@@ -17,6 +17,8 @@ export type PortaSerialAberta = {
 	path: string;
 	ler: () => Promise<Buffer>;
 	escrever: (dados: Buffer) => Promise<void>;
+	/** Descarta o que já estava no buffer (purge da ACBr antes do ENQ). */
+	limpar: () => Promise<void>;
 	fechar: () => Promise<void>;
 };
 
@@ -111,6 +113,12 @@ try {
           $buf = New-Object byte[] $n
           $got = $port.Read($buf, 0, $n)
           Out-Line ('OK READ ' + [Convert]::ToBase64String($buf, 0, $got))
+        }
+        'PURGE' {
+          if (-not $port) { throw 'Porta fechada' }
+          $port.DiscardInBuffer()
+          $port.DiscardOutBuffer()
+          Out-Line 'OK PURGE'
         }
         'CLOSE' {
           if ($port) { $port.Close(); $port.Dispose(); $port = $null }
@@ -306,6 +314,9 @@ async function abrirPortaWindows(
 		async escrever(dados) {
 			await sessao.comando(`WRITE ${dados.toString("base64")}`, 2000);
 		},
+		async limpar() {
+			await sessao.comando("PURGE", 2000);
+		},
 		async fechar() {
 			try {
 				await sessao.comando("CLOSE", 1500);
@@ -388,6 +399,9 @@ async function abrirPortaPosix(
 			await new Promise<void>((resolve, reject) => {
 				escrita.write(dados, (err) => (err ? reject(err) : resolve()));
 			});
+		},
+		async limpar() {
+			buffer = Buffer.alloc(0);
 		},
 		async fechar() {
 			leitura.destroy();

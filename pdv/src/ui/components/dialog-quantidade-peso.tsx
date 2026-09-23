@@ -44,8 +44,10 @@ export function DialogQuantidadePeso({
 
 	useEffect(() => {
 		let ativo = true;
+		let emCurso = false;
 		async function poll() {
-			if (!ativo || manual) return;
+			if (!ativo || manual || emCurso) return;
+			emCurso = true;
 			try {
 				const leitura = await pdvInvoke<BalancaPeso>("balanca.lerPeso");
 				if (!ativo || manual) return;
@@ -62,6 +64,8 @@ export function DialogQuantidadePeso({
 						? err.message
 						: "Balança indisponível — informe o peso",
 				);
+			} finally {
+				emCurso = false;
 			}
 		}
 		void poll();

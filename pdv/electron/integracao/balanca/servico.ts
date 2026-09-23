@@ -1,5 +1,6 @@
 import { getConfig } from "../../db/database";
 import {
+	comandoFallbackEmuladorToledo,
 	comandoSolicitarPeso,
 	extrairPesoKg,
 	normalizarProtocoloBalanca,
@@ -37,6 +38,17 @@ export type BalancaPeso = {
 let portaAberta: PortaSerialAberta | null = null;
 let chavePorta: string | null = null;
 let ultimoErro = "";
+let cadeia: Promise<unknown> = Promise.resolve();
+
+/** Uma leitura por vez. A segunda espera; não fecha a porta da primeira. */
+function emExclusao<T>(trabalho: () => Promise<T>): Promise<T> {
+	const resultado = cadeia.then(trabalho, trabalho);
+	cadeia = resultado.then(
+		() => undefined,
+		() => undefined,
+	);
+	return resultado;
+}
 
 const BAUD_PADRAO = 9600;
 
@@ -61,13 +73,18 @@ export async function lerConfigBalanca(): Promise<BalancaConfig> {
 	};
 }
 
-export async function resetarConexaoBalanca(): Promise<void> {
-	if (portaAberta) {
-		await portaAberta.fechar().catch(() => undefined);
-	}
+async function fecharPortaAtual(): Promise<void> {
+	const aberta = portaAberta;
 	portaAberta = null;
 	chavePorta = null;
 	ultimoErro = "";
+	if (aberta) {
+		await aberta.fechar().catch(() => undefined);
+	}
+}
+
+export async function resetarConexaoBalanca(): Promise<void> {
+	await emExclusao(() => fecharPortaAtual());
 }
 
 async function garantirPorta(
@@ -77,7 +94,7 @@ async function garantirPorta(
 	if (portaAberta && chavePorta === chave) {
 		return portaAberta;
 	}
-	await resetarConexaoBalanca();
+	await fecharPortaAtual();
 	const aberta = await comTimeout(
 		abrirPortaSerial(config.porta, config.baud),
 		8000,
@@ -141,18 +158,53 @@ export async function listarPortasBalanca(): Promise<string[]> {
 	return listarPortasSeriais();
 }
 
+/**
+ * Junta os bytes até um silêncio curto ou o timeout, no lugar de um único
+ * snapshot de BytesToRead. É o RecvPacket da ACBr.
+ */
+async function lerPacote(
+	porta: PortaSerialAberta,
+	timeoutMs: number,
+): Promise<Buffer> {
+	const inicio = Date.now();
+	const partes: Buffer[] = [];
+	let ultimoDado = 0;
+	const silencioMs = 80;
+	while (Date.now() - inicio < timeoutMs) {
+		const pedaco = await porta.ler();
+		if (pedaco.length > 0) {
+			partes.push(pedaco);
+			ultimoDado = Date.now();
+		} else if (partes.length > 0 && Date.now() - ultimoDado >= silencioMs) {
+			break;
+		}
+		const restante = timeoutMs - (Date.now() - inicio);
+		if (restante <= 0) break;
+		await esperar(Math.min(40, restante));
+	}
+	return partes.length > 0 ? Buffer.concat(partes) : Buffer.alloc(0);
+}
+
 async function lerPesoDaPorta(
 	config: BalancaConfig,
-	esperaMs: number,
+	timeoutMs: number,
 ): Promise<number> {
 	const porta = await garantirPorta(config);
 	const pedido = comandoSolicitarPeso(config.protocolo);
 	if (pedido) {
-		await porta.escrever(pedido).catch(() => undefined);
+		await porta.limpar().catch(() => undefined);
+		await porta.escrever(pedido);
+		await esperar(200);
 	}
-	await esperar(esperaMs);
-	const bruto = await porta.ler();
-	return extrairPesoKg(bruto, config.protocolo);
+	let bruto = await lerPacote(porta, timeoutMs);
+	let peso = extrairPesoKg(bruto, config.protocolo);
+	if (peso <= 0 && bruto.length === 0 && config.protocolo === "toledo") {
+		await porta.escrever(comandoFallbackEmuladorToledo());
+		await esperar(200);
+		bruto = await lerPacote(porta, timeoutMs);
+		peso = extrairPesoKg(bruto, config.protocolo);
+	}
+	return peso;
 }
 
 export async function lerPesoBalanca(): Promise<BalancaPeso> {
@@ -165,32 +217,34 @@ export async function lerPesoBalanca(): Promise<BalancaPeso> {
 			mensagem: "Balança desligada",
 		};
 	}
-	try {
-		const peso = await lerPesoDaPorta(config, 280);
-		if (peso > 0) {
+	return emExclusao(async () => {
+		try {
+			const peso = await lerPesoDaPorta(config, 800);
+			if (peso > 0) {
+				return {
+					peso,
+					conectado: true,
+					origem: "balanca" as const,
+					mensagem: "Peso lido da balança",
+				};
+			}
 			return {
-				peso,
+				peso: 0,
 				conectado: true,
-				origem: "balanca",
-				mensagem: "Peso lido da balança",
+				origem: "nenhuma" as const,
+				mensagem: "Balança conectada — coloque o produto ou digite o peso",
+			};
+		} catch (err) {
+			ultimoErro = err instanceof Error ? err.message : "Falha na porta";
+			await fecharPortaAtual();
+			return {
+				peso: 0,
+				conectado: false,
+				origem: "nenhuma" as const,
+				mensagem: ultimoErro,
 			};
 		}
-		return {
-			peso: 0,
-			conectado: true,
-			origem: "nenhuma",
-			mensagem: "Balança conectada — coloque o produto ou digite o peso",
-		};
-	} catch (err) {
-		ultimoErro = err instanceof Error ? err.message : "Falha na porta";
-		await resetarConexaoBalanca();
-		return {
-			peso: 0,
-			conectado: false,
-			origem: "nenhuma",
-			mensagem: ultimoErro,
-		};
-	}
+	});
 }
 
 export async function testarBalanca(): Promise<BalancaPeso & BalancaStatus> {
@@ -203,37 +257,40 @@ export async function testarBalanca(): Promise<BalancaPeso & BalancaStatus> {
 			origem: "nenhuma",
 		};
 	}
-	try {
-		const peso = await lerPesoDaPorta(config, 800);
-		if (peso > 0) {
+	return emExclusao(async () => {
+		try {
+			const peso = await lerPesoDaPorta(config, 2000);
+			if (peso > 0) {
+				return {
+					...base,
+					conectado: true,
+					peso,
+					origem: "balanca" as const,
+					mensagem: `Peso lido: ${peso.toLocaleString("pt-BR", {
+						minimumFractionDigits: 3,
+						maximumFractionDigits: 3,
+					})} kg`,
+				};
+			}
 			return {
 				...base,
 				conectado: true,
-				peso,
-				origem: "balanca",
-				mensagem: `Peso lido: ${peso.toLocaleString("pt-BR", {
-					minimumFractionDigits: 3,
-					maximumFractionDigits: 3,
-				})} kg`,
+				peso: 0,
+				origem: "nenhuma" as const,
+				mensagem:
+					"Porta aberta, mas nenhum peso chegou. Confira o protocolo e se há produto na balança.",
+			};
+		} catch (err) {
+			const mensagem = err instanceof Error ? err.message : "Falha na porta";
+			ultimoErro = mensagem;
+			await fecharPortaAtual();
+			return {
+				...base,
+				conectado: false,
+				peso: 0,
+				origem: "nenhuma" as const,
+				mensagem,
 			};
 		}
-		return {
-			...base,
-			conectado: true,
-			peso: 0,
-			origem: "nenhuma",
-			mensagem:
-				"Porta aberta, mas nenhum peso chegou. Confira o protocolo e se há produto na balança.",
-		};
-	} catch (err) {
-		const mensagem = err instanceof Error ? err.message : "Falha na porta";
-		await resetarConexaoBalanca();
-		return {
-			...base,
-			conectado: false,
-			peso: 0,
-			origem: "nenhuma",
-			mensagem,
-		};
-	}
+	});
 }
