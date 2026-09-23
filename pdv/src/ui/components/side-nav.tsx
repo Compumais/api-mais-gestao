@@ -12,7 +12,7 @@ import {
 import type { ComponentType } from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import { onDeliveryEvent, onWhatsappEvent, pdvInvoke } from "@/lib/pdv-api";
+import { onDeliveryEvent, pdvInvoke } from "@/lib/pdv-api";
 import {
 	rotuloModelo,
 	type StatusContext,
@@ -98,6 +98,7 @@ export function SideNav({
 	const path = location.pathname;
 	const { recolhida } = useSidebarState();
 	const [novosDelivery, setNovosDelivery] = useState(0);
+	const deliveryAtivo = path === "/delivery" || path.startsWith("/delivery/");
 
 	useEffect(() => {
 		if (!gourmet || bloqueado) {
@@ -107,12 +108,14 @@ export function SideNav({
 		let cancelado = false;
 		async function atualizarBadge() {
 			try {
-				const [novos, naoLidas] = await Promise.all([
-					pdvInvoke<number>("contarPedidosEntregaNovos"),
-					pdvInvoke<number>("whatsapp.contarNaoLidas"),
-				]);
+				if (deliveryAtivo) {
+					await pdvInvoke("marcarPedidosDeliveryVistos");
+					if (!cancelado) setNovosDelivery(0);
+					return;
+				}
+				const novos = await pdvInvoke<number>("contarPedidosEntregaNovos");
 				if (!cancelado) {
-					setNovosDelivery((Number(novos) || 0) + (Number(naoLidas) || 0));
+					setNovosDelivery(Number(novos) || 0);
 				}
 			} catch {
 				if (!cancelado) setNovosDelivery(0);
@@ -122,23 +125,18 @@ export function SideNav({
 		const timer = window.setInterval(() => {
 			void atualizarBadge();
 		}, 4000);
-		const offWa = onWhatsappEvent(() => {
-			void atualizarBadge();
-		});
 		const offDelivery = onDeliveryEvent(() => {
 			void atualizarBadge();
 		});
 		return () => {
 			cancelado = true;
 			window.clearInterval(timer);
-			offWa();
 			offDelivery();
 		};
-	}, [gourmet, bloqueado, path]);
+	}, [gourmet, bloqueado, deliveryAtivo]);
 
 	const mesasAtivo = path === "/" || path.startsWith("/mesas/");
 	const balcaoAtivo = path === "/balcao" || (!gourmet && path === "/");
-	const deliveryAtivo = path === "/delivery" || path.startsWith("/delivery/");
 	const pedidosAtivo = path === "/pedidos" || path.startsWith("/pedidos/");
 	const vendasAtivo = path === "/vendas" || path.startsWith("/vendas/");
 	const configAtivo = path === "/config";

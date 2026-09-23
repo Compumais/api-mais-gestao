@@ -17,6 +17,12 @@ export function marcarPedidosDeliveryVistos(): void {
 	naoVistos = 0;
 }
 
+/** Incrementa o badge de pedidos novos ainda não vistos pelo operador. */
+export function incrementarPedidosDeliveryNaoVistos(): number {
+	naoVistos += 1;
+	return naoVistos;
+}
+
 export function tituloAlertaPedidoDelivery(pedido: PedidoDeliveryNovo): string {
 	const tipo = pedido.modalidade === "retirada" ? "Retirada" : "Delivery";
 	const senha = pedido.senha?.trim();
@@ -24,7 +30,7 @@ export function tituloAlertaPedidoDelivery(pedido: PedidoDeliveryNovo): string {
 }
 
 export function avisarPedidoDeliveryNovo(pedido: PedidoDeliveryNovo): void {
-	naoVistos += 1;
+	incrementarPedidosDeliveryNaoVistos();
 	const titulo = tituloAlertaPedidoDelivery(pedido);
 	const corpo = (pedido.nomecliente ?? "").trim() || "Novo pedido no cardápio";
 	if (Notification.isSupported()) {

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { tituloAlertaPedidoDelivery } from "./alertas";
+import {
+	incrementarPedidosDeliveryNaoVistos,
+	marcarPedidosDeliveryVistos,
+	pedidosDeliveryNaoVistos,
+	tituloAlertaPedidoDelivery,
+} from "./alertas";
 
 describe("tituloAlertaPedidoDelivery", () => {
 	it("inclui senha e tipo", () => {
@@ -25,5 +30,17 @@ describe("tituloAlertaPedidoDelivery", () => {
 			}),
 			"Novo pedido Retirada",
 		);
+	});
+});
+
+describe("pedidosDeliveryNaoVistos", () => {
+	it("conta alertas novos e zera ao marcar como vistos", () => {
+		marcarPedidosDeliveryVistos();
+		assert.equal(pedidosDeliveryNaoVistos(), 0);
+		assert.equal(incrementarPedidosDeliveryNaoVistos(), 1);
+		assert.equal(incrementarPedidosDeliveryNaoVistos(), 2);
+		assert.equal(pedidosDeliveryNaoVistos(), 2);
+		marcarPedidosDeliveryVistos();
+		assert.equal(pedidosDeliveryNaoVistos(), 0);
 	});
 });
