@@ -38,7 +38,7 @@ import {
 	ehModalidadeEntrega,
 	gerarSenhaChamada,
 	type ModalidadePedido,
-	mensagemErroCancelarPedidoEntrega,
+	mensagemErroCancelarConta,
 	normalizarModalidade,
 	origemVendaPorModalidade,
 	parseBairrosEntrega,
@@ -2518,33 +2518,25 @@ export async function limparContasVazias(): Promise<number> {
 /** Descarta itens, libera a mesa/comanda/pedido e cancela outbox pendente da conta. */
 export async function cancelarContaMesa(idconta: string): Promise<void> {
 	const conta = await obterContaMesa(idconta);
-	if (!conta || conta.status !== "aberta") {
-		throw new Error("Conta inválida");
-	}
-	const entrega = ehModalidadeEntrega(conta.modalidade);
-	if (entrega) {
-		const recusa = mensagemErroCancelarPedidoEntrega({
-			contaValida: true,
-			modalidade: conta.modalidade,
-			status: conta.status,
-			statusEntrega: conta.status_entrega,
-			valorpago: conta.valorpago,
-		});
-		if (recusa) throw new Error(recusa);
-	} else if (conta.valorpago > 0) {
-		throw new Error(
-			"Conta com pagamento parcial não pode ser cancelada. Finalize ou estorne os pagamentos.",
-		);
-	}
-
 	const rotulo =
 		(await getConfig("modelo_atendimento", "mesa")) === "comanda"
 			? "Comanda"
 			: "Mesa";
-	const numero = conta.numero_mesa;
-	if (!entrega && numero <= 0) {
-		throw new Error(`${rotulo} inválida para cancelamento`);
+	const recusa = mensagemErroCancelarConta({
+		contaValida: Boolean(conta && conta.status === "aberta"),
+		modalidade: conta?.modalidade,
+		status: conta?.status,
+		statusEntrega: conta?.status_entrega,
+		valorpago: conta?.valorpago ?? 0,
+		numeroMesa: conta?.numero_mesa ?? 0,
+		rotuloAtendimento: rotulo,
+	});
+	if (recusa) throw new Error(recusa);
+	if (!conta) {
+		throw new Error("Conta inválida");
 	}
+	const entrega = ehModalidadeEntrega(normalizarModalidade(conta.modalidade));
+	const numero = conta.numero_mesa;
 	const agora = new Date().toISOString();
 
 	await withTransaction(async (client) => {
