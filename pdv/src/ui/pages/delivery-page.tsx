@@ -592,13 +592,15 @@ export function DeliveryPage() {
 													</span>
 												) : null}
 											</Button>
-											<Button
-												size="sm"
-												variant="outline"
-												onClick={() => void avancarStatus(p.id)}
-											>
-												Avançar
-											</Button>
+											{p.status_entrega !== "entregue" ? (
+												<Button
+													size="sm"
+													variant="outline"
+													onClick={() => void avancarStatus(p.id)}
+												>
+													Avançar
+												</Button>
+											) : null}
 											<Button
 												size="sm"
 												variant="destructive"

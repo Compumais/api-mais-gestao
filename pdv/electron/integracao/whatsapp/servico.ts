@@ -22,8 +22,9 @@ import {
 	telefoneParaJid,
 } from "./normalizar-telefone";
 import {
-	montarMensagemTemplate,
-	obterTemplateWhatsapp,
+	CHAVES_TEMPLATE_WHATSAPP,
+	montarMensagemStatusWhatsapp,
+	TEMPLATES_PADRAO,
 	type TemplateStatusWhatsapp,
 } from "./templates";
 
@@ -575,6 +576,7 @@ export async function notificarStatusPedidoWhatsapp(params: {
 	protocolo: string | null | undefined;
 	modalidade: string;
 	statusEntrega: string;
+	copiaPedido?: string | null;
 }): Promise<void> {
 	if (!(await whatsappHabilitado())) return;
 	const telefone = normalizarTelefoneE164(params.telefone);
@@ -594,13 +596,24 @@ export async function notificarStatusPedidoWhatsapp(params: {
 
 	if (!tipo) return;
 	const template = await obterTemplateWhatsapp(tipo);
-	const corpo = montarMensagemTemplate(template, {
+	const corpo = montarMensagemStatusWhatsapp({
+		template,
 		nome: params.nomecliente,
 		protocolo: params.protocolo,
+		copiaPedido: params.copiaPedido,
+		incluirCopiaSeAusente: tipo === "producao",
 	});
 	await enviarTextoWhatsapp({
 		telefoneE164: telefone,
 		corpo,
 		idconta: params.idconta,
 	});
+}
+
+async function obterTemplateWhatsapp(
+	tipo: TemplateStatusWhatsapp,
+): Promise<string> {
+	const chave = CHAVES_TEMPLATE_WHATSAPP[tipo];
+	const valor = (await getConfig(chave, TEMPLATES_PADRAO[tipo])).trim();
+	return valor || TEMPLATES_PADRAO[tipo];
 }

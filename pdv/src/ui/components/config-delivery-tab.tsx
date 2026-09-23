@@ -222,25 +222,27 @@ export function ConfigDeliveryTab({
 					) : null}
 
 					<div className="space-y-2 sm:col-span-2">
-						<Label htmlFor="whatsapp_msg_producao">
-							Msg. pedido em produção
-						</Label>
-						<Input
+						<Label htmlFor="whatsapp_msg_producao">Msg. pedido recebido</Label>
+						<textarea
 							id="whatsapp_msg_producao"
+							rows={7}
+							className="flex min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
 							value={
 								config.whatsapp_msg_producao ??
-								"Olá {nome}, recebemos seu pedido #{protocolo} e já estamos preparando."
+								"Oi {nome}! 😊\nRecebemos o seu pedido #{protocolo} e já estamos preparando com carinho.\n\n{pedido}\n\nQualquer dúvida, é só responder esta mensagem."
 							}
 							onChange={(e) => set("whatsapp_msg_producao", e.target.value)}
 						/>
 					</div>
 					<div className="space-y-2 sm:col-span-2">
 						<Label htmlFor="whatsapp_msg_saiu">Msg. saiu para entrega</Label>
-						<Input
+						<textarea
 							id="whatsapp_msg_saiu"
+							rows={2}
+							className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
 							value={
 								config.whatsapp_msg_saiu ??
-								"Seu pedido #{protocolo} saiu para entrega."
+								"{nome}, o pedido #{protocolo} saiu para entrega e já está a caminho. 🛵"
 							}
 							onChange={(e) => set("whatsapp_msg_saiu", e.target.value)}
 						/>
@@ -249,11 +251,13 @@ export function ConfigDeliveryTab({
 						<Label htmlFor="whatsapp_msg_retirada_pronta">
 							Msg. pronto para retirada
 						</Label>
-						<Input
+						<textarea
 							id="whatsapp_msg_retirada_pronta"
+							rows={2}
+							className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
 							value={
 								config.whatsapp_msg_retirada_pronta ??
-								"Seu pedido #{protocolo} está pronto para retirada."
+								"{nome}, o pedido #{protocolo} está prontinho para retirada. Pode vir buscar quando quiser. 🛍️"
 							}
 							onChange={(e) =>
 								set("whatsapp_msg_retirada_pronta", e.target.value)
@@ -262,27 +266,32 @@ export function ConfigDeliveryTab({
 					</div>
 					<div className="space-y-2 sm:col-span-2">
 						<Label htmlFor="whatsapp_msg_entregue">Msg. entregue</Label>
-						<Input
+						<textarea
 							id="whatsapp_msg_entregue"
+							rows={2}
+							className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
 							value={
 								config.whatsapp_msg_entregue ??
-								"Pedido #{protocolo} entregue. Obrigado!"
+								"Pedido #{protocolo} entregue, {nome}! Obrigado pela preferência. Volte sempre 💚"
 							}
 							onChange={(e) => set("whatsapp_msg_entregue", e.target.value)}
 						/>
 					</div>
 					<div className="space-y-2 sm:col-span-2">
 						<Label htmlFor="whatsapp_msg_cancelado">Msg. cancelado</Label>
-						<Input
+						<textarea
 							id="whatsapp_msg_cancelado"
+							rows={2}
+							className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
 							value={
 								config.whatsapp_msg_cancelado ??
-								"Olá {nome}, seu pedido #{protocolo} foi cancelado."
+								"Oi {nome}, o pedido #{protocolo} foi cancelado. Se quiser fazer um novo, é só chamar por aqui."
 							}
 							onChange={(e) => set("whatsapp_msg_cancelado", e.target.value)}
 						/>
 						<p className="text-xs text-muted-foreground">
-							Use {"{nome}"} e {"{protocolo}"} nos textos.
+							Use {"{nome}"}, {"{protocolo}"} e, no recebido, {"{pedido}"} para
+							inserir a cópia dos itens, totais e endereço.
 						</p>
 					</div>
 				</CardContent>

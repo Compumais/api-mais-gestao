@@ -2,6 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { app } from "electron";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import {
+	CHAVES_TEMPLATE_WHATSAPP,
+	TEMPLATES_PADRAO,
+	TEMPLATES_WHATSAPP_LEGADOS,
+} from "../integracao/whatsapp/templates";
 import { SCHEMA_INDEXES_SQL, SCHEMA_TABLES_SQL } from "./schema";
 
 export const DATABASE_URL_PADRAO =
@@ -847,26 +852,27 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["taxa_entrega_padrao", "0"],
 		["bairros_entrega", "[]"],
 		["whatsapp_habilitado", "0"],
+		[CHAVES_TEMPLATE_WHATSAPP.producao, TEMPLATES_PADRAO.producao],
+		[CHAVES_TEMPLATE_WHATSAPP.saiu, TEMPLATES_PADRAO.saiu],
 		[
-			"whatsapp_msg_producao",
-			"Olá {nome}, recebemos seu pedido #{protocolo} e já estamos preparando.",
+			CHAVES_TEMPLATE_WHATSAPP.retirada_pronta,
+			TEMPLATES_PADRAO.retirada_pronta,
 		],
-		["whatsapp_msg_saiu", "Seu pedido #{protocolo} saiu para entrega."],
-		[
-			"whatsapp_msg_retirada_pronta",
-			"Seu pedido #{protocolo} está pronto para retirada.",
-		],
-		["whatsapp_msg_entregue", "Pedido #{protocolo} entregue. Obrigado!"],
-		[
-			"whatsapp_msg_cancelado",
-			"Olá {nome}, seu pedido #{protocolo} foi cancelado.",
-		],
+		[CHAVES_TEMPLATE_WHATSAPP.entregue, TEMPLATES_PADRAO.entregue],
+		[CHAVES_TEMPLATE_WHATSAPP.cancelado, TEMPLATES_PADRAO.cancelado],
 	];
 
 	for (const [chave, valor] of defaults) {
 		await database.query(
 			"INSERT INTO config (chave, valor) VALUES ($1, $2) ON CONFLICT (chave) DO NOTHING",
 			[chave, valor],
+		);
+	}
+
+	for (const legado of TEMPLATES_WHATSAPP_LEGADOS) {
+		await database.query(
+			"UPDATE config SET valor = $1 WHERE chave = $2 AND valor = $3",
+			[legado.novo, legado.chave, legado.antigo],
 		);
 	}
 
