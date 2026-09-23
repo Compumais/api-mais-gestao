@@ -40,6 +40,7 @@ import {
 import { cestService } from "@/services/cest.service";
 import { gruposGourmetService } from "@/services/grupos-gourmet.service";
 import { hierarquiasService } from "@/services/hierarquias.service";
+import { ibsCbsService } from "@/services/ibscbs.service";
 import { produtosService } from "@/services/produtos.service";
 import {
 	isUnidadeMedidaGlobal,
@@ -196,6 +197,34 @@ export function AlterarProdutosEmMassaDialog({
 		},
 		enabled: aberto && !!empresa,
 	});
+
+	const cstIbsValor = valores.cstibs?.valor ?? null;
+
+	const { data: cstsIbs = [] } = useQuery({
+		queryKey: ["ibscbs-cst"],
+		queryFn: () => ibsCbsService.listarCst(),
+		enabled: aberto,
+	});
+
+	const { data: classificacoesIbs = [] } = useQuery({
+		queryKey: ["ibscbs-classificacoes", cstIbsValor ?? ""],
+		queryFn: () =>
+			ibsCbsService.listarClassificacoes({
+				cst: cstIbsValor,
+				documento: "nfe",
+			}),
+		enabled: aberto && !!cstIbsValor,
+	});
+
+	const opcoesCstIbs = cstsIbs.map((item) => ({
+		value: item.cst,
+		label: item.label,
+	}));
+
+	const opcoesClassificacaoIbs = classificacoesIbs.map((item) => ({
+		value: item.codigo,
+		label: `${item.codigo} - ${item.nome}`,
+	}));
 
 	const unidadesGlobais = unidades.filter((unidade) =>
 		isUnidadeMedidaGlobal(unidade),
@@ -948,11 +977,24 @@ export function AlterarProdutosEmMassaDialog({
 								alterar={valores.cstibs?.alterar ?? false}
 								onAlterar={(alterar) => setValue("cstibs.alterar", alterar)}
 							>
-								<Input
-									id="cstibs"
-									placeholder="Ex.: 000"
-									maxLength={3}
-									{...register("cstibs.valor")}
+								<Controller
+									name="cstibs.valor"
+									control={control}
+									render={({ field }) => (
+										<Combobox
+											options={opcoesCstIbs}
+											value={field.value ?? ""}
+											onChange={(valor) => {
+												field.onChange(valor || null);
+												setValue("classtributariaibs.valor", null);
+											}}
+											allowEmpty
+											emptyLabel="Nenhum"
+											placeholder="Selecione o CST IBS/CBS"
+											searchPlaceholder="Buscar CST..."
+											emptyMessage="Nenhum CST encontrado"
+										/>
+									)}
 								/>
 							</LinhaCampo>
 							<LinhaCampo
@@ -963,11 +1005,26 @@ export function AlterarProdutosEmMassaDialog({
 									setValue("classtributariaibs.alterar", alterar)
 								}
 							>
-								<Input
-									id="classtributariaibs"
-									placeholder="Ex.: 000001"
-									maxLength={6}
-									{...register("classtributariaibs.valor")}
+								<Controller
+									name="classtributariaibs.valor"
+									control={control}
+									render={({ field }) => (
+										<Combobox
+											options={opcoesClassificacaoIbs}
+											value={field.value ?? ""}
+											onChange={(valor) => field.onChange(valor || null)}
+											allowEmpty
+											emptyLabel="Nenhuma"
+											placeholder={
+												!cstIbsValor
+													? "Selecione o CST primeiro"
+													: "Selecione a classificação"
+											}
+											disabled={!cstIbsValor}
+											searchPlaceholder="Buscar classificação..."
+											emptyMessage="Nenhuma classificação para este CST"
+										/>
+									)}
 								/>
 							</LinhaCampo>
 							<LinhaCampo

@@ -203,4 +203,39 @@ describe("enriquecerItensEmissaoComProduto", () => {
 		expect(itens[0]?.csosn).toBe("102");
 		expect(itens[0]?.percentualMvaSt).toBe(40);
 	});
+
+	it("copia CST/classificação/alíquotas IBS/CBS do produto", async () => {
+		vi.mocked(produtosRepositories.buscarProdutoPorId).mockResolvedValue({
+			id: "prod-1",
+			idempresa: "emp-1",
+			codigo: 10,
+			idcest: null,
+			cest: null,
+			ean: null,
+			eantributavel: null,
+			cstibs: "000",
+			classtributariaibs: "000001",
+			aliquotaiibs: "0.1000",
+			aliquotacbs: "0.9000",
+		} as Awaited<ReturnType<typeof produtosRepositories.buscarProdutoPorId>>);
+
+		const itens = await enriquecerItensEmissaoComProduto([
+			{
+				idproduto: "prod-1",
+				descricao: "Produto reforma",
+				ncm: "22021000",
+				cfop: "5102",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 10,
+			},
+		]);
+
+		expect(itens[0]?.ibsCbs).toEqual({
+			cst: "000",
+			cClassTrib: "000001",
+			aliquotaIbs: 0.1,
+			aliquotaCbs: 0.9,
+		});
+	});
 });

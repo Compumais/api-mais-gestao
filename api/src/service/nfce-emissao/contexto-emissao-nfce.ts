@@ -20,6 +20,7 @@ import {
 	ajustarDestinatarioAmbienteNfe,
 	montarIeEmitenteNfe,
 } from "@/util/normalizar-ie-nfe.js";
+import { aplicarIbsCbsPorRegimeCrt } from "@/util/ibs-cbs-emissao-nfe.js";
 import { resolverNomeMunicipioIbge } from "@/util/resolver-nome-municipio-ibge.js";
 import { validarPreRequisitosEmissaoNfce } from "@/util/validar-pre-requisitos-emissao-nfce.js";
 
@@ -128,6 +129,9 @@ export async function montarPayloadGatewayEmissaoNfce({
 			}
 		: undefined;
 
+	const crt = empresaFiscal.crt ?? 3;
+	const itensGateway = aplicarIbsCbsPorRegimeCrt(itens, crt);
+
 	return {
 		configJson,
 		pfxBase64: credenciais.pfxBase64,
@@ -138,7 +142,7 @@ export async function montarPayloadGatewayEmissaoNfce({
 				razaoSocial: empresaFiscal.razaosocial,
 				nomeFantasia: empresaFiscal.nomefantasia ?? empresaFiscal.razaosocial,
 				ie: montarIeEmitenteNfe(empresaFiscal.inscricaoestadual),
-				crt: empresaFiscal.crt ?? 3,
+				crt,
 				logradouro: empresaFiscal.logradouro,
 				numero: empresaFiscal.numero,
 				complemento: empresaFiscal.complemento ?? "",
@@ -171,7 +175,7 @@ export async function montarPayloadGatewayEmissaoNfce({
 					destinatarioComMunicipio,
 					nfceConfiguracao.ambiente,
 				) ?? {},
-			itens,
+			itens: itensGateway,
 			totais: totais ?? {},
 			pagamento: pagamento ?? {},
 			transporte: { modFrete: 9 },

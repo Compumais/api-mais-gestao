@@ -5,7 +5,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { criarProdutoService } from "@/service/produto/criar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
-import { camposImpostosProdutoSchema } from "@/util/campos-impostos-produto.js";
+import { camposImpostosProdutoSchema, refinirCamposIbsCbsProduto } from "@/util/campos-impostos-produto.js";
 import {
 	camposServicoProdutoSchema,
 	montarCamposServicoProduto,
@@ -104,6 +104,7 @@ const criarProdutoBodySchema = z
 				path: ["ncm"],
 			});
 		}
+		refinirCamposIbsCbsProduto(dados, ctx);
 	});
 
 export async function criarProduto(

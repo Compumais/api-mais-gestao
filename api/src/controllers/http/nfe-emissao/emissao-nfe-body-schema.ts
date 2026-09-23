@@ -58,6 +58,14 @@ export const itemNfeSchema = z.object({
 	valorIcmsDesonerado: z.number().min(0).optional(),
 	valorIcmsMonoRet: z.number().min(0).optional(),
 	valorIcmsMonoReten: z.number().min(0).optional(),
+	ibsCbs: z
+		.object({
+			cst: z.string().min(1).max(3),
+			cClassTrib: z.string().min(1).max(6),
+			aliquotaIbs: z.number().min(0).optional(),
+			aliquotaCbs: z.number().min(0).optional(),
+		})
+		.optional(),
 	rastros: z
 		.array(
 			z.object({
