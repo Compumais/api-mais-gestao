@@ -13,22 +13,10 @@ type Mensagem = {
 	criadoem: string;
 };
 
-function mesmoTelefoneChat(a?: string | null, b?: string | null): boolean {
-	const da = (a ?? "").replace(/\D/g, "");
-	const db = (b ?? "").replace(/\D/g, "");
-	if (!da || !db) return false;
-	if (da === db) return true;
-	const localA = da.replace(/^55/, "");
-	const localB = db.replace(/^55/, "");
-	const dddA = localA.slice(0, 2);
-	const dddB = localB.slice(0, 2);
-	return (
-		dddA.length === 2 &&
-		dddA === dddB &&
-		localA.slice(-8) === localB.slice(-8) &&
-		localA.slice(-8).length === 8
-	);
-}
+type Conversa = {
+	id: string;
+	status?: "aberta" | "finalizada";
+};
 
 export function ChatWhatsappPedido({
 	aberto,
@@ -44,12 +32,14 @@ export function ChatWhatsappPedido({
 	onFechar: () => void;
 }) {
 	const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+	const [conversa, setConversa] = useState<Conversa | null>(null);
 	const [texto, setTexto] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [enviando, setEnviando] = useState(false);
 	const [erro, setErro] = useState("");
 	const fimRef = useRef<HTMLDivElement | null>(null);
 	useEscapeFechaModal(aberto, onFechar);
+	const finalizada = conversa?.status === "finalizada";
 
 	async function carregar() {
 		if (!aberto) return;
@@ -57,11 +47,13 @@ export function ChatWhatsappPedido({
 		setErro("");
 		try {
 			const res = await pdvInvoke<{
+				conversa: Conversa | null;
 				mensagens: Mensagem[];
 			}>("whatsapp.listarMensagens", {
 				idconta,
 				telefone: telefone ?? undefined,
 			});
+			setConversa(res.conversa ?? null);
 			setMensagens(res.mensagens ?? []);
 			await pdvInvoke("whatsapp.marcarLidas", {
 				idconta,
@@ -84,16 +76,19 @@ export function ChatWhatsappPedido({
 			const evento = payload as {
 				tipo?: string;
 				idconta?: string | null;
-				telefone?: string | null;
+				idconversa?: string | null;
 			};
 			if (evento.tipo !== "mensagem") return;
 			const mesmaConta = Boolean(evento.idconta) && evento.idconta === idconta;
-			const mesmoTel = mesmoTelefoneChat(evento.telefone, telefone);
-			if (mesmaConta || mesmoTel) {
+			const mesmaConversa =
+				Boolean(evento.idconversa) &&
+				Boolean(conversa?.id) &&
+				evento.idconversa === conversa?.id;
+			if (mesmaConta || mesmaConversa) {
 				void carregar();
 			}
 		});
-	}, [aberto, idconta, telefone]);
+	}, [aberto, idconta, conversa?.id]);
 
 	useEffect(() => {
 		fimRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,7 +96,7 @@ export function ChatWhatsappPedido({
 
 	async function enviar() {
 		const corpo = texto.trim();
-		if (!corpo || enviando) return;
+		if (!corpo || enviando || finalizada) return;
 		setEnviando(true);
 		setErro("");
 		try {
@@ -137,7 +132,7 @@ export function ChatWhatsappPedido({
 					</Button>
 				</header>
 
-				<div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-3">
+				<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 py-3">
 					{loading ? (
 						<p className="text-sm text-muted-foreground">Carregando…</p>
 					) : null}
@@ -150,14 +145,19 @@ export function ChatWhatsappPedido({
 					{mensagens.map((msg) => (
 						<div
 							key={msg.id}
-							className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+							className={`flex max-w-[85%] flex-col rounded-lg px-3 py-2 text-sm ${
 								msg.direcao === "out"
-									? "ml-auto bg-primary text-primary-foreground"
+									? "self-end bg-primary text-primary-foreground"
 									: msg.direcao === "system"
-										? "mx-auto bg-muted text-muted-foreground"
-										: "bg-muted"
+										? "self-center bg-muted text-muted-foreground"
+										: "self-start bg-muted"
 							}`}
 						>
+							{msg.direcao !== "system" ? (
+								<p className="mb-0.5 text-[10px] font-semibold opacity-80">
+									{msg.direcao === "out" ? "Operador" : "Cliente"}
+								</p>
+							) : null}
 							<p className="whitespace-pre-wrap break-words">{msg.corpo}</p>
 							<p className="mt-1 text-[10px] opacity-70">
 								{new Date(msg.criadoem).toLocaleString("pt-BR")}
@@ -166,6 +166,12 @@ export function ChatWhatsappPedido({
 					))}
 					<div ref={fimRef} />
 				</div>
+
+				{finalizada ? (
+					<p className="border-t px-3 py-2 text-center text-xs text-muted-foreground">
+						Conversa finalizada — pedido entregue.
+					</p>
+				) : null}
 
 				<form
 					className="flex gap-2 border-t p-3"
@@ -177,16 +183,20 @@ export function ChatWhatsappPedido({
 					<input
 						className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
 						value={texto}
-						disabled={!telefone || enviando}
+						disabled={!telefone || enviando || finalizada}
 						placeholder={
-							telefone ? "Escreva uma mensagem…" : "Pedido sem telefone"
+							finalizada
+								? "Conversa finalizada"
+								: telefone
+									? "Escreva uma mensagem…"
+									: "Pedido sem telefone"
 						}
 						onChange={(e) => setTexto(e.target.value)}
 					/>
 					<Button
 						type="submit"
 						size="sm"
-						disabled={!telefone || !texto.trim() || enviando}
+						disabled={!telefone || !texto.trim() || enviando || finalizada}
 					>
 						<Send className="size-4" />
 					</Button>

@@ -4,6 +4,16 @@ import {
 	variantesTelefoneE164,
 } from "../integracao/whatsapp/normalizar-telefone";
 import { execute, query, queryOne } from "./database";
+import {
+	decidirInboundWhatsapp,
+	type StatusConversaWhatsapp,
+} from "./whatsapp-conversa-regras";
+
+export type {
+	DestinoConversaWhatsapp,
+	StatusConversaWhatsapp,
+} from "./whatsapp-conversa-regras";
+export { decidirInboundWhatsapp } from "./whatsapp-conversa-regras";
 
 export type WhatsappSessaoStatus =
 	| "desconectado"
@@ -26,7 +36,18 @@ export type WhatsappConversaLocal = {
 	nao_lidas: number;
 	ultima_mensagem_em: string | null;
 	criadoem: string;
+	status: StatusConversaWhatsapp;
 };
+
+function mapearConversa(
+	row: WhatsappConversaLocal | null | undefined,
+): WhatsappConversaLocal | null {
+	if (!row) return null;
+	return {
+		...row,
+		status: row.status === "finalizada" ? "finalizada" : "aberta",
+	};
+}
 
 export type WhatsappMensagemLocal = {
 	id: string;
@@ -85,31 +106,72 @@ export async function atualizarWhatsappSessao(dados: {
 export async function buscarConversaPorTelefone(
 	telefoneE164: string,
 ): Promise<WhatsappConversaLocal | null> {
-	const exact = await queryOne<WhatsappConversaLocal>(
-		`SELECT * FROM whatsapp_conversa WHERE telefone_e164 = $1 LIMIT 1`,
-		[telefoneE164],
+	return buscarConversaAvulsaAbertaPorTelefone(telefoneE164);
+}
+
+export async function buscarConversaAvulsaAbertaPorTelefone(
+	telefoneE164: string,
+): Promise<WhatsappConversaLocal | null> {
+	const variantes = variantesTelefoneE164(telefoneE164);
+	if (!variantes.length) return null;
+	return mapearConversa(
+		await queryOne<WhatsappConversaLocal>(
+			`SELECT * FROM whatsapp_conversa
+			 WHERE telefone_e164 = ANY($1::text[])
+			   AND idconta IS NULL
+			   AND status = 'aberta'
+			 ORDER BY ultima_mensagem_em DESC NULLS LAST, criadoem DESC
+			 LIMIT 1`,
+			[variantes],
+		),
 	);
-	if (exact) return exact;
-	for (const variante of variantesTelefoneE164(telefoneE164)) {
-		if (variante === telefoneE164) continue;
-		const row = await queryOne<WhatsappConversaLocal>(
-			`SELECT * FROM whatsapp_conversa WHERE telefone_e164 = $1 LIMIT 1`,
-			[variante],
-		);
-		if (row) return row;
-	}
-	return null;
 }
 
 export async function buscarConversaPorConta(
 	idconta: string,
 ): Promise<WhatsappConversaLocal | null> {
-	return (
-		(await queryOne<WhatsappConversaLocal>(
+	return mapearConversa(
+		await queryOne<WhatsappConversaLocal>(
 			`SELECT * FROM whatsapp_conversa WHERE idconta = $1 LIMIT 1`,
 			[idconta],
-		)) ?? null
+		),
 	);
+}
+
+async function criarConversa(
+	telefoneE164: string,
+	idconta: string | null,
+): Promise<WhatsappConversaLocal> {
+	if (idconta) {
+		const existente = await buscarConversaPorConta(idconta);
+		if (existente) return existente;
+	}
+	const agora = new Date().toISOString();
+	const id = uuidv4();
+	try {
+		await execute(
+			`INSERT INTO whatsapp_conversa (
+				id, idconta, telefone_e164, nao_lidas, ultima_mensagem_em, criadoem, status
+			) VALUES ($1, $2, $3, 0, NULL, $4, 'aberta')`,
+			[id, idconta, telefoneE164, agora],
+		);
+	} catch (err) {
+		if (idconta) {
+			const corrida = await buscarConversaPorConta(idconta);
+			if (corrida) return corrida;
+		}
+		throw err;
+	}
+	const criada = mapearConversa(
+		await queryOne<WhatsappConversaLocal>(
+			`SELECT * FROM whatsapp_conversa WHERE id = $1`,
+			[id],
+		),
+	);
+	if (!criada) {
+		throw new Error("Falha ao criar conversa WhatsApp");
+	}
+	return criada;
 }
 
 export async function obterOuCriarConversa(params: {
@@ -119,36 +181,49 @@ export async function obterOuCriarConversa(params: {
 	if (params.idconta) {
 		const porConta = await buscarConversaPorConta(params.idconta);
 		if (porConta) return porConta;
+		return criarConversa(params.telefoneE164, params.idconta);
 	}
-	const existente = await buscarConversaPorTelefone(params.telefoneE164);
-	if (existente) {
-		if (params.idconta && existente.idconta !== params.idconta) {
-			await execute(`UPDATE whatsapp_conversa SET idconta = $1 WHERE id = $2`, [
-				params.idconta,
-				existente.id,
-			]);
-			return (
-				(await buscarConversaPorTelefone(params.telefoneE164)) ?? existente
-			);
-		}
-		return existente;
+	const avulsa = await buscarConversaAvulsaAbertaPorTelefone(
+		params.telefoneE164,
+	);
+	if (avulsa) return avulsa;
+	return criarConversa(params.telefoneE164, null);
+}
+
+export async function resolverConversaInbound(
+	telefoneE164: string,
+): Promise<WhatsappConversaLocal> {
+	const conta = await buscarContaAbertaPorTelefone(telefoneE164);
+	const conversaDaConta = conta ? await buscarConversaPorConta(conta.id) : null;
+	const precisaAvulsa =
+		!conta || conversaDaConta?.status === "finalizada";
+	const avulsa = precisaAvulsa
+		? await buscarConversaAvulsaAbertaPorTelefone(telefoneE164)
+		: null;
+	const destino = decidirInboundWhatsapp({
+		contaAberta: conta ? { id: conta.id } : null,
+		conversaDaConta: conversaDaConta
+			? { id: conversaDaConta.id, status: conversaDaConta.status }
+			: null,
+		conversaAvulsaAberta: avulsa ? { id: avulsa.id } : null,
+	});
+	if (destino.acao === "usar") {
+		if (conversaDaConta?.id === destino.id) return conversaDaConta;
+		if (avulsa?.id === destino.id) return avulsa;
 	}
-	const agora = new Date().toISOString();
-	const id = uuidv4();
+	return criarConversa(
+		telefoneE164,
+		destino.acao === "criar" ? destino.idconta : null,
+	);
+}
+
+export async function finalizarConversaPorConta(idconta: string): Promise<void> {
 	await execute(
-		`INSERT INTO whatsapp_conversa (
-			id, idconta, telefone_e164, nao_lidas, ultima_mensagem_em, criadoem
-		) VALUES ($1, $2, $3, 0, NULL, $4)`,
-		[id, params.idconta ?? null, params.telefoneE164, agora],
+		`UPDATE whatsapp_conversa
+		 SET status = 'finalizada'
+		 WHERE idconta = $1 AND status <> 'finalizada'`,
+		[idconta],
 	);
-	const criada = await queryOne<WhatsappConversaLocal>(
-		`SELECT * FROM whatsapp_conversa WHERE id = $1`,
-		[id],
-	);
-	if (!criada) {
-		throw new Error("Falha ao criar conversa WhatsApp");
-	}
-	return criada;
 }
 
 export async function registrarMensagemWhatsapp(params: {
@@ -263,6 +338,8 @@ export async function buscarContaAbertaPorTelefone(
 			 FROM conta_mesa
 			 WHERE status = 'aberta'
 			   AND modalidade IN ('delivery', 'retirada')
+			   AND COALESCE(NULLIF(TRIM(status_entrega), ''), 'recebido')
+			       NOT IN ('entregue', 'cancelado')
 			   AND regexp_replace(COALESCE(telefone, ''), '[^0-9]', '', 'g') LIKE $1
 			 ORDER BY abertoem DESC
 			 LIMIT 1`,
