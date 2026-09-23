@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { camposAliquotaProdutoSchema } from "./campos-impostos-produto.js";
+import {
+	camposAliquotaProdutoSchema,
+	camposImpostosProdutoSchema,
+	refinirCamposIbsCbsProduto,
+} from "./campos-impostos-produto.js";
 
 describe("alíquotas IBS/CBS do produto", () => {
 	const schema = z.object(camposAliquotaProdutoSchema);
@@ -23,5 +27,38 @@ describe("alíquotas IBS/CBS do produto", () => {
 
 		expect(resultado.aliquotaiibs).toBeNull();
 		expect(resultado.aliquotacbs).toBeNull();
+	});
+});
+
+describe("CST e classificação IBS/CBS do produto", () => {
+	const schema = z
+		.object(camposImpostosProdutoSchema)
+		.superRefine((dados, ctx) => refinirCamposIbsCbsProduto(dados, ctx));
+
+	it("aceita CST e classificação compatíveis", () => {
+		const resultado = schema.parse({
+			cstibs: "000",
+			classtributariaibs: "000001",
+		});
+		expect(resultado.cstibs).toBe("000");
+		expect(resultado.classtributariaibs).toBe("000001");
+	});
+
+	it("rejeita classificação de outro CST", () => {
+		expect(() =>
+			schema.parse({
+				cstibs: "000",
+				classtributariaibs: "200001",
+			}),
+		).toThrow();
+	});
+
+	it("exige classificação quando CST é informado", () => {
+		expect(() =>
+			schema.parse({
+				cstibs: "000",
+				classtributariaibs: null,
+			}),
+		).toThrow();
 	});
 });
