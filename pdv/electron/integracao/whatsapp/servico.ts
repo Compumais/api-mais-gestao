@@ -4,11 +4,10 @@ import { app, BrowserWindow } from "electron";
 import { getConfig, isDbReady, setConfig } from "../../db/database";
 import {
 	atualizarWhatsappSessao,
-	buscarContaAbertaPorTelefone,
-	buscarConversaPorConta,
 	garantirWhatsappSessao,
 	obterOuCriarConversa,
 	registrarMensagemWhatsapp,
+	resolverConversaInbound,
 	type WhatsappSessaoStatus,
 } from "../../db/whatsapp-chat";
 import {
@@ -544,16 +543,7 @@ async function conectarSocket(): Promise<void> {
 					const texto = extrairTextoMensagemWhatsapp(msg.message);
 					if (!texto) continue;
 					try {
-						const conta = await buscarContaAbertaPorTelefone(telefone);
-						let conversa = conta
-							? await buscarConversaPorConta(conta.id)
-							: null;
-						if (!conversa) {
-							conversa = await obterOuCriarConversa({
-								telefoneE164: telefone,
-								idconta: conta?.id ?? null,
-							});
-						}
+						const conversa = await resolverConversaInbound(telefone);
 						await registrarMensagemWhatsapp({
 							idconversa: conversa.id,
 							direcao: "in",
@@ -564,7 +554,7 @@ async function conectarSocket(): Promise<void> {
 						emitirEvento({
 							tipo: "mensagem",
 							idconversa: conversa.id,
-							idconta: conversa.idconta ?? conta?.id ?? null,
+							idconta: conversa.idconta,
 							telefone,
 							direcao: "in",
 						});
@@ -594,6 +584,7 @@ export async function enviarTextoWhatsapp(params: {
 	corpo: string;
 	idconta?: string | null;
 	origemFila?: boolean;
+	permitirConversaFinalizada?: boolean;
 }): Promise<{ ok: boolean; enfileirado?: boolean }> {
 	const telefone = normalizarTelefoneE164(params.telefoneE164);
 	if (!telefone) {
@@ -607,6 +598,13 @@ export async function enviarTextoWhatsapp(params: {
 		telefoneE164: telefone,
 		idconta: params.idconta ?? null,
 	});
+	if (
+		conversa.status === "finalizada" &&
+		!params.origemFila &&
+		!params.permitirConversaFinalizada
+	) {
+		throw new Error("A conversa deste pedido já foi finalizada");
+	}
 
 	if (!sock || statusRuntime.status !== "conectado") {
 		if (!params.origemFila) {
@@ -688,6 +686,7 @@ export async function notificarStatusPedidoWhatsapp(params: {
 		telefoneE164: telefone,
 		corpo,
 		idconta: params.idconta,
+		permitirConversaFinalizada: params.statusEntrega === "entregue",
 	});
 }
 

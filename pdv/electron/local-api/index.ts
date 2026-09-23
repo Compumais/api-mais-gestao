@@ -148,8 +148,8 @@ import {
 import { verificarSenhaUsuario } from "../db/senha-usuario";
 import {
 	buscarConversaPorConta,
-	buscarConversaPorTelefone,
 	contarNaoLidasWhatsapp,
+	finalizarConversaPorConta,
 	listarMensagensConversa,
 	marcarConversaLida,
 	naoLidasPorConta,
@@ -1139,9 +1139,6 @@ export const localApi = {
 			? await buscarConversaPorConta(params.idconta)
 			: null;
 		if (!conversa && telefone) {
-			conversa = await buscarConversaPorTelefone(telefone);
-		}
-		if (!conversa && telefone) {
 			conversa = await obterOuCriarConversa({
 				telefoneE164: telefone,
 				idconta: params.idconta ?? null,
@@ -1183,13 +1180,9 @@ export const localApi = {
 		telefone?: string;
 	}) {
 		await assertModuloGourmet();
-		const telefone = normalizarTelefoneE164(params.telefone ?? "");
-		let conversa = params.idconta
+		const conversa = params.idconta
 			? await buscarConversaPorConta(params.idconta)
 			: null;
-		if (!conversa && telefone) {
-			conversa = await buscarConversaPorTelefone(telefone);
-		}
 		if (!conversa) return { ok: true };
 		await marcarConversaLida(conversa.id);
 		return { ok: true };
@@ -2312,20 +2305,31 @@ export const localApi = {
 			return remoto.atualizarStatusEntregaRemoto(idconta, status);
 		}
 		const atualizada = await atualizarStatusEntrega(idconta, status);
-		void notificarStatusPedidoWhatsapp({
-			idconta: atualizada.id,
-			telefone: atualizada.telefone,
-			nomecliente: atualizada.nomecliente,
-			protocolo: atualizada.orderidintegracao ?? atualizada.senha_chamada,
-			modalidade: atualizada.modalidade,
-			statusEntrega: atualizada.status_entrega || "recebido",
-			copiaPedido:
-				atualizada.status_entrega === "producao"
-					? copiaPedidoWhatsapp(atualizada)
-					: undefined,
-		}).catch(() => {
-			// notificação não falha o avanço de status
-		});
+		const notificar = () =>
+			notificarStatusPedidoWhatsapp({
+				idconta: atualizada.id,
+				telefone: atualizada.telefone,
+				nomecliente: atualizada.nomecliente,
+				protocolo: atualizada.orderidintegracao ?? atualizada.senha_chamada,
+				modalidade: atualizada.modalidade,
+				statusEntrega: atualizada.status_entrega || "recebido",
+				copiaPedido:
+					atualizada.status_entrega === "producao"
+						? copiaPedidoWhatsapp(atualizada)
+						: undefined,
+			});
+		if (atualizada.status_entrega === "entregue") {
+			try {
+				await notificar();
+			} catch {
+				// notificação não falha o avanço de status
+			}
+			await finalizarConversaPorConta(atualizada.id);
+		} else {
+			void notificar().catch(() => {
+				// notificação não falha o avanço de status
+			});
+		}
 		return atualizada;
 	},
 

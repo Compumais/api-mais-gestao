@@ -616,7 +616,8 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			telefone_e164 TEXT NOT NULL,
 			nao_lidas INTEGER NOT NULL DEFAULT 0,
 			ultima_mensagem_em TEXT,
-			criadoem TEXT NOT NULL
+			criadoem TEXT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'aberta'
 		)
 	`);
 	await database.query(`
@@ -640,6 +641,59 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	await database.query(
 		`CREATE INDEX IF NOT EXISTS idx_whatsapp_mensagem_conversa ON whatsapp_mensagem(idconversa, criadoem)`,
 	);
+
+	const waCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'whatsapp_conversa'`,
+	);
+	if (waCols.rows.length) {
+		const waNomes = new Set(waCols.rows.map((c) => c.column_name));
+		if (!waNomes.has("status")) {
+			await database.query(
+				`ALTER TABLE whatsapp_conversa
+				 ADD COLUMN status TEXT NOT NULL DEFAULT 'aberta'`,
+			);
+			await database.query(`
+				UPDATE whatsapp_conversa c
+				SET status = 'finalizada'
+				FROM conta_mesa m
+				WHERE c.idconta = m.id
+				  AND (
+				    COALESCE(m.status_entrega, '') IN ('entregue', 'cancelado')
+				    OR m.status = 'fechada'
+				  )
+			`);
+		}
+		await database.query(`
+			UPDATE whatsapp_mensagem m
+			SET idconversa = keeper.id
+			FROM whatsapp_conversa dup
+			JOIN LATERAL (
+				SELECT id
+				FROM whatsapp_conversa k
+				WHERE k.idconta IS NOT NULL
+				  AND k.idconta = dup.idconta
+				ORDER BY k.criadoem ASC, k.id ASC
+				LIMIT 1
+			) keeper ON true
+			WHERE m.idconversa = dup.id
+			  AND dup.idconta IS NOT NULL
+			  AND keeper.id <> dup.id
+		`);
+		await database.query(`
+			DELETE FROM whatsapp_conversa a
+			WHERE a.idconta IS NOT NULL
+			  AND EXISTS (
+			    SELECT 1 FROM whatsapp_conversa b
+			    WHERE b.idconta = a.idconta
+			      AND (
+			        b.criadoem < a.criadoem
+			        OR (b.criadoem = a.criadoem AND b.id < a.id)
+			      )
+			  )
+		`);
+	}
 
 	if (!itemNomes.has("pago")) {
 		await database.query(
