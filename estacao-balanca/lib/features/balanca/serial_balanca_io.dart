@@ -1,31 +1,48 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'package:estacao_balanca/features/balanca/balanca_leitura.dart';
 import 'package:estacao_balanca/features/balanca/balanca_service.dart';
+import 'package:estacao_balanca/features/balanca/porta_serial_info.dart';
 import 'package:estacao_balanca/features/balanca/prt3_parser.dart';
 import 'package:estacao_balanca/features/balanca/prt3_protocol.dart';
+import 'package:estacao_balanca/features/balanca/serial_android_usb.dart';
 
 BalancaService createSerialBalanca({
   required String portaNome,
   int baudRate = 2400,
 }) {
-  return _SerialBalancaIo(portaNome: portaNome, baudRate: baudRate);
+  if (!kIsWeb && Platform.isAndroid) {
+    return AndroidUsbBalanca(portaNome: portaNome, baudRate: baudRate);
+  }
+  return _SerialBalancaDesktop(portaNome: portaNome, baudRate: baudRate);
 }
 
-List<String> listarPortasSerialSeguro() {
+Future<List<String>> listarPortasSerialSeguro() async {
+  final infos = await listarPortasSerialInfo();
+  return infos.map((e) => e.id).toList();
+}
+
+Future<List<PortaSerialInfo>> listarPortasSerialInfo() async {
   try {
     if (kIsWeb) return const [];
-    return SerialPort.availablePorts;
+    if (Platform.isAndroid) {
+      return await AndroidUsbBalanca.listarDispositivosUsb();
+    }
+    return SerialPort.availablePorts
+        .map((p) => PortaSerialInfo(id: p, label: p))
+        .toList();
   } catch (_) {
     return const [];
   }
 }
 
-class _SerialBalancaIo implements BalancaService {
-  _SerialBalancaIo({
+bool plataformaUsaUsbOtg() => !kIsWeb && Platform.isAndroid;
+
+class _SerialBalancaDesktop implements BalancaService {
+  _SerialBalancaDesktop({
     required this.portaNome,
     this.baudRate = 2400,
   });

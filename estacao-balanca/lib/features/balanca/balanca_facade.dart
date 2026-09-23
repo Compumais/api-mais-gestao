@@ -26,10 +26,18 @@ class BalancaFacade implements BalancaService {
 
   BalancaService? _localOuNulo() {
     if (!prefs.balancaLocalHabilitada) return null;
-    if (prefs.portaSerial.isEmpty) return null;
+    // No Android, porta vazia = auto (único conversor USB-Serial).
+    if (prefs.portaSerial.isEmpty && !plataformaUsaUsbOtg()) return null;
+    final porta = prefs.portaSerial;
+    final baud = prefs.baudRate;
+    if (_serial != null &&
+        (_serial!.portaNome != porta || _serial!.baudRate != baud)) {
+      _serial!.desconectar();
+      _serial = null;
+    }
     _serial ??= SerialBalancaService(
-      portaNome: prefs.portaSerial,
-      baudRate: prefs.baudRate,
+      portaNome: porta,
+      baudRate: baud,
     );
     return _serial;
   }
@@ -73,7 +81,7 @@ class BalancaFacade implements BalancaService {
   Future<List<String>> listarPortas() async {
     final portas = <String>['pdv'];
     try {
-      portas.addAll(listarPortasSerialSeguro());
+      portas.addAll(await listarPortasSerialSeguro());
     } catch (_) {}
     return portas;
   }
