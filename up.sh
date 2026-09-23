@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
-# Sobe API + Web na VPS com build completo (evita Next.js antigo no ar).
+# Sobe API + Web + NFe Gateway na VPS com build completo (evita Next.js/gateway antigos no ar).
 #
 # Rodar NA VPS, no clone do monorepo, depois do push em main:
 #   cd /caminho/do/clone   # ex.: /home/deploy/aplicacão/api-mais-gestao
 #   ./up.sh
 #
-# Fluxo: pull ff-only → deps API → migrations → build+reload API → deps Web →
+# Fluxo: pull ff-only → deps API → migrations → build+reload API →
+# build+up nfe-gateway (Docker: sped-nfe + gateway) → deps Web →
 # build:live (next build em staging + publica .next + restart web-mais-gestao).
 # Não publica PDV/POS/Android. Não grava senha. Não altera .env.
 #
 # Opcional: SKIP_PULL=1  SKIP_MIGRATE=1  MIGRATE_SQL=api/drizzle/XXXX.sql
 #           ALLOW_BRANCH=1  COMPOSE_FILE=/opt/mais-gestao/docker-compose.prod.yml
+#           SKIP_NFE_GATEWAY=1  NFE_GATEWAY_COMPOSE=caminho/docker-compose.yml
+#           NFE_GATEWAY_HEALTH_URL=http://127.0.0.1:8088/health
 
 set -euo pipefail
 
@@ -21,6 +24,8 @@ API_PM2="${API_PM2:-api-mais-gestao}"
 WEB_PM2="${WEB_PM2:-web-mais-gestao}"
 API_HEALTH_URL="${API_HEALTH_URL:-http://127.0.0.1:3333/health}"
 WEB_CHECK_URL="${WEB_CHECK_URL:-http://127.0.0.1:3000/}"
+NFE_GATEWAY_HEALTH_URL="${NFE_GATEWAY_HEALTH_URL:-http://127.0.0.1:8088/health}"
+NFE_GATEWAY_COMPOSE_PADRAO="$ROOT/api_Nfe/nfe-gateway/docker-compose.yml"
 BRANCH_PADRAO="main"
 
 log() { printf '\n==> %s\n' "$*"; }
@@ -202,6 +207,45 @@ subir_api() {
 	die "API não encontrada (PM2 $API_PM2 nem docker-compose.prod.yml)."
 }
 
+achar_nfe_gateway_compose() {
+	if [[ -n "${NFE_GATEWAY_COMPOSE:-}" && -f "$NFE_GATEWAY_COMPOSE" ]]; then
+		printf '%s\n' "$NFE_GATEWAY_COMPOSE"
+		return 0
+	fi
+	if [[ -f "$NFE_GATEWAY_COMPOSE_PADRAO" ]]; then
+		printf '%s\n' "$NFE_GATEWAY_COMPOSE_PADRAO"
+		return 0
+	fi
+	return 1
+}
+
+# Rebuild da imagem: copia api_Nfe/sped-nfe + nfe-gateway e roda composer install nos dois.
+subir_nfe_gateway() {
+	if [[ "${SKIP_NFE_GATEWAY:-}" == "1" ]]; then
+		log "NFe Gateway pulado (SKIP_NFE_GATEWAY=1)"
+		return 0
+	fi
+
+	local compose
+	if ! compose="$(achar_nfe_gateway_compose)"; then
+		warn "docker-compose do NFe Gateway não encontrado — pulando."
+		return 0
+	fi
+
+	precisa docker
+	[[ -d "$ROOT/api_Nfe/sped-nfe" ]] || die "Pasta api_Nfe/sped-nfe não encontrada (necessária no build)."
+	[[ -d "$ROOT/api_Nfe/nfe-gateway" ]] || die "Pasta api_Nfe/nfe-gateway não encontrada."
+
+	log "Build + up NFe Gateway (sped-nfe + nfe-gateway) — $compose"
+	(
+		cd "$(dirname "$compose")"
+		docker compose -f "$compose" build --pull
+		docker compose -f "$compose" up -d --force-recreate
+	)
+	esperar_http "$NFE_GATEWAY_HEALTH_URL" "NFe Gateway" 45
+	ok "Container mais-gestao-nfe-gateway atualizado"
+}
+
 instalar_web() {
 	log "Dependências da Web"
 	[[ -d "$ROOT/web" ]] || die "Pasta web/ não encontrada em $ROOT"
@@ -244,7 +288,14 @@ validar() {
 	pm2 describe "$API_PM2" >/dev/null 2>&1 && ok "PM2 $API_PM2 presente" || warn "PM2 $API_PM2 ausente"
 	pm2 describe "$WEB_PM2" >/dev/null
 	ok "PM2 $WEB_PM2 presente"
-	ok "Deploy completo. API e Web foram reconstruídos nesta ordem."
+	if [[ "${SKIP_NFE_GATEWAY:-}" != "1" ]]; then
+		if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx 'mais-gestao-nfe-gateway'; then
+			ok "Container mais-gestao-nfe-gateway presente"
+		else
+			warn "Container mais-gestao-nfe-gateway ausente"
+		fi
+	fi
+	ok "Deploy completo. API, NFe Gateway (sped) e Web foram reconstruídos nesta ordem."
 }
 
 main() {
@@ -252,6 +303,7 @@ main() {
 	log "Mais Gestão — subida completa em $ROOT"
 	atualizar_codigo
 	subir_api
+	subir_nfe_gateway
 	subir_web
 	validar
 }
