@@ -329,7 +329,22 @@ async function conectarSocket(): Promise<void> {
 			ultimo_erro: null,
 		});
 
-		const baileys = await import("@whiskeysockets/baileys");
+		let baileys: typeof import("@whiskeysockets/baileys");
+		try {
+			baileys = await import("@whiskeysockets/baileys");
+		} catch (err) {
+			const mensagem =
+				err instanceof Error && /Cannot find package/i.test(err.message)
+					? "Pacote WhatsApp (@whiskeysockets/baileys) não está instalado. No diretório pdv, rode npm install."
+					: err instanceof Error
+						? err.message
+						: "Falha ao carregar o WhatsApp";
+			await persistirStatus({
+				status: "erro",
+				ultimo_erro: mensagem,
+			});
+			throw new Error(mensagem);
+		}
 		const makeWASocket = baileys.makeWASocket ?? baileys.default;
 		const {
 			useMultiFileAuthState,

@@ -2229,6 +2229,14 @@ export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
 			ORDER BY criadoem DESC
 			LIMIT 1
 		 ) n ON true
+		 LEFT JOIN LATERAL (
+			SELECT tentativas, ultimo_erro
+			FROM outbox
+			WHERE status IN ('pendente', 'processando')
+			  AND payload LIKE '%' || v.id || '%'
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) o ON true
 		 ORDER BY v.criadoem DESC
 		 LIMIT $1`,
 		[limit],
@@ -2296,7 +2304,9 @@ export async function listarVendasNaoSincronizadas(
 			c.senha_chamada AS senha_chamada,
 			n.serie AS nfce_serie,
 			n.numero AS nfce_numero,
-			n.chave AS nfce_chave
+			n.chave AS nfce_chave,
+			o.tentativas AS outbox_tentativas,
+			o.ultimo_erro AS outbox_ultimo_erro
 		 FROM venda v
 		 LEFT JOIN conta_mesa c ON c.id = v.idconta
 		 LEFT JOIN LATERAL (

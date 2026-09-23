@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import {
+	isNaoAutorizado,
 	type ManifestoNfcePdv,
 	pingApi,
 	type RespostaReconciliacaoNfcePdv,
@@ -210,6 +211,12 @@ async function executarReconciliacao(): Promise<ResumoReconciliacaoNfce> {
 		await salvarMeta("nfce_sync_ultimo_resumo", JSON.stringify(vazio));
 		return vazio;
 	} catch (err) {
+		if (isNaoAutorizado(err)) {
+			await salvarMeta("nfce_sync_ultimo_erro", "Sessão expirada").catch(
+				() => undefined,
+			);
+			return vazio;
+		}
 		const mensagem =
 			err instanceof Error ? err.message : "Falha ao reconciliar NFC-e";
 		await salvarMeta("nfce_sync_ultimo_erro", mensagem).catch(() => undefined);

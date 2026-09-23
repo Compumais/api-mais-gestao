@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { ApiError } from "../api/client";
+import { ApiError, isNaoAutorizado } from "../api/client";
 import { chaveIdempotenciaOutbox, prioridadeOutbox } from "../db/repos";
 import { podeAplicarStatusNfce } from "./nfce-retaguarda";
 import {
@@ -45,6 +45,8 @@ describe("reconciliação robusta de NFC-e", () => {
 			classificarErroOutbox(new ApiError("Sessão expirada", 401)),
 			"transitorio",
 		);
+		assert.equal(isNaoAutorizado(new ApiError("Não autorizado", 401)), true);
+		assert.equal(isNaoAutorizado(new ApiError("Proibido", 403)), false);
 	});
 
 	it("gera chave estável para operação fiscal equivalente", () => {
