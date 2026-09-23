@@ -8,6 +8,8 @@ App Windows + Android para lançar consumo em **kg** em comandas via PDV local (
 1. Informa URL/IP do PDV (`http://IP:5050` ou QR `mgpos://…`)
 2. Login (mesmo usuário da retaguarda)
 3. **Atalhos:** lista só produtos com unidade **KG** do catálogo do PDV e marca os que entram na grade
+4. Opcional: **Ignorar dígito verificador** no leitor (remove o último dígito do código da comanda)
+5. **Balança:** Windows usa porta COM (`flutter_libserialport`); Android usa **USB OTG** + conversor USB-Serial (`usb_serial`), como o POS
 
 ### Operação (touch + leitor)
 1. Tela simples: *“Passe a comanda no leitor”* (sem digitar)
@@ -20,6 +22,7 @@ App Windows + Android para lançar consumo em **kg** em comandas via PDV local (
 - Flutter 3.5+
 - PDV principal com LAN (`lan_habilitada=1`, porta `5050`) e módulo Gourmet
 - Prix: `C14=Prt3`, `C15=2400`, 8N1
+- **Android:** tablet/celular com USB OTG + conversor USB-Serial (FTDI, CH340, CP210x, PL2303…). Aceite a permissão USB na primeira conexão.
 
 ## Executar
 
