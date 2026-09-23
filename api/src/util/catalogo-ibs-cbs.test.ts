@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	buscarClassificacaoIbsCbs,
+	calcularAliquotasSugeridasIbsCbs,
 	listarClassificacoesIbsCbs,
 	listarCstIbsCbs,
 	validarCstEClassificacaoIbsCbs,
@@ -46,5 +47,41 @@ describe("catalogo-ibs-cbs", () => {
 		const item = buscarClassificacaoIbsCbs("000001");
 		expect(item?.cst).toBe("000");
 		expect(item?.codigo).toBe("000001");
+		expect(item?.aliquotaiibs).toBe("0.1000");
+		expect(item?.aliquotacbs).toBe("0.9000");
+	});
+
+	it("calcula alíquotas com redução da classificação", () => {
+		expect(
+			calcularAliquotasSugeridasIbsCbs({
+				tipoaliquota: 2,
+				percentualreducaoibs: 0,
+				percentualreducaocbs: 0,
+			}),
+		).toEqual({ aliquotaiibs: "0.1000", aliquotacbs: "0.9000" });
+
+		expect(
+			calcularAliquotasSugeridasIbsCbs({
+				tipoaliquota: 4,
+				percentualreducaoibs: 60,
+				percentualreducaocbs: 60,
+			}),
+		).toEqual({ aliquotaiibs: "0.0400", aliquotacbs: "0.3600" });
+
+		expect(
+			calcularAliquotasSugeridasIbsCbs({
+				tipoaliquota: 2,
+				percentualreducaoibs: 100,
+				percentualreducaocbs: 100,
+			}),
+		).toEqual({ aliquotaiibs: "0.0000", aliquotacbs: "0.0000" });
+
+		expect(
+			calcularAliquotasSugeridasIbsCbs({
+				tipoaliquota: 3,
+				percentualreducaoibs: 0,
+				percentualreducaocbs: 0,
+			}),
+		).toEqual({ aliquotaiibs: "0.0000", aliquotacbs: "0.0000" });
 	});
 });

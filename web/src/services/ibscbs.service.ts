@@ -15,8 +15,11 @@ export type ClassificacaoIbsCbs = {
 	descricao: string;
 	nfe: boolean;
 	nfce: boolean;
+	tipoaliquota: number;
 	percentualreducaoibs: number;
 	percentualreducaocbs: number;
+	aliquotaiibs: string;
+	aliquotacbs: string;
 };
 
 export const ibsCbsService = {
