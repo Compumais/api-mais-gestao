@@ -12,7 +12,7 @@ import {
 import type { ComponentType } from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import { pdvInvoke, onWhatsappEvent } from "@/lib/pdv-api";
+import { onDeliveryEvent, onWhatsappEvent, pdvInvoke } from "@/lib/pdv-api";
 import {
 	rotuloModelo,
 	type StatusContext,
@@ -49,9 +49,7 @@ function SideButton({
 		<button
 			type="button"
 			onClick={onClick}
-			aria-label={
-				badge && badge > 0 ? `${label} (${badge} novos)` : label
-			}
+			aria-label={badge && badge > 0 ? `${label} (${badge} novos)` : label}
 			title={recolhida ? label : undefined}
 			aria-current={active ? "page" : undefined}
 			className={cn(
@@ -81,9 +79,7 @@ function SideButton({
 }
 
 function mensagemBloqueio(status: StatusPdv | null | undefined) {
-	return (
-		status?.principalErro ?? "PDV principal offline. Operação bloqueada."
-	);
+	return status?.principalErro ?? "PDV principal offline. Operação bloqueada.";
 }
 
 /** Rail lateral compacto das telas operacionais do PDV. */
@@ -129,10 +125,14 @@ export function SideNav({
 		const offWa = onWhatsappEvent(() => {
 			void atualizarBadge();
 		});
+		const offDelivery = onDeliveryEvent(() => {
+			void atualizarBadge();
+		});
 		return () => {
 			cancelado = true;
 			window.clearInterval(timer);
 			offWa();
+			offDelivery();
 		};
 	}, [gourmet, bloqueado, path]);
 
@@ -251,9 +251,7 @@ export function SideNav({
 					</div>
 					<div className={cn("min-w-0 flex-1", recolhida && "hidden")}>
 						<div className="truncate text-xs font-semibold">
-							{status?.caixa?.username ??
-								status?.sessao.username ??
-								"Operador"}
+							{status?.caixa?.username ?? status?.sessao.username ?? "Operador"}
 						</div>
 						<div className="truncate text-[10px] opacity-65">
 							Caixa {status?.caixa?.numeropdv ?? status?.numeropdv ?? "—"}

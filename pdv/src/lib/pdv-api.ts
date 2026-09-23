@@ -1,6 +1,7 @@
 export type PdvApi = {
 	invoke: <T = unknown>(method: string, ...args: unknown[]) => Promise<T>;
 	onWhatsappEvent?: (callback: (payload: unknown) => void) => () => void;
+	onDeliveryEvent?: (callback: (payload: unknown) => void) => () => void;
 };
 
 declare global {
@@ -26,4 +27,13 @@ export function onWhatsappEvent(
 		return () => undefined;
 	}
 	return window.pdv.onWhatsappEvent(callback);
+}
+
+export function onDeliveryEvent(
+	callback: (payload: unknown) => void,
+): () => void {
+	if (!window.pdv?.onDeliveryEvent) {
+		return () => undefined;
+	}
+	return window.pdv.onDeliveryEvent(callback);
 }

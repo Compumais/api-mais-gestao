@@ -4,7 +4,8 @@ export type TemplateStatusWhatsapp =
 	| "producao"
 	| "saiu"
 	| "retirada_pronta"
-	| "entregue";
+	| "entregue"
+	| "cancelado";
 
 const TEMPLATES_PADRAO: Record<TemplateStatusWhatsapp, string> = {
 	producao:
@@ -12,6 +13,7 @@ const TEMPLATES_PADRAO: Record<TemplateStatusWhatsapp, string> = {
 	saiu: "Seu pedido #{protocolo} saiu para entrega.",
 	retirada_pronta: "Seu pedido #{protocolo} está pronto para retirada.",
 	entregue: "Pedido #{protocolo} entregue. Obrigado!",
+	cancelado: "Olá {nome}, seu pedido #{protocolo} foi cancelado.",
 };
 
 const CHAVES: Record<TemplateStatusWhatsapp, string> = {
@@ -19,6 +21,7 @@ const CHAVES: Record<TemplateStatusWhatsapp, string> = {
 	saiu: "whatsapp_msg_saiu",
 	retirada_pronta: "whatsapp_msg_retirada_pronta",
 	entregue: "whatsapp_msg_entregue",
+	cancelado: "whatsapp_msg_cancelado",
 };
 
 export async function obterTemplateWhatsapp(

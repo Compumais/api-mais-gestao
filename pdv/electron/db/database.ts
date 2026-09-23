@@ -388,10 +388,14 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		grupoGourmetCols.rows.map((c) => c.column_name),
 	);
 	if (!grupoGourmetNomes.has("caminhoimagem")) {
-		await database.query("ALTER TABLE grupo_gourmet ADD COLUMN caminhoimagem TEXT");
+		await database.query(
+			"ALTER TABLE grupo_gourmet ADD COLUMN caminhoimagem TEXT",
+		);
 	}
 	if (!grupoGourmetNomes.has("imagemremota")) {
-		await database.query("ALTER TABLE grupo_gourmet ADD COLUMN imagemremota TEXT");
+		await database.query(
+			"ALTER TABLE grupo_gourmet ADD COLUMN imagemremota TEXT",
+		);
 	}
 
 	const gourmetCols = await database.query<{ column_name: string }>(
@@ -853,6 +857,10 @@ async function seedDefaults(database: Pool): Promise<void> {
 			"Seu pedido #{protocolo} está pronto para retirada.",
 		],
 		["whatsapp_msg_entregue", "Pedido #{protocolo} entregue. Obrigado!"],
+		[
+			"whatsapp_msg_cancelado",
+			"Olá {nome}, seu pedido #{protocolo} foi cancelado.",
+		],
 	];
 
 	for (const [chave, valor] of defaults) {

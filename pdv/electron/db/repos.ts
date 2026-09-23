@@ -38,6 +38,7 @@ import {
 	ehModalidadeEntrega,
 	gerarSenhaChamada,
 	type ModalidadePedido,
+	mensagemErroCancelarPedidoEntrega,
 	normalizarModalidade,
 	origemVendaPorModalidade,
 	parseBairrosEntrega,
@@ -358,20 +359,21 @@ export type UsuarioCacheUpsertInput = {
 	empresas?: EmpresaUsuarioLocal[] | null;
 };
 
-function parseEmpresasJson(valor: string | null | undefined): EmpresaUsuarioLocal[] {
+function parseEmpresasJson(
+	valor: string | null | undefined,
+): EmpresaUsuarioLocal[] {
 	if (!valor?.trim()) return [];
 	try {
 		const parsed = JSON.parse(valor) as unknown;
 		if (!Array.isArray(parsed)) return [];
 		return parsed
-			.filter(
-				(item): item is EmpresaUsuarioLocal =>
-					Boolean(
-						item &&
-							typeof item === "object" &&
-							typeof (item as EmpresaUsuarioLocal).id === "string" &&
-							(item as EmpresaUsuarioLocal).id.trim(),
-					),
+			.filter((item): item is EmpresaUsuarioLocal =>
+				Boolean(
+					item &&
+						typeof item === "object" &&
+						typeof (item as EmpresaUsuarioLocal).id === "string" &&
+						(item as EmpresaUsuarioLocal).id.trim(),
+				),
 			)
 			.map((item) => ({
 				id: item.id.trim(),
@@ -397,10 +399,14 @@ function mesclarEmpresas(
 			nome: e.nome.trim() || e.id,
 		});
 	}
-	return [...mapa.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+	return [...mapa.values()].sort((a, b) =>
+		a.nome.localeCompare(b.nome, "pt-BR"),
+	);
 }
 
-function serializarPerfil(perfil: string[] | string | null | undefined): string {
+function serializarPerfil(
+	perfil: string[] | string | null | undefined,
+): string {
 	if (Array.isArray(perfil)) return JSON.stringify(perfil);
 	if (typeof perfil === "string" && perfil.trim()) {
 		try {
@@ -2509,16 +2515,23 @@ export async function limparContasVazias(): Promise<number> {
 	return vazias.length;
 }
 
-/** Descarta itens, libera a mesa/comanda e cancela outbox pendente da conta. */
+/** Descarta itens, libera a mesa/comanda/pedido e cancela outbox pendente da conta. */
 export async function cancelarContaMesa(idconta: string): Promise<void> {
 	const conta = await obterContaMesa(idconta);
 	if (!conta || conta.status !== "aberta") {
 		throw new Error("Conta inválida");
 	}
-	if (conta.modalidade && conta.modalidade !== "mesa") {
-		throw new Error("Cancelamento disponível apenas para mesa/comanda");
-	}
-	if (conta.valorpago > 0) {
+	const entrega = ehModalidadeEntrega(conta.modalidade);
+	if (entrega) {
+		const recusa = mensagemErroCancelarPedidoEntrega({
+			contaValida: true,
+			modalidade: conta.modalidade,
+			status: conta.status,
+			statusEntrega: conta.status_entrega,
+			valorpago: conta.valorpago,
+		});
+		if (recusa) throw new Error(recusa);
+	} else if (conta.valorpago > 0) {
 		throw new Error(
 			"Conta com pagamento parcial não pode ser cancelada. Finalize ou estorne os pagamentos.",
 		);
@@ -2529,7 +2542,7 @@ export async function cancelarContaMesa(idconta: string): Promise<void> {
 			? "Comanda"
 			: "Mesa";
 	const numero = conta.numero_mesa;
-	if (numero <= 0) {
+	if (!entrega && numero <= 0) {
 		throw new Error(`${rotulo} inválida para cancelamento`);
 	}
 	const agora = new Date().toISOString();
@@ -2551,12 +2564,14 @@ export async function cancelarContaMesa(idconta: string): Promise<void> {
 			[agora, idconta],
 			client,
 		);
-		await execute(
-			`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL
+		if (!entrega) {
+			await execute(
+				`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL
 			 WHERE numero = $1 AND (idconta = $2 OR idconta IS NULL)`,
-			[numero, idconta],
-			client,
-		);
+				[numero, idconta],
+				client,
+			);
+		}
 		await execute("DELETE FROM conta_mesa WHERE id = $1", [idconta], client);
 
 		const pendentes = await query<{ id: string; payload: string }>(

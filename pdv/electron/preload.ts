@@ -13,6 +13,15 @@ const api = {
 			ipcRenderer.removeListener("whatsapp:evento", listener);
 		};
 	},
+	onDeliveryEvent(callback: (payload: unknown) => void): () => void {
+		const listener = (_event: Electron.IpcRendererEvent, payload: unknown) => {
+			callback(payload);
+		};
+		ipcRenderer.on("delivery:evento", listener);
+		return () => {
+			ipcRenderer.removeListener("delivery:evento", listener);
+		};
+	},
 };
 
 contextBridge.exposeInMainWorld("pdv", api);

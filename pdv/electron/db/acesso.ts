@@ -70,6 +70,7 @@ export const CHAVES_CONFIG_GOURMET = [
 	"whatsapp_msg_saiu",
 	"whatsapp_msg_retirada_pronta",
 	"whatsapp_msg_entregue",
+	"whatsapp_msg_cancelado",
 ] as const;
 
 /** Preferências do operador — qualquer usuário logado pode gravar. */

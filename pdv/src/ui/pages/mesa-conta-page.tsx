@@ -36,6 +36,7 @@ import {
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { money } from "@/lib/utils";
+import { AlertaPedidoDelivery } from "@/ui/components/alerta-pedido-delivery";
 import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { ChatWhatsappPedido } from "@/ui/components/chat-whatsapp-pedido";
@@ -474,7 +475,7 @@ export function MesaContaPage() {
 	}
 
 	function solicitarCancelarMesa() {
-		if (modoEntrega || loading || pagando) return;
+		if (loading || pagando) return;
 		if (!conta && fila.length === 0) return;
 		setConfirmandoCancelar(true);
 	}
@@ -490,7 +491,7 @@ export function MesaContaPage() {
 			setFila([]);
 			setConta(null);
 			setGrupoAtivo(null);
-			navigate("/", { replace: true });
+			navigate(modoEntrega ? "/delivery" : "/", { replace: true });
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Falha ao cancelar");
 		} finally {
@@ -1036,6 +1037,7 @@ export function MesaContaPage() {
 				<div className="grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)_370px] gap-2.5 overflow-hidden">
 					<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 						<AvisoSecundario status={status} />
+						<AlertaPedidoDelivery />
 						<AlertasOperacionaisPdv status={status} />
 						<div className="flex items-center justify-between gap-2">
 							<div>
@@ -1154,25 +1156,37 @@ export function MesaContaPage() {
 							</div>
 							<div className="flex items-center gap-2">
 								{modoEntrega ? (
-									<Button
-										size="sm"
-										variant="outline"
-										className="relative"
-										disabled={!conta?.telefone}
-										title={
-											conta?.telefone
-												? "Conversar no WhatsApp"
-												: "Pedido sem telefone"
-										}
-										onClick={() => setChatWhatsappAberto(true)}
-									>
-										<MessageCircle className="size-4" />
-										{naoLidasWhatsapp > 0 ? (
-											<span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-												{naoLidasWhatsapp}
-											</span>
-										) : null}
-									</Button>
+									<>
+										<Button
+											size="sm"
+											variant="outline"
+											className="relative"
+											disabled={!conta?.telefone}
+											title={
+												conta?.telefone
+													? "Conversar no WhatsApp"
+													: "Pedido sem telefone"
+											}
+											onClick={() => setChatWhatsappAberto(true)}
+										>
+											<MessageCircle className="size-4" />
+											{naoLidasWhatsapp > 0 ? (
+												<span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+													{naoLidasWhatsapp}
+												</span>
+											) : null}
+										</Button>
+										<Button
+											size="sm"
+											variant="destructive"
+											disabled={
+												loading || pagando || confirmandoCancelar || !conta
+											}
+											onClick={() => solicitarCancelarMesa()}
+										>
+											Cancelar
+										</Button>
+									</>
 								) : null}
 								<span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold">
 									{fila.length + itens.length} itens
@@ -1563,12 +1577,16 @@ export function MesaContaPage() {
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">
-							Cancelar {rotulo.singular}
+							{modoEntrega ? "Cancelar pedido" : `Cancelar ${rotulo.singular}`}
 						</h2>
 						<p className="text-sm text-muted-foreground">
-							{conta
-								? `Os itens da ${rotulo.singular.toLowerCase()} serão desconsiderados, ela será liberada e removida da catraca. Esta ação não pode ser desfeita.`
-								: `Há itens apenas na fila. Ao cancelar, a fila será descartada e você voltará ao salão.`}
+							{modoEntrega
+								? conta
+									? "O pedido será cancelado e os itens desconsiderados. Esta ação não pode ser desfeita."
+									: "Há itens apenas na fila. Ao cancelar, a fila será descartada e você voltará ao delivery."
+								: conta
+									? `Os itens da ${rotulo.singular.toLowerCase()} serão desconsiderados, ela será liberada e removida da catraca. Esta ação não pode ser desfeita.`
+									: `Há itens apenas na fila. Ao cancelar, a fila será descartada e você voltará ao salão.`}
 						</p>
 						<div className="flex gap-2">
 							<Button
@@ -1939,11 +1957,12 @@ export function MesaContaPage() {
 					},
 					{
 						key: "cancelar",
-						label: `Cancelar ${rotulo.singular}`,
+						label: modoEntrega
+							? "Cancelar pedido"
+							: `Cancelar ${rotulo.singular}`,
 						hotkey: "F3",
 						variant: "outline",
 						disabled:
-							modoEntrega ||
 							loading ||
 							pagando ||
 							confirmandoCancelar ||
@@ -2122,6 +2141,18 @@ export function MesaContaPage() {
 											conta.id,
 										).then(setConta);
 									},
+								},
+								{
+									key: "cancelar",
+									label: "Cancelar pedido",
+									hotkey: "F3",
+									variant: "destructive" as const,
+									disabled:
+										loading ||
+										pagando ||
+										confirmandoCancelar ||
+										(!conta && fila.length === 0),
+									onClick: () => solicitarCancelarMesa(),
 								},
 							]
 						: [

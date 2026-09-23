@@ -66,6 +66,7 @@ export const CHAVES_CONFIG_LOCAL = [
 	"whatsapp_msg_saiu",
 	"whatsapp_msg_retirada_pronta",
 	"whatsapp_msg_entregue",
+	"whatsapp_msg_cancelado",
 	"sitef_habilitado",
 	"sitef_ip",
 	"sitef_loja",

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	gerarSenhaChamada,
+	mensagemErroCancelarPedidoEntrega,
 	origemVendaPorModalidade,
 	parseBairrosEntrega,
 	podeFecharDelivery,
@@ -99,5 +100,46 @@ describe("origemVendaPorModalidade", () => {
 		assert.equal(origemVendaPorModalidade("delivery"), "delivery");
 		assert.equal(origemVendaPorModalidade("retirada"), "retirada");
 		assert.equal(origemVendaPorModalidade("mesa"), "mesa");
+	});
+});
+
+describe("mensagemErroCancelarPedidoEntrega", () => {
+	it("permite cancelar delivery aberto sem pagamento", () => {
+		assert.equal(
+			mensagemErroCancelarPedidoEntrega({
+				contaValida: true,
+				modalidade: "delivery",
+				status: "aberta",
+				statusEntrega: "producao",
+				valorpago: 0,
+			}),
+			null,
+		);
+	});
+
+	it("recusa pedido já entregue", () => {
+		assert.equal(
+			mensagemErroCancelarPedidoEntrega({
+				contaValida: true,
+				modalidade: "delivery",
+				status: "aberta",
+				statusEntrega: "entregue",
+				valorpago: 0,
+			}),
+			"Pedido já entregue não pode ser cancelado",
+		);
+	});
+
+	it("recusa pedido com pagamento", () => {
+		assert.match(
+			mensagemErroCancelarPedidoEntrega({
+				contaValida: true,
+				modalidade: "retirada",
+				status: "aberta",
+				statusEntrega: "recebido",
+				valorpago: 10,
+			}) ?? "",
+			/pagamento/,
+		);
 	});
 });

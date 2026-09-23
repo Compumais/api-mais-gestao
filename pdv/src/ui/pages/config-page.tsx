@@ -445,6 +445,7 @@ export function ConfigPage() {
 				whatsapp_msg_retirada_pronta:
 					config.whatsapp_msg_retirada_pronta ?? "",
 				whatsapp_msg_entregue: config.whatsapp_msg_entregue ?? "",
+				whatsapp_msg_cancelado: config.whatsapp_msg_cancelado ?? "",
 				senha_gerencial: config.senha_gerencial ?? "",
 				senha_gerencial_habilitada:
 					config.senha_gerencial_definida === "1" &&
