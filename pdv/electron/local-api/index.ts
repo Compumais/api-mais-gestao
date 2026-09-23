@@ -75,6 +75,7 @@ import {
 	buscarUsuarioCachePorId,
 	buscarUsuarioCachePorLogin,
 	type ClienteVenda,
+	type ContaMesaLocal,
 	caixaAberto,
 	caixaAbertoOutroOperador,
 	calcularResumoTurnoAberto,
@@ -214,6 +215,7 @@ import {
 	reconectarWhatsapp,
 	statusWhatsapp,
 } from "../integracao/whatsapp/servico";
+import { montarCopiaPedidoWhatsapp } from "../integracao/whatsapp/templates";
 import { modalAbrirMesaHabilitado } from "../lan-api/config-pos";
 import { criarConexoesQrPos } from "../lan-api/qr-pos";
 import * as remoto from "../pdv-secundario/operacoes-remoto";
@@ -268,6 +270,22 @@ function parseJsonSeguro(valor: string | null): unknown {
 
 function avisarTecnibra(): void {
 	void syncTecnibra();
+}
+
+function copiaPedidoWhatsapp(conta: ContaMesaLocal): string {
+	return montarCopiaPedidoWhatsapp({
+		modalidade: conta.modalidade,
+		senha: conta.senha_chamada,
+		itens: conta.itens,
+		valordesconto: conta.valordesconto,
+		valorentrega: conta.valorentrega,
+		valortotal: conta.valortotal,
+		endereco: conta.endereco,
+		bairro: conta.bairro,
+		complemento: conta.complemento,
+		referencia: conta.referencia,
+		obs: conta.obs,
+	});
 }
 
 async function sincronizarRolesSessao(
@@ -2300,6 +2318,10 @@ export const localApi = {
 			protocolo: atualizada.orderidintegracao ?? atualizada.senha_chamada,
 			modalidade: atualizada.modalidade,
 			statusEntrega: atualizada.status_entrega || "recebido",
+			copiaPedido:
+				atualizada.status_entrega === "producao"
+					? copiaPedidoWhatsapp(atualizada)
+					: undefined,
 		}).catch(() => {
 			// notificação não falha o avanço de status
 		});
@@ -2420,6 +2442,7 @@ export const localApi = {
 				protocolo: result.conta.orderidintegracao ?? result.conta.senha_chamada,
 				modalidade: result.conta.modalidade,
 				statusEntrega: result.conta.status_entrega || "producao",
+				copiaPedido: copiaPedidoWhatsapp(result.conta),
 			}).catch(() => {
 				// notificação não falha o ingest
 			});

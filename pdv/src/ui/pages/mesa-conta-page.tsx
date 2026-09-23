@@ -2130,18 +2130,22 @@ export function MesaContaPage() {
 					},
 					...(modoEntrega
 						? [
-								{
-									key: "avancar-status",
-									label: "Avançar status",
-									disabled: !conta || loading,
-									onClick: () => {
-										if (!conta) return;
-										void pdvInvoke<ContaMesa>(
-											"atualizarStatusEntrega",
-											conta.id,
-										).then(setConta);
-									},
-								},
+								...(conta?.status_entrega !== "entregue"
+									? [
+											{
+												key: "avancar-status",
+												label: "Avançar status",
+												disabled: !conta || loading,
+												onClick: () => {
+													if (!conta) return;
+													void pdvInvoke<ContaMesa>(
+														"atualizarStatusEntrega",
+														conta.id,
+													).then(setConta);
+												},
+											},
+										]
+									: []),
 								{
 									key: "cancelar",
 									label: "Cancelar pedido",
