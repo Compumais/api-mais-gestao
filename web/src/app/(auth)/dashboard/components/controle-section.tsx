@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import {
 	Card,
 	CardContent,
@@ -80,7 +81,7 @@ export function ControleSection() {
 					</p>
 				</div>
 				<Select value={ano} onValueChange={setAno}>
-					<SelectTrigger className="w-[120px]">
+					<SelectTrigger className="w-30">
 						<SelectValue placeholder="Ano" />
 					</SelectTrigger>
 					<SelectContent>
@@ -93,91 +94,98 @@ export function ControleSection() {
 				</Select>
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Despesas por Plano de Contas — {ano}</CardTitle>
-					<CardDescription>
-						Valores mensais por conta de despesa
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="overflow-x-auto">
-					{isLoading ? (
-						<div className="flex h-48 items-center justify-center">
-							<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-						</div>
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead className="sticky left-0 bg-background min-w-[200px]">
-										Plano de Contas
-									</TableHead>
-									{MESES.map((mes) => (
-										<TableHead key={mes} className="text-right min-w-[90px]">
-											{mes}
-										</TableHead>
-									))}
-									<TableHead className="text-right min-w-[100px]">Total</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{(data?.linhas ?? []).length === 0 ? (
+			<VisualErrorBoundary>
+				<Card>
+					<CardHeader>
+						<CardTitle>Despesas por Plano de Contas — {ano}</CardTitle>
+						<CardDescription>
+							Valores mensais por conta de despesa
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="overflow-x-auto">
+						{isLoading ? (
+							<div className="flex h-48 items-center justify-center">
+								<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+							</div>
+						) : (
+							<Table>
+								<TableHeader>
 									<TableRow>
-										<TableCell
-											colSpan={14}
-											className="text-center text-muted-foreground"
-										>
-											Nenhum lançamento encontrado
-										</TableCell>
+										<TableHead className="sticky left-0 bg-background min-w-[200px]">
+											Plano de Contas
+										</TableHead>
+										{MESES.map((mes) => (
+											<TableHead key={mes} className="text-right min-w-[90px]">
+												{mes}
+											</TableHead>
+										))}
+										<TableHead className="text-right min-w-[100px]">
+											Total
+										</TableHead>
 									</TableRow>
-								) : (
-									data?.linhas.map((linha) => (
-										<TableRow key={linha.idplanocontas}>
-											<TableCell className="sticky left-0 bg-background font-medium">
-												{linha.codigo ? `${linha.codigo} — ` : ""}
-												{linha.nome ?? "Sem nome"}
-											</TableCell>
-											{linha.meses.map((valor, index) => (
-												<TableCell
-													key={`${linha.idplanocontas}-${index}`}
-													className="text-right tabular-nums text-destructive"
-												>
-													{valor > 0 ? formatCurrency(valor) : "—"}
-												</TableCell>
-											))}
-											<TableCell className="text-right font-medium tabular-nums text-destructive">
-												{formatCurrency(linha.total)}
+								</TableHeader>
+								<TableBody>
+									{(data?.linhas ?? []).length === 0 ? (
+										<TableRow>
+											<TableCell
+												colSpan={14}
+												className="text-center text-muted-foreground"
+											>
+												Nenhum lançamento encontrado
 											</TableCell>
 										</TableRow>
-									))
-								)}
-								<TableRow className="bg-muted/50 font-semibold">
-									<TableCell className="sticky left-0 bg-muted/50">
-										Saldo Líquido
-									</TableCell>
-									{(data?.saldoLiquidoMensal ?? Array(12).fill(0)).map(
-										(valor, index) => (
-											<TableCell
-												key={`saldo-${index}`}
-												className={`text-right tabular-nums ${valor >= 0 ? "text-green-600" : "text-destructive"}`}
-											>
-												{formatCurrency(valor)}
-											</TableCell>
-										),
+									) : (
+										data?.linhas.map((linha) => (
+											<TableRow key={linha.idplanocontas}>
+												<TableCell className="sticky left-0 bg-background font-medium">
+													{linha.codigo ? `${linha.codigo} — ` : ""}
+													{linha.nome ?? "Sem nome"}
+												</TableCell>
+												{linha.meses.map((valor, index) => (
+													<TableCell
+														key={`${linha.idplanocontas}-${index}`}
+														className="text-right tabular-nums text-destructive"
+													>
+														{valor > 0 ? formatCurrency(valor) : "—"}
+													</TableCell>
+												))}
+												<TableCell className="text-right font-medium tabular-nums text-destructive">
+													{formatCurrency(linha.total)}
+												</TableCell>
+											</TableRow>
+										))
 									)}
-									<TableCell
-										className={`text-right tabular-nums ${(data?.saldoLiquidoMensal ?? []).reduce((a, b) => a + b, 0) >= 0 ? "text-green-600" : "text-destructive"}`}
-									>
-										{formatCurrency(
-											(data?.saldoLiquidoMensal ?? []).reduce((a, b) => a + b, 0),
+									<TableRow className="bg-muted/50 font-semibold">
+										<TableCell className="sticky left-0 bg-muted/50">
+											Saldo Líquido
+										</TableCell>
+										{(data?.saldoLiquidoMensal ?? Array(12).fill(0)).map(
+											(valor, index) => (
+												<TableCell
+													key={`saldo-${index}`}
+													className={`text-right tabular-nums ${valor >= 0 ? "text-green-600" : "text-destructive"}`}
+												>
+													{formatCurrency(valor)}
+												</TableCell>
+											),
 										)}
-									</TableCell>
-								</TableRow>
-							</TableBody>
-						</Table>
-					)}
-				</CardContent>
-			</Card>
+										<TableCell
+											className={`text-right tabular-nums ${(data?.saldoLiquidoMensal ?? []).reduce((a, b) => a + b, 0) >= 0 ? "text-green-600" : "text-destructive"}`}
+										>
+											{formatCurrency(
+												(data?.saldoLiquidoMensal ?? []).reduce(
+													(a, b) => a + b,
+													0,
+												),
+											)}
+										</TableCell>
+									</TableRow>
+								</TableBody>
+							</Table>
+						)}
+					</CardContent>
+				</Card>
+			</VisualErrorBoundary>
 		</div>
 	);
 }

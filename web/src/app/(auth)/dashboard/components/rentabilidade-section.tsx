@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import { Badge } from "@/components/ui/badge";
 import {
 	Card,
@@ -71,7 +72,7 @@ export function RentabilidadeSection() {
 					value={dimensao}
 					onValueChange={(v) => setDimensao(v as "produto" | "categoria")}
 				>
-					<SelectTrigger className="w-[180px]" size="sm">
+					<SelectTrigger className="w-44" size="sm">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -82,71 +83,73 @@ export function RentabilidadeSection() {
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				{(Object.keys(QUADRANTE_LABEL) as Array<keyof typeof QUADRANTE_LABEL>).map(
-					(key) => (
-						<Card key={key}>
-							<CardHeader>
-								<CardDescription>{QUADRANTE_LABEL[key]}</CardDescription>
-								<CardTitle className="text-2xl tabular-nums">
-									{contagem[key]}
-								</CardTitle>
-							</CardHeader>
-						</Card>
-					),
-				)}
+				{(
+					Object.keys(QUADRANTE_LABEL) as Array<keyof typeof QUADRANTE_LABEL>
+				).map((key) => (
+					<Card key={key}>
+						<CardHeader>
+							<CardDescription>{QUADRANTE_LABEL[key]}</CardDescription>
+							<CardTitle className="text-2xl tabular-nums">
+								{contagem[key]}
+							</CardTitle>
+						</CardHeader>
+					</Card>
+				))}
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Quadrante volume × margem</CardTitle>
-					<CardDescription>
-						Alto volume + alta margem = estrela; baixo volume + baixa margem =
-						revisar
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="overflow-x-auto">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Item</TableHead>
-								<TableHead>Quadrante</TableHead>
-								<TableHead className="text-right">Qtd</TableHead>
-								<TableHead className="text-right">Receita</TableHead>
-								<TableHead className="text-right">Custo</TableHead>
-								<TableHead className="text-right">Lucro</TableHead>
-								<TableHead className="text-right">Margem</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{data.itens.map((item) => (
-								<TableRow key={item.id}>
-									<TableCell>{item.nome}</TableCell>
-									<TableCell>
-										<Badge variant="outline">
-											{QUADRANTE_LABEL[item.quadrante]}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatNumber(item.quantidade, 2)}
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatCurrency(item.faturamento)}
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatCurrency(item.custo)}
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatCurrency(item.lucro)}
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatPercent(item.margemPct)}
-									</TableCell>
+			<VisualErrorBoundary>
+				<Card>
+					<CardHeader>
+						<CardTitle>Quadrante volume × margem</CardTitle>
+						<CardDescription>
+							Alto volume + alta margem = estrela; baixo volume + baixa margem =
+							revisar
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="overflow-x-auto">
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Item</TableHead>
+									<TableHead>Quadrante</TableHead>
+									<TableHead className="text-right">Qtd</TableHead>
+									<TableHead className="text-right">Receita</TableHead>
+									<TableHead className="text-right">Custo</TableHead>
+									<TableHead className="text-right">Lucro</TableHead>
+									<TableHead className="text-right">Margem</TableHead>
 								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</CardContent>
-			</Card>
+							</TableHeader>
+							<TableBody>
+								{data.itens.map((item) => (
+									<TableRow key={item.id}>
+										<TableCell>{item.nome}</TableCell>
+										<TableCell>
+											<Badge variant="outline">
+												{QUADRANTE_LABEL[item.quadrante]}
+											</Badge>
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatNumber(item.quantidade, 2)}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatCurrency(item.faturamento)}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatCurrency(item.custo)}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatCurrency(item.lucro)}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatPercent(item.margemPct)}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
+			</VisualErrorBoundary>
 		</div>
 	);
 }
