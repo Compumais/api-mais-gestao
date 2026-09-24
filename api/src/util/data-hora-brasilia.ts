@@ -37,6 +37,15 @@ export function agoraBrasiliaIsoOffset(agora: Date = new Date()): string {
 }
 
 /**
+ * Relógio de Brasília **sem offset**, para colunas `timestamp without time zone`
+ * de emissão fiscal (`datahoraemissao` etc.). O PG descarta o fuso; ao devolver
+ * pela API use `timestampFiscalBrasiliaParaUtcIso` (naive = Brasília, não UTC).
+ */
+export function agoraBrasiliaNaiveIso(agora: Date = new Date()): string {
+	return agoraBrasiliaIsoOffset(agora).slice(0, 19);
+}
+
+/**
  * Data civil atual em Brasília: `yyyy-MM-dd` (campo `emissao`).
  */
 export function hojeBrasiliaIsoDate(agora: Date = new Date()): string {
@@ -91,6 +100,33 @@ export function timestampUtcIso(value?: string | Date | null): string | null {
 	const iso = raw.includes("T") ? raw : raw.replace(" ", "T");
 	const comoUtc = new Date(iso.endsWith("Z") ? iso : `${iso}Z`);
 	return Number.isNaN(comoUtc.getTime()) ? null : comoUtc.toISOString();
+}
+
+/**
+ * Timestamps de emissão fiscal (`datahoraemissao`, cupom, listagem NFC-e):
+ * no banco ficam naive com **relógio de Brasília** (PG sem time zone).
+ * Diferente de `timestampUtcIso` (naive = UTC genérico).
+ */
+export function timestampFiscalBrasiliaParaUtcIso(
+	value?: string | Date | null,
+): string | null {
+	if (value instanceof Date) {
+		return Number.isNaN(value.getTime()) ? null : value.toISOString();
+	}
+	if (!value) return null;
+	const raw = value.trim();
+	if (!raw) return null;
+	if (DATE_ONLY_PATTERN.test(raw)) return raw;
+
+	if (TEM_OFFSET.test(raw)) {
+		return timestampUtcIso(raw);
+	}
+
+	const iso = (raw.includes("T") ? raw : raw.replace(" ", "T")).slice(0, 19);
+	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(iso)) {
+		return timestampUtcIso(raw);
+	}
+	return timestampUtcIso(`${iso}-03:00`);
 }
 
 /**

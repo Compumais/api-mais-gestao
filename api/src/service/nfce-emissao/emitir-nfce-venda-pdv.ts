@@ -36,7 +36,7 @@ import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-
 import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import {
-	agoraBrasiliaIsoOffset,
+	agoraBrasiliaNaiveIso,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
 import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
@@ -109,7 +109,7 @@ async function persistirFalhaPreValidacaoNfce({
 	ambiente: number;
 	mensagem: string;
 }): Promise<HttpResponse<ResultadoEmissaoNfcePdv>> {
-	const agora = agoraBrasiliaIsoOffset();
+	const agora = agoraBrasiliaNaiveIso();
 	const valorVenda = parseValorMonetario(venda.valortotal);
 	const notaExistente = venda.idnotafiscalnfce
 		? await buscarNotaFiscalPorId(venda.idnotafiscalnfce)
@@ -624,7 +624,7 @@ export async function emitirNfceVendaPdvService({
 		...(erroTransmissao ? { erroTransmissao } : {}),
 	});
 
-	const agora = agoraBrasiliaIsoOffset();
+	const agora = agoraBrasiliaNaiveIso();
 	const dataEmissao = hojeBrasiliaIsoDate();
 	const valortotalnota = totaisFiscais.totalNota.toFixed(2);
 

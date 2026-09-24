@@ -18,7 +18,7 @@ import {
 } from "@/service/nfe-emissao/inutilizar-nfe-venda.js";
 import { resolverAmbienteSefaz } from "@/util/ambiente-sefaz.js";
 import {
-	agoraBrasiliaIsoOffset,
+	agoraBrasiliaNaiveIso,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
 import {
@@ -115,7 +115,7 @@ export async function registrarInutilizacaoNumeracaoNfceService({
 
 	let idnotafiscal = nota?.id;
 	if (!idnotafiscal) {
-		const agora = agoraBrasiliaIsoOffset();
+		const agora = agoraBrasiliaNaiveIso();
 		idnotafiscal = uuidv4();
 		const dadosNota: NovaNotaFiscal = {
 			id: idnotafiscal,

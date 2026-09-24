@@ -150,11 +150,13 @@ function aplicarCsosnStDoProduto(
 	const resultado = { ...item };
 	const csosnItem = resultado.csosn?.replace(/\D/g, "") ?? "";
 
+	// Preenche CSOSN do cadastro quando o item não tem; não apaga CST.
+	// Em CRT 3 (lucro real/presumido) o normalizar descarta CSOSN e mantém CST —
+	// zerar CST aqui fazia o gateway cair em CST 00 genérico ou perder isenção/ST.
 	if (!csosnItem) {
 		const csosnProduto = codigoCsosnProduto(produto);
 		if (csosnProduto) {
 			resultado.csosn = csosnProduto;
-			resultado.cst = undefined;
 		}
 	}
 

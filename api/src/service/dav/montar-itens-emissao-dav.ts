@@ -5,7 +5,21 @@ import { listarItensPorDav } from "@/repositories/dav-item-repositories.js";
 import { buscarNcmPorId } from "@/repositories/ncm-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { empresaUsaCsosn } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
+
+function round2(value: number): number {
+	return Math.round(value * 100) / 100;
+}
+
+function aliquotaIcmsProduto(
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): number | undefined {
+	const raw = produto.aliquotaicmsinterna;
+	if (raw == null || raw === "") return undefined;
+	const numero = Number(raw);
+	return Number.isFinite(numero) ? numero : undefined;
+}
 
 async function resolverCodigoCfop(
 	ids: Array<string | null | undefined>,
@@ -57,6 +71,8 @@ function formatarSituacaoTributaria(
 export type MontarItensEmissaoDavOpcoes = {
 	/** Prioriza CFOP de NFC-e (`idcfopsaidanfce`) — pedidos POS. */
 	prioridadeNfce?: boolean;
+	/** CRT da empresa (1/2/4 = Simples; 3 = Lucro real/presumido). */
+	crt?: number | null;
 };
 
 export async function montarItensEmissaoDav(
@@ -75,6 +91,7 @@ export async function montarItensEmissaoDav(
 	const pendencias: string[] = [];
 	const itens: ItemPayloadNfe[] = [];
 	const prioridadeNfce = opcoes.prioridadeNfce === true;
+	const usaCsosn = empresaUsaCsosn(opcoes.crt);
 
 	for (const [index, itemDav] of itensDav.entries()) {
 		const rotulo = `Item ${index + 1}`;
@@ -154,6 +171,9 @@ export async function montarItensEmissaoDav(
 					}))
 				: undefined;
 
+		const vProd = round2(quantidade * valorUnitario);
+		const aliquotaIcms = aliquotaIcmsProduto(produto);
+
 		itens.push({
 			idproduto: produto.id,
 			...(produto.codigo != null
@@ -166,8 +186,17 @@ export async function montarItensEmissaoDav(
 			unidade: itemDav.unidademedida ?? produto.unidademedida ?? "UN",
 			quantidade,
 			valorUnitario,
-			...(cst ? { cst } : {}),
-			...(csosn ? { csosn } : {}),
+			...(usaCsosn
+				? csosn
+					? { csosn }
+					: cst
+						? { csosn: cst }
+						: {}
+				: {
+						...(cst ? { cst } : {}),
+						baseIcms: vProd,
+						...(aliquotaIcms != null ? { aliquotaIcms } : {}),
+					}),
 			orig: produto.origem ?? 0,
 			...(rastros ? { rastros } : {}),
 		});

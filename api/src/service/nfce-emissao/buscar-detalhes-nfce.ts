@@ -13,6 +13,7 @@ import { listarItensPorVendaPdv } from "@/repositories/venda-pdv-item-repositori
 import { buscarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/buscar-configuracao-usuario.js";
 import { resolverProvedor } from "@/service/ia/provedores.js";
 import { resolverVendaPorNotaFiscalNfce } from "@/service/nfce-emissao/resolver-venda-nfce.js";
+import { timestampFiscalBrasiliaParaUtcIso } from "@/util/data-hora-brasilia.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
@@ -324,8 +325,10 @@ export async function buscarDetalhesNfceService({
 			tipoambientenfe: nota.tipoambientenfe,
 			valortotalnota: nota.valortotalnota,
 			emissao: nota.emissao,
-			datahoraemissao: nota.datahoraemissao,
-			datahoraautorizacao: nota.datahoraautorizacao ?? null,
+			datahoraemissao: timestampFiscalBrasiliaParaUtcIso(nota.datahoraemissao),
+			datahoraautorizacao: timestampFiscalBrasiliaParaUtcIso(
+				nota.datahoraautorizacao,
+			),
 		},
 		itens,
 		pagamentos: venda ? montarPagamentos(venda) : [],

@@ -29,18 +29,18 @@ describe("completarListagemNfce", () => {
 		});
 
 		expect(resultado.valortotalnota).toBe("18.00");
-		expect(resultado.datahoraemissao).toBe("2026-08-18T13:32:00-03:00");
+		expect(resultado.datahoraemissao).toBe("2026-08-18T16:32:00.000Z");
 		expect(resultado.emissao).toBe("2026-08-18");
 	});
 
 	it("deriva a data do AAMM da chave quando não há outra referência", () => {
 		const resultado = completarListagemNfce(cabecalhoVazio);
 
-		expect(resultado.datahoraemissao).toBe("2026-08-01T00:00:00-03:00");
+		expect(resultado.datahoraemissao).toBe("2026-08-01T03:00:00.000Z");
 		expect(resultado.emissao).toBe("2026-08-01");
 	});
 
-	it("não altera cabeçalho já preenchido", () => {
+	it("não altera numeração/valor já preenchidos e normaliza timestamps para UTC", () => {
 		const nota = {
 			numeronotafiscal: "101",
 			serie: "10",
@@ -51,6 +51,10 @@ describe("completarListagemNfce", () => {
 			datainclusao: "2026-08-18T13:32:00-03:00",
 		};
 
-		expect(completarListagemNfce(nota, { valortotal: "99.00" })).toEqual(nota);
+		expect(completarListagemNfce(nota, { valortotal: "99.00" })).toEqual({
+			...nota,
+			datahoraemissao: "2026-08-18T16:32:00.000Z",
+			datainclusao: "2026-08-18T16:32:00.000Z",
+		});
 	});
 });

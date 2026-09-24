@@ -144,6 +144,39 @@ describe("enriquecerItensEmissaoComProduto", () => {
 		expect(itens[0]?.aliquotaIcmsProprioSt).toBe(18);
 	});
 
+	it("não apaga CST do item ao injetar CSOSN do produto (CRT 3 / lucro real)", async () => {
+		vi.mocked(produtosRepositories.buscarProdutoPorId).mockResolvedValue({
+			id: "prod-1",
+			idempresa: "emp-1",
+			idcest: null,
+			cest: null,
+			ean: null,
+			eantributavel: null,
+			situacaotributariasn: "102",
+			aliquotaicmsinterna: "18.00",
+		} as Awaited<ReturnType<typeof produtosRepositories.buscarProdutoPorId>>);
+
+		const itens = await enriquecerItensEmissaoComProduto([
+			{
+				idproduto: "prod-1",
+				descricao: "Produto tributado",
+				ncm: "22021000",
+				cfop: "5102",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 100,
+				cst: "00",
+				baseIcms: 100,
+				aliquotaIcms: 18,
+			},
+		]);
+
+		expect(itens[0]?.cst).toBe("00");
+		expect(itens[0]?.csosn).toBe("102");
+		expect(itens[0]?.baseIcms).toBe(100);
+		expect(itens[0]?.aliquotaIcms).toBe(18);
+	});
+
 	it("não inventa CSOSN 102 nem MVA quando o cadastro está vazio", async () => {
 		vi.mocked(produtosRepositories.buscarProdutoPorId).mockResolvedValue({
 			id: "prod-1",

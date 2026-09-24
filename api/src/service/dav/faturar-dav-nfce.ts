@@ -46,7 +46,7 @@ import {
 } from "@/util/card-pagamento-nfce.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import {
-	agoraBrasiliaIsoOffset,
+	agoraBrasiliaNaiveIso,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
 import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
@@ -347,7 +347,10 @@ export async function faturarDavNfceService({
 
 	const crt = empresaFiscal.crt ?? 3;
 	const { itens: itensBrutos, pendencias: pendenciasItens } =
-		await montarItensEmissaoDav(idempresa, iddav, { prioridadeNfce: true });
+		await montarItensEmissaoDav(idempresa, iddav, {
+			prioridadeNfce: true,
+			crt,
+		});
 
 	if (itensBrutos.length === 0) {
 		return httpBadRequest("Pedido sem itens válidos para emissão da NFC-e");
@@ -475,7 +478,7 @@ export async function faturarDavNfceService({
 		...(erroTransmissao ? { erroTransmissao } : {}),
 	});
 
-	const agora = agoraBrasiliaIsoOffset();
+	const agora = agoraBrasiliaNaiveIso();
 	const dataEmissao = hojeBrasiliaIsoDate();
 	const valortotalnota = totaisFiscais.totalNota.toFixed(2);
 

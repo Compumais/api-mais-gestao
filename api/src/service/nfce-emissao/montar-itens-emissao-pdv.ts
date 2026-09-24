@@ -8,6 +8,19 @@ import { empresaUsaCsosn } from "@/util/normalizar-tributacao-item-emissao-nfe.j
 import { truncarDescricaoItemNfce } from "@/util/pizza-meio-a-meio.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
+function round2(value: number): number {
+	return Math.round(value * 100) / 100;
+}
+
+function aliquotaIcmsProduto(
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): number | undefined {
+	const raw = produto.aliquotaicmsinterna;
+	if (raw == null || raw === "") return undefined;
+	const numero = Number(raw);
+	return Number.isFinite(numero) ? numero : undefined;
+}
+
 async function resolverCodigoCfop(
 	ids: Array<string | null | undefined>,
 ): Promise<string | undefined> {
@@ -115,7 +128,11 @@ export async function montarItensEmissaoPdv(
 			formatarSituacaoTributaria(produto.tributacaosn) ??
 			formatarSituacaoTributaria(produto.situacaotributariasn);
 
-		// ICMS próprio não entra no payload NFC-e; crédito SN é aplicado depois da normalização.
+		const vProd = round2(quantidade * valorUnitario);
+		const aliquotaIcms = aliquotaIcmsProduto(produto);
+
+		// Simples (CRT 1/2/4): ICMS próprio não é destacado (CSOSN; BC/vICMS = 0).
+		// Lucro real/presumido (CRT 3): CST + base/alíquota para vBC = vProd (sem desconto ainda).
 		itens.push({
 			idproduto: produto.id,
 			...(produto.codigo != null
@@ -140,7 +157,8 @@ export async function montarItensEmissaoPdv(
 						: {}
 				: {
 						...(cst ? { cst } : {}),
-						...(csosn ? { csosn } : {}),
+						baseIcms: vProd,
+						...(aliquotaIcms != null ? { aliquotaIcms } : {}),
 					}),
 			orig: produto.origem ?? 0,
 		});
