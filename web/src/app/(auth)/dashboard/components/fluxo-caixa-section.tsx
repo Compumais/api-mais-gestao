@@ -1,14 +1,9 @@
 "use client";
 
 import * as React from "react";
-import {
-	Area,
-	AreaChart,
-	CartesianGrid,
-	XAxis,
-	YAxis,
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { KpiCard } from "@/components/dashboard/kpi-card";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import {
 	Card,
 	CardContent,
@@ -38,10 +33,7 @@ export function FluxoCaixaSection() {
 	);
 	const [horizonte, setHorizonte] = React.useState("30");
 
-	const { data, isLoading } = useDashboardFluxoCaixa(
-		modo,
-		Number(horizonte),
-	);
+	const { data, isLoading } = useDashboardFluxoCaixa(modo, Number(horizonte));
 
 	if (isLoading || !data) {
 		return (
@@ -123,45 +115,47 @@ export function FluxoCaixaSection() {
 				/>
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>
-						{modo === "historico" ? "Fluxo realizado" : "Projeção de caixa"}
-					</CardTitle>
-					<CardDescription>Entradas, saídas e saldo diário</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<ChartContainer config={chartConfig} className="h-[320px] w-full">
-						<AreaChart data={dias}>
-							<CartesianGrid vertical={false} />
-							<XAxis dataKey="date" tickLine={false} axisLine={false} />
-							<YAxis tickLine={false} axisLine={false} width={60} />
-							<ChartTooltip content={<ChartTooltipContent />} />
-							<Area
-								type="monotone"
-								dataKey="entradas"
-								stroke="var(--color-entradas)"
-								fill="var(--color-entradas)"
-								fillOpacity={0.15}
-							/>
-							<Area
-								type="monotone"
-								dataKey="saidas"
-								stroke="var(--color-saidas)"
-								fill="var(--color-saidas)"
-								fillOpacity={0.15}
-							/>
-							<Area
-								type="monotone"
-								dataKey="saldo"
-								stroke="var(--color-saldo)"
-								fill="var(--color-saldo)"
-								fillOpacity={0.1}
-							/>
-						</AreaChart>
-					</ChartContainer>
-				</CardContent>
-			</Card>
+			<VisualErrorBoundary>
+				<Card>
+					<CardHeader>
+						<CardTitle>
+							{modo === "historico" ? "Fluxo realizado" : "Projeção de caixa"}
+						</CardTitle>
+						<CardDescription>Entradas, saídas e saldo diário</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<ChartContainer config={chartConfig} className="h-[320px] w-full">
+							<AreaChart data={dias}>
+								<CartesianGrid vertical={false} />
+								<XAxis dataKey="date" tickLine={false} axisLine={false} />
+								<YAxis tickLine={false} axisLine={false} width={60} />
+								<ChartTooltip content={<ChartTooltipContent />} />
+								<Area
+									type="monotone"
+									dataKey="entradas"
+									stroke="var(--color-entradas)"
+									fill="var(--color-entradas)"
+									fillOpacity={0.15}
+								/>
+								<Area
+									type="monotone"
+									dataKey="saidas"
+									stroke="var(--color-saidas)"
+									fill="var(--color-saidas)"
+									fillOpacity={0.15}
+								/>
+								<Area
+									type="monotone"
+									dataKey="saldo"
+									stroke="var(--color-saldo)"
+									fill="var(--color-saldo)"
+									fillOpacity={0.1}
+								/>
+							</AreaChart>
+						</ChartContainer>
+					</CardContent>
+				</Card>
+			</VisualErrorBoundary>
 		</div>
 	);
 }

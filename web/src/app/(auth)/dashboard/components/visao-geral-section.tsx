@@ -10,6 +10,7 @@ import {
 	YAxis,
 } from "recharts";
 import { KpiCard } from "@/components/dashboard/kpi-card";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import {
 	Card,
 	CardContent,
@@ -140,189 +141,209 @@ export function VisaoGeralSection() {
 				/>
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Evolução do faturamento</CardTitle>
-					<CardDescription>Série diária no período selecionado</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<ChartContainer config={evolucaoConfig} className="h-[280px] w-full">
-						<AreaChart data={data.evolucaoFaturamento}>
-							<CartesianGrid vertical={false} />
-							<XAxis
-								dataKey="date"
-								tickLine={false}
-								axisLine={false}
-								tickFormatter={(value) =>
-									formatDateCurtaBrasilia(String(value))
-								}
-							/>
-							<YAxis tickLine={false} axisLine={false} width={60} />
-							<ChartTooltip
-								content={
-									<ChartTooltipContent
-										labelFormatter={(value) =>
-											formatDataCivilBrasilia(String(value))
-										}
-									/>
-								}
-							/>
-							<Area
-								type="monotone"
-								dataKey="total"
-								stroke="var(--color-total)"
-								fill="var(--color-total)"
-								fillOpacity={0.2}
-							/>
-						</AreaChart>
-					</ChartContainer>
-				</CardContent>
-			</Card>
-
-			<div className="grid gap-4 lg:grid-cols-2">
+			<VisualErrorBoundary>
 				<Card>
 					<CardHeader>
-						<CardTitle>Receitas × Despesas</CardTitle>
+						<CardTitle>Evolução do faturamento</CardTitle>
+						<CardDescription>
+							Série diária no período selecionado
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<ChartContainer
-							config={receitasDespesasConfig}
-							className="h-[240px] w-full"
+							config={evolucaoConfig}
+							className="h-[280px] w-full"
 						>
-							<BarChart data={receitasDespesasData}>
+							<AreaChart data={data.evolucaoFaturamento}>
 								<CartesianGrid vertical={false} />
-								<XAxis dataKey="nome" tickLine={false} axisLine={false} />
+								<XAxis
+									dataKey="date"
+									tickLine={false}
+									axisLine={false}
+									tickFormatter={(value) =>
+										formatDateCurtaBrasilia(String(value))
+									}
+								/>
 								<YAxis tickLine={false} axisLine={false} width={60} />
-								<ChartTooltip content={<ChartTooltipContent />} />
-								<Bar dataKey="valor" fill="var(--color-valor)" radius={4} />
-							</BarChart>
+								<ChartTooltip
+									content={
+										<ChartTooltipContent
+											labelFormatter={(value) =>
+												formatDataCivilBrasilia(String(value))
+											}
+										/>
+									}
+								/>
+								<Area
+									type="monotone"
+									dataKey="total"
+									stroke="var(--color-total)"
+									fill="var(--color-total)"
+									fillOpacity={0.2}
+								/>
+							</AreaChart>
 						</ChartContainer>
 					</CardContent>
 				</Card>
+			</VisualErrorBoundary>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Mini fluxo de caixa</CardTitle>
-						<CardDescription>
-							Entradas e saídas previstas (30 dias)
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-3 text-sm">
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">Saldo atual</span>
-							<span className="font-medium tabular-nums">
-								{formatCurrency(data.caixa.saldoAtual)}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">Entradas previstas</span>
-							<span className="font-medium tabular-nums text-emerald-600">
-								{formatCurrency(data.caixa.entradasPrevistas)}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="text-muted-foreground">Saídas previstas</span>
-							<span className="font-medium tabular-nums text-red-600">
-								{formatCurrency(data.caixa.saidasPrevistas)}
-							</span>
-						</div>
-						<div className="flex justify-between border-t pt-3">
-							<span className="font-medium">Saldo projetado</span>
-							<span className="font-semibold tabular-nums">
-								{formatCurrency(data.caixa.saldoProjetado)}
-							</span>
-						</div>
-					</CardContent>
-				</Card>
+			<div className="grid gap-4 lg:grid-cols-2">
+				<VisualErrorBoundary className="h-60 w-full">
+					<Card>
+						<CardHeader>
+							<CardTitle>Receitas × Despesas</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<ChartContainer
+								config={receitasDespesasConfig}
+								className="h-60 w-full"
+							>
+								<BarChart data={receitasDespesasData}>
+									<CartesianGrid vertical={false} />
+									<XAxis dataKey="nome" tickLine={false} axisLine={false} />
+									<YAxis tickLine={false} axisLine={false} width={60} />
+									<ChartTooltip content={<ChartTooltipContent />} />
+									<Bar dataKey="valor" fill="var(--color-valor)" radius={4} />
+								</BarChart>
+							</ChartContainer>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
+
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Mini fluxo de caixa</CardTitle>
+							<CardDescription>
+								Entradas e saídas previstas (30 dias)
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-3 text-sm">
+							<div className="flex justify-between">
+								<span className="text-muted-foreground">Saldo atual</span>
+								<span className="font-medium tabular-nums">
+									{formatCurrency(data.caixa.saldoAtual)}
+								</span>
+							</div>
+							<div className="flex justify-between">
+								<span className="text-muted-foreground">
+									Entradas previstas
+								</span>
+								<span className="font-medium tabular-nums text-emerald-600">
+									{formatCurrency(data.caixa.entradasPrevistas)}
+								</span>
+							</div>
+							<div className="flex justify-between">
+								<span className="text-muted-foreground">Saídas previstas</span>
+								<span className="font-medium tabular-nums text-red-600">
+									{formatCurrency(data.caixa.saidasPrevistas)}
+								</span>
+							</div>
+							<div className="flex justify-between border-t pt-3">
+								<span className="font-medium">Saldo projetado</span>
+								<span className="font-semibold tabular-nums">
+									{formatCurrency(data.caixa.saldoProjetado)}
+								</span>
+							</div>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-3">
-				<Card>
-					<CardHeader>
-						<CardTitle>Top produtos</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Produto</TableHead>
-									<TableHead className="text-right">Total</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.topProdutos.map((item) => (
-									<TableRow key={item.idproduto}>
-										<TableCell>{item.nome}</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatCurrency(item.total)}
-										</TableCell>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Top produtos</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Produto</TableHead>
+										<TableHead className="text-right">Total</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+								</TableHeader>
+								<TableBody>
+									{data.topProdutos.map((item) => (
+										<TableRow key={item.idproduto}>
+											<TableCell>{item.nome}</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatCurrency(item.total)}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Top clientes</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Cliente</TableHead>
-									<TableHead className="text-right">Total</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.topClientes.map((item) => (
-									<TableRow key={item.identidade}>
-										<TableCell>{item.nome}</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatCurrency(item.total)}
-										</TableCell>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Top clientes</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Cliente</TableHead>
+										<TableHead className="text-right">Total</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+								</TableHeader>
+								<TableBody>
+									{data.topClientes.map((item) => (
+										<TableRow key={item.identidade}>
+											<TableCell>{item.nome}</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatCurrency(item.total)}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Alertas e insights</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-2">
-						{(insights ?? []).slice(0, 5).map((insight) => (
-							<button
-								key={insight.codigo}
-								type="button"
-								className="block w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-muted/50"
-								onClick={() => setTab(insight.tabAlvo as DashboardTab)}
-							>
-								<span className="mr-2">
-									{insight.severidade === "positivo"
-										? "●"
-										: insight.severidade === "atencao"
-											? "▲"
-											: "■"}
-								</span>
-								{insight.mensagem}
-							</button>
-						))}
-						{!temCompleto && (
-							<p className="text-sm text-muted-foreground">
-								Alertas automáticos disponíveis no plano com Dashboard Completo.
-							</p>
-						)}
-						{temCompleto && (!insights || insights.length === 0) && (
-							<p className="text-sm text-muted-foreground">
-								Nenhum insight no período.
-							</p>
-						)}
-					</CardContent>
-				</Card>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Alertas e insights</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-2">
+							{(insights ?? []).slice(0, 5).map((insight) => (
+								<button
+									key={insight.codigo}
+									type="button"
+									className="block w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-muted/50"
+									onClick={() => setTab(insight.tabAlvo as DashboardTab)}
+								>
+									<span className="mr-2">
+										{insight.severidade === "positivo"
+											? "●"
+											: insight.severidade === "atencao"
+												? "▲"
+												: "■"}
+									</span>
+									{insight.mensagem}
+								</button>
+							))}
+							{!temCompleto && (
+								<p className="text-sm text-muted-foreground">
+									Alertas automáticos disponíveis no plano com Dashboard
+									Completo.
+								</p>
+							)}
+							{temCompleto && (!insights || insights.length === 0) && (
+								<p className="text-sm text-muted-foreground">
+									Nenhum insight no período.
+								</p>
+							)}
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 			</div>
 		</div>
 	);

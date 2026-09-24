@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { KpiCard } from "@/components/dashboard/kpi-card";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import { Badge } from "@/components/ui/badge";
 import {
 	Card,
@@ -28,10 +29,7 @@ import {
 	useDashboardClientes,
 	useDashboardClientesRfm,
 } from "@/hooks/dashboard/use-dashboard-queries";
-import {
-	formatCurrency,
-	formatNumber,
-} from "@/lib/dashboard-periodo";
+import { formatCurrency, formatNumber } from "@/lib/dashboard-periodo";
 
 const chartConfig = {
 	total: { label: "Clientes", color: "var(--chart-1)" },
@@ -76,10 +74,7 @@ export function ClientesSection() {
 					titulo="Clientes atendidos"
 					valor={formatNumber(data.clientesAtendidos)}
 				/>
-				<KpiCard
-					titulo="Novos"
-					valor={formatNumber(data.clientesNovos)}
-				/>
+				<KpiCard titulo="Novos" valor={formatNumber(data.clientesNovos)} />
 				<KpiCard
 					titulo="Recorrentes"
 					valor={formatNumber(data.clientesRecorrentes)}
@@ -95,112 +90,120 @@ export function ClientesSection() {
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Novos × recorrentes</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<ChartContainer config={chartConfig} className="h-[240px] w-full">
-							<BarChart data={novosVsRec}>
-								<CartesianGrid vertical={false} />
-								<XAxis dataKey="nome" tickLine={false} axisLine={false} />
-								<YAxis tickLine={false} axisLine={false} width={40} />
-								<ChartTooltip content={<ChartTooltipContent />} />
-								<Bar dataKey="total" fill="var(--color-total)" radius={4} />
-							</BarChart>
-						</ChartContainer>
-					</CardContent>
-				</Card>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Novos × recorrentes</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<ChartContainer config={chartConfig} className="h-60 w-full">
+								<BarChart data={novosVsRec}>
+									<CartesianGrid vertical={false} />
+									<XAxis dataKey="nome" tickLine={false} axisLine={false} />
+									<YAxis tickLine={false} axisLine={false} width={40} />
+									<ChartTooltip content={<ChartTooltipContent />} />
+									<Bar dataKey="total" fill="var(--color-total)" radius={4} />
+								</BarChart>
+							</ChartContainer>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Segmentação RFM</CardTitle>
-						<CardDescription>Recência · Frequência · Valor</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<ChartContainer config={chartConfig} className="h-[240px] w-full">
-							<BarChart data={segmentosChart}>
-								<CartesianGrid vertical={false} />
-								<XAxis dataKey="nome" tickLine={false} axisLine={false} />
-								<YAxis tickLine={false} axisLine={false} width={40} />
-								<ChartTooltip content={<ChartTooltipContent />} />
-								<Bar dataKey="total" fill="var(--color-total)" radius={4} />
-							</BarChart>
-						</ChartContainer>
-					</CardContent>
-				</Card>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Segmentação RFM</CardTitle>
+							<CardDescription>Recência · Frequência · Valor</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<ChartContainer config={chartConfig} className="h-[240px] w-full">
+								<BarChart data={segmentosChart}>
+									<CartesianGrid vertical={false} />
+									<XAxis dataKey="nome" tickLine={false} axisLine={false} />
+									<YAxis tickLine={false} axisLine={false} width={40} />
+									<ChartTooltip content={<ChartTooltipContent />} />
+									<Bar dataKey="total" fill="var(--color-total)" radius={4} />
+								</BarChart>
+							</ChartContainer>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Top clientes</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Cliente</TableHead>
-									<TableHead className="text-right">Compras</TableHead>
-									<TableHead className="text-right">Total</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.topClientes.map((c) => (
-									<TableRow key={c.identidade}>
-										<TableCell>{c.nome}</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatNumber(c.quantidade)}
-										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatCurrency(c.total)}
-										</TableCell>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Top clientes</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Cliente</TableHead>
+										<TableHead className="text-right">Compras</TableHead>
+										<TableHead className="text-right">Total</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+								</TableHeader>
+								<TableBody>
+									{data.topClientes.map((c) => (
+										<TableRow key={c.identidade}>
+											<TableCell>{c.nome}</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatNumber(c.quantidade)}
+											</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatCurrency(c.total)}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Clientes RFM</CardTitle>
-					</CardHeader>
-					<CardContent className="overflow-x-auto">
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Cliente</TableHead>
-									<TableHead>Segmento</TableHead>
-									<TableHead className="text-right">Recência</TableHead>
-									<TableHead className="text-right">Freq.</TableHead>
-									<TableHead className="text-right">Valor</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{(rfm?.clientes ?? []).slice(0, 20).map((c) => (
-									<TableRow key={c.identidade}>
-										<TableCell>{c.nome}</TableCell>
-										<TableCell>
-											<Badge variant="outline">
-												{SEGMENTO_LABEL[c.segmento] ?? c.segmento}
-											</Badge>
-										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatNumber(c.recenciaDias)}d
-										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatNumber(c.frequencia)}
-										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatCurrency(c.monetario)}
-										</TableCell>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Clientes RFM</CardTitle>
+						</CardHeader>
+						<CardContent className="overflow-x-auto">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Cliente</TableHead>
+										<TableHead>Segmento</TableHead>
+										<TableHead className="text-right">Recência</TableHead>
+										<TableHead className="text-right">Freq.</TableHead>
+										<TableHead className="text-right">Valor</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+								</TableHeader>
+								<TableBody>
+									{(rfm?.clientes ?? []).slice(0, 20).map((c) => (
+										<TableRow key={c.identidade}>
+											<TableCell>{c.nome}</TableCell>
+											<TableCell>
+												<Badge variant="outline">
+													{SEGMENTO_LABEL[c.segmento] ?? c.segmento}
+												</Badge>
+											</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatNumber(c.recenciaDias)}d
+											</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatNumber(c.frequencia)}
+											</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatCurrency(c.monetario)}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 			</div>
 		</div>
 	);

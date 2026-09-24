@@ -1,6 +1,7 @@
 "use client";
 
 import { KpiCard } from "@/components/dashboard/kpi-card";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import {
 	Card,
 	CardContent,
@@ -67,97 +68,103 @@ export function FinanceiroSection() {
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Aging a receber</CardTitle>
-						<CardDescription>Envelhecimento das contas</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Situação</TableHead>
-									<TableHead className="text-right">Qtd</TableHead>
-									<TableHead className="text-right">Valor</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.agingReceber.map((bucket) => (
-									<TableRow key={bucket.faixa}>
-										<TableCell>{bucket.faixa}</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatNumber(bucket.quantidade)}
-										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatCurrency(bucket.valor)}
-										</TableCell>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Aging a receber</CardTitle>
+							<CardDescription>Envelhecimento das contas</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Situação</TableHead>
+										<TableHead className="text-right">Qtd</TableHead>
+										<TableHead className="text-right">Valor</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+								</TableHeader>
+								<TableBody>
+									{data.agingReceber.map((bucket) => (
+										<TableRow key={bucket.faixa}>
+											<TableCell>{bucket.faixa}</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatNumber(bucket.quantidade)}
+											</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatCurrency(bucket.valor)}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Aging a pagar</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Situação</TableHead>
-									<TableHead className="text-right">Qtd</TableHead>
-									<TableHead className="text-right">Valor</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.agingPagar.map((bucket) => (
-									<TableRow key={bucket.faixa}>
-										<TableCell>{bucket.faixa}</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatNumber(bucket.quantidade)}
-										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatCurrency(bucket.valor)}
-										</TableCell>
+				<VisualErrorBoundary>
+					<Card>
+						<CardHeader>
+							<CardTitle>Aging a pagar</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Situação</TableHead>
+										<TableHead className="text-right">Qtd</TableHead>
+										<TableHead className="text-right">Valor</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+								</TableHeader>
+								<TableBody>
+									{data.agingPagar.map((bucket) => (
+										<TableRow key={bucket.faixa}>
+											<TableCell>{bucket.faixa}</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatNumber(bucket.quantidade)}
+											</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatCurrency(bucket.valor)}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
+				</VisualErrorBoundary>
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Maiores inadimplentes</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Cliente</TableHead>
-								<TableHead className="text-right">Dias</TableHead>
-								<TableHead className="text-right">Valor</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{data.topInadimplentes.map((item, index) => (
-								<TableRow key={`${item.identidade ?? "x"}-${index}`}>
-									<TableCell>{item.nome}</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatNumber(item.diasAtraso)}
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{formatCurrency(item.valor)}
-									</TableCell>
+			<VisualErrorBoundary>
+				<Card>
+					<CardHeader>
+						<CardTitle>Maiores inadimplentes</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Cliente</TableHead>
+									<TableHead className="text-right">Dias</TableHead>
+									<TableHead className="text-right">Valor</TableHead>
 								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</CardContent>
-			</Card>
+							</TableHeader>
+							<TableBody>
+								{data.topInadimplentes.map((item, index) => (
+									<TableRow key={`${item.identidade ?? "x"}-${index}`}>
+										<TableCell>{item.nome}</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatNumber(item.diasAtraso)}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{formatCurrency(item.valor)}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
+			</VisualErrorBoundary>
 		</div>
 	);
 }

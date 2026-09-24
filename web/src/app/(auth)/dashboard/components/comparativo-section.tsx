@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import {
 	Card,
 	CardContent,
@@ -24,10 +25,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useDashboardComparativoFlexivel } from "@/hooks/dashboard/use-dashboard-queries";
-import {
-	formatCurrency,
-	formatPercent,
-} from "@/lib/dashboard-periodo";
+import { formatCurrency, formatPercent } from "@/lib/dashboard-periodo";
 import { cn } from "@/lib/utils";
 import type { ComparativoFlexivelModo } from "@/services/dashboard.service";
 
@@ -52,67 +50,75 @@ export function ComparativoSection() {
 					value={modo}
 					onValueChange={(v) => setModo(v as ComparativoFlexivelModo)}
 				>
-					<SelectTrigger className="w-[260px]" size="sm">
+					<SelectTrigger className="w-64" size="sm">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="ano_x_ano">Ano × Ano</SelectItem>
 						<SelectItem value="mes_x_anterior">Mês × Mês anterior</SelectItem>
-						<SelectItem value="mes_x_yoy">Mês × Mesmo mês ano anterior</SelectItem>
+						<SelectItem value="mes_x_yoy">
+							Mês × Mesmo mês ano anterior
+						</SelectItem>
 						<SelectItem value="personalizado">Período personalizado</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Comparativo executivo</CardTitle>
-					<CardDescription>
-						Indicadores do período atual versus o período de comparação
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{isLoading || !data ? (
-						<p className="text-sm text-muted-foreground">
-							Carregando comparativo…
-						</p>
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Indicador</TableHead>
-									<TableHead className="text-right">Período atual</TableHead>
-									<TableHead className="text-right">Período anterior</TableHead>
-									<TableHead className="text-right">Variação</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{linhas.map((item) => (
-									<TableRow key={item.label}>
-										<TableCell className="font-medium">{item.label}</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatCurrency(item.periodoA)}
-										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatCurrency(item.periodoB)}
-										</TableCell>
-										<TableCell
-											className={cn(
-												"text-right tabular-nums",
-												(item.variacaoPct ?? 0) >= 0
-													? "text-emerald-600"
-													: "text-red-600",
-											)}
-										>
-											{formatPercent(item.variacaoPct)}
-										</TableCell>
+			<VisualErrorBoundary>
+				<Card>
+					<CardHeader>
+						<CardTitle>Comparativo executivo</CardTitle>
+						<CardDescription>
+							Indicadores do período atual versus o período de comparação
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{isLoading || !data ? (
+							<p className="text-sm text-muted-foreground">
+								Carregando comparativo…
+							</p>
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Indicador</TableHead>
+										<TableHead className="text-right">Período atual</TableHead>
+										<TableHead className="text-right">
+											Período anterior
+										</TableHead>
+										<TableHead className="text-right">Variação</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					)}
-				</CardContent>
-			</Card>
+								</TableHeader>
+								<TableBody>
+									{linhas.map((item) => (
+										<TableRow key={item.label}>
+											<TableCell className="font-medium">
+												{item.label}
+											</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatCurrency(item.periodoA)}
+											</TableCell>
+											<TableCell className="text-right tabular-nums">
+												{formatCurrency(item.periodoB)}
+											</TableCell>
+											<TableCell
+												className={cn(
+													"text-right tabular-nums",
+													(item.variacaoPct ?? 0) >= 0
+														? "text-emerald-600"
+														: "text-red-600",
+												)}
+											>
+												{formatPercent(item.variacaoPct)}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)}
+					</CardContent>
+				</Card>
+			</VisualErrorBoundary>
 		</div>
 	);
 }
