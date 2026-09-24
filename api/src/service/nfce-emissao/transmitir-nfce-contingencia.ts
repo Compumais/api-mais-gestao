@@ -25,7 +25,7 @@ import { reconciliarNfceAutorizadaSefaz } from "@/service/nfce-emissao/reconcili
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { numeroFiscalPreenchido } from "@/util/completar-listagem-nfce.js";
 import {
-	agoraBrasiliaIsoOffset,
+	agoraBrasiliaNaiveIso,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
 import { decodificarChaveNfe } from "@/util/decodificar-chave-nfe.js";
@@ -548,7 +548,7 @@ export async function transmitirNfceContingenciaService({
 
 	const idnotafiscal = uuidv4();
 	const [dataCont, horaCont] = splitDataHoraContingencia(datacontingencia);
-	const agora = agoraBrasiliaIsoOffset();
+	const agora = agoraBrasiliaNaiveIso();
 	const valorXml = extrairValorTotalXml(xml);
 	const valorVenda = parseValorMonetario(venda?.valortotal);
 	const valortotalnota =

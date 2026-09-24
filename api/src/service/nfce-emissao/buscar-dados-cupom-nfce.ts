@@ -8,6 +8,10 @@ import {
 	buscarVendaPdvGourmetPorNotaFiscalNfce,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { listarItensPorVendaPdv } from "@/repositories/venda-pdv-item-repositories.js";
+import {
+	agoraBrasiliaNaiveIso,
+	timestampFiscalBrasiliaParaUtcIso,
+} from "@/util/data-hora-brasilia.js";
 import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
 import {
 	httpBadRequest,
@@ -169,10 +173,10 @@ export async function buscarDadosCupomNfceService({
 	const { qrCode, urlChave } = extrairQrCodeNfceXml(xml);
 
 	const dataHora =
-		nota.datahoraemissao ??
-		nota.emissao ??
-		nota.datainclusao ??
-		new Date().toISOString();
+		timestampFiscalBrasiliaParaUtcIso(nota.datahoraemissao) ??
+		timestampFiscalBrasiliaParaUtcIso(nota.emissao) ??
+		timestampFiscalBrasiliaParaUtcIso(nota.datainclusao) ??
+		timestampFiscalBrasiliaParaUtcIso(agoraBrasiliaNaiveIso())!;
 
 	return httpOk({
 		...(venda?.id ? { vendaId: venda.id } : {}),

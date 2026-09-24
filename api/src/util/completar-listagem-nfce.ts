@@ -1,4 +1,5 @@
 import { decodificarChaveNfe } from "@/util/decodificar-chave-nfe.js";
+import { timestampFiscalBrasiliaParaUtcIso } from "@/util/data-hora-brasilia.js";
 import { numeracaoInutilizacaoDaNota } from "@/util/validar-eventos-nfe.js";
 
 export type CabecalhoListagemNfce = {
@@ -88,18 +89,25 @@ export function completarListagemNfce<T extends CabecalhoListagemNfce>(
 			? (venda?.valortotal ?? null)
 			: nota.valortotalnota;
 
-	const datahoraemissao =
+	const datahoraemissaoBruta =
 		textoOuNulo(nota.datahoraemissao) ??
 		textoOuNulo(nota.emissao) ??
 		textoOuNulo(nota.datainclusao) ??
 		textoOuNulo(venda?.datacriacao) ??
 		(decodificada ? dataEmissaoApartirAnoMesChave(decodificada.anoMes) : null);
 
+	const datahoraemissao =
+		timestampFiscalBrasiliaParaUtcIso(datahoraemissaoBruta) ??
+		datahoraemissaoBruta;
+
 	const emissao =
 		textoOuNulo(nota.emissao) ??
 		(datahoraemissao ? datahoraemissao.slice(0, 10) : null);
 
-	const datainclusao = textoOuNulo(nota.datainclusao) ?? datahoraemissao;
+	const datainclusao =
+		timestampFiscalBrasiliaParaUtcIso(textoOuNulo(nota.datainclusao)) ??
+		textoOuNulo(nota.datainclusao) ??
+		datahoraemissao;
 
 	return {
 		...nota,

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
 	adicionarDiasIso,
 	agoraBrasiliaIsoOffset,
+	agoraBrasiliaNaiveIso,
 	hojeBrasiliaIsoDate,
 	inicioFimMesDe,
 	limitesUtcDoPeriodoBrasilia,
+	timestampFiscalBrasiliaParaUtcIso,
 	timestampUtcIso,
 } from "@/util/data-hora-brasilia.js";
 
@@ -14,11 +16,18 @@ describe("data-hora-brasilia", () => {
 		const utc = new Date("2026-07-19T00:00:00.000Z");
 		expect(agoraBrasiliaIsoOffset(utc)).toBe("2026-07-18T21:00:00-03:00");
 		expect(hojeBrasiliaIsoDate(utc)).toBe("2026-07-18");
+		expect(agoraBrasiliaNaiveIso(utc)).toBe("2026-07-18T21:00:00");
 	});
 
 	it("retorna string no padrão XSD do dhEmi (sem milissegundos)", () => {
 		const iso = agoraBrasiliaIsoOffset();
 		expect(iso).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}-03:00$/);
+	});
+
+	it("grava relógio de Brasília sem offset para timestamp fiscal naive", () => {
+		const iso = agoraBrasiliaNaiveIso();
+		expect(iso).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+		expect(iso).not.toMatch(/[Zz]|[+-]\d{2}:\d{2}$/);
 	});
 
 	it("converte o dia civil de Brasília para limites UTC", () => {
@@ -41,5 +50,14 @@ describe("data-hora-brasilia", () => {
 			"2026-09-05T04:50:00.000Z",
 		);
 		expect(timestampUtcIso("2026-09-05")).toBe("2026-09-05");
+	});
+
+	it("trata naive fiscal como Brasília ao serializar para a API", () => {
+		expect(timestampFiscalBrasiliaParaUtcIso("2026-09-05 21:00:00")).toBe(
+			"2026-09-06T00:00:00.000Z",
+		);
+		expect(
+			timestampFiscalBrasiliaParaUtcIso("2026-09-05T21:00:00-03:00"),
+		).toBe("2026-09-06T00:00:00.000Z");
 	});
 });
