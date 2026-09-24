@@ -2,6 +2,7 @@ export type PdvApi = {
 	invoke: <T = unknown>(method: string, ...args: unknown[]) => Promise<T>;
 	onWhatsappEvent?: (callback: (payload: unknown) => void) => () => void;
 	onDeliveryEvent?: (callback: (payload: unknown) => void) => () => void;
+	onSessaoExpirada?: (callback: (payload: unknown) => void) => () => void;
 };
 
 declare global {
@@ -36,4 +37,13 @@ export function onDeliveryEvent(
 		return () => undefined;
 	}
 	return window.pdv.onDeliveryEvent(callback);
+}
+
+export function onSessaoExpirada(
+	callback: (payload: unknown) => void,
+): () => void {
+	if (!window.pdv?.onSessaoExpirada) {
+		return () => undefined;
+	}
+	return window.pdv.onSessaoExpirada(callback);
 }

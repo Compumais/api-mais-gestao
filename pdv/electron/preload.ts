@@ -22,6 +22,15 @@ const api = {
 			ipcRenderer.removeListener("delivery:evento", listener);
 		};
 	},
+	onSessaoExpirada(callback: (payload: unknown) => void): () => void {
+		const listener = (_event: Electron.IpcRendererEvent, payload: unknown) => {
+			callback(payload);
+		};
+		ipcRenderer.on("sessao:expirada", listener);
+		return () => {
+			ipcRenderer.removeListener("sessao:expirada", listener);
+		};
+	},
 };
 
 contextBridge.exposeInMainWorld("pdv", api);

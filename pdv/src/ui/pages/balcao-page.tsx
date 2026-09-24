@@ -67,7 +67,7 @@ type Item = {
 
 export function BalcaoPage() {
 	const navigate = useNavigate();
-	const { status, refresh } = useOutletContext<StatusContext>();
+	const { status } = useOutletContext<StatusContext>();
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const gourmet = Boolean(status?.moduloGourmet);
 	const bloqueado = secundarioDesconectado(status);
@@ -877,8 +877,16 @@ export function BalcaoPage() {
 				aberto={fechando}
 				onFechar={() => setFechando(false)}
 				onSucesso={async () => {
-					await refresh();
-					navigate("/abertura-caixa", { replace: true });
+					// Tenta subir a fila com o token atual antes de deslogar.
+					try {
+						await Promise.race([
+							pdvInvoke("processarOutboxAgora"),
+							new Promise((resolve) => setTimeout(resolve, 8000)),
+						]);
+					} catch {
+						// Sync best-effort; logout segue mesmo se a fila falhar.
+					}
+					await sair();
 				}}
 			/>
 		</PdvShell>

@@ -93,6 +93,7 @@ import {
 } from "../fiscal/numeracao-nfce";
 import { sincronizarImagensProdutos } from "./imagens-produtos";
 import { sincronizarImagensGruposGourmet } from "./imagens-grupos-gourmet";
+import { invalidarSessaoExpirada } from "./sessao-expirada";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 export type DetalheCicloOutbox = {
@@ -222,6 +223,7 @@ export async function pullCatalogo(): Promise<{
 			};
 		}
 		if (isNaoAutorizado(err)) {
+			await invalidarSessaoExpirada();
 			throw new Error("Sessão expirada. Faça login novamente.");
 		}
 		throw err;
@@ -736,6 +738,7 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 				processados += 1;
 			} catch (err) {
 				erros += 1;
+				const sessaoExpirada = isNaoAutorizado(err);
 				const classificacao = classificarErroOutbox(err);
 				const detalhe: DetalheCicloOutbox = {
 					tipo: item.tipo,
@@ -755,14 +758,21 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 					{
 						classificacao,
 						workerId: OUTBOX_WORKER_ID,
+						// 401: sem backoff — retenta assim que houver login novo.
 						proximaTentativa:
-							classificacao === "transitorio"
-								? new Date(
-										Date.now() + atrasoBackoffOutboxMs(item.tentativas),
-									).toISOString()
-								: null,
+							sessaoExpirada
+								? null
+								: classificacao === "transitorio"
+									? new Date(
+											Date.now() + atrasoBackoffOutboxMs(item.tentativas),
+										).toISOString()
+									: null,
 					},
 				);
+				if (sessaoExpirada) {
+					await invalidarSessaoExpirada();
+					break;
+				}
 				// Venda não confirmada é uma barreira FIFO: não permite que
 				// dependências fiscais nem vendas posteriores avancem neste ciclo.
 				if (item.tipo === "criar_venda") {
