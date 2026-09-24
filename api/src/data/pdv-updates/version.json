@@ -1,8 +1,8 @@
 {
-    "version":  "0.1.35",
-    "artifact":  "PDV-Mais-Gestao-Setup-0.1.35.exe",
-    "url":  "/pdv/updates/PDV-Mais-Gestao-Setup-0.1.35.exe",
-    "releasedAt":  "2026-09-23T19:15:33.8504350Z",
-    "sha256":  "281c638eb0e7e6c7da27cba3b9fa73f4357011812ac8a0555e1e6410f01c0126",
-    "size":  89671582
+    "version":  "0.1.36",
+    "artifact":  "PDV-Mais-Gestao-Setup-0.1.36.exe",
+    "url":  "/pdv/updates/PDV-Mais-Gestao-Setup-0.1.36.exe",
+    "releasedAt":  "2026-09-24T11:37:09.8250940Z",
+    "sha256":  "5f87b9c3f3df04ee58899a0e75a927060874964de1937e180370b6ee2a7729e4",
+    "size":  89668214
 }

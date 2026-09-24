@@ -88,6 +88,18 @@ export function LoginPage() {
 			} catch {
 				// sem sessão — permanece no formulário de login
 			}
+			try {
+				const sessaoExpirada = await pdvInvoke<boolean>(
+					"consumirAvisoSessaoExpirada",
+				);
+				if (sessaoExpirada) {
+					setErro(
+						"Sessão expirada. Faça login novamente para sincronizar os cupons com o web.",
+					);
+				}
+			} catch {
+				// aviso opcional
+			}
 		})();
 	}, []);
 

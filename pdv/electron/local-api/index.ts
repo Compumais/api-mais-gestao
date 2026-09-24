@@ -13,6 +13,7 @@ import {
 	extrairNfceDaBaixa,
 	inutilizarNfceVendaPdv,
 	isEmpresaAcessoNegado,
+	isNaoAutorizado,
 	listarEmpresas,
 	loginEmail,
 	obterMeuPlano,
@@ -245,6 +246,10 @@ import {
 	validarConfirmacaoVenda,
 } from "../sync/outbox";
 import { reconciliarNfce } from "../sync/reconciliar-nfce";
+import {
+	consumirAvisoSessaoExpirada,
+	invalidarSessaoExpirada,
+} from "../sync/sessao-expirada";
 import { obterTerminaisPdvLocais } from "../sync/terminais-pdv";
 import {
 	arquivarSeTrocaEmpresa,
@@ -296,7 +301,11 @@ async function sincronizarRolesSessao(
 		return await salvarSessao({
 			roles: JSON.stringify(normalizarPerfis(perfil.perfil)),
 		});
-	} catch {
+	} catch (err) {
+		if (isNaoAutorizado(err)) {
+			await invalidarSessaoExpirada();
+			return obterSessao();
+		}
 		return sessao;
 	}
 }
@@ -310,7 +319,11 @@ async function sincronizarModuloGourmet(
 		return await salvarSessao({
 			modulogourmet: planoTemGourmet(plano.modulos) ? "1" : "0",
 		});
-	} catch {
+	} catch (err) {
+		if (isNaoAutorizado(err)) {
+			await invalidarSessaoExpirada();
+			return obterSessao();
+		}
 		return sessao;
 	}
 }
@@ -833,6 +846,10 @@ export const localApi = {
 
 	async consumirAvisoBackupEmpresa() {
 		return consumirAvisoBackupEmpresa();
+	},
+
+	async consumirAvisoSessaoExpirada() {
+		return consumirAvisoSessaoExpirada();
 	},
 
 	async statusBackup() {

@@ -16,6 +16,7 @@ import {
 } from "../db/repos";
 import { aplicarNfceRetaguardaNaVendaLocal } from "./nfce-retaguarda";
 import { processarOutbox } from "./outbox";
+import { invalidarSessaoExpirada } from "./sessao-expirada";
 
 export type ResumoReconciliacaoNfce = {
 	cicloId: string;
@@ -212,6 +213,7 @@ async function executarReconciliacao(): Promise<ResumoReconciliacaoNfce> {
 		return vazio;
 	} catch (err) {
 		if (isNaoAutorizado(err)) {
+			await invalidarSessaoExpirada();
 			await salvarMeta("nfce_sync_ultimo_erro", "Sessão expirada").catch(
 				() => undefined,
 			);
