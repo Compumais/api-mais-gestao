@@ -5,6 +5,7 @@ import {
 	IconCalculator,
 	IconCheck,
 	IconChevronDown,
+	IconCopy,
 	IconDotsVertical,
 	IconHistory,
 	IconLayoutColumns,
@@ -345,6 +346,13 @@ export default function ProdutosPage() {
 		[router],
 	);
 
+	const handleClone = useCallback(
+		(produto: Produto) => {
+			router.push(`/produtos/novo?clonar=${produto.id}`);
+		},
+		[router],
+	);
+
 	const handleDelete = useCallback(
 		(id: string) => {
 			if (!localStorageEmpresa) {
@@ -441,6 +449,10 @@ export default function ProdutosPage() {
 										<IconPencil className="size-4" />
 										Editar
 									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleClone(produto)}>
+										<IconCopy className="size-4" />
+										Clonar
+									</DropdownMenuItem>
 									<DropdownMenuItem
 										onClick={() => setProdutoMovimentos(produto)}
 									>
@@ -490,6 +502,7 @@ export default function ProdutosPage() {
 			onFiltrarColuna,
 			configFiltroPorColuna,
 			handleEdit,
+			handleClone,
 			handleDelete,
 			handleToggleInativo,
 		],
