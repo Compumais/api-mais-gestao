@@ -81,6 +81,13 @@ export interface AtualizarVendaPdvGourmetData {
 	valortotal?: string;
 }
 
+export interface ResultadoCancelamentoVendaNaoFiscal {
+	idvenda: string;
+	titulosCancelados: number;
+	movimentosEstornados: number;
+	avisos: string[];
+}
+
 export const vendaPdvGourmetService = {
 	async listar(params: {
 		idempresa: string;
@@ -126,5 +133,16 @@ export const vendaPdvGourmetService = {
 
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/vendas-pdv-gourmet/${id}`);
+	},
+
+	async cancelarNaoFiscal(
+		id: string,
+		dados: { idempresa: string; motivo?: string | null },
+	): Promise<ResultadoCancelamentoVendaNaoFiscal> {
+		const { data } = await api.post<ResultadoCancelamentoVendaNaoFiscal>(
+			`/vendas-pdv-gourmet/${id}/cancelar`,
+			dados,
+		);
+		return data;
 	},
 };
