@@ -7,6 +7,7 @@ import type {
 import type { LancamentoPagamentoPdv } from "@/model/venda-pdv-pagamento-model.js";
 import { buscarAuditoriaPorRecurso } from "@/repositories/auditoria-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configuracao-repositories.js";
 import {
 	criarOuBuscarVendaPdvGourmet,
 	excluirVendaPdvGourmet,
@@ -24,6 +25,7 @@ import {
 	type PagamentoErpVendaPdv,
 } from "@/service/venda-pdv-gourmet/gerar-contas-receber-venda-pdv.js";
 import { registrarRecebimentosVendaService } from "@/service/venda-pdv-gourmet/registrar-recebimentos-venda.js";
+import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import {
 	httpCriacao,
 	httpErro,
@@ -153,71 +155,79 @@ async function criarVendaPdvGourmetSemLock({
 		return httpErroInterno();
 	}
 
-	const recebimentos = await registrarRecebimentosVendaService({
-		venda: registro,
-		idusuario,
-	});
+	const configNfce = await buscarNfceConfiguracaoPorEmpresa(
+		dadosVendaPdvGourmet.idempresa,
+	);
+	const homologacao = isAmbienteHomologacao(configNfce?.ambiente);
 
-	if (!recebimentos.success) {
-		if (criacao.criada) {
-			await excluirVendaPdvGourmet(registro.id);
-		}
-		return {
-			success: false,
-			status: 400,
-			error: recebimentos.mensagem,
-			code: "RECEBIMENTOS_VENDA_ERRO",
-		};
-	}
+	// Homologação SEFAZ não integra caixa nem contas a receber (teste fiscal).
+	if (!homologacao) {
+		const recebimentos = await registrarRecebimentosVendaService({
+			venda: registro,
+			idusuario,
+		});
 
-	const formasErp = pagamentosErp?.filter((f) => f.valor > 0) ?? [];
-	const formasResolvidas =
-		formasErp.length > 0
-			? formasErp
-			: ((await inferirPagamentosErpVendaPdv({
-					venda: registro,
-					pagamentos,
-				})) ?? []);
-
-	if (formasResolvidas.length > 0) {
-		const exigeCliente = (
-			await Promise.all(
-				formasResolvidas.map((forma) =>
-					formaErpExigeCliente(forma.idtipodocumentofinanceiro),
-				),
-			)
-		).some(Boolean);
-
-		if (exigeCliente && !dadosVendaPdvGourmet.identidade?.trim()) {
+		if (!recebimentos.success) {
 			if (criacao.criada) {
 				await excluirVendaPdvGourmet(registro.id);
 			}
 			return {
 				success: false,
 				status: 400,
-				error: "Cliente obrigatório para pagamento a prazo no PDV",
-				code: "CLIENTE_PRAZO_OBRIGATORIO",
+				error: recebimentos.mensagem,
+				code: "RECEBIMENTOS_VENDA_ERRO",
 			};
 		}
 
-		const contasReceber = await gerarContasReceberVendaPdvService({
-			venda: registro,
-			idusuario,
-			identidade: dadosVendaPdvGourmet.identidade ?? undefined,
-			idcondicaopagto: dadosVendaPdvGourmet.idcondicaopagto ?? undefined,
-			pagamentosErp: formasResolvidas,
-		});
+		const formasErp = pagamentosErp?.filter((f) => f.valor > 0) ?? [];
+		const formasResolvidas =
+			formasErp.length > 0
+				? formasErp
+				: ((await inferirPagamentosErpVendaPdv({
+						venda: registro,
+						pagamentos,
+					})) ?? []);
 
-		if (!contasReceber.success) {
-			if (criacao.criada) {
-				await excluirVendaPdvGourmet(registro.id);
+		if (formasResolvidas.length > 0) {
+			const exigeCliente = (
+				await Promise.all(
+					formasResolvidas.map((forma) =>
+						formaErpExigeCliente(forma.idtipodocumentofinanceiro),
+					),
+				)
+			).some(Boolean);
+
+			if (exigeCliente && !dadosVendaPdvGourmet.identidade?.trim()) {
+				if (criacao.criada) {
+					await excluirVendaPdvGourmet(registro.id);
+				}
+				return {
+					success: false,
+					status: 400,
+					error: "Cliente obrigatório para pagamento a prazo no PDV",
+					code: "CLIENTE_PRAZO_OBRIGATORIO",
+				};
 			}
-			return {
-				success: false,
-				status: contasReceber.status,
-				error: contasReceber.error ?? "Erro ao gerar contas a receber",
-				code: contasReceber.code ?? "CONTAS_RECEBER_PDV_ERRO",
-			};
+
+			const contasReceber = await gerarContasReceberVendaPdvService({
+				venda: registro,
+				idusuario,
+				identidade: dadosVendaPdvGourmet.identidade ?? undefined,
+				idcondicaopagto: dadosVendaPdvGourmet.idcondicaopagto ?? undefined,
+				pagamentosErp: formasResolvidas,
+			});
+
+			if (!contasReceber.success) {
+				if (criacao.criada) {
+					await excluirVendaPdvGourmet(registro.id);
+				}
+				return {
+					success: false,
+					status: contasReceber.status,
+					error: contasReceber.error ?? "Erro ao gerar contas a receber",
+					code: contasReceber.code ?? "CONTAS_RECEBER_PDV_ERRO",
+				};
+			}
 		}
 	}
 

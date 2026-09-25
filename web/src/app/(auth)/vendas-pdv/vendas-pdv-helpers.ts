@@ -83,6 +83,7 @@ export function rotuloStatusNfce(venda: VendaPdvGourmet): string {
  * Inclui não fiscal e tentativas fiscais rejeitadas/inutilizadas/pendentes.
  */
 export function podeCancelarVendaNaoFiscal(venda: VendaPdvGourmet): boolean {
+	if (venda.cancelada) return false;
 	if (statusEhAutorizada(venda.nfce?.status)) return false;
 	if (statusEhCancelada(venda.nfce?.status)) return false;
 

@@ -7,6 +7,7 @@ export interface NfceHistoricoVendaPdv {
 	chave: string | null;
 	serie: string | null;
 	numero: string | null;
+	ambiente?: number | null;
 }
 
 export interface VendaPdvGourmet {
@@ -26,6 +27,9 @@ export interface VendaPdvGourmet {
 	valortotal: string | null;
 	deveemitirnfce?: boolean;
 	idnotafiscalnfce?: string | null;
+	cancelada?: boolean;
+	canceladaem?: string | null;
+	motivocancelamento?: string | null;
 	datacriacao: string | null;
 	dataalteracao: string | null;
 	usuarioquefechouvenda: string;

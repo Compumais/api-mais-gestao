@@ -12,7 +12,7 @@
  * 4. Estornos → mesmo tipoestoque do movimento original
  * 5. Inventário fiscal / SINTEGRA → quantidadefiscal
  * 6. Lotes seguem o dual (quantidade + quantidadefiscal)
- * 7. Homologação NFC-e: baixa operacional na venda; fiscal só em produção após autorização
+ * 7. Homologação NFC-e/NF-e: sem baixa operacional nem fiscal (só teste SEFAZ)
  * 8. Saldo de produto pode ficar negativo na saída (sem bloqueio de estoque insuficiente)
  */
 

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, lt, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model.js";
 import {
@@ -7,6 +7,7 @@ import {
 	vendapdvgourmet,
 	vendapdvitem,
 } from "@/repositories/schema.js";
+import { AMBIENTE_SEFAZ } from "@/util/ambiente-sefaz.js";
 import { limitesUtcDoPeriodoBrasilia } from "@/util/data-hora-brasilia.js";
 import { db, pool } from "./connection.js";
 
@@ -174,6 +175,10 @@ export type ListarVendasPdvGourmetParametros = {
 	dataFim?: string | undefined;
 	page?: number;
 	limit?: number;
+	/** Inclui vendas canceladas (default: ocultar). */
+	incluirCanceladas?: boolean;
+	/** Inclui vendas com NFC-e em homologação (default: ocultar). */
+	incluirHomologacao?: boolean;
 };
 
 export async function listarVendasPdvGourmet({
@@ -184,8 +189,14 @@ export async function listarVendasPdvGourmet({
 	dataFim,
 	page = 1,
 	limit = 10,
+	incluirCanceladas = false,
+	incluirHomologacao = false,
 }: ListarVendasPdvGourmetParametros) {
 	const where = [eq(vendapdvgourmet.idempresa, idempresa)];
+
+	if (!incluirCanceladas) {
+		where.push(eq(vendapdvgourmet.cancelada, false));
+	}
 
 	if (idcontamesa) {
 		where.push(eq(vendapdvgourmet.idcontamesa, idcontamesa));
@@ -229,12 +240,24 @@ export async function listarVendasPdvGourmet({
 		}
 	}
 
+	if (!incluirHomologacao) {
+		// Sem NFC-e vinculada OU nota fora de homologação (null legado = produção).
+		where.push(
+			or(
+				isNull(vendapdvgourmet.idnotafiscalnfce),
+				isNull(notafiscal.tipoambientenfe),
+				sql`${notafiscal.tipoambientenfe} <> ${AMBIENTE_SEFAZ.HOMOLOGACAO}`,
+			)!,
+		);
+	}
+
 	const offset = (page - 1) * limit;
 
 	const [totalCount, linhas] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(vendapdvgourmet)
+			.leftJoin(notafiscal, eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id))
 			.where(and(...where)),
 		db
 			.select({
@@ -245,6 +268,7 @@ export async function listarVendasPdvGourmet({
 				nfceChave: notafiscal.chavenfe,
 				nfceSerie: notafiscal.serie,
 				nfceNumero: notafiscal.numeronotafiscal,
+				nfceAmbiente: notafiscal.tipoambientenfe,
 			})
 			.from(vendapdvgourmet)
 			.leftJoin(
@@ -270,6 +294,7 @@ export async function listarVendasPdvGourmet({
 						chave: linha.nfceChave,
 						serie: linha.nfceSerie,
 						numero: linha.nfceNumero,
+						ambiente: linha.nfceAmbiente,
 					}
 				: null,
 		})),
@@ -289,6 +314,7 @@ export async function listarTodasVendasPdvGourmetTurno({
 	const where = [
 		eq(vendapdvgourmet.idempresa, idempresa),
 		eq(vendapdvgourmet.numeropdv, numeropdv),
+		eq(vendapdvgourmet.cancelada, false),
 	];
 
 	if (dataInicio) {
@@ -302,8 +328,22 @@ export async function listarTodasVendasPdvGourmetTurno({
 	}
 
 	return db
-		.select()
+		.select({
+			venda: vendapdvgourmet,
+			nfceAmbiente: notafiscal.tipoambientenfe,
+		})
 		.from(vendapdvgourmet)
-		.where(and(...where))
-		.orderBy(desc(vendapdvgourmet.datacriacao));
+		.leftJoin(notafiscal, eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id))
+		.where(
+			and(
+				...where,
+				or(
+					isNull(vendapdvgourmet.idnotafiscalnfce),
+					isNull(notafiscal.tipoambientenfe),
+					sql`${notafiscal.tipoambientenfe} <> ${AMBIENTE_SEFAZ.HOMOLOGACAO}`,
+				)!,
+			),
+		)
+		.orderBy(desc(vendapdvgourmet.datacriacao))
+		.then((linhas) => linhas.map((linha) => linha.venda));
 }

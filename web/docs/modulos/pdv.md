@@ -32,6 +32,7 @@ Layout `(pdv)`: `ProtectedRoute` + `CaixaPdvProvider` + `CaixaBloqueioOverlay`.
 - Histórico `/vendas-pdv` e fechamentos leem o que o caixa gravou. Chave de listagem de fechamento: conferir `["fechamentos-caixa"]` (invalidação confirmada; a query da página inclui empresa e filtros).
 - Cancelar venda **não fiscal** em `/vendas-pdv` chama `POST /vendas-pdv-gourmet/:id/cancelar` (sem prazo SEFAZ; estorna estoque/títulos). NFC-e autorizada segue o cancelamento fiscal (24h).
 - Filtros e ordenação ficam nos cabeçalhos das colunas (`CabecalhoColunaTabela`). Data e nº PDV também vão para a API; demais filtros agem sobre a página carregada.
+- Listagem omite vendas `cancelada` e vendas com NFC-e em **homologação**. Homologação não gera financeiro nem baixa de estoque (só teste SEFAZ).
 
 ## Permissões / guards
 

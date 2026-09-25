@@ -757,6 +757,13 @@
       "when": 1790122000000,
       "tag": "0105_cardapio_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1790200000000,
+      "tag": "0106_vendapdv_cancelada",
+      "breakpoints": true
     }
   ]
 }

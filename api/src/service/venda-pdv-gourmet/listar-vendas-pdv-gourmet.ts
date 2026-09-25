@@ -29,6 +29,7 @@ export type NfceHistoricoVendaPdv = {
 	chave: string | null;
 	serie: string | null;
 	numero: string | null;
+	ambiente?: number | null;
 };
 
 export type VendaPdvGourmetListagem = VendaPdvGourmet & {
