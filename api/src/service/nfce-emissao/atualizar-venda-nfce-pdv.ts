@@ -13,6 +13,7 @@ import {
 	type ResultadoEmissaoNfcePdv,
 } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
 import { resolverVendaPorNotaFiscalNfce } from "@/service/nfce-emissao/resolver-venda-nfce.js";
+import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import { avaliarEmissaoNfcePorPagamento } from "@/util/avaliar-emissao-nfce-pagamento.js";
 import {
 	httpBadRequest,
@@ -226,6 +227,7 @@ export async function atualizarVendaNfcePdvService({
 	});
 
 	const configNfce = await buscarNfceConfiguracaoPorEmpresa(idempresa);
+	const homologacao = isAmbienteHomologacao(configNfce?.ambiente);
 	const meiosConfig = normalizarMeiosPagamentoNfce(
 		configNfce?.meiospagamentonfce,
 	);
@@ -244,17 +246,24 @@ export async function atualizarVendaNfcePdvService({
 			: {}),
 	}));
 
-	// Reajuste sempre no operacional; fiscal só após NFC-e autorizada.
-	let movimentosRegistrados = await reajustarEstoqueVendaPdv({
-		idempresa,
-		idvenda: venda.id,
-		itensNovos: itensEstoque,
-		tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
-	}).catch((erro) => {
-		console.error("[nfce] Falha ao reajustar estoque da venda:", erro);
-		avisos.push("Falha ao reajustar estoque da venda");
-		return 0;
-	});
+	let movimentosRegistrados = 0;
+
+	if (!homologacao) {
+		movimentosRegistrados = await reajustarEstoqueVendaPdv({
+			idempresa,
+			idvenda: venda.id,
+			itensNovos: itensEstoque,
+			tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
+		}).catch((erro) => {
+			console.error("[nfce] Falha ao reajustar estoque da venda:", erro);
+			avisos.push("Falha ao reajustar estoque da venda");
+			return 0;
+		});
+	} else {
+		avisos.push(
+			"NFC-e em homologação: estoque operacional não foi reajustado.",
+		);
+	}
 
 	let emissaoNfce: ResultadoEmissaoNfcePdv | undefined;
 
@@ -268,7 +277,7 @@ export async function atualizarVendaNfcePdvService({
 
 		if (emissao.success && emissao.body) {
 			emissaoNfce = emissao.body;
-			if (emissao.body.emitida) {
+			if (emissao.body.emitida && !homologacao) {
 				const complemento = await complementarBaixaFiscalVendaPdv({
 					idempresa,
 					idvenda: venda.id,
@@ -277,6 +286,10 @@ export async function atualizarVendaNfcePdvService({
 				});
 				movimentosRegistrados += complemento.movimentosRegistrados;
 				avisos.push(...complemento.avisos);
+			} else if (emissao.body.emitida && homologacao) {
+				avisos.push(
+					"NFC-e autorizada em homologação: baixa fiscal não aplicada.",
+				);
 			} else {
 				const mensagem =
 					emissao.body.erro ??

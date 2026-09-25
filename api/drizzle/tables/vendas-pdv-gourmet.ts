@@ -9,6 +9,7 @@ import {
 	text,
 	timestamp,
 	uniqueIndex,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { condicaopagamento } from "./condicao-pagamento.js";
 import { contamesa } from "./conta-mesa.js";
@@ -40,6 +41,9 @@ export const vendapdvgourmet = pgTable(
 		idnotafiscalnfce: text(),
 		identidade: text(),
 		idcondicaopagto: text(),
+		cancelada: boolean().default(false).notNull(),
+		canceladaem: timestamp({ precision: 3, mode: "string" }),
+		motivocancelamento: varchar({ length: 255 }),
 		datacriacao: timestamp({ precision: 3, mode: "string" }).default(
 			sql`CURRENT_TIMESTAMP`,
 		),

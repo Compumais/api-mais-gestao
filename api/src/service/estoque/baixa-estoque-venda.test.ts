@@ -217,7 +217,7 @@ describe("baixaEstoqueVendaService", () => {
 		expect(resultado.body?.avisos).toContain("Rejeição SEFAZ");
 	});
 
-	it("em homologação baixa operacional e não aplica fiscal", async () => {
+	it("em homologação não baixa estoque e não aplica fiscal", async () => {
 		vi.mocked(
 			nfceConfigRepository.buscarNfceConfiguracaoPorEmpresa,
 		).mockResolvedValue({
@@ -250,19 +250,14 @@ describe("baixaEstoqueVendaService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
-		expect(registrarMovimento.registrarMovimentoEstoque).toHaveBeenCalledWith(
-			expect.objectContaining({
-				tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
-				idoriginal: "venda-1",
-			}),
-		);
+		expect(registrarMovimento.registrarMovimentoEstoque).not.toHaveBeenCalled();
 		expect(
 			complementarFiscal.complementarBaixaFiscalVendaPdv,
 		).not.toHaveBeenCalled();
 		expect(emitirNfce.emitirNfceVendaPdvService).toHaveBeenCalled();
 		expect(
 			resultado.body?.avisos.some((aviso) =>
-				aviso.includes("baixa fiscal não aplicada"),
+				aviso.includes("estoque operacional e fiscal não foram movimentados"),
 			),
 		).toBe(true);
 	});

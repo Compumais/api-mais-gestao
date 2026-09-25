@@ -10,7 +10,10 @@ import {
 	listarMovimentosEstoquePorIdOriginal,
 } from "@/repositories/movimento-estoque-repositories.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
-import { buscarVendaPdvGourmetPorId } from "@/repositories/venda-pdv-gourmet-repositories.js";
+import {
+	atualizarVendaPdvGourmet,
+	buscarVendaPdvGourmetPorId,
+} from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
 import {
@@ -66,6 +69,10 @@ export async function cancelarVendaNaoFiscalPdvService({
 		return httpNaoEncontrado();
 	}
 
+	if (venda.cancelada) {
+		return httpBadRequest("Esta venda já está cancelada.");
+	}
+
 	if (venda.idnotafiscalnfce) {
 		const nota = await buscarNotaFiscalPorId(venda.idnotafiscalnfce);
 		if (nota && statusEhAutorizada(nota.status)) {
@@ -79,6 +86,7 @@ export async function cancelarVendaNaoFiscalPdvService({
 	let titulosCancelados = 0;
 	let movimentosEstornados = 0;
 	const agora = new Date().toISOString();
+	const motivoTrim = motivo?.trim() || null;
 
 	const titulos = await buscarFinanceirosPorOrigem(
 		idempresa,
@@ -141,6 +149,13 @@ export async function cancelarVendaNaoFiscalPdvService({
 		movimentosEstornados++;
 	}
 
+	await atualizarVendaPdvGourmet(idvenda, {
+		cancelada: true,
+		canceladaem: agora,
+		motivocancelamento: motivoTrim,
+		dataalteracao: agora,
+	});
+
 	try {
 		await criarAuditoriaService({
 			id: uuidv4(),
@@ -151,7 +166,7 @@ export async function cancelarVendaNaoFiscalPdvService({
 			idempresa,
 			criadoem: agora,
 			metadados: {
-				motivo: motivo?.trim() || null,
+				motivo: motivoTrim,
 				titulosCancelados,
 				movimentosEstornados,
 				avisos,

@@ -35,6 +35,7 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 			id: "venda-1",
 			idempresa: "emp-1",
 			idnotafiscalnfce: "nf-1",
+			cancelada: false,
 		} as never);
 		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue({
 			id: "nf-1",
@@ -57,6 +58,7 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 			id: "venda-1",
 			idempresa: "emp-1",
 			idnotafiscalnfce: null,
+			cancelada: false,
 		} as never);
 		vi.mocked(financeiroRepository.buscarFinanceirosPorOrigem).mockResolvedValue([
 			{
@@ -80,6 +82,10 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 		vi.mocked(estoqueService.registrarMovimentoEstoque).mockResolvedValue({
 			id: 11,
 		} as never);
+		vi.mocked(vendaRepository.atualizarVendaPdvGourmet).mockResolvedValue({
+			id: "venda-1",
+			cancelada: true,
+		} as never);
 
 		const resultado = await cancelarVendaNaoFiscalPdvService({
 			idusuario: "user-1",
@@ -101,5 +107,12 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 			cancelado: 1,
 		});
 		expect(estoqueService.registrarMovimentoEstoque).toHaveBeenCalled();
+		expect(vendaRepository.atualizarVendaPdvGourmet).toHaveBeenCalledWith(
+			"venda-1",
+			expect.objectContaining({
+				cancelada: true,
+				motivocancelamento: "Cliente desistiu",
+			}),
+		);
 	});
 });

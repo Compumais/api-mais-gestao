@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import * as auditoriaRepository from "@/repositories/auditoria-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
+import * as nfceConfigRepository from "@/repositories/nfce-configuracao-repositories.js";
 import * as vendaRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
 import * as pagamentoRepository from "@/repositories/venda-pdv-pagamento-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
@@ -11,6 +12,7 @@ import { criarVendaPdvGourmetService } from "./criar-venda-pdv-gourmet.js";
 
 vi.mock("@/repositories/auditoria-repositories.js");
 vi.mock("@/repositories/entidade-repositories.js");
+vi.mock("@/repositories/nfce-configuracao-repositories.js");
 vi.mock("@/repositories/venda-pdv-gourmet-repositories.js");
 vi.mock("@/repositories/venda-pdv-pagamento-repositories.js");
 vi.mock("@/service/auditoria/criar-auditoria.js");
@@ -37,6 +39,9 @@ const vendaBase: VendaPdvGourmet = {
 	idnotafiscalnfce: null,
 	identidade: null,
 	idcondicaopagto: null,
+	cancelada: false,
+	canceladaem: null,
+	motivocancelamento: null,
 	datacriacao: null,
 	dataalteracao: null,
 	usuarioquefechouvenda: "user-1",
@@ -72,6 +77,9 @@ describe("criarVendaPdvGourmetService", () => {
 		vi.mocked(
 			recebimentosService.registrarRecebimentosVendaService,
 		).mockResolvedValue({ success: true });
+		vi.mocked(
+			nfceConfigRepository.buscarNfceConfiguracaoPorEmpresa,
+		).mockResolvedValue({ ambiente: 1 } as never);
 		vi.mocked(
 			contasReceberService.inferirPagamentosErpVendaPdv,
 		).mockResolvedValue([]);
