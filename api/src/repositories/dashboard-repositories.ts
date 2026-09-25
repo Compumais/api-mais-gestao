@@ -303,6 +303,7 @@ async function buscarMovimentacoesFinanceiras(
 			and(
 				eq(schema.financeiro.idempresa, idempresa),
 				eq(schema.financeiro.tipo, tipo),
+				sql`${schema.financeiro.status} <> 'C'`,
 			),
 		)
 		.orderBy(desc(schema.financeiro.registro))
@@ -637,6 +638,7 @@ export async function buscarFinanceiroResumo({
 				SELECT COUNT(*)::int as total
 				FROM financeiro
 				WHERE idempresa = ${idempresa}
+					AND status <> 'C'
 					AND registro >= ${dataInicioStr}::date
 					AND registro <= ${dataFimStr}::date
 			`),
@@ -803,6 +805,7 @@ export async function buscarDadosVendas({
 				COUNT(*)::int as quantidade
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
+				AND cancelada = false
 				AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		`),
@@ -850,6 +853,7 @@ export async function buscarHistoricoVendas({
 			COUNT(*)::int as quantidade
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
+			AND cancelada = false
 			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY DATE(datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
@@ -903,7 +907,7 @@ export async function buscarTopProdutos({
 			COALESCE(SUM(vi.quantidade::numeric), 0) as quantidade,
 			COALESCE(SUM(vi.precototal::numeric), 0) as total
 		FROM vendapdvitem vi
-		JOIN vendapdvgourmet v ON v.id = vi.idvenda
+		JOIN vendapdvgourmet v ON v.id = vi.idvenda AND v.cancelada = false
 		JOIN produtos p ON p.id = vi.idproduto
 		WHERE vi.idempresa = ${idempresa}
 			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
