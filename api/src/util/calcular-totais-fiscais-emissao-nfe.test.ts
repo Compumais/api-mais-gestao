@@ -291,4 +291,25 @@ describe("calcularTotaisFiscaisEmissaoNfe", () => {
 		expect(totais.totalProdutos).toBe(150);
 		expect(totais.totalNota).toBe(150);
 	});
+
+	it("CST 60 (ICMS ST cobrado ant.) zera BC própria — evita rejeição 531", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{
+					quantidade: 1,
+					valorUnitario: 4,
+					cst: "60",
+					baseIcms: 4,
+					aliquotaIcms: 18,
+				},
+			],
+			{},
+		);
+
+		expect(totais.baseIcms).toBe(0);
+		expect(totais.valorIcms).toBe(0);
+		expect(totais.totalProdutos).toBe(4);
+		expect(totais.totalNota).toBe(4);
+	});
 });

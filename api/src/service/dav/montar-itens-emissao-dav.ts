@@ -173,6 +173,9 @@ export async function montarItensEmissaoDav(
 
 		const vProd = round2(quantidade * valorUnitario);
 		const aliquotaIcms = aliquotaIcmsProduto(produto);
+		const cstDigitos = (cst ?? "").replace(/\D/g, "").slice(-2);
+		const cstComIcmsProprio =
+			!!cstDigitos && !["40", "41", "50", "60"].includes(cstDigitos);
 
 		itens.push({
 			idproduto: produto.id,
@@ -194,8 +197,14 @@ export async function montarItensEmissaoDav(
 						: {}
 				: {
 						...(cst ? { cst } : {}),
-						baseIcms: vProd,
-						...(aliquotaIcms != null ? { aliquotaIcms } : {}),
+						...(cstComIcmsProprio
+							? {
+									baseIcms: vProd,
+									...(aliquotaIcms != null
+										? { aliquotaIcms }
+										: {}),
+								}
+							: {}),
 					}),
 			orig: produto.origem ?? 0,
 			...(rastros ? { rastros } : {}),

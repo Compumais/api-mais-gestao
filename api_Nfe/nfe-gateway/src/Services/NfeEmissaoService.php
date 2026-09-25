@@ -366,6 +366,29 @@ final class NfeEmissaoService
 						}
 					}
 					$mk->tagICMS((object) $tagIcms40);
+				} elseif ($cstIcms === '60') {
+					// Grupo ICMS60: ICMS cobrado anteriormente por ST — sem vBC próprio.
+					// Acumular vBC aqui gera rejeição 531 (ICMSTot/vBC ≠ Σ vBC dos itens).
+					$tagIcms60 = [
+						'item' => $nItem,
+						'orig' => $orig,
+						'CST'  => '60',
+					];
+					foreach ([
+						'vBCSTRet' => ['vBCSTRet', 'baseIcmsStRet'],
+						'pST' => ['pST', 'percentualSt'],
+						'vICMSSubstituto' => ['vICMSSubstituto', 'valorIcmsSubstituto'],
+						'vICMSSTRet' => ['vICMSSTRet', 'valorIcmsStRet'],
+						'vBCFCPSTRet' => ['vBCFCPSTRet', 'baseFcpStRet'],
+						'pFCPSTRet' => ['pFCPSTRet', 'aliquotaFcpStRet'],
+						'vFCPSTRet' => ['vFCPSTRet', 'valorFcpStRet'],
+					] as $campoXml => $aliases) {
+						$valor = self::resolverNumeroItem($item, $aliases);
+						if ($valor !== null && $valor > 0) {
+							$tagIcms60[$campoXml] = round($valor, 2);
+						}
+					}
+					$mk->tagICMS((object) $tagIcms60);
 				} else {
 					$vBC = self::resolverBaseIcmsItem($item, $vProdLiquido);
 					$pICMS = (float) ($item['aliquotaIcms'] ?? 0);

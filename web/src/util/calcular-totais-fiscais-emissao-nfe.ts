@@ -70,11 +70,12 @@ function valorProdutoItem(item: ItemTributacaoEmissaoNfe): number {
 	return round2(item.quantidade * item.valorUnitario);
 }
 
-/** Grupo ICMS40 (leiaute 4.00): CST 40/41/50 sem vBC/pICMS/vICMS. Aceita "040". */
+/** CSTs sem ICMS próprio no leiaute (sem vBC/pICMS/vICMS no item → ICMSTot/vBC). */
 export function cstSemIcmsProprio(cst?: string): boolean {
 	const digitos = (cst ?? "").replace(/\D/g, "");
 	if (!digitos) return false;
-	return ["40", "41", "50"].includes(digitos.slice(-2));
+	// 40/41/50 = ICMS40; 60 = ICMS60 (ST cobrado anteriormente).
+	return ["40", "41", "50", "60"].includes(digitos.slice(-2));
 }
 
 function calcularIcmsItem(
@@ -90,7 +91,7 @@ function calcularIcmsItem(
 		return { base: 0, valor: 0 };
 	}
 
-	// Grupo ICMS40: isenta / não tributada / suspensão — sem base nem valor.
+	// Grupo ICMS40/ICMS60: isenta / ST cobrado ant. — sem base nem valor próprio.
 	if (cstSemIcmsProprio(item.cst)) {
 		return { base: 0, valor: 0 };
 	}
