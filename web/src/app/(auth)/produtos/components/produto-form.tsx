@@ -55,6 +55,8 @@ type ProdutoFormProps = {
 	modo?: "criar" | "editar";
 	produtoId?: string;
 	valoresIniciais?: Partial<ProdutoFormData>;
+	/** Chave do rascunho da aba; útil ao clonar para não misturar com rascunho de novo produto. */
+	chaveRascunho?: string;
 };
 
 function textoOuNulo(valor: string | null | undefined): string | null {
@@ -247,7 +249,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			quantidadepadrao: 0,
 			quantidademinima: null,
 			quantidademaxima: null,
-			...(isEdicao && props.valoresIniciais ? props.valoresIniciais : {}),
+			...(props.valoresIniciais ?? {}),
 		},
 	});
 
@@ -261,7 +263,9 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		formState: { errors },
 	} = form;
 
-	const { limparRascunho } = useRascunhoAbaForm(form);
+	const { limparRascunho } = useRascunhoAbaForm(form, {
+		chave: props.chaveRascunho,
+	});
 
 	const idunidademedida = watch("idunidademedida");
 	const fornecedor = watch("fornecedor");
@@ -314,10 +318,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		enabled: !!empresa,
 	});
 
-	const idgrupogourmetInicial =
-		isEdicao && props.valoresIniciais?.idgrupogourmet
-			? props.valoresIniciais.idgrupogourmet
-			: null;
+	const idgrupogourmetInicial = props.valoresIniciais?.idgrupogourmet ?? null;
 
 	const { data: gruposGourmet = [] } = useQuery({
 		queryKey: ["grupos-gourmet", empresa?.id, "todos", idgrupogourmetInicial],
