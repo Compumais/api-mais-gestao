@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as contaCorrenteLancamentoRepository from "@/repositories/conta-corrente-lancamento-repositories.js";
+import * as contaCorrenteRepository from "@/repositories/conta-corrente-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as financeiroRepository from "@/repositories/financeiro-repositories.js";
 import * as movimentoRepository from "@/repositories/movimento-estoque-repositories.js";
@@ -9,12 +11,22 @@ import * as estoqueService from "@/service/estoque/registrar-movimento-estoque.j
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { cancelarVendaNaoFiscalPdvService } from "./cancelar-venda-nao-fiscal-pdv.js";
 
+vi.mock("@/repositories/connection.js", () => ({
+	db: {
+		transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+			fn({}),
+		),
+	},
+}));
+vi.mock("@/repositories/conta-corrente-lancamento-repositories.js");
+vi.mock("@/repositories/conta-corrente-repositories.js");
 vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/financeiro-repositories.js");
 vi.mock("@/repositories/movimento-estoque-repositories.js");
 vi.mock("@/repositories/nota-fiscal-repositories.js");
 vi.mock("@/repositories/venda-pdv-gourmet-repositories.js");
 vi.mock("@/service/auditoria/criar-auditoria.js");
+vi.mock("@/service/conta-corrente/inserir-lancamento-caixa.js");
 vi.mock("@/service/estoque/registrar-movimento-estoque.js");
 
 describe("cancelarVendaNaoFiscalPdvService", () => {
@@ -28,6 +40,12 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 			status: 201,
 			body: null,
 		} as never);
+		vi.mocked(
+			contaCorrenteRepository.buscarContaCorrenteCaixaPadrao,
+		).mockResolvedValue(null);
+		vi.mocked(
+			contaCorrenteLancamentoRepository.buscarLancamentoContaPorDocumento,
+		).mockResolvedValue(null);
 	});
 
 	it("bloqueia quando a venda tem NFC-e autorizada", async () => {
@@ -57,6 +75,7 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 		vi.mocked(vendaRepository.buscarVendaPdvGourmetPorId).mockResolvedValue({
 			id: "venda-1",
 			idempresa: "emp-1",
+			numeropdv: 1,
 			idnotafiscalnfce: null,
 			cancelada: false,
 		} as never);
@@ -99,6 +118,7 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 			idvenda: "venda-1",
 			titulosCancelados: 1,
 			movimentosEstornados: 1,
+			lancamentosCaixaEstornados: 0,
 		});
 		expect(financeiroRepository.atualizarFinanceiro).toHaveBeenCalledWith("fin-1", {
 			status: "C",

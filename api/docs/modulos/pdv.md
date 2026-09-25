@@ -43,6 +43,7 @@ Auto-update: o PDV baixa manifesto e artefato sem login. O handler restringe o n
 - `GET /vendas-pdv-gourmet/identidade-local` existe para o PDV não duplicar venda já sincronizada. Não remover.
 - Cancelamento de venda não fiscal é rota própria (`POST /vendas-pdv-gourmet/:id/cancelar`), distinta de cancelar NFC-e. Marca `cancelada` na venda e some da listagem padrão.
 - Homologação NFC-e (`ambiente = 2`): não gera financeiro/caixa nem baixa de estoque; vendas com NFC-e de homologação ficam fora do histórico operacional `/vendas-pdv` e do fechamento de caixa.
+- Dashboard/analytics e relatório comercial filtram `cancelada = false`. Cancelamento também estorna lançamento de caixa por documento `PDV …` e omite títulos `status = C` das últimas movimentações.
 - Fechamento de caixa consolida o período do terminal. Apagar fechamento não desfaz venda nem nota.
 - Pagamentos ficam em `venda-pdv-pagamento` e podem gerar lançamento (ver `src/util/lancamento-pagamento-pdv.test.ts`).
 - `GET /empresas/:id/pdv-fiscal` devolve a configuração que o terminal precisa para emitir. Está com `logLevel: silent`.

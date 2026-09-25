@@ -299,6 +299,7 @@ async function somarFaturamento(
 		SELECT COALESCE(SUM(valortotal::numeric), 0) as total
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
+			AND cancelada = false
 			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 	`);
@@ -313,7 +314,7 @@ async function somarCmv(
 	const result = await db.execute(sql`
 		SELECT COALESCE(SUM(vi.quantidade::numeric * ${CUSTO_UNITARIO_SQL}), 0) as total
 		FROM vendapdvitem vi
-		JOIN vendapdvgourmet v ON v.id = vi.idvenda
+		JOIN vendapdvgourmet v ON v.id = vi.idvenda AND v.cancelada = false
 		JOIN produtos p ON p.id = vi.idproduto
 		WHERE vi.idempresa = ${idempresa}
 			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
@@ -424,13 +425,14 @@ async function metricasVendasPeriodo(
 				COUNT(*)::int as quantidade
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
+				AND cancelada = false
 				AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		`),
 		db.execute(sql`
 			SELECT COALESCE(SUM(vi.quantidade::numeric), 0) as itens
 			FROM vendapdvitem vi
-			JOIN vendapdvgourmet v ON v.id = vi.idvenda
+			JOIN vendapdvgourmet v ON v.id = vi.idvenda AND v.cancelada = false
 			WHERE vi.idempresa = ${idempresa}
 				AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
@@ -439,6 +441,7 @@ async function metricasVendasPeriodo(
 			SELECT COUNT(DISTINCT identidade)::int as clientes
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
+				AND cancelada = false
 				AND identidade IS NOT NULL
 				AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
@@ -475,6 +478,7 @@ async function buscarEvolucaoFaturamento({
 			COUNT(*)::int as quantidade
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
+			AND cancelada = false
 			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY DATE(datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
@@ -505,7 +509,7 @@ async function buscarTopProdutosPeriodo(
 			COALESCE(SUM(vi.precototal::numeric), 0) as total,
 			COALESCE(SUM(vi.quantidade::numeric), 0) as quantidade
 		FROM vendapdvitem vi
-		JOIN vendapdvgourmet v ON v.id = vi.idvenda
+		JOIN vendapdvgourmet v ON v.id = vi.idvenda AND v.cancelada = false
 		LEFT JOIN produtos p ON p.id = vi.idproduto
 		WHERE vi.idempresa = ${idempresa}
 			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
@@ -543,6 +547,7 @@ async function buscarTopClientesPeriodo(
 		FROM vendapdvgourmet v
 		LEFT JOIN entidade e ON e.id = v.identidade
 		WHERE v.idempresa = ${idempresa}
+			AND v.cancelada = false
 			AND v.identidade IS NOT NULL
 			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
@@ -574,6 +579,7 @@ async function clientesNovosRecorrentes(
 			SELECT identidade, valortotal::numeric as valor
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
+				AND cancelada = false
 				AND identidade IS NOT NULL
 				AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
@@ -582,6 +588,7 @@ async function clientesNovosRecorrentes(
 			SELECT DISTINCT identidade
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
+				AND cancelada = false
 				AND identidade IS NOT NULL
 				AND (datacriacao AT TIME ZONE 'UTC') < (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 		)
@@ -658,7 +665,7 @@ async function matrizProdutosBase({
 			COALESCE(SUM(vi.precototal::numeric), 0) as faturamento,
 			COALESCE(SUM(vi.quantidade::numeric * ${CUSTO_UNITARIO_SQL}), 0) as custo
 		FROM vendapdvitem vi
-		JOIN vendapdvgourmet v ON v.id = vi.idvenda
+		JOIN vendapdvgourmet v ON v.id = vi.idvenda AND v.cancelada = false
 		LEFT JOIN produtos p ON p.id = vi.idproduto
 		WHERE vi.idempresa = ${idempresa}
 			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
@@ -921,6 +928,7 @@ export async function buscarVendasPorHora({
 			COUNT(*)::int as quantidade
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
+			AND cancelada = false
 			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY EXTRACT(HOUR FROM datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
@@ -959,6 +967,7 @@ export async function buscarVendasPorDiaSemana({
 			COUNT(*)::int as quantidade
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
+			AND cancelada = false
 			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY EXTRACT(DOW FROM datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
@@ -1495,7 +1504,7 @@ export async function buscarRentabilidade({
 				COALESCE(SUM(vi.precototal::numeric), 0) as faturamento,
 				COALESCE(SUM(vi.quantidade::numeric * ${CUSTO_UNITARIO_SQL}), 0) as custo
 			FROM vendapdvitem vi
-			JOIN vendapdvgourmet v ON v.id = vi.idvenda
+			JOIN vendapdvgourmet v ON v.id = vi.idvenda AND v.cancelada = false
 			LEFT JOIN produtos p ON p.id = vi.idproduto
 			LEFT JOIN hierarquia h ON h.id = p.idgrupo
 			WHERE vi.idempresa = ${idempresa}
@@ -1593,6 +1602,7 @@ export async function buscarClientesAnalytics({
 					SELECT DISTINCT identidade
 					FROM vendapdvgourmet
 					WHERE idempresa = ${idempresa}
+						AND cancelada = false
 						AND identidade IS NOT NULL
 						AND (datacriacao AT TIME ZONE 'UTC') < (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				)
@@ -1605,6 +1615,7 @@ export async function buscarClientesAnalytics({
 				LEFT JOIN entidade e ON e.id = v.identidade
 				LEFT JOIN historico h ON h.identidade = v.identidade
 				WHERE v.idempresa = ${idempresa}
+					AND v.cancelada = false
 					AND v.identidade IS NOT NULL
 					AND h.identidade IS NULL
 					AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
@@ -1618,6 +1629,7 @@ export async function buscarClientesAnalytics({
 					SELECT DISTINCT identidade
 					FROM vendapdvgourmet
 					WHERE idempresa = ${idempresa}
+						AND cancelada = false
 						AND identidade IS NOT NULL
 						AND (datacriacao AT TIME ZONE 'UTC') < (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				)
@@ -1630,6 +1642,7 @@ export async function buscarClientesAnalytics({
 				LEFT JOIN entidade e ON e.id = v.identidade
 				JOIN historico h ON h.identidade = v.identidade
 				WHERE v.idempresa = ${idempresa}
+					AND v.cancelada = false
 					AND v.identidade IS NOT NULL
 					AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 					AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
@@ -1695,6 +1708,7 @@ export async function buscarClientesRfm({
 		FROM vendapdvgourmet v
 		LEFT JOIN entidade e ON e.id = v.identidade
 		WHERE v.idempresa = ${idempresa}
+			AND v.cancelada = false
 			AND v.identidade IS NOT NULL
 			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')

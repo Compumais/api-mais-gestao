@@ -17,8 +17,11 @@ export async function inserirLancamentoCaixa(
 		historico: string;
 		documento: string;
 		datahora: string;
+		/** C = crédito/entrada (default), D = débito/saída (estorno). */
+		tipo?: "C" | "D";
 	},
 ): Promise<void> {
+	const tipo = parametros.tipo ?? "C";
 	const [ultimoLancamento] = await tx
 		.select()
 		.from(schema.contacorrentelancamento)
@@ -37,13 +40,16 @@ export async function inserirLancamentoCaixa(
 	const saldoAnterior = ultimoLancamento?.saldoatual
 		? Number(ultimoLancamento.saldoatual)
 		: 0;
-	const saldoAtual = saldoAnterior + parametros.valor;
+	const saldoAtual =
+		tipo === "C"
+			? saldoAnterior + parametros.valor
+			: saldoAnterior - parametros.valor;
 
 	await tx.insert(schema.contacorrentelancamento).values({
 		id: uuidv4(),
 		idcontacorrente: parametros.idcontacorrente,
 		datahora: parametros.datahora,
-		tipo: "C",
+		tipo,
 		valor: formatarValorMonetario(parametros.valor),
 		saldoanterior: formatarValorMonetario(saldoAnterior),
 		saldoatual: formatarValorMonetario(saldoAtual),

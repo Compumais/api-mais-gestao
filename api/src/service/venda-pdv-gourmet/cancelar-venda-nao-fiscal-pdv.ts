@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
+import { db } from "@/repositories/connection.js";
+import { buscarLancamentoContaPorDocumento } from "@/repositories/conta-corrente-lancamento-repositories.js";
+import { buscarContaCorrenteCaixaPadrao } from "@/repositories/conta-corrente-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarFinanceiro,
@@ -15,6 +18,7 @@ import {
 	buscarVendaPdvGourmetPorId,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { inserirLancamentoCaixa } from "@/service/conta-corrente/inserir-lancamento-caixa.js";
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
 import {
 	httpBadRequest,
@@ -23,7 +27,11 @@ import {
 	httpProibido,
 } from "@/util/http-util.js";
 import { statusEhAutorizada } from "@/util/nfe-status.js";
-import { TIPO_ORIGEM_VENDA_PDV } from "@/util/recebimentos-venda-util.js";
+import {
+	formatarDataIso,
+	parseValorMonetario,
+	TIPO_ORIGEM_VENDA_PDV,
+} from "@/util/recebimentos-venda-util.js";
 import {
 	TIPO_DOCUMENTO_ESTOQUE,
 	TIPO_ESTOQUE,
@@ -34,6 +42,7 @@ export type ResultadoCancelamentoVendaNaoFiscal = {
 	idvenda: string;
 	titulosCancelados: number;
 	movimentosEstornados: number;
+	lancamentosCaixaEstornados: number;
 	avisos: string[];
 };
 
@@ -45,8 +54,8 @@ type CancelarVendaNaoFiscalPdvParametros = {
 };
 
 /**
- * Cancela venda PDV sem NFC-e autorizada: estorna estoque operacional e títulos
- * financeiros da origem venda PDV. Não chama SEFAZ (não confundir com cancelar NFC-e).
+ * Cancela venda PDV sem NFC-e autorizada: estorna estoque operacional, títulos
+ * financeiros e lançamentos de caixa da origem venda PDV. Não chama SEFAZ.
  */
 export async function cancelarVendaNaoFiscalPdvService({
 	idusuario,
@@ -85,6 +94,7 @@ export async function cancelarVendaNaoFiscalPdvService({
 	const avisos: string[] = [];
 	let titulosCancelados = 0;
 	let movimentosEstornados = 0;
+	let lancamentosCaixaEstornados = 0;
 	const agora = new Date().toISOString();
 	const motivoTrim = motivo?.trim() || null;
 
@@ -149,6 +159,51 @@ export async function cancelarVendaNaoFiscalPdvService({
 		movimentosEstornados++;
 	}
 
+	try {
+		const caixa = await buscarContaCorrenteCaixaPadrao(idempresa);
+		const documentoOrigem = `PDV ${venda.numeropdv} ${venda.id}`.slice(0, 60);
+		const documentoEstorno = `ESTORNO ${documentoOrigem}`.slice(0, 60);
+
+		if (caixa) {
+			const lancamento = await buscarLancamentoContaPorDocumento(
+				caixa.id,
+				documentoOrigem,
+			);
+			const jaEstornado = await buscarLancamentoContaPorDocumento(
+				caixa.id,
+				documentoEstorno,
+			);
+			const valorOrigem = parseValorMonetario(lancamento?.valor);
+			const idPlano = lancamento?.idplanocontas
+				? String(lancamento.idplanocontas)
+				: "";
+
+			if (lancamento && !jaEstornado && valorOrigem > 0 && idPlano) {
+				await db.transaction(async (tx) => {
+					await inserirLancamentoCaixa(tx, {
+						idcontacorrente: caixa.id,
+						idusuario,
+						idplanocontas: idPlano,
+						valor: valorOrigem,
+						historico: `Estorno cancelamento venda PDV #${venda.numeropdv}`,
+						documento: documentoEstorno,
+						datahora: formatarDataIso(new Date()),
+						tipo: "D",
+					});
+				});
+				lancamentosCaixaEstornados++;
+			}
+		}
+	} catch (erro) {
+		console.error(
+			"[pdv] Falha ao estornar lançamento de caixa da venda:",
+			erro,
+		);
+		avisos.push(
+			"Falha ao estornar lançamento de caixa; confira o caixa manualmente",
+		);
+	}
+
 	await atualizarVendaPdvGourmet(idvenda, {
 		cancelada: true,
 		canceladaem: agora,
@@ -169,6 +224,7 @@ export async function cancelarVendaNaoFiscalPdvService({
 				motivo: motivoTrim,
 				titulosCancelados,
 				movimentosEstornados,
+				lancamentosCaixaEstornados,
 				avisos,
 			},
 		});
@@ -183,6 +239,7 @@ export async function cancelarVendaNaoFiscalPdvService({
 		idvenda,
 		titulosCancelados,
 		movimentosEstornados,
+		lancamentosCaixaEstornados,
 		avisos,
 	});
 }

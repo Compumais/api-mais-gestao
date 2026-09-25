@@ -636,7 +636,7 @@ async function consultarComercial(
 				MAX(v.datacriacao) ultima_venda
 			FROM produtos p
 			JOIN vendapdvitem vi ON vi.idproduto = p.id AND vi.idempresa = p.idempresa
-			JOIN vendapdvgourmet v ON v.id = vi.idvenda AND v.idempresa = p.idempresa
+			JOIN vendapdvgourmet v ON v.id = vi.idvenda AND v.idempresa = p.idempresa AND v.cancelada = false
 			WHERE p.idempresa = ${f.idempresa}
 				${filtroSituacao(f.situacao)}
 				${f.q ? sql`AND (p.nome ILIKE ${`%${f.q}%`} OR p.codigo::text ILIKE ${`%${f.q}%`})` : sql``}
