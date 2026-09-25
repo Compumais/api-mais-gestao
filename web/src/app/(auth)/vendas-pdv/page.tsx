@@ -1,19 +1,17 @@
 "use client";
 
-import { IconFilter, IconX } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
 	Table,
 	TableBody,
@@ -33,28 +31,34 @@ import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import { PageContainer } from "../components/page-container";
 import { DialogDetalhesNfce } from "../nfce/components/dialog-detalhes-nfce";
+import { DialogCancelarVendaNaoFiscal } from "./dialog-cancelar-venda-nao-fiscal";
 import { ItensVendaDialog } from "./itens-venda-dialog";
-import { criarColunasVendasPdv } from "./vendas-pdv-colunas";
-import { filtrosAtivos, idNfceVenda } from "./vendas-pdv-helpers";
-
-interface FiltrosState {
-	dataInicio: string;
-	dataFim: string;
-	numeropdv: string;
-}
-
-const filtrosVazios: FiltrosState = {
-	dataInicio: "",
-	dataFim: "",
-	numeropdv: "",
-};
+import {
+	COLUNA_PARA_CAMPO_FILTRO_VENDAS_PDV,
+	type ConfigFiltroColunaVendasPdv,
+	criarColunasVendasPdv,
+	FISCAL_OPCOES_FILTRO,
+	NFCE_STATUS_OPCOES_FILTRO,
+	ORIGEM_OPCOES_FILTRO,
+	PAGAMENTO_OPCOES_FILTRO,
+} from "./vendas-pdv-colunas";
+import {
+	filtrarVendasPdvColuna,
+	filtrosColunaVendasPdvAtivos,
+	filtrosColunaVendasPdvVazios,
+	type FiltrosColunaVendasPdvState,
+	idNfceVenda,
+	ordenarVendasPdvColuna,
+} from "./vendas-pdv-helpers";
 
 export default function VendasPdvPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const queryClient = useQueryClient();
 
-	const [filtros, setFiltros] = useState<FiltrosState>(filtrosVazios);
-	const [filtrosAplicados, setFiltrosAplicados] =
-		useState<FiltrosState>(filtrosVazios);
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaVendasPdvState>(filtrosColunaVendasPdvVazios);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 15,
@@ -64,6 +68,9 @@ export default function VendasPdvPage() {
 		useState<VendaPdvGourmet | null>(null);
 	const [dialogItensAberto, setDialogItensAberto] = useState(false);
 	const [detalhesNotaId, setDetalhesNotaId] = useState<string | null>(null);
+	const [vendaCancelar, setVendaCancelar] = useState<VendaPdvGourmet | null>(
+		null,
+	);
 
 	const { data: produtosData } = useQuery({
 		queryKey: ["produtos-lista", empresa?.id],
@@ -104,23 +111,30 @@ export default function VendasPdvPage() {
 		return map;
 	}, [usuariosLista]);
 
+	const numeropdvApi = useMemo(() => {
+		const n = Number(filtrosColuna.numeropdv.trim());
+		return Number.isFinite(n) && filtrosColuna.numeropdv.trim() !== ""
+			? n
+			: undefined;
+	}, [filtrosColuna.numeropdv]);
+
 	const { data, isLoading } = useQuery({
 		queryKey: [
 			"vendas-pdv-gourmet",
 			empresa?.id,
-			filtrosAplicados,
+			filtrosColuna.datacriacao,
+			numeropdvApi,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
 		],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
+			const dia = filtrosColuna.datacriacao.trim() || undefined;
 			return vendaPdvGourmetService.listar({
 				idempresa: empresa.id,
-				dataInicio: filtrosAplicados.dataInicio || undefined,
-				dataFim: filtrosAplicados.dataFim || undefined,
-				numeropdv: filtrosAplicados.numeropdv
-					? Number(filtrosAplicados.numeropdv)
-					: undefined,
+				dataInicio: dia,
+				dataFim: dia,
+				numeropdv: numeropdvApi,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
 			});
@@ -128,16 +142,92 @@ export default function VendasPdvPage() {
 		enabled: !!empresa,
 	});
 
-	const handleAplicarFiltros = () => {
-		setPagination((p) => ({ ...p, pageIndex: 0 }));
-		setFiltrosAplicados({ ...filtros });
-	};
+	const vendasExibidas = useMemo(() => {
+		const base = data?.data ?? [];
+		const filtradas = filtrarVendasPdvColuna(
+			base,
+			filtrosColuna,
+			usuariosPorId,
+		);
+		return ordenarVendasPdvColuna(
+			filtradas,
+			ordenarPor,
+			ordem,
+			usuariosPorId,
+		);
+	}, [data?.data, filtrosColuna, ordenarPor, ordem, usuariosPorId]);
 
-	const handleLimparFiltros = () => {
-		setFiltros(filtrosVazios);
-		setFiltrosAplicados(filtrosVazios);
+	const cancelarMutation = useMutation({
+		mutationFn: async ({
+			venda,
+			motivo,
+		}: {
+			venda: VendaPdvGourmet;
+			motivo: string | null;
+		}) => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return vendaPdvGourmetService.cancelarNaoFiscal(venda.id, {
+				idempresa: empresa.id,
+				motivo,
+			});
+		},
+		onSuccess: (resultado) => {
+			const partes = [
+				"Venda cancelada",
+				resultado.titulosCancelados > 0
+					? `${resultado.titulosCancelados} título(s)`
+					: null,
+				resultado.movimentosEstornados > 0
+					? `${resultado.movimentosEstornados} movimento(s) de estoque`
+					: null,
+			].filter(Boolean);
+			toast.success(partes.join(" · "));
+			if (resultado.avisos.length > 0) {
+				toast.warning(resultado.avisos.join(" "));
+			}
+			setVendaCancelar(null);
+			void queryClient.invalidateQueries({ queryKey: ["vendas-pdv-gourmet"] });
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Não foi possível cancelar a venda");
+		},
+	});
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_VENDAS_PDV[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
 		setPagination((p) => ({ ...p, pageIndex: 0 }));
-	};
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaVendasPdv
+	> => {
+		return {
+			numeropdv: { tipo: "texto", placeholder: "Nº PDV" },
+			datacriacao: { tipo: "data" },
+			origem: { tipo: "opcoes", opcoes: ORIGEM_OPCOES_FILTRO },
+			operador: { tipo: "texto", placeholder: "Operador" },
+			pagamento: { tipo: "opcoes", opcoes: PAGAMENTO_OPCOES_FILTRO },
+			fiscal: { tipo: "opcoes", opcoes: FISCAL_OPCOES_FILTRO },
+			nfce: { tipo: "opcoes", opcoes: NFCE_STATUS_OPCOES_FILTRO },
+			valortotal: { tipo: "texto", placeholder: "Valor" },
+		};
+	}, []);
 
 	const handleVerItens = useCallback((venda: VendaPdvGourmet) => {
 		setVendaSelecionada(venda);
@@ -147,6 +237,10 @@ export default function VendasPdvPage() {
 	const handleVerNfce = useCallback((venda: VendaPdvGourmet) => {
 		const id = idNfceVenda(venda);
 		if (id) setDetalhesNotaId(id);
+	}, []);
+
+	const handleCancelarVendaNaoFiscal = useCallback((venda: VendaPdvGourmet) => {
+		setVendaCancelar(venda);
 	}, []);
 
 	const detalhesQuery = useNfceDetalhes({
@@ -168,102 +262,70 @@ export default function VendasPdvPage() {
 		() =>
 			criarColunasVendasPdv({
 				usuariosPorId,
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
 				onVerItens: handleVerItens,
 				onVerNfce: handleVerNfce,
+				onCancelarVendaNaoFiscal: handleCancelarVendaNaoFiscal,
 			}),
-		[usuariosPorId, handleVerItens, handleVerNfce],
+		[
+			usuariosPorId,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			handleVerItens,
+			handleVerNfce,
+			handleCancelarVendaNaoFiscal,
+		],
 	);
 
 	const table = useReactTable({
-		data: data?.data ?? [],
+		data: vendasExibidas,
 		columns,
 		state: { pagination },
 		onPaginationChange: setPagination,
 		getCoreRowModel: getCoreRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
 
-	const comFiltros = filtrosAtivos(filtrosAplicados);
+	const comFiltros = filtrosColunaVendasPdvAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex items-center justify-between px-4">
+				<div className="flex items-center justify-between gap-3 px-4">
 					<div className="space-y-1">
 						<h1 className="text-2xl font-bold">Histórico de vendas PDV</h1>
 						<p className="text-sm text-muted-foreground">
-							Pagamento, fiscal/não fiscal, status da NFC-e e consulta. Horários
-							em Brasília (GMT−3).
+							Filtros e ordenação nos cabeçalhos das colunas. Vendas sem NFC-e
+							autorizada podem ser canceladas a qualquer tempo.
 						</p>
 					</div>
-					{comFiltros && (
-						<Badge variant="secondary" className="gap-1">
-							<IconFilter className="size-3" aria-hidden="true" />
-							Filtros ativos
-						</Badge>
-					)}
-				</div>
-
-				<div className="mx-4 rounded-lg border bg-card p-4">
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-						<Field>
-							<FieldLabel>Data início</FieldLabel>
-							<FieldGroup>
-								<Input
-									type="date"
-									value={filtros.dataInicio}
-									onChange={(e) =>
-										setFiltros((f) => ({ ...f, dataInicio: e.target.value }))
-									}
-								/>
-							</FieldGroup>
-						</Field>
-
-						<Field>
-							<FieldLabel>Data fim</FieldLabel>
-							<FieldGroup>
-								<Input
-									type="date"
-									value={filtros.dataFim}
-									onChange={(e) =>
-										setFiltros((f) => ({ ...f, dataFim: e.target.value }))
-									}
-								/>
-							</FieldGroup>
-						</Field>
-
-						<Field>
-							<FieldLabel>Nº do PDV</FieldLabel>
-							<FieldGroup>
-								<Input
-									type="number"
-									placeholder="Ex: 1"
-									value={filtros.numeropdv}
-									onChange={(e) =>
-										setFiltros((f) => ({ ...f, numeropdv: e.target.value }))
-									}
-								/>
-							</FieldGroup>
-						</Field>
-
-						<div className="flex items-end gap-2">
-							<Button onClick={handleAplicarFiltros} className="flex-1 gap-2">
-								<IconFilter className="size-4" aria-hidden="true" />
-								Filtrar
+					{comFiltros ? (
+						<div className="flex items-center gap-2">
+							<Badge variant="secondary">Filtros ativos</Badge>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									setFiltrosColuna(filtrosColunaVendasPdvVazios);
+									setOrdenarPor(null);
+									setOrdem(null);
+									setPagination((p) => ({ ...p, pageIndex: 0 }));
+								}}
+							>
+								Limpar
 							</Button>
-							{comFiltros && (
-								<Button
-									variant="outline"
-									onClick={handleLimparFiltros}
-									aria-label="Limpar filtros"
-								>
-									<IconX className="size-4" aria-hidden="true" />
-								</Button>
-							)}
 						</div>
-					</div>
+					) : null}
 				</div>
 
 				<div className="mx-4 overflow-x-auto rounded-lg border bg-card">
@@ -287,7 +349,7 @@ export default function VendasPdvPage() {
 						</TableSkeleton>
 					) : (
 						<>
-							<Table className="min-w-[960px]">
+							<Table className="min-w-[1080px]">
 								<TableHeader>
 									{table.getHeaderGroups().map((hg) => (
 										<TableRow key={hg.id}>
@@ -341,6 +403,9 @@ export default function VendasPdvPage() {
 										{(data?.paginacao.total ?? 0) !== 1 ? "s" : ""} • Página{" "}
 										{pagination.pageIndex + 1} de{" "}
 										{data?.paginacao.totalPages ?? 1}
+										{vendasExibidas.length !== (data?.data.length ?? 0)
+											? ` · ${vendasExibidas.length} nesta página após filtro`
+											: ""}
 									</p>
 									<div className="flex gap-2">
 										<Button
@@ -377,6 +442,19 @@ export default function VendasPdvPage() {
 					usuariosPorId={usuariosPorId}
 				/>
 			)}
+
+			<DialogCancelarVendaNaoFiscal
+				open={vendaCancelar != null}
+				onClose={() => {
+					if (!cancelarMutation.isPending) setVendaCancelar(null);
+				}}
+				carregando={cancelarMutation.isPending}
+				numeropdv={vendaCancelar?.numeropdv}
+				onConfirmar={(motivo) => {
+					if (!vendaCancelar) return;
+					cancelarMutation.mutate({ venda: vendaCancelar, motivo });
+				}}
+			/>
 
 			<DialogDetalhesNfce
 				open={detalhesNotaId != null}
