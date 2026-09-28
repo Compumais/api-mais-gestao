@@ -1,7 +1,8 @@
 /** Valores técnicos NF-e modelo 55 — definidos pelo sistema, não pelo usuário. */
 export const NFE_CONFIG_PADRAO = {
 	versaoleiaute: "4.00",
-	schema: "PL_009_V4",
+	/** PL_010+ (NT 2025.002) — necessário para grupo IBSCBS no XML. */
+	schema: "PL_010_V1.30",
 	verproc: "MaisGestao 1.0.0",
 } as const;
 
