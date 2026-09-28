@@ -13,6 +13,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { financeiroService } from "@/services/financeiro.service";
 
 const formatCurrency = (value: string | null | undefined) => {
@@ -39,6 +40,8 @@ export default function DetalhesContaReceberPage() {
 		queryFn: () => financeiroService.buscar(id),
 		enabled: !!id,
 	});
+
+	useTituloAba(financeiro?.historico ?? financeiro?.documento ?? undefined);
 
 	if (isLoading) {
 		return (

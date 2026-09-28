@@ -31,7 +31,6 @@ export function SiteHeaderTopbar() {
 						<SearchButton />
 						<ThemeToogle />
 						<VisualErrorBoundary title="Não foi possível carregar as notificações">
-							<TestError />
 							<NotificationsBell />
 						</VisualErrorBoundary>
 					</div>

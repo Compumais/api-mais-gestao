@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { fatorConversaoService } from "@/services/fator-conversao.service";
 import { FatorConversaoForm } from "../../components/fator-conversao-form";
 
@@ -13,6 +14,8 @@ export function EditarFatorConversaoClient({ id }: EditarFatorConversaoClientPro
 		queryKey: ["fator-conversao", id],
 		queryFn: () => fatorConversaoService.buscar(id),
 	});
+
+	useTituloAba(data?.nome);
 
 	if (isLoading) {
 		return (

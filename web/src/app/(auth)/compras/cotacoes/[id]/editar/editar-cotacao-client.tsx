@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { cotacoesCompraService } from "@/services/cotacoes-compra.service";
 import { CotacaoCompraForm } from "../../components/cotacao-form";
 
@@ -9,6 +10,8 @@ export function EditarCotacaoClient({ id }: { id: string }) {
 		queryKey: ["cotacao-compra", id],
 		queryFn: () => cotacoesCompraService.buscar(id),
 	});
+
+	useTituloAba(data?.titulo);
 
 	if (isLoading) {
 		return (

@@ -1,6 +1,6 @@
 ---
+alwaysApply: true
 name: backend
-description: Backend best practices for Node.js, Fastify, and Drizzle
 ---
 
 ## Agent

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { budgetsService } from "@/services/budgets.service";
 import { BudgetForm } from "../../components/budget-form";
 
@@ -15,6 +16,8 @@ export function EditarBudgetClient({ id }: EditarBudgetClientProps) {
 			return await budgetsService.buscar(id);
 		},
 	});
+
+	useTituloAba(data ? `Budget ${data.ano}` : undefined);
 
 	if (isLoading) {
 		return (

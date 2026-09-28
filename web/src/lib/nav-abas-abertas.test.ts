@@ -64,6 +64,35 @@ describe("nav-abas-abertas", () => {
 		expect(titulo).toBe("Relatórios");
 	});
 
+	it("usa título de criação em /novo e /nova", () => {
+		const itens = [
+			{ url: "/produtos", title: "Produtos" },
+			{ url: "/clientes", title: "Clientes" },
+			{ url: "/ordens-servico", title: "Ordens de serviço" },
+		];
+		expect(resolverTituloAba("/produtos/novo", "", itens)).toBe("Novo Produto");
+		expect(resolverTituloAba("/produtos/novo", "clonar=abc", itens)).toBe(
+			"Clonar Produto",
+		);
+		expect(resolverTituloAba("/clientes/novo", "", itens)).toBe("Novo Cliente");
+		expect(resolverTituloAba("/ordens-servico/nova", "", itens)).toBe(
+			"Nova ordem de serviço",
+		);
+	});
+
+	it("usa título provisório em edição e detalhe", () => {
+		const itens = [{ url: "/produtos", title: "Produtos" }];
+		const id = "a1b2c3d4-e5f6-4789-a012-3456789abcde";
+		expect(resolverTituloAba(`/produtos/${id}/editar`, "", itens)).toBe(
+			"Editar · Produtos",
+		);
+		expect(resolverTituloAba(`/produtos/${id}`, "", itens)).toBe("Produtos");
+	});
+
+	it("usa mapa de criação mesmo fora do menu", () => {
+		expect(resolverTituloAba("/cfop/novo", "", [])).toBe("Novo CFOP");
+	});
+
 	it("ignora JSON inválido no storage", () => {
 		expect(lerAbasAbertas("nao-json")).toEqual([]);
 		expect(lerAbasAbertas('[{"id":"/a","href":"/a","title":"A"},1]')).toEqual([

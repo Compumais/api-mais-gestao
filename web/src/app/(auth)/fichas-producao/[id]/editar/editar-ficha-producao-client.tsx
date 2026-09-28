@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PageContainer } from "@/app/(auth)/components/page-container";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { fichaProducaoService } from "@/services/ficha-producao.service";
 import { FichaProducaoForm } from "../../components/ficha-producao-form";
 
@@ -16,6 +17,8 @@ export function EditarFichaProducaoClient({
 		queryKey: ["ficha-producao", id],
 		queryFn: () => fichaProducaoService.buscar(id),
 	});
+
+	useTituloAba(data?.nomeprodutoacabado ?? undefined);
 
 	if (isLoading) {
 		return (

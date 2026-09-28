@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { cfopService } from "@/services/cfop.service";
 import { valoresIniciaisNaturezaForm } from "@/util/cfop-natureza-mapper";
 import { NaturezaForm } from "../../components/natureza-form";
@@ -17,6 +18,8 @@ export function EditarNaturezaClient({ id }: EditarNaturezaClientProps) {
 		queryKey: ["cfop", id],
 		queryFn: () => cfopService.buscar(id),
 	});
+
+	useTituloAba(data?.descricao ?? data?.codigo ?? undefined);
 
 	if (isLoading) {
 		return (

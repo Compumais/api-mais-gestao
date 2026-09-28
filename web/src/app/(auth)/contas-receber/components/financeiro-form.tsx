@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { extractDateOnly } from "@/lib/date";
 import {
 	type AtualizarFinanceiroFormData,
@@ -150,6 +151,12 @@ export function FinanceiroForm({
 		queryFn: () => financeiroService.buscar(financeiroId!),
 		enabled: isEdicao && !!financeiroId,
 	});
+
+	useTituloAba(
+		isEdicao
+			? financeiroData?.historico ?? financeiroData?.documento ?? undefined
+			: undefined,
+	);
 
 	// Carregar bancos
 	const { data: bancosData } = useQuery({

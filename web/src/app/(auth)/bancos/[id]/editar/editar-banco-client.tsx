@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { bancosService } from "@/services/bancos.service";
 import { isBancoPadrao } from "@/util/bancos-padrao";
 import { BancoForm } from "../../components/banco-form";
@@ -20,6 +21,8 @@ export function EditarBancoClient({ id }: EditarBancoClientProps) {
 			return await bancosService.buscar(id);
 		},
 	});
+
+	useTituloAba(data?.nome);
 
 	if (isLoading) {
 		return (

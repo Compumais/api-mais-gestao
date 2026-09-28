@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { mapEntidadeToForm } from "@/schemas/entidades.schema";
 import { entidadesService } from "@/services/entidades.service";
 import { SupplierForm } from "../../components/supplier-form";
@@ -17,6 +18,8 @@ export function EditarFornecedorClient({ id }: EditarFornecedorClientProps) {
 			return await entidadesService.buscar(id);
 		},
 	});
+
+	useTituloAba(data?.nome);
 
 	const valoresIniciais = useMemo(
 		() => (data ? mapEntidadeToForm(data) : undefined),

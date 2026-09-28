@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { produtosService } from "@/services/produtos.service";
 import { ProdutoForm } from "../../components/produto-form";
 import { mapProdutoToForm } from "../../map-produto-form";
@@ -17,6 +18,8 @@ export function EditarProdutoClient({ id }: EditarProdutoClientProps) {
 			return await produtosService.buscar(id);
 		},
 	});
+
+	useTituloAba(data?.nome);
 
 	const valoresIniciais = useMemo(
 		() => (data ? mapProdutoToForm(data) : undefined),

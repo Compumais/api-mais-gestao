@@ -1,35 +1,68 @@
 ---
-alwaysApply: true
-description: Boas práticas de SEO para Next App Router
-  - "app/**/*.ts"
-  - "app/**/*.tsx"
+awlaysApply: true
+name: seo
 ---
 
-## Regras obrigatórias
+# Rules
 
-- Toda rota pública deve definir metadata usando a API do Next
-- Usar `generateMetadata` quando os dados forem dinâmicos
-- Definir obrigatoriamente:
+- Every public route must define metadata using the Next Metadata API.
+- Use `generateMetadata` when the data is dynamic.
+- Define at least:
   - title
   - description
   - openGraph
-  - robots quando aplicável
-
-## Conteúdo
-
-- Usar corretamente tags semânticas:
-  - header, main, nav, section, article, footer
-- Usar apenas um `<h1>` por página
-- Hierarquia correta de headings (`h1` → `h6`)
+  - robots when applicable
+- Use semantic HTML tags: header, main, nav, section, article, footer.
+- Use only one `<h1>` per page.
+- Use the correct heading hierarchy: `h1` → `h6`.
+- Prioritize Server Components.
+- Avoid unnecessary JavaScript on the client.
+- Use `Image` from Next for images.
+- Do not use `<div>` when a semantic tag is available.
+- Do not generate metadata manually via `<head>`.
+- Do not duplicate titles and descriptions between pages.
 
 ## Performance SEO
 
-- Priorizar Server Components
-- Evitar JavaScript desnecessário no client
-- Usar `Image` do Next para imagens
+- Prioritize Server Components.
+- Avoid unnecessary JavaScript on the client.
+- Use `Image` from Next for images.
+- Do not use `<div>` when a semantic tag is available.
+- Do not generate metadata manually via `<head>`.
+- Do not duplicate titles and descriptions between pages.
+- Use `alt` attribute for all images.
+- Use `Link` from Next for links.
 
-## Proibições
+## Prohibitions
 
-- Não usar `<div>` quando existir tag semântica adequada
-- Não gerar metadata manualmente via `<head>`
-- Não duplicar titles e descriptions entre páginas
+- Do not use `<div>` when a semantic tag is available.
+- Do not generate metadata manually via `<head>`.
+- Do not duplicate titles and descriptions between pages.
+
+## Examples
+
+```typescript
+// Good
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Title",
+    description: "Description",
+    openGraph: {
+      title: "Title",
+      description: "Description",
+    },
+  };
+}
+
+// Bad
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Title",
+    description: "Description",
+    openGraph: {
+      title: "Title",
+      description: "Description",
+    },
+  };
+}
+```

@@ -9,6 +9,7 @@ import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import { TableCell } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import { BarraFinalizarImportacao } from "../../components/importacao/barra-finalizar-importacao";
 import { CabecalhoNfImportacao } from "../../components/importacao/cabecalho-nf-importacao";
@@ -28,6 +29,12 @@ export default function RascunhoImportacaoPage() {
 		},
 		enabled: !!empresa && !!idRascunho,
 	});
+
+	useTituloAba(
+		data?.nota?.numeronotafiscal != null
+			? `NF ${data.nota.numeronotafiscal}`
+			: data?.nota?.chavenfe ?? undefined,
+	);
 
 	if (!empresa) {
 		return (

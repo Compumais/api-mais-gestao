@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import {
 	useAtualizarModeloImpressaoOs,
 	useModeloImpressaoOs,
@@ -26,6 +27,8 @@ export default function EditarModeloImpressaoOsPage({
 		id,
 	);
 	const atualizar = useAtualizarModeloImpressaoOs(empresa?.id ?? "");
+
+	useTituloAba(modelo?.nome);
 
 	const [nome, setNome] = useState("");
 	const [descricao, setDescricao] = useState("");

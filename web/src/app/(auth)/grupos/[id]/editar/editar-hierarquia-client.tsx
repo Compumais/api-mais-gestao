@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import type { HierarquiaFormData } from "@/schemas/hierarquia.schema";
 import { hierarquiasService } from "@/services/hierarquias.service";
 import { HierarquiaForm } from "../../components/hierarquia-form";
@@ -35,6 +36,8 @@ export function EditarHierarquiaClient({ id }: EditarHierarquiaClientProps) {
 		queryKey: ["hierarquia", id],
 		queryFn: () => hierarquiasService.buscar(id),
 	});
+
+	useTituloAba(data?.nome);
 
 	if (isLoading) {
 		return (

@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { contasCorrentesService } from "@/services/contas-correntes.service";
 import { ContaCorrenteForm } from "../../components/conta-corrente-form";
 
@@ -21,6 +22,8 @@ export function EditarContaCorrenteClient({
 			return await contasCorrentesService.buscar(id);
 		},
 	});
+
+	useTituloAba(data?.descricao);
 
 	if (isLoading) {
 		return (

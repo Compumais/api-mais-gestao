@@ -21,6 +21,7 @@ import {
 	labelProdutoCotacao,
 	STATUS_PEDIDO_COMPRA,
 } from "@/constants/compras-constants";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { pedidosCompraService } from "@/services/pedidos-compra.service";
 
 export default function DetalhePedidoCompraPage() {
@@ -33,6 +34,10 @@ export default function DetalhePedidoCompraPage() {
 		queryKey: ["pedido-compra", id],
 		queryFn: () => pedidosCompraService.buscar(id),
 	});
+
+	useTituloAba(
+		data?.codigo != null ? `Pedido de compra #${data.codigo}` : undefined,
+	);
 
 	const { mutate: cancelar, isPending } = useMutation({
 		mutationFn: () => pedidosCompraService.cancelar(id),

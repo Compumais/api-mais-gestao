@@ -1,6 +1,6 @@
 ---
-name: web
-description: Web best practices for Next App Router
+alwaysApply: true
+name: frontend
 ---
 
 ## Agent
