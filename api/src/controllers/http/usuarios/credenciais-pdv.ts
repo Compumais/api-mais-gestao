@@ -20,6 +20,8 @@ export async function listarCredenciaisPdv(
 		const resultado = await listarCredenciaisPdvService({
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
+			isPdvDevice: Boolean(request.user.isPdvDevice),
+			terminalEmpresaId: request.pdvTerminal?.idempresa,
 		});
 
 		if (!resultado.success) {

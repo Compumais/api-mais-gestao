@@ -8,6 +8,7 @@ export interface TerminalPdv {
 	descricao: string | null;
 	idnfeserie: string;
 	ativo: boolean;
+	apikey_prefix?: string | null;
 	serie: string;
 	numeroproximo: number;
 	modeloserie: string;
@@ -42,5 +43,25 @@ export const terminalPdvService = {
 		await api.delete(`/terminais-pdv/${id}`, {
 			params: { idempresa },
 		});
+	},
+
+	async gerarApiKey(
+		id: string,
+		idempresa: string,
+	): Promise<{
+		id: string;
+		apiKey: string;
+		prefix: string;
+		numeropdv: number;
+		aviso: string;
+	}> {
+		const { data } = await api.post<{
+			id: string;
+			apiKey: string;
+			prefix: string;
+			numeropdv: number;
+			aviso: string;
+		}>(`/terminais-pdv/${id}/apikey`, { idempresa });
+		return data;
 	},
 };
