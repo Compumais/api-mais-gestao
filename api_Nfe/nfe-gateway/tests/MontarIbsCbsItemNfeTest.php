@@ -97,6 +97,17 @@ assertTrue(str_contains($xmlLp, '<pIBSUF>0.1000</pIBSUF>'), 'LP com pIBSUF');
 assertTrue(str_contains($xmlLp, '<pCBS>0.9000</pCBS>'), 'LP com pCBS');
 assertTrue(str_contains($xmlLp, '<IBSCBSTot>'), 'LP inclui totais IBSCBS');
 assertTrue(
+	(bool) preg_match(
+		'/<IBSCBSTot>.*<vBCIBSCBS>.*<gIBS>.*<gIBSUF>.*<vIBSUF>.*<\/gIBSUF>.*<gIBSMun>.*<\/gIBSMun>.*<vIBS>.*<\/gIBS>.*<gCBS>.*<vCBS>.*<\/gCBS>.*<\/IBSCBSTot>/s',
+		$xmlLp,
+	),
+	'IBSCBSTot segue TIBSCBSMonoTot (gIBS/gCBS, sem vIBSUF solto)',
+);
+assertTrue(
+	!preg_match('/<IBSCBSTot>\s*<vBCIBSCBS>[^<]*<\/vBCIBSCBS>\s*<vIBSUF>/s', $xmlLp),
+	'IBSCBSTot não coloca vIBSUF logo após vBCIBSCBS',
+);
+assertTrue(
 	(bool) preg_match('/<\/COFINS>.*<IBSCBS>/s', $xmlLp),
 	'IBSCBS vem após COFINS',
 );
