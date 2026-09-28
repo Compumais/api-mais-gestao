@@ -10,7 +10,7 @@ namespace MaisGestao\NfeGateway\Fiscal;
  * O sped-nfe local ainda não expõe tagIBSCBS; a injeção ocorre após Make::getXML().
  * Simples Nacional (CRT 1/2/4): não injeta (piloto não se aplica).
  * Schema PL_009_V4 (e anteriores): não injeta — o XSD rejeita IBSCBS/IBSCBSTot.
- * Somente PL_010b+ (NT 2025.002) aceita esses grupos na ordem correta.
+ * Somente PL_010+ (NT 2025.002) aceita esses grupos na ordem correta.
  */
 final class MontarIbsCbsItemNfe
 {
@@ -157,7 +157,7 @@ final class MontarIbsCbsItemNfe
 	}
 
 	/**
-	 * PL_010b+ (NT 2025.002). PL_009_V4 rejeita IBSCBS no XSD.
+	 * PL_010+ (NT 2025.002). PL_009_V4 rejeita IBSCBS no XSD.
 	 *
 	 * @param array<string, mixed> $configJson
 	 */

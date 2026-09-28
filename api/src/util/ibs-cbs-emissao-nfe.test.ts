@@ -60,6 +60,17 @@ describe("ibs-cbs-emissao-nfe", () => {
 		expect(pendencias).toEqual([]);
 	});
 
+	it("exige IBS/CBS no Lucro Real/Presumido quando o item não tem", () => {
+		const pendencias = validarIbsCbsItensEmissao(
+			[{ descricao: "Água" }],
+			"nfce",
+			3,
+		);
+		expect(pendencias.length).toBe(1);
+		expect(pendencias[0]).toContain("Água:");
+		expect(pendencias[0]).toContain("IBS/CBS");
+	});
+
 	it("valida classificação inválida no LP", () => {
 		const pendencias = validarIbsCbsItensEmissao(
 			[{ ibsCbs: { cst: "000", cClassTrib: "999999" }, descricao: "X" }],

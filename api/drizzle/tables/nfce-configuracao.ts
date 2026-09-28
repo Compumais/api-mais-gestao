@@ -42,7 +42,7 @@ export const nfceconfiguracao = pgTable(
 
 		versaoleiaute: varchar({ length: 10 }).default("4.00").notNull(),
 
-		schema: varchar({ length: 30 }).default("PL_009_V4").notNull(),
+		schema: varchar({ length: 30 }).default("PL_010_V1.30").notNull(),
 
 		idcertificadoativo: text(),
 
