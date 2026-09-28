@@ -27,6 +27,7 @@ import {
 	formatarQuantidade,
 	labelProdutoCotacao,
 } from "@/constants/compras-constants";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { cotacoesCompraService } from "@/services/cotacoes-compra.service";
 
 export default function ComparativoCotacaoPage() {
@@ -39,6 +40,13 @@ export default function ComparativoCotacaoPage() {
 		queryKey: ["cotacao-compra", id, "comparativo"],
 		queryFn: () => cotacoesCompraService.comparativo(id),
 	});
+
+	useTituloAba(
+		data?.cotacao?.titulo ??
+			(data?.cotacao?.codigo != null
+				? `Cotação #${data.cotacao.codigo}`
+				: undefined),
+	);
 
 	useEffect(() => {
 		if (!data) return;

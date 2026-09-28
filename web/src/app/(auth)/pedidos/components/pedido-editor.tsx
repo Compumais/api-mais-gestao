@@ -58,6 +58,7 @@ import {
 	pedidoPodeFaturarNfe,
 } from "@/constants/dav-status";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { salvarNovoPedidoDavSchema } from "@/schemas/dav.schema";
 import {
 	type AtualizarPedidoData,
@@ -126,6 +127,12 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 		queryFn: () => davService.buscar(pedidoId ?? ""),
 		enabled: !!pedidoId,
 	});
+
+	useTituloAba(
+		pedidoId && pedido
+			? `Pedido ${pedido.codigo ?? pedidoId.slice(0, 8)}`
+			: undefined,
+	);
 
 	const { data: itensServidor = [], isLoading: carregandoItens } = useQuery({
 		queryKey: ["pedido-itens", pedidoId],

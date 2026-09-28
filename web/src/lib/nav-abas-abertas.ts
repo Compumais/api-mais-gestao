@@ -1,3 +1,7 @@
+import {
+	classificarRotaAba,
+	tituloCriacaoParaPathname,
+} from "@/lib/nav-aba-titulos";
 import { rotaNavEstaAtiva } from "@/lib/nav-rota-ativa";
 
 export const NAV_ABAS_STORAGE_PREFIX = "mais-gestao:nav-abas-abertas";
@@ -9,6 +13,8 @@ export type AbaAberta = {
 	/** Href completo para restaurar a navegação. */
 	href: string;
 	title: string;
+	/** Quando true, o resolver estático não sobrescreve o título (nome da entidade). */
+	titleLocked?: boolean;
 };
 
 export function chaveNavAbasAbertas(userId: string) {
@@ -31,19 +37,20 @@ export function lerAbasAbertas(raw: string | null): AbaAberta[] {
 			const id = typeof rec.id === "string" ? rec.id : "";
 			const href = typeof rec.href === "string" ? rec.href : "";
 			const title = typeof rec.title === "string" ? rec.title : "";
+			const titleLocked = rec.titleLocked === true;
 			if (!id || !href || !title) return [];
-			return [{ id, href, title }];
+			return [{ id, href, title, ...(titleLocked ? { titleLocked } : {}) }];
 		});
 	} catch {
 		return [];
 	}
 }
 
-export function resolverTituloAba(
+function tituloNavMaisEspecifico(
 	pathname: string,
 	search: string,
 	itens: { url: string; title: string }[],
-): string {
+): string | null {
 	let melhor: { url: string; title: string } | null = null;
 	let melhorScore = -1;
 
@@ -57,14 +64,53 @@ export function resolverTituloAba(
 		}
 	}
 
-	if (melhor) return melhor.title;
+	return melhor?.title ?? null;
+}
 
+function tituloFallbackSegmento(pathname: string): string {
 	const segmento = pathname.split("/").filter(Boolean).pop() ?? "Página";
 	try {
 		return decodeURIComponent(segmento).replace(/-/g, " ");
 	} catch {
 		return segmento.replace(/-/g, " ");
 	}
+}
+
+export function resolverTituloAba(
+	pathname: string,
+	search: string,
+	itens: { url: string; title: string }[],
+): string {
+	const classificacao = classificarRotaAba(pathname);
+	const { tipo, pathnameParaMatch, pathnamePai } = classificacao;
+
+	if (tipo === "criacao" && pathnamePai) {
+		const doMapa = tituloCriacaoParaPathname(pathnamePai, search);
+		if (doMapa) return doMapa;
+		const tituloNav =
+			tituloNavMaisEspecifico(pathnameParaMatch, "", itens) ??
+			tituloFallbackSegmento(pathnamePai);
+		return `Novo · ${tituloNav}`;
+	}
+
+	if (tipo === "edicao") {
+		const tituloNav =
+			tituloNavMaisEspecifico(pathnameParaMatch, "", itens) ??
+			tituloFallbackSegmento(pathnameParaMatch);
+		return `Editar · ${tituloNav}`;
+	}
+
+	if (tipo === "detalhe") {
+		return (
+			tituloNavMaisEspecifico(pathnameParaMatch, "", itens) ??
+			tituloFallbackSegmento(pathnameParaMatch)
+		);
+	}
+
+	return (
+		tituloNavMaisEspecifico(pathname, search, itens) ??
+		tituloFallbackSegmento(pathname)
+	);
 }
 
 /**
@@ -86,7 +132,13 @@ export function registrarAbaAberta(
 
 	if (existente) {
 		return abas.map((aba) =>
-			aba.id === pathname ? { ...aba, href, title } : aba,
+			aba.id === pathname
+				? {
+						...aba,
+						href,
+						title: aba.titleLocked ? aba.title : title,
+					}
+				: aba,
 		);
 	}
 

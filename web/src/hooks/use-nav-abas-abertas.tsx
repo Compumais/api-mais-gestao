@@ -18,6 +18,7 @@ type NavAbasAbertasContextValue = {
 	hidratado: boolean;
 	ativarAba: (href: string) => void;
 	fecharAba: (id: string) => void;
+	atualizarTituloAba: (id: string, title: string) => void;
 	lerRascunho: <T>(id: string) => T | undefined;
 	salvarRascunho: (id: string, dados: unknown) => void;
 	limparRascunho: (id: string) => void;
@@ -93,6 +94,27 @@ export function NavAbasAbertasProvider({
 		[router],
 	);
 
+	const atualizarTituloAba = React.useCallback(
+		(id: string, title: string) => {
+			const titulo = title.trim();
+			if (!id || !titulo) return;
+			setAbas((atuais) => {
+				const indice = atuais.findIndex((aba) => aba.id === id);
+				if (indice < 0) return atuais;
+				const atual = atuais[indice];
+				if (atual?.title === titulo && atual.titleLocked) return atuais;
+				const proximas = atuais.map((aba) =>
+					aba.id === id ? { ...aba, title: titulo, titleLocked: true } : aba,
+				);
+				if (storageKey) {
+					localStorage.setItem(storageKey, JSON.stringify(proximas));
+				}
+				return proximas;
+			});
+		},
+		[storageKey],
+	);
+
 	const lerRascunho = React.useCallback(<T,>(id: string) => {
 		return rascunhosRef.current.get(id) as T | undefined;
 	}, []);
@@ -125,6 +147,7 @@ export function NavAbasAbertasProvider({
 			hidratado,
 			ativarAba,
 			fecharAba,
+			atualizarTituloAba,
 			lerRascunho,
 			salvarRascunho,
 			limparRascunho,
@@ -135,6 +158,7 @@ export function NavAbasAbertasProvider({
 			hidratado,
 			ativarAba,
 			fecharAba,
+			atualizarTituloAba,
 			lerRascunho,
 			salvarRascunho,
 			limparRascunho,

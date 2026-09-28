@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -23,6 +24,8 @@ export function EditarUnidadeMedidaClient({ id }: EditarUnidadeMedidaClientProps
 			return await unidadeMedidaService.buscar(id);
 		},
 	});
+
+	useTituloAba(data?.nome);
 
 	useEffect(() => {
 		if (!data) return;

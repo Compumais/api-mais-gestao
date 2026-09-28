@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NFE_STATUS, NFE_STATUS_LABELS } from "@/constants/nfe-status";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import {
 	buscarNfsePorId,
 	cancelarNfse,
@@ -50,6 +51,13 @@ export default function DetalheNfsePage() {
 		queryKey: ["nfse-detalhe", params.id],
 		queryFn: () => buscarNfsePorId(params.id),
 	});
+
+	useTituloAba(
+		data?.notaFiscal?.numeronfse ??
+			(data?.notaFiscal?.numeronotafiscal
+				? `${data.notaFiscal.serie ?? ""}-${data.notaFiscal.numeronotafiscal}`
+				: undefined),
+	);
 
 	const cancelarMutation = useMutation({
 		mutationFn: () => cancelarNfse(params.id, motivoCancelamento),

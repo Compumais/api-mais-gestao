@@ -32,6 +32,7 @@ import {
 	NFE_STATUS,
 } from "@/constants/nfe-status";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { api } from "@/lib/axios";
 import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
 import { extrairRelatorioFiscalErro } from "@/schemas/relatorio-fiscal.schema";
@@ -126,6 +127,14 @@ export default function DetalheNfePage({
 		queryFn: () => buscarNfeEmitidaPorId(id),
 		enabled: !!id,
 	});
+
+	useTituloAba(
+		nf?.numeronotafiscal
+			? nf.serie
+				? `${nf.serie}-${nf.numeronotafiscal}`
+				: String(nf.numeronotafiscal)
+			: undefined,
+	);
 
 	const { data: entidadeDestinatario } = useQuery({
 		queryKey: ["entidade-destinatario-nfe", nf?.identidade],

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { tipoProblemaService } from "@/services/tipo-problema.service";
 import { TipoProblemaForm } from "../../components/tipo-problema-form";
 
@@ -17,6 +18,8 @@ export function EditarTipoProblemaClient({
 			return await tipoProblemaService.buscar(id);
 		},
 	});
+
+	useTituloAba(data?.descricao);
 
 	if (isLoading) {
 		return (

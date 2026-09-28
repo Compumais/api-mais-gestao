@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { ESCOPO_CONDICAO_PAGAMENTO } from "@/schemas/condicao-pagamento.schema";
 import { condicaoPagamentoService } from "@/services/condicao-pagamento.service";
 import { MeioPagamentoForm } from "../../components/meio-pagamento-form";
@@ -16,6 +17,8 @@ export function EditarMeioPagamentoClient({ id }: EditarMeioPagamentoClientProps
 			return await condicaoPagamentoService.buscar(id);
 		},
 	});
+
+	useTituloAba(data?.descricao);
 
 	if (isLoading) {
 		return (

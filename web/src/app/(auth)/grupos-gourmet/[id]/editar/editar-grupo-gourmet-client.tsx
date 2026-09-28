@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import type { GrupoGourmetFormData } from "@/schemas/grupo-gourmet.schema";
 import { gruposGourmetService } from "@/services/grupos-gourmet.service";
 import { GrupoGourmetForm } from "../../components/grupo-gourmet-form";
@@ -16,6 +17,8 @@ export function EditarGrupoGourmetClient({
 		queryKey: ["grupo-gourmet", id],
 		queryFn: () => gruposGourmetService.buscar(id),
 	});
+
+	useTituloAba(data?.nome);
 
 	if (isLoading) {
 		return (

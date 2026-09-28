@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
 	avaliarResultadoBaixaEstoque,
@@ -68,6 +69,14 @@ export function EditarNfcePdv() {
 			!!editarNfceId && !!empresa?.id && isAuthenticated && !authLoading,
 		retry: 1,
 	});
+
+	useTituloAba(
+		dadosEdicao?.nota.numeronotafiscal
+			? dadosEdicao.nota.serie
+				? `${dadosEdicao.nota.numeronotafiscal}/${dadosEdicao.nota.serie}`
+				: String(dadosEdicao.nota.numeronotafiscal)
+			: undefined,
+	);
 
 	const atualizarNfceMutation = useMutation({
 		mutationFn: (params: {

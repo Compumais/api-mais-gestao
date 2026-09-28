@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ORDEM_SERVICO_CAMPOS_EXTRA } from "@/constants/ordem-servico-status";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import {
 	useAtualizarOrdemServico,
 	useConfiguracaoOrdemServico,
@@ -113,6 +114,11 @@ export default function OrdemServicoDetalhePage({
 	const [modalImpressaoAberto, setModalImpressaoAberto] = useState(false);
 
 	const { data: os, isLoading } = useOrdemServico(id);
+	useTituloAba(
+		os?.codigo != null
+			? `OS ${os.codigo}`
+			: os?.nomecliente ?? undefined,
+	);
 	const { data: config } = useConfiguracaoOrdemServico(empresa?.id ?? null);
 	const { data: tipos = [] } = useTiposOrdemServicoEvento(empresa?.id ?? null);
 	const { data: itensOs = [] } = useOrdemServicoItens(id, empresa?.id ?? null);

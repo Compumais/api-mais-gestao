@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { financeiroService } from "@/services/financeiro.service";
 
 const formatCurrency = (value: string | null | undefined) => {
@@ -33,6 +34,8 @@ export default function DetalhesContaPagarPage() {
 		queryFn: () => financeiroService.buscar(id),
 		enabled: !!id,
 	});
+
+	useTituloAba(financeiro?.historico ?? financeiro?.documento ?? undefined);
 
 	if (isLoading) {
 		return (

@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { TableCell } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import {
 	type NotaFiscalCompraEdicaoFormData,
 	notaFiscalCompraEdicaoSchema,
@@ -46,6 +47,13 @@ export default function EditarNotaFiscalCompraPage() {
 		queryFn: () => notaFiscalService.buscar(id),
 		enabled: !!id,
 	});
+
+	useTituloAba(
+		data?.notaFiscal?.numero ??
+			data?.notaFiscal?.numeronotafiscal ??
+			data?.notaFiscal?.chavenfe ??
+			undefined,
+	);
 
 	const form = useForm<NotaFiscalCompraEdicaoFormData>({
 		resolver: zodResolver(notaFiscalCompraEdicaoSchema),

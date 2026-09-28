@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import {
 	type AtualizarUsuarioFormData,
 	atualizarUsuarioSchema,
@@ -89,6 +90,12 @@ export function UsuarioForm(props: UsuarioFormProps) {
 		},
 		enabled: isEdicao && !!props.usuarioId,
 	});
+
+	useTituloAba(
+		isEdicao
+			? usuarioData?.nome ?? usuarioData?.email ?? undefined
+			: undefined,
+	);
 
 	useEffect(() => {
 		if (empresa?.id) {

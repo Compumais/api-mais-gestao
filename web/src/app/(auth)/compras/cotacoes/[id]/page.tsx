@@ -26,6 +26,7 @@ import {
 	labelProdutoCotacao,
 	STATUS_COTACAO_COMPRA,
 } from "@/constants/compras-constants";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { cotacoesCompraService } from "@/services/cotacoes-compra.service";
 
 export default function DetalheCotacaoPage() {
@@ -38,6 +39,11 @@ export default function DetalheCotacaoPage() {
 		queryKey: ["cotacao-compra", id],
 		queryFn: () => cotacoesCompraService.buscar(id),
 	});
+
+	useTituloAba(
+		data?.titulo ??
+			(data?.codigo != null ? `Cotação #${data.codigo}` : undefined),
+	);
 
 	const { mutate: abrir, isPending: abrindo } = useMutation({
 		mutationFn: () => cotacoesCompraService.abrir(id),
