@@ -216,12 +216,36 @@ final class MontarIbsCbsItemNfe
 		}
 
 		$ns = $total->namespaceURI ?: 'http://www.portalfiscal.inf.br/nfe';
+		$zero = self::fmt2(0.0);
 		$ibsTot = $dom->createElementNS($ns, 'IBSCBSTot');
 		$ibsTot->appendChild($dom->createElementNS($ns, 'vBCIBSCBS', self::fmt2($totais['vBCIBSCBS'])));
-		$ibsTot->appendChild($dom->createElementNS($ns, 'vIBSUF', self::fmt2($totais['vIBSUF'])));
-		$ibsTot->appendChild($dom->createElementNS($ns, 'vIBSMun', self::fmt2($totais['vIBSMun'])));
-		$ibsTot->appendChild($dom->createElementNS($ns, 'vIBS', self::fmt2($totais['vIBS'])));
-		$ibsTot->appendChild($dom->createElementNS($ns, 'vCBS', self::fmt2($totais['vCBS'])));
+
+		// PL_010 / TIBSCBSMonoTot: vBCIBSCBS → gIBS? → gCBS? → gMono? → gEstornoCred?
+		$gIbs = $dom->createElementNS($ns, 'gIBS');
+		$gUf = $dom->createElementNS($ns, 'gIBSUF');
+		$gUf->appendChild($dom->createElementNS($ns, 'vDif', $zero));
+		$gUf->appendChild($dom->createElementNS($ns, 'vDevTrib', $zero));
+		$gUf->appendChild($dom->createElementNS($ns, 'vIBSUF', self::fmt2($totais['vIBSUF'])));
+		$gIbs->appendChild($gUf);
+
+		$gMun = $dom->createElementNS($ns, 'gIBSMun');
+		$gMun->appendChild($dom->createElementNS($ns, 'vDif', $zero));
+		$gMun->appendChild($dom->createElementNS($ns, 'vDevTrib', $zero));
+		$gMun->appendChild($dom->createElementNS($ns, 'vIBSMun', self::fmt2($totais['vIBSMun'])));
+		$gIbs->appendChild($gMun);
+
+		$gIbs->appendChild($dom->createElementNS($ns, 'vIBS', self::fmt2($totais['vIBS'])));
+		$gIbs->appendChild($dom->createElementNS($ns, 'vCredPres', $zero));
+		$gIbs->appendChild($dom->createElementNS($ns, 'vCredPresCondSus', $zero));
+		$ibsTot->appendChild($gIbs);
+
+		$gCbs = $dom->createElementNS($ns, 'gCBS');
+		$gCbs->appendChild($dom->createElementNS($ns, 'vDif', $zero));
+		$gCbs->appendChild($dom->createElementNS($ns, 'vDevTrib', $zero));
+		$gCbs->appendChild($dom->createElementNS($ns, 'vCBS', self::fmt2($totais['vCBS'])));
+		$gCbs->appendChild($dom->createElementNS($ns, 'vCredPres', $zero));
+		$gCbs->appendChild($dom->createElementNS($ns, 'vCredPresCondSus', $zero));
+		$ibsTot->appendChild($gCbs);
 
 		// PL_010b: ICMSTot → ISSQNtot? → retTrib? → ISTot? → IBSCBSTot → vNFTot?
 		$ancoragem = null;
