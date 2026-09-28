@@ -5,7 +5,17 @@ import { db } from "./connection";
 export type TerminalPdv = typeof terminalpdv.$inferSelect;
 export type NovoTerminalPdv = typeof terminalpdv.$inferInsert;
 
-export type TerminalPdvComSerie = TerminalPdv & {
+/** Resposta pública do terminal (sem hash/instance da API key). */
+export type TerminalPdvComSerie = {
+	id: string;
+	idempresa: string;
+	numeropdv: number;
+	descricao: string | null;
+	idnfeserie: string;
+	ativo: boolean;
+	apikey_prefix: string | null;
+	criadoem: string;
+	atualizadoem: string;
 	serie: string;
 	numeroproximo: number;
 	modeloserie: string;
@@ -13,23 +23,25 @@ export type TerminalPdvComSerie = TerminalPdv & {
 	ultimonumero?: number | null;
 };
 
+const selectTerminalComSerie = {
+	id: terminalpdv.id,
+	idempresa: terminalpdv.idempresa,
+	numeropdv: terminalpdv.numeropdv,
+	descricao: terminalpdv.descricao,
+	idnfeserie: terminalpdv.idnfeserie,
+	ativo: terminalpdv.ativo,
+	apikey_prefix: terminalpdv.apikey_prefix,
+	criadoem: terminalpdv.criadoem,
+	atualizadoem: terminalpdv.atualizadoem,
+	serie: nfeserie.serie,
+	numeroproximo: nfeserie.numeroproximo,
+	modeloserie: nfeserie.modelo,
+	serieativa: nfeserie.ativo,
+} as const;
+
 export async function listarTerminaisPdvPorEmpresa(idempresa: string) {
 	return db
-		.select({
-			id: terminalpdv.id,
-			idempresa: terminalpdv.idempresa,
-			numeropdv: terminalpdv.numeropdv,
-			descricao: terminalpdv.descricao,
-			idnfeserie: terminalpdv.idnfeserie,
-			ativo: terminalpdv.ativo,
-			apikey_prefix: terminalpdv.apikey_prefix,
-			criadoem: terminalpdv.criadoem,
-			atualizadoem: terminalpdv.atualizadoem,
-			serie: nfeserie.serie,
-			numeroproximo: nfeserie.numeroproximo,
-			modeloserie: nfeserie.modelo,
-			serieativa: nfeserie.ativo,
-		})
+		.select(selectTerminalComSerie)
 		.from(terminalpdv)
 		.innerJoin(nfeserie, eq(terminalpdv.idnfeserie, nfeserie.id))
 		.where(eq(terminalpdv.idempresa, idempresa))
@@ -38,20 +50,7 @@ export async function listarTerminaisPdvPorEmpresa(idempresa: string) {
 
 export async function buscarTerminalPdvPorId(id: string) {
 	const [registro] = await db
-		.select({
-			id: terminalpdv.id,
-			idempresa: terminalpdv.idempresa,
-			numeropdv: terminalpdv.numeropdv,
-			descricao: terminalpdv.descricao,
-			idnfeserie: terminalpdv.idnfeserie,
-			ativo: terminalpdv.ativo,
-			criadoem: terminalpdv.criadoem,
-			atualizadoem: terminalpdv.atualizadoem,
-			serie: nfeserie.serie,
-			numeroproximo: nfeserie.numeroproximo,
-			modeloserie: nfeserie.modelo,
-			serieativa: nfeserie.ativo,
-		})
+		.select(selectTerminalComSerie)
 		.from(terminalpdv)
 		.innerJoin(nfeserie, eq(terminalpdv.idnfeserie, nfeserie.id))
 		.where(eq(terminalpdv.id, id));
@@ -64,20 +63,7 @@ export async function buscarTerminalPdvPorNumero(
 	numeropdv: number,
 ) {
 	const [registro] = await db
-		.select({
-			id: terminalpdv.id,
-			idempresa: terminalpdv.idempresa,
-			numeropdv: terminalpdv.numeropdv,
-			descricao: terminalpdv.descricao,
-			idnfeserie: terminalpdv.idnfeserie,
-			ativo: terminalpdv.ativo,
-			criadoem: terminalpdv.criadoem,
-			atualizadoem: terminalpdv.atualizadoem,
-			serie: nfeserie.serie,
-			numeroproximo: nfeserie.numeroproximo,
-			modeloserie: nfeserie.modelo,
-			serieativa: nfeserie.ativo,
-		})
+		.select(selectTerminalComSerie)
 		.from(terminalpdv)
 		.innerJoin(nfeserie, eq(terminalpdv.idnfeserie, nfeserie.id))
 		.where(
