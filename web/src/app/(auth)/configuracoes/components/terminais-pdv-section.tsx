@@ -71,6 +71,11 @@ export function TerminaisPdvSection({ idempresa }: TerminaisPdvSectionProps) {
 		(TerminalPdv & { idnfeserieSelect: string }) | null
 	>(null);
 	const [excluindo, setExcluindo] = useState<TerminalPdv | null>(null);
+	const [apiKeyGerada, setApiKeyGerada] = useState<{
+		numeropdv: number;
+		apiKey: string;
+		aviso: string;
+	} | null>(null);
 
 	const { data: terminais = [], isLoading } = useQuery({
 		queryKey: ["terminais-pdv", idempresa],
@@ -143,13 +148,29 @@ export function TerminaisPdvSection({ idempresa }: TerminaisPdvSectionProps) {
 			toast.error(error.message || "Erro ao excluir PDV"),
 	});
 
+	const gerarApiKeyMutation = useMutation({
+		mutationFn: (terminal: TerminalPdv) =>
+			terminalPdvService.gerarApiKey(terminal.id, idempresa),
+		onSuccess: (data) => {
+			setApiKeyGerada({
+				numeropdv: data.numeropdv,
+				apiKey: data.apiKey,
+				aviso: data.aviso,
+			});
+			invalidar();
+			toast.success("API key gerada — copie agora");
+		},
+		onError: (error: Error) =>
+			toast.error(error.message || "Erro ao gerar API key"),
+	});
+
 	return (
 		<div className="rounded-lg border bg-card p-6">
 			<h2 className="mb-1 text-lg font-semibold">Terminais PDV</h2>
 			<p className="mb-4 text-sm text-muted-foreground">
-				Cada PDV precisa de série NFC-e própria. Use o mesmo número do terminal
-				Electron em Configurações. Dois caixas na mesma série geram colisão na
-				SEFAZ.
+				Cada PDV precisa de série NFC-e própria e de uma API key. Gere a key
+				aqui e cole nas configurações do PDV Electron. Só uma instância pode
+				usar a mesma key por vez.
 			</p>
 
 			<div className="grid gap-4 md:grid-cols-5">
@@ -312,7 +333,10 @@ export function TerminaisPdvSection({ idempresa }: TerminaisPdvSectionProps) {
 											</p>
 											<p className="text-muted-foreground">
 												Série {terminal.serie} · próximo nº{" "}
-												{terminal.numeroproximo}
+												{terminal.ultimonumero ?? terminal.numeroproximo}
+												{terminal.apikey_prefix
+													? ` · key ${terminal.apikey_prefix}…`
+													: " · sem API key"}
 											</p>
 											<div className="mt-1 flex flex-wrap gap-2">
 												{terminal.ativo ? (
@@ -320,9 +344,23 @@ export function TerminaisPdvSection({ idempresa }: TerminaisPdvSectionProps) {
 												) : (
 													<Badge variant="outline">Inativo</Badge>
 												)}
+												{terminal.apikey_prefix ? (
+													<Badge variant="secondary">API key</Badge>
+												) : null}
 											</div>
 										</div>
 										<div className="flex flex-wrap gap-2">
+											<Button
+												type="button"
+												size="sm"
+												variant="secondary"
+												disabled={gerarApiKeyMutation.isPending}
+												onClick={() => gerarApiKeyMutation.mutate(terminal)}
+											>
+												{terminal.apikey_prefix
+													? "Regenerar API key"
+													: "Gerar API key"}
+											</Button>
 											<Button
 												type="button"
 												size="sm"
@@ -358,6 +396,40 @@ export function TerminaisPdvSection({ idempresa }: TerminaisPdvSectionProps) {
 					)}
 				</ul>
 			)}
+
+			<AlertDialog
+				open={!!apiKeyGerada}
+				onOpenChange={(open) => !open && setApiKeyGerada(null)}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							API key do PDV {apiKeyGerada?.numeropdv}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{apiKeyGerada?.aviso}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<div className="rounded-md border bg-muted/40 p-3">
+						<code className="break-all text-sm font-medium">
+							{apiKeyGerada?.apiKey}
+						</code>
+					</div>
+					<AlertDialogFooter>
+						<AlertDialogAction
+							onClick={() => {
+								if (apiKeyGerada?.apiKey) {
+									void navigator.clipboard.writeText(apiKeyGerada.apiKey);
+									toast.success("API key copiada");
+								}
+								setApiKeyGerada(null);
+							}}
+						>
+							Copiar e fechar
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			<AlertDialog
 				open={!!excluindo}

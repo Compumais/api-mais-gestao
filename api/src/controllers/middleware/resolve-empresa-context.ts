@@ -50,6 +50,27 @@ export async function resolveEmpresaContext(
 		return;
 	}
 
+	if (request.user.isPdvDevice && request.pdvTerminal) {
+		if (request.pdvTerminal.idempresa !== idempresa) {
+			return reply.status(403).send({
+				error: "Terminal PDV não pertence à empresa informada",
+				code: "EMPRESA_ACESSO_NEGADO",
+			});
+		}
+		const empresaDevice = await buscarEmpresaPorId(idempresa);
+		if (!empresaDevice?.idproprietario) {
+			return reply.status(404).send({
+				error: "Empresa não encontrada",
+				code: "EMPRESA_NAO_ENCONTRADA",
+			});
+		}
+		request.empresaContext = {
+			idempresa,
+			idproprietario: empresaDevice.idproprietario,
+		};
+		return;
+	}
+
 	const pertence = await verificarUsuarioPertenceEmpresa(
 		request.user.id,
 		idempresa,

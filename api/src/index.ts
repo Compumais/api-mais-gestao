@@ -12,6 +12,7 @@ import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 // import { authRotas } from "./controllers/http/auth/rotas.js";
 import { obterPerfil } from "./controllers/http/auth/obter-perfil.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
+import { resolverEmailLogin } from "./service/auth/resolver-email-login.js";
 import { automacaoRotas } from "./controllers/http/automacao/rotas.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
 import { bandeirasCartaoRotas } from "./controllers/http/bandeira-cartao/rotas.js";
@@ -251,16 +252,20 @@ app.route({
 	url: "/api/auth/sign-in/email",
 	schema: {
 		tags: ["auth"],
-		summary: "Fazer login com email e senha",
-		description: "Autentica um usuário usando email e senha",
+		summary: "Fazer login com e-mail (ou nome) e senha",
+		description:
+			"Autentica um usuário usando e-mail ou nome de usuário e senha",
 		body: {
 			type: "object",
-			required: ["email", "password"],
+			required: ["password"],
 			properties: {
 				email: {
 					type: "string",
-					format: "email",
-					description: "Email do usuário",
+					description: "E-mail ou nome do usuário",
+				},
+				login: {
+					type: "string",
+					description: "Alias de e-mail/nome (opcional)",
 				},
 				password: {
 					type: "string",
@@ -331,6 +336,31 @@ app.route({
 		},
 	},
 	handler: async (request: FastifyRequest, reply: FastifyReply) => {
+		const body = (request.body ?? {}) as {
+			email?: string;
+			login?: string;
+			password?: string;
+			rememberMe?: boolean;
+			callbackURL?: string;
+		};
+		const identificador = String(body.email ?? body.login ?? "").trim();
+		if (!identificador || !body.password) {
+			return reply.status(400).send({
+				error: "BAD_REQUEST",
+				message: "Informe usuário/e-mail e senha.",
+			});
+		}
+		const emailResolvido = await resolverEmailLogin(identificador);
+		if (!emailResolvido) {
+			return reply.status(401).send({
+				error: "UNAUTHORIZED",
+				message: "Credenciais inválidas",
+			});
+		}
+		request.body = {
+			...body,
+			email: emailResolvido,
+		};
 		await authenticationRoute(request, reply);
 	},
 });

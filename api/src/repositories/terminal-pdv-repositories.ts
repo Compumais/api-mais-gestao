@@ -22,6 +22,7 @@ export async function listarTerminaisPdvPorEmpresa(idempresa: string) {
 			descricao: terminalpdv.descricao,
 			idnfeserie: terminalpdv.idnfeserie,
 			ativo: terminalpdv.ativo,
+			apikey_prefix: terminalpdv.apikey_prefix,
 			criadoem: terminalpdv.criadoem,
 			atualizadoem: terminalpdv.atualizadoem,
 			serie: nfeserie.serie,
