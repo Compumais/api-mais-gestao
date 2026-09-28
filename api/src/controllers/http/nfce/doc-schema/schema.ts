@@ -113,6 +113,121 @@ export const buscarDetalhesNfceSchema: FastifySchema = {
 	},
 };
 
+export const emitirNfceVendaNaoFiscalSchema: FastifySchema = {
+	tags: ["nfce"],
+	summary: "Emitir NFC-e de venda não fiscal",
+	description:
+		"Converte uma venda PDV gerencial (ou reemite tentativa falha) em NFC-e, complementando a baixa fiscal quando autorizada.",
+	security: [{ bearerAuth: [] }],
+	params: {
+		type: "object",
+		required: ["idvenda"],
+		properties: {
+			idvenda: {
+				type: "string",
+				format: "uuid",
+				description: "ID da venda PDV",
+			},
+		},
+	},
+	body: {
+		type: "object",
+		required: ["idempresa"],
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+		},
+	},
+	response: {
+		200: {
+			type: "object",
+			description: "Resultado da emissão",
+			properties: {
+				emitida: { type: "boolean" },
+				jaEmitida: { type: "boolean" },
+				idnotafiscal: { type: "string" },
+				chave: { type: "string" },
+				protocolo: { type: "string" },
+				serie: { type: "string" },
+				numero: { type: "number" },
+				cStat: { type: "string" },
+				xMotivo: { type: "string" },
+				erro: { type: "string" },
+				avisosEstoque: {
+					type: "array",
+					items: { type: "string" },
+				},
+			},
+		},
+		400: erroPadrao,
+		401: erroPadrao,
+		403: erroPadrao,
+		404: erroPadrao,
+		500: erroPadrao,
+	},
+};
+
+export const emitirNfceVendasNaoFiscaisLoteSchema: FastifySchema = {
+	tags: ["nfce"],
+	summary: "Emitir NFC-e em lote de vendas não fiscais",
+	description:
+		"Emite NFC-e sequencialmente para as vendas informadas. Rejeições SEFAZ não interrompem o lote; falha de configuração fiscal aborta antes de reservar numeração.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		required: ["idempresa", "idsVendas"],
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+			idsVendas: {
+				type: "array",
+				minItems: 1,
+				maxItems: 100,
+				items: { type: "string", format: "uuid" },
+				description: "IDs das vendas PDV a emitir",
+			},
+		},
+	},
+	response: {
+		200: {
+			type: "object",
+			description: "Relatório do lote",
+			properties: {
+				total: { type: "number" },
+				autorizadas: { type: "number" },
+				falhas: { type: "number" },
+				ignoradas: { type: "number" },
+				itens: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							idvenda: { type: "string" },
+							idnotafiscal: { type: "string", nullable: true },
+							numeronotafiscal: { type: "string", nullable: true },
+							serie: { type: "string", nullable: true },
+							sucesso: { type: "boolean" },
+							ignorada: { type: "boolean" },
+							cStat: { type: "string", nullable: true },
+							mensagem: { type: "string" },
+						},
+					},
+				},
+			},
+		},
+		400: erroPadrao,
+		401: erroPadrao,
+		403: erroPadrao,
+		500: erroPadrao,
+	},
+};
+
 export const interpretarRejeicaoNfceSchema: FastifySchema = {
 	tags: ["nfce"],
 	summary: "Interpretar rejeição SEFAZ da NFC-e",
