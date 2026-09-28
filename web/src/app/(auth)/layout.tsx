@@ -2,6 +2,7 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import { NavAbasAbertasBar } from "@/components/nav-abas-abertas-bar";
 import { NavAbasKeepAlive } from "@/components/nav-abas-keep-alive";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -21,7 +22,11 @@ import {
 
 function SearchDialogWrapper() {
 	const { open, setOpen } = useSearchDialog();
-	return <SearchDialog open={open} onOpenChange={setOpen} />;
+	return (
+		<VisualErrorBoundary title="Não foi possível carregar a busca">
+			<SearchDialog open={open} onOpenChange={setOpen} />
+		</VisualErrorBoundary>
+	);
 }
 
 function LayoutComum({ children }: { children: React.ReactNode }) {
@@ -44,11 +49,21 @@ function LayoutSidebar({ children }: { children: React.ReactNode }) {
 				} as React.CSSProperties
 			}
 		>
-			<AppSidebar variant="inset" />
+			<VisualErrorBoundary
+				title="Não foi possível carregar o menu"
+				className="min-h-svh w-(--sidebar-width) shrink-0"
+			>
+				<AppSidebar variant="inset" />
+			</VisualErrorBoundary>
 			<SidebarInset>
 				<PwaInstallPrompt />
 				<SiteHeader />
-				<NavAbasAbertasBar variante="sidebar" />
+				<VisualErrorBoundary
+					title="Não foi possível carregar as abas"
+					className="min-h-12 w-full"
+				>
+					<NavAbasAbertasBar variante="sidebar" />
+				</VisualErrorBoundary>
 				<NavAbasKeepAlive>{children}</NavAbasKeepAlive>
 			</SidebarInset>
 			<LayoutComum>{null}</LayoutComum>
@@ -67,7 +82,12 @@ function LayoutTopbar({ children }: { children: React.ReactNode }) {
 			}
 		>
 			<div className="sticky top-0 z-40">
-				<AppTopbar />
+				<VisualErrorBoundary
+					title="Não foi possível carregar o menu"
+					className="min-h-12 w-full"
+				>
+					<AppTopbar />
+				</VisualErrorBoundary>
 				<SiteHeaderTopbar />
 			</div>
 			<PwaInstallPrompt />

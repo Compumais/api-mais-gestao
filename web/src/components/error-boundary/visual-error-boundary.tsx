@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 type VisualErrorBoundaryProps = {
 	children: React.ReactNode;
 	className?: string;
+	title?: string;
 };
 
 type VisualErrorBoundaryState = {
@@ -30,13 +31,16 @@ export class VisualErrorBoundary extends Component<
 	}
 
 	handleRetry = () => {
-		if (!this.state.failed) return this.props.children;
+		this.setState({ failed: false });
 	};
 
 	render() {
 		if (!this.state.failed) {
 			return this.props.children;
 		}
+
+		const title =
+			this.props.title ?? "Não foi possível carregar este gráfico";
 
 		return (
 			<div
@@ -45,14 +49,10 @@ export class VisualErrorBoundary extends Component<
 				<AlertTriangle className="h-7 w-7 text-destructive" />
 
 				<div>
-					<p className="font-medium">Não foi possível carregar este gráfico</p>
+					<p className="font-medium">{title}</p>
 				</div>
 
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => window.location.reload()}
-				>
+				<Button variant="outline" size="sm" onClick={this.handleRetry}>
 					<RefreshCw className="mr-2 h-4 w-4" />
 					Tentar novamente
 				</Button>

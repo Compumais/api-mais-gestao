@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Suspense } from "react";
 import { DashboardFiltersBar } from "@/components/dashboard/dashboard-filters-bar";
+import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	DashboardFiltersProvider,
@@ -106,17 +107,23 @@ function DashboardShell() {
 					</ToggleGroup>
 				</div>
 
-				{tab === "visao-geral" && <VisaoGeralSection />}
-				{tab === "vendas" && <VendasSection />}
-				{tab === "clientes" && <ClientesSection />}
-				{tab === "financeiro" && <FinanceiroSection />}
-				{tab === "fluxo-caixa" && <FluxoCaixaSection />}
-				{tab === "rentabilidade" && <RentabilidadeSection />}
-				{tab === "dre" && <DreSection />}
-				{tab === "metas" && <MetasSection />}
-				{tab === "comparativo" && <ComparativoSection />}
-				{tab === "alertas" && <AlertasSection />}
-				{tab === "controle" && <ControleSection />}
+				<VisualErrorBoundary
+					key={tab}
+					title="Não foi possível carregar este painel"
+					className="min-h-60 w-full"
+				>
+					{tab === "visao-geral" && <VisaoGeralSection />}
+					{tab === "vendas" && <VendasSection />}
+					{tab === "clientes" && <ClientesSection />}
+					{tab === "financeiro" && <FinanceiroSection />}
+					{tab === "fluxo-caixa" && <FluxoCaixaSection />}
+					{tab === "rentabilidade" && <RentabilidadeSection />}
+					{tab === "dre" && <DreSection />}
+					{tab === "metas" && <MetasSection />}
+					{tab === "comparativo" && <ComparativoSection />}
+					{tab === "alertas" && <AlertasSection />}
+					{tab === "controle" && <ControleSection />}
+				</VisualErrorBoundary>
 			</div>
 		</PageContainer>
 	);
