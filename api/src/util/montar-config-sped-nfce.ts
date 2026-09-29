@@ -34,7 +34,7 @@ export function montarConfigJsonSpedNfce({
 		razaosocial: empresaFiscal.razaosocial ?? empresa.nome,
 		cnpj: empresa.cnpj.replace(/\D/g, ""),
 		siglaUF: estado.idestado,
-		schemes: nfceConfiguracao.schema ?? "PL_009_V4",
+		schemes: nfceConfiguracao.schema ?? "PL_010_V1.30",
 		versao: nfceConfiguracao.versaoleiaute ?? "4.00",
 		tokenIBPT: "",
 		CSC: CSC ?? "",

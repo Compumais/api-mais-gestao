@@ -1,5 +1,5 @@
-import { IconBan, IconEye, IconFileInvoice } from "@tabler/icons-react";
-import type { ColumnDef } from "@tanstack/react-table";
+import { IconBan, IconEye, IconFileInvoice, IconReceipt } from "@tabler/icons-react";
+import type { ColumnDef, Row, Table } from "@tanstack/react-table";
 import {
 	CabecalhoColunaTabela,
 	type OpcaoFiltroColunaTabela,
@@ -9,6 +9,7 @@ import {
 import { StatusNfeBadge } from "@/app/(auth)/nota-fiscal-venda/components/status-nfe-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { NFE_STATUS, NFE_STATUS_LABELS } from "@/constants/nfe-status";
 import { formatDateTimeBrasilia } from "@/lib/date";
 import { formatCurrency } from "@/lib/gourmet-utils";
@@ -20,6 +21,7 @@ import {
 	meiosPagamentoVenda,
 	nomeOperador,
 	podeCancelarVendaNaoFiscal,
+	podeEmitirNfceVendaNaoFiscal,
 	rotuloFiscal,
 	rotuloNfce,
 	tipoVenda,
@@ -99,6 +101,7 @@ type DefinicaoColuna = {
 };
 
 const DEFINICOES_COLUNAS: DefinicaoColuna[] = [
+	{ id: "select", label: "Seleção" },
 	{ id: "numeropdv", label: "Nº PDV" },
 	{ id: "datacriacao", label: "Data / Hora" },
 	{ id: "origem", label: "Origem" },
@@ -121,6 +124,8 @@ export type OpcoesColunasVendasPdv = {
 	onVerItens: (venda: VendaPdvGourmet) => void;
 	onVerNfce: (venda: VendaPdvGourmet) => void;
 	onCancelarVendaNaoFiscal: (venda: VendaPdvGourmet) => void;
+	onEmitirNfce: (venda: VendaPdvGourmet) => void;
+	emitindoId?: string | null;
 };
 
 function criarHeaderColuna(
@@ -162,12 +167,58 @@ export function criarColunasVendasPdv(
 		onVerItens,
 		onVerNfce,
 		onCancelarVendaNaoFiscal,
+		onEmitirNfce,
+		emitindoId,
 	} = opcoes;
 
 	const colunas: ColumnDef<VendaPdvGourmet>[] = [];
 
 	for (const def of DEFINICOES_COLUNAS) {
 		const meta = { label: def.label };
+
+		if (def.id === "select") {
+			colunas.push({
+				id: "select",
+				header: ({ table }: { table: Table<VendaPdvGourmet> }) => {
+					const elegiveis = table
+						.getRowModel()
+						.rows.filter((row) => podeEmitirNfceVendaNaoFiscal(row.original));
+					const todasSelecionadas =
+						elegiveis.length > 0 && elegiveis.every((row) => row.getIsSelected());
+					const algumasSelecionadas = elegiveis.some((row) => row.getIsSelected());
+					return (
+						<Checkbox
+							checked={
+								todasSelecionadas ||
+								(algumasSelecionadas && "indeterminate")
+							}
+							disabled={elegiveis.length === 0}
+							onCheckedChange={(value) => {
+								for (const row of elegiveis) {
+									row.toggleSelected(!!value);
+								}
+							}}
+							aria-label="Selecionar vendas elegíveis da página"
+						/>
+					);
+				},
+				cell: ({ row }: { row: Row<VendaPdvGourmet> }) => {
+					const elegivel = podeEmitirNfceVendaNaoFiscal(row.original);
+					return (
+						<Checkbox
+							checked={row.getIsSelected()}
+							disabled={!elegivel}
+							onCheckedChange={(value) => row.toggleSelected(!!value)}
+							aria-label={`Selecionar venda PDV ${row.original.numeropdv}`}
+						/>
+					);
+				},
+				enableSorting: false,
+				enableHiding: false,
+				meta,
+			});
+			continue;
+		}
 
 		if (def.id === "acoes") {
 			colunas.push({
@@ -181,6 +232,8 @@ export function criarColunasVendasPdv(
 					const idNfce = idNfceVenda(venda);
 					const fiscal = documentoVenda(venda) === "fiscal";
 					const podeCancelar = podeCancelarVendaNaoFiscal(venda);
+					const podeEmitir = podeEmitirNfceVendaNaoFiscal(venda);
+					const emitindo = emitindoId === venda.id;
 					return (
 						<div className="flex justify-end gap-1 whitespace-nowrap">
 							<Button
@@ -192,6 +245,19 @@ export function criarColunasVendasPdv(
 								<IconEye className="size-4" aria-hidden="true" />
 								Itens
 							</Button>
+							{podeEmitir ? (
+								<Button
+									variant="ghost"
+									size="sm"
+									className="gap-1.5"
+									disabled={emitindo}
+									title="Emitir NFC-e desta venda"
+									onClick={() => onEmitirNfce(venda)}
+								>
+									<IconReceipt className="size-4" aria-hidden="true" />
+									{emitindo ? "Emitindo…" : "Emitir NFC-e"}
+								</Button>
+							) : null}
 							{fiscal ? (
 								<Button
 									variant="ghost"

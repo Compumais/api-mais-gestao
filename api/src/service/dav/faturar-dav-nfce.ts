@@ -71,6 +71,7 @@ import {
 	resolverStatusPersistenciaEmissao,
 } from "@/util/resolver-status-emissao-nfe.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
+import { validarIbsCbsItensEmissao } from "@/util/ibs-cbs-emissao-nfe.js";
 
 type FaturarDavNfceParametros = {
 	idusuario: string;
@@ -391,6 +392,18 @@ export async function faturarDavNfceService({
 		return httpOk({
 			emitida: false,
 			erro: pendenciasCest.join("; "),
+		});
+	}
+
+	const pendenciasIbsCbs = validarIbsCbsItensEmissao(
+		itensNormalizados,
+		"nfce",
+		crt,
+	);
+	if (pendenciasIbsCbs.length > 0) {
+		return httpOk({
+			emitida: false,
+			erro: pendenciasIbsCbs.join("; "),
 		});
 	}
 

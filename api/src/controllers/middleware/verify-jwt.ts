@@ -3,6 +3,8 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import * as schema from "../../../drizzle/schema.js";
 import { auth } from "../../lib/auth.js";
 import { db } from "../../repositories/connection.js";
+import { PDV_API_KEY_PREFIX } from "../../repositories/terminal-pdv-apikey.js";
+import { resolverTerminalPorBearerApiKey } from "../../service/terminal-pdv/apikey-pdv.js";
 import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
 import { verificarUsuarioPodeAcessarPlataforma } from "../../util/verificar-acesso-plataforma.js";
 import { isSuper } from "../../util/verificar-super.js";
@@ -12,6 +14,7 @@ const ROTAS_SEM_VERIFICACAO_ACESSO = [
 	"/docs",
 	"/api/auth",
 	"/pdv/updates",
+	"/pdv/device/auth",
 ];
 
 /**
@@ -37,15 +40,11 @@ function fastifyHeadersToWebHeaders(
 			}
 		}
 	} catch (error) {
-		// Se houver erro ao processar headers, retorna headers vazio
 		console.warn("Erro ao processar headers:", error);
 	}
 	return headers;
 }
 
-/**
- * Extrai o token do header Authorization
- */
 function extractTokenFromHeader(
 	authHeader: string | undefined,
 ): string | null | undefined {
@@ -58,6 +57,12 @@ function extractTokenFromHeader(
 	}
 
 	return parts[1];
+}
+
+function extrairInstanceId(request: FastifyRequest): string | null {
+	const raw = request.headers["x-pdv-instance-id"];
+	const valor = Array.isArray(raw) ? raw[0] : raw;
+	return valor?.trim() || null;
 }
 
 function deveIgnorarVerificacaoAcesso(url: string): boolean {
@@ -76,6 +81,10 @@ async function validarAcessoPlataforma(
 	}
 
 	if (!request.user) {
+		return true;
+	}
+
+	if (request.user.isPdvDevice) {
 		return true;
 	}
 
@@ -101,21 +110,45 @@ async function validarAcessoPlataforma(
 
 /**
  * Middleware para verificar autenticação usando Better Auth
- * Aceita tanto cookies (padrão do Better Auth) quanto tokens JWT no header Authorization
+ * Aceita cookies, Bearer de sessão e API key de terminal PDV (`pdv_…`).
  */
 export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 	try {
-		// Tenta primeiro usar cookies (padrão do Better Auth)
 		const headers = fastifyHeadersToWebHeaders(request.headers);
 		const session = await auth.api.getSession({ headers });
 
-		// Se não houver sessão via cookies, tenta usar token do header Authorization
 		if (!session?.user) {
 			const authHeader = request.headers.authorization;
 			const token = extractTokenFromHeader(authHeader);
 
+			if (token?.startsWith(PDV_API_KEY_PREFIX)) {
+				const resolvido = await resolverTerminalPorBearerApiKey({
+					apiKey: token,
+					instanceId: extrairInstanceId(request),
+				});
+				if (!resolvido.ok || !resolvido.terminal) {
+					return reply.status(resolvido.ok ? 401 : resolvido.status).send({
+						error: resolvido.ok ? "Não autorizado" : resolvido.error,
+						code: resolvido.ok ? "UNAUTHORIZED" : resolvido.code,
+					});
+				}
+				const terminal = resolvido.terminal;
+				request.pdvTerminal = {
+					id: terminal.id,
+					idempresa: terminal.idempresa,
+					numeropdv: terminal.numeropdv,
+				};
+				request.user = {
+					id: `pdv-device:${terminal.id}`,
+					name: terminal.descricao || `PDV ${terminal.numeropdv}`,
+					email: undefined,
+					roles: ["pdv"],
+					isPdvDevice: true,
+				};
+				return;
+			}
+
 			if (token) {
-				// Busca a sessão pelo token no banco de dados
 				const sessionData = await db
 					.select({
 						id: schema.sessoes.id,
@@ -129,9 +162,7 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 
 				if (sessionData.length > 0) {
 					const sessao = sessionData[0];
-					// Verifica se a sessão não expirou
 					if (sessao?.expiraem && new Date(sessao.expiraem) > new Date()) {
-						// Busca os dados do usuário
 						const usuario = await db
 							.select({
 								id: schema.usuarios.id,
@@ -158,14 +189,12 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 							};
 							const permitido = await validarAcessoPlataforma(request, reply);
 							if (!permitido) return;
-							return; // Autenticação bem-sucedida
+							return;
 						}
 					}
 				}
 			}
 		} else {
-			// Sessão encontrada via cookies
-			// Buscar dados completos do usuário incluindo plano
 			const usuario = await db
 				.select({
 					id: schema.usuarios.id,
@@ -186,7 +215,6 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 				});
 			}
 
-			// perfil completo do usuário (array JSONB)
 			const perfil = normalizarPerfilArray(userData.perfil);
 
 			request.user = {
@@ -200,10 +228,9 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 			const permitido = await validarAcessoPlataforma(request, reply);
 			if (!permitido) return;
 
-			return; // Autenticação bem-sucedida
+			return;
 		}
 
-		// Se chegou aqui, não foi possível autenticar
 		return reply.status(401).send({
 			error: "Não autorizado",
 			code: "UNAUTHORIZED",

@@ -66,15 +66,20 @@ export function validarIbsCbsItensEmissao(
 
 	const pendencias: string[] = [];
 	for (const [indice, item] of itens.entries()) {
+		const rotulo = item.descricao?.trim() || `item ${indice + 1}`;
 		const ibs = item.ibsCbs;
-		if (!ibs) continue;
+		if (!ibs?.cst || !ibs?.cClassTrib) {
+			pendencias.push(
+				`${rotulo}: informe CST e classificação tributária IBS/CBS no produto`,
+			);
+			continue;
+		}
 		const validacao = validarCstEClassificacaoIbsCbs(
 			ibs.cst,
 			ibs.cClassTrib,
 			documento,
 		);
 		if (!validacao.ok) {
-			const rotulo = item.descricao?.trim() || `item ${indice + 1}`;
 			pendencias.push(`${rotulo}: ${validacao.message}`);
 		}
 	}

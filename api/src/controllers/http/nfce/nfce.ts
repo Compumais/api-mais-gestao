@@ -18,6 +18,8 @@ import {
 import { reemitirNfceService } from "@/service/nfce-emissao/reemitir-nfce.js";
 import { registrarInutilizacaoNumeracaoNfceService } from "@/service/nfce-emissao/registrar-inutilizacao-numeracao-nfce.js";
 import { retransmitirNfceVendaPdvService } from "@/service/nfce-emissao/retransmitir-nfce-venda-pdv.js";
+import { emitirNfceVendaNaoFiscalService } from "@/service/nfce-emissao/emitir-nfce-venda-nao-fiscal.js";
+import { emitirNfceVendasNaoFiscaisLoteService } from "@/service/nfce-emissao/emitir-nfce-vendas-nao-fiscais-lote.js";
 import { transmitirNfceContingenciaService } from "@/service/nfce-emissao/transmitir-nfce-contingencia.js";
 import { transmitirNfcePendentesLoteService } from "@/service/nfce-emissao/transmitir-nfce-pendentes-lote.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
@@ -79,6 +81,15 @@ const bodyContingenciaSchema = z.object({
 const bodyTransmitirPendentesLoteSchema = z.object({
 	idempresa: z.string().uuid(),
 	limite: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+const bodyEmitirVendaNaoFiscalSchema = z.object({
+	idempresa: z.string().uuid(),
+});
+
+const bodyEmitirVendasNaoFiscaisLoteSchema = z.object({
+	idempresa: z.string().uuid(),
+	idsVendas: z.array(z.string().uuid()).min(1).max(100),
 });
 
 const manifestoNfcePdvSchema = z.object({
@@ -616,6 +627,76 @@ export async function transmitirNfcePendentesLote(
 			idusuario: request.user.id,
 			idempresa: body.idempresa,
 			...(body.limite !== undefined ? { limite: body.limite } : {}),
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function emitirNfceVendaNaoFiscal(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const { idvenda } = paramsVendaSchema.parse(request.params);
+		const { idempresa } = bodyEmitirVendaNaoFiscalSchema.parse(request.body);
+
+		const resultado = await emitirNfceVendaNaoFiscalService({
+			idusuario: request.user.id,
+			idempresa,
+			idvenda,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function emitirNfceVendasNaoFiscaisLote(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const body = bodyEmitirVendasNaoFiscaisLoteSchema.parse(request.body);
+		const resultado = await emitirNfceVendasNaoFiscaisLoteService({
+			idusuario: request.user.id,
+			idempresa: body.idempresa,
+			idsVendas: body.idsVendas,
 		});
 
 		if (!resultado.success) {

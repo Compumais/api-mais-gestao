@@ -100,6 +100,27 @@ export function podeCancelarVendaNaoFiscal(venda: VendaPdvGourmet): boolean {
 	);
 }
 
+/**
+ * Venda elegível para emitir NFC-e na retaguarda (gerencial ou tentativa falha).
+ */
+export function podeEmitirNfceVendaNaoFiscal(venda: VendaPdvGourmet): boolean {
+	if (venda.cancelada) return false;
+	if (statusEhAutorizada(venda.nfce?.status)) return false;
+	if (statusEhCancelada(venda.nfce?.status)) return false;
+
+	if (documentoVenda(venda) === "gerencial") return true;
+
+	const status = venda.nfce?.status;
+	if (status == null) return Boolean(venda.idnotafiscalnfce);
+	return (
+		status === NFE_STATUS.PENDENTE ||
+		status === NFE_STATUS.REJEITADA ||
+		status === NFE_STATUS.INUTILIZADA ||
+		status === NFE_STATUS.DENEGADA ||
+		status === NFE_STATUS.RASCUNHO
+	);
+}
+
 export type FiltrosColunaVendasPdvState = {
 	numeropdv: string;
 	datacriacao: string;

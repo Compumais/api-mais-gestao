@@ -22,6 +22,10 @@ export const terminalpdv = pgTable(
 		descricao: varchar({ length: 120 }),
 		idnfeserie: text().notNull(),
 		ativo: boolean().default(true).notNull(),
+		apikey_hash: text(),
+		apikey_prefix: varchar({ length: 16 }),
+		instance_id: text(),
+		instance_visto_em: timestamp({ precision: 3, mode: "string" }),
 		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),

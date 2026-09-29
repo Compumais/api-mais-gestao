@@ -40,17 +40,26 @@ function mapearCredencial(row: CredencialPdvUsuario): CredencialPdvItem {
 
 /**
  * Endpoint exclusivo do PDV: exporta hashes scrypt (Better Auth) para login offline.
- * Exige que o usuário autenticado pertença à empresa solicitada.
+ * Exige que o usuário autenticado pertença à empresa — ou API key do terminal da empresa.
  */
 export async function listarCredenciaisPdvService({
 	idusuario,
 	idempresa,
-}: ListarCredenciaisPdvParametros): Promise<
-	HttpResponse<ListarCredenciaisPdvResposta>
-> {
-	const pertence = await verificarUsuarioPertenceEmpresa(idusuario, idempresa);
-	if (!pertence) {
-		return httpProibido();
+	isPdvDevice,
+	terminalEmpresaId,
+}: ListarCredenciaisPdvParametros & {
+	isPdvDevice?: boolean;
+	terminalEmpresaId?: string;
+}): Promise<HttpResponse<ListarCredenciaisPdvResposta>> {
+	if (isPdvDevice) {
+		if (!terminalEmpresaId || terminalEmpresaId !== idempresa) {
+			return httpProibido();
+		}
+	} else {
+		const pertence = await verificarUsuarioPertenceEmpresa(idusuario, idempresa);
+		if (!pertence) {
+			return httpProibido();
+		}
 	}
 
 	const rows = await listarCredenciaisPdvPorEmpresa(idempresa);
