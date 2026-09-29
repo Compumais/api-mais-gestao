@@ -1,4 +1,4 @@
-import { getConfig } from "../db/database";
+import { getConfig, setConfig } from "../db/database";
 import { obterSessao } from "../db/repos";
 
 export class ApiError extends Error {
@@ -99,6 +99,27 @@ export function isCatalogoPdvIndisponivel(err: unknown): boolean {
 	);
 }
 
+async function authHeadersForApi(): Promise<Record<string, string>> {
+	const apiKey = (await getConfig("pdv_api_key", "")).trim();
+	if (apiKey.startsWith("pdv_")) {
+		let instanceId = (await getConfig("pdv_instance_id", "")).trim();
+		if (!instanceId) {
+			const { v4: uuidv4 } = await import("uuid");
+			instanceId = uuidv4();
+			await setConfig("pdv_instance_id", instanceId);
+		}
+		return {
+			Authorization: `Bearer ${apiKey}`,
+			"X-PDV-Instance-Id": instanceId,
+		};
+	}
+	const token = (await obterSessao()).token;
+	if (!token) {
+		throw new ApiError("Sem token de sessão", 401);
+	}
+	return { Authorization: `Bearer ${token}` };
+}
+
 async function request<T>(
 	path: string,
 	options: {
@@ -116,11 +137,11 @@ async function request<T>(
 		headers["Content-Type"] = "application/json";
 	}
 	if (auth) {
-		const token = (await obterSessao()).token;
-		if (!token) {
-			throw new ApiError("Sem token de sessão", 401);
+		Object.assign(headers, await authHeadersForApi());
+		const sessao = await obterSessao();
+		if (sessao.idempresa) {
+			headers["x-empresa-id"] = sessao.idempresa;
 		}
-		headers.Authorization = `Bearer ${token}`;
 	}
 
 	const controller = new AbortController();
@@ -201,13 +222,12 @@ export async function baixarImagemProduto(
 	if (!/^\/produtos\/[0-9a-f-]{36}\/imagem(?:\?|$)/i.test(referencia)) {
 		throw new ApiError("Referência de imagem de produto inválida", 400);
 	}
-	const token = (await obterSessao()).token;
-	if (!token) throw new ApiError("Sem token de sessão", 401);
+	const authHeaders = await authHeadersForApi();
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), 30_000);
 	try {
 		const resposta = await fetch(`${await baseUrl()}${referencia}`, {
-			headers: { Authorization: `Bearer ${token}` },
+			headers: authHeaders,
 			signal: controller.signal,
 		});
 		if (!resposta.ok) {
@@ -238,10 +258,9 @@ export async function baixarImagemGrupoGourmet(
 	if (!/^\/grupos-gourmet\/[0-9a-f-]{36}\/imagem(?:\?|$)/i.test(referencia)) {
 		throw new ApiError("Referência de imagem de grupo gourmet inválida", 400);
 	}
-	const token = (await obterSessao()).token;
-	if (!token) throw new ApiError("Sem token de sessão", 401);
+	const authHeaders = await authHeadersForApi();
 	const resposta = await fetch(`${await baseUrl()}${referencia}`, {
-		headers: { Authorization: `Bearer ${token}` },
+		headers: authHeaders,
 	});
 	if (!resposta.ok) {
 		throw new ApiError(`Falha ao baixar imagem: HTTP ${resposta.status}`, resposta.status);
@@ -276,6 +295,44 @@ export async function loginEmail(email: string, password: string) {
 		username: data.user?.name ?? data.user?.nome ?? data.user?.email ?? email,
 		email: data.user?.email ?? email,
 	};
+}
+
+export async function autenticarDevicePdv(params?: {
+	forcar?: boolean;
+}): Promise<{
+	idempresa: string;
+	numeropdv: number;
+	descricao: string | null;
+	terminalId: string;
+	instanceId: string;
+}> {
+	const apiKey = (await getConfig("pdv_api_key", "")).trim();
+	if (!apiKey.startsWith("pdv_")) {
+		throw new ApiError("Configure a API key do PDV nas configurações", 400);
+	}
+	let instanceId = (await getConfig("pdv_instance_id", "")).trim();
+	if (!instanceId) {
+		const { v4: uuidv4 } = await import("uuid");
+		instanceId = uuidv4();
+		await setConfig("pdv_instance_id", instanceId);
+	}
+	const data = await request<{
+		idempresa: string;
+		numeropdv: number;
+		descricao: string | null;
+		terminalId: string;
+		instanceId: string;
+	}>("/pdv/device/auth", {
+		method: "POST",
+		auth: false,
+		body: {
+			apiKey,
+			instanceId,
+			forcar: params?.forcar === true,
+		},
+	});
+	await setConfig("numeropdv", String(data.numeropdv));
+	return data;
 }
 
 export type CredencialPdvRemota = {

@@ -17,9 +17,13 @@ import { LIMITE_EXPORTACAO_CSV } from "@/util/csv.js";
 import {
 	empresa as schemaEmpresa,
 	entidade as schemaEntidade,
+	terminalpdv as schemaTerminalPdv,
 	usuarioEmpresa as schemaUsuarioEmpresa,
 } from "../../drizzle/schema.js";
 import { db } from "./connection.js";
+
+/** Prefixo do id sintético criado em verifyJwt para API key de terminal PDV. */
+export const PDV_DEVICE_USER_PREFIX = "pdv-device:";
 
 export const ORDENAR_ENTIDADES_CAMPOS = [
 	"nome",
@@ -269,6 +273,17 @@ export async function verificarUsuarioPertenceEmpresa(
 	idusuario: string,
 	idempresa: string,
 ): Promise<boolean> {
+	// Terminal PDV autenticado por API key: acesso limitado à empresa do terminal.
+	if (idusuario.startsWith(PDV_DEVICE_USER_PREFIX)) {
+		const idTerminal = idusuario.slice(PDV_DEVICE_USER_PREFIX.length);
+		if (!idTerminal) return false;
+		const [terminal] = await db
+			.select({ idempresa: schemaTerminalPdv.idempresa })
+			.from(schemaTerminalPdv)
+			.where(eq(schemaTerminalPdv.id, idTerminal));
+		return terminal?.idempresa === idempresa;
+	}
+
 	// Verifica se o usuário está na tabela usuarioEmpresa
 	const [resultadoUsuarioEmpresa] = await db
 		.select({ value: count() })

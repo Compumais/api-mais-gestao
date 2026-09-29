@@ -1,12 +1,13 @@
 {
 	"name": "pdv-mais-gestao",
-	"version": "0.1.36",
+	"version": "0.1.38",
 	"private": true,
 	"description": "PDV Híbrido Desktop Mais Gestão (Electron + PostgreSQL local)",
 	"author": "Mais Gestão",
 	"main": "./out/main/index.js",
 	"scripts": {
 		"dev": "cross-env ELECTRON_DISABLE_SANDBOX=1 electron-vite dev",
+		"dev:lan-service": "cross-env ELECTRON_DISABLE_SANDBOX=1 PDV_LAN_SERVICE=1 electron-vite dev",
 		"build": "electron-vite build",
 		"preview": "ELECTRON_DISABLE_SANDBOX=1 electron-vite preview",
 		"typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",

@@ -26,7 +26,9 @@ export function requireFeature(feature: string) {
 				code: "UNAUTHORIZED",
 			});
 		}
-		const idempresa = obterIdEmpresaDoContexto(request);
+		const idempresa =
+			obterIdEmpresaDoContexto(request) ??
+			(request.user.isPdvDevice ? request.pdvTerminal?.idempresa : undefined);
 		try {
 			const ok = await usuarioTemFeature({
 				idusuario: request.user.id,
@@ -62,7 +64,9 @@ export function requireModulo(modulo: string) {
 				code: "UNAUTHORIZED",
 			});
 		}
-		const idempresa = obterIdEmpresaDoContexto(request);
+		const idempresa =
+			obterIdEmpresaDoContexto(request) ??
+			(request.user.isPdvDevice ? request.pdvTerminal?.idempresa : undefined);
 		try {
 			const ok = await usuarioTemModulo({
 				idusuario: request.user.id,
