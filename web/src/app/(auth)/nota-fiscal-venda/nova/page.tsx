@@ -69,6 +69,7 @@ import {
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
 import { getSessionToken } from "@/lib/auth-token";
+import { hojeBrasiliaIsoDate } from "@/lib/date";
 import {
 	type EmissaoNfeFormData,
 	emissaoNfeFormSchema,
@@ -397,6 +398,8 @@ export default function NovaEmissaoNfePage() {
 			informarEnderecoEntregaManual: false,
 			gerarFinanceiro: true,
 			gerarEstoque: true,
+			dataFaturamento: hojeBrasiliaIsoDate(),
+			diasPagamento: undefined,
 		},
 	});
 
@@ -851,6 +854,9 @@ export default function NovaEmissaoNfePage() {
 				? false
 				: contextoReemissao.gerarFinanceiro,
 			gerarEstoque: contextoReemissao.gerarEstoque,
+			dataFaturamento:
+				contextoReemissao.dataFaturamento ?? hojeBrasiliaIsoDate(),
+			diasPagamento: contextoReemissao.diasPagamento,
 		});
 		// Executa uma vez quando todos os dados da reemissão estiverem prontos.
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
@@ -994,6 +1000,8 @@ export default function NovaEmissaoNfePage() {
 			idlocalestoque: contextoClone.idlocalestoque,
 			gerarFinanceiro: ehDevolucaoClone ? false : contextoClone.gerarFinanceiro,
 			gerarEstoque: contextoClone.gerarEstoque,
+			dataFaturamento: contextoClone.dataFaturamento ?? hojeBrasiliaIsoDate(),
+			diasPagamento: contextoClone.diasPagamento,
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
 	}, [clonarProntoKey]);
@@ -1098,6 +1106,8 @@ export default function NovaEmissaoNfePage() {
 			idlocalestoque: contexto.idlocalestoque,
 			gerarFinanceiro: ehDevolucao ? false : contexto.gerarFinanceiro,
 			gerarEstoque: contexto.gerarEstoque,
+			dataFaturamento: contexto.dataFaturamento ?? hojeBrasiliaIsoDate(),
+			diasPagamento: contexto.diasPagamento,
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
 	}, [rascunhoProntoKey]);
@@ -3427,6 +3437,51 @@ export default function NovaEmissaoNfePage() {
 										className="bg-muted"
 									/>
 								</Field>
+
+								{!isOperacaoDevolucao && (
+									<>
+										<Field>
+											<FieldLabel htmlFor="dataFaturamento">
+												Data de faturamento
+											</FieldLabel>
+											<Input
+												id="dataFaturamento"
+												type="date"
+												disabled={isOperacaoDevolucao}
+												{...form.register("dataFaturamento")}
+											/>
+											<p className="text-xs text-muted-foreground">
+												Base dos vencimentos no quadro FATURA do DANFE (não
+												altera a data de emissão fiscal).
+											</p>
+										</Field>
+
+										<Field>
+											<FieldLabel htmlFor="diasPagamento">
+												Dias até o pagamento
+											</FieldLabel>
+											<Input
+												id="diasPagamento"
+												type="number"
+												min={0}
+												step={1}
+												placeholder="Ex.: 30"
+												disabled={
+													isOperacaoDevolucao || Boolean(idcondicaopagtoWatch)
+												}
+												{...form.register("diasPagamento", {
+													setValueAs: (v) =>
+														v === "" || v == null ? undefined : Number(v),
+												})}
+											/>
+											<p className="text-xs text-muted-foreground">
+												{idcondicaopagtoWatch
+													? "Com condição de pagamento, os prazos da condição definem as duplicatas."
+													: "Usado quando não há condição de pagamento (cobrança a prazo)."}
+											</p>
+										</Field>
+									</>
+								)}
 							</div>
 						</FieldSet>
 					</FieldGroup>

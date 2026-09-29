@@ -77,6 +77,8 @@ export async function salvarRascunhoEmissaoNfe(
 			formasPagamento: dados.formasPagamento,
 			gerarFinanceiro: dados.gerarFinanceiro,
 			gerarEstoque: dados.gerarEstoque,
+			dataFaturamento: dados.dataFaturamento,
+			diasPagamento: dados.diasPagamento,
 		});
 
 		if (!resultado.success) {

@@ -62,6 +62,7 @@ import {
 	normalizarIeParaNfe,
 	resolverIndIeDestNfe,
 } from "@/util/normalizar-ie-nfe.js";
+import { resolverCobrancaEmissaoNfe } from "@/util/resolver-cobranca-emissao-nfe.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
@@ -94,6 +95,8 @@ export type PrepararPayloadEmissaoNfeVendaParams = {
 	totais?: TotaisPayloadNfe;
 	totaisInformados?: TotaisInformadosEmissaoNfe;
 	pagamento?: PagamentoPayloadNfe;
+	dataFaturamento?: string;
+	diasPagamento?: number;
 	transporte?: TransportePayloadNfe;
 	informarEnderecoEntregaManual?: boolean;
 	enderecoEntrega?: EnderecoEntregaPayloadNfe;
@@ -151,6 +154,9 @@ export type PayloadEmissaoNfeVendaPreparado = {
 	localEntrega?: LocalEntregaPayloadNfe;
 	natOpResolvida: string;
 	pagamentoNormalizado: PagamentoPayloadNfe;
+	cobrancaResolvida?: import("@/util/resolver-cobranca-emissao-nfe.js").CobrancaPayloadNfe;
+	dataFaturamentoResolvida?: string;
+	diasPagamentoResolvido?: number;
 	documentoReferenciado?: DocumentoReferenciadoPayloadNfe;
 	finNFe: number;
 	tpNF: number;
@@ -413,6 +419,8 @@ export async function prepararPayloadEmissaoNfeVenda(
 		totais,
 		totaisInformados,
 		pagamento,
+		dataFaturamento,
+		diasPagamento,
 		transporte,
 		informarEnderecoEntregaManual,
 		enderecoEntrega,
@@ -699,6 +707,16 @@ export async function prepararPayloadEmissaoNfeVenda(
 		},
 	);
 
+	const cobrancaResolvida = await resolverCobrancaEmissaoNfe({
+		valorNota: totaisFiscais.totalNota,
+		dataFaturamento,
+		diasPagamento,
+		idcondicaopagto: idcondicaopagtoResolvido,
+		idtipodocumento: idtipodocumentoResolvido,
+		nFat: String(numeroNf),
+		gerarCobranca: finNFe !== 4 && gerarFinanceiroResolvido !== false,
+	});
+
 	const permiteInterestadualMesmaUf =
 		await possuiCfopInterestadualDestinatarioMesmaUf(
 			idempresa,
@@ -823,6 +841,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		itens: itensComIbpt,
 		totais,
 		pagamento: pagamentoNormalizado,
+		cobranca: cobrancaResolvida,
 		transporte: transporteAjustado,
 		localEntrega: localEntregaNormalizado,
 		enderecoEntrega: localEntregaNormalizado
@@ -858,6 +877,9 @@ export async function prepararPayloadEmissaoNfeVenda(
 		localEntrega: localEntregaNormalizado,
 		natOpResolvida,
 		pagamentoNormalizado,
+		cobrancaResolvida,
+		dataFaturamentoResolvida: dataFaturamento,
+		diasPagamentoResolvido: diasPagamento,
 		documentoReferenciado,
 		finNFe,
 		tpNF,

@@ -32,7 +32,7 @@ final class DanfeService
 		} else {
 			$danfe = new Danfe($xmlRender);
 			$danfe->debugMode(false);
-			$danfe->exibirTextoFatura = false;
+			$danfe->exibirTextoFatura = self::xmlPossuiDuplicatas($xmlRender);
 			$danfe->creditsIntegratorFooter('Mais Gestão ERP');
 
 			if (self::ehSimplesNacional($crt)) {
@@ -72,6 +72,11 @@ final class DanfeService
 	private static function ehSimplesNacional(int $crt): bool
 	{
 		return in_array($crt, [1, 2, 4], true);
+	}
+
+	private static function xmlPossuiDuplicatas(string $xml): bool
+	{
+		return (bool) preg_match('/<dup[\s>]/i', $xml);
 	}
 
 	/**

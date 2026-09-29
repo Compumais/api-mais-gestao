@@ -71,6 +71,8 @@ export type SalvarRascunhoEmissaoNfeVendaParametros = {
 	formasPagamento?: FormaPagamentoNfVenda[];
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
+	dataFaturamento?: string;
+	diasPagamento?: number;
 };
 
 export type SalvarRascunhoEmissaoNfeVendaResposta = {
@@ -242,6 +244,8 @@ function montarDadosNotaRascunho(params: {
 			gerarFinanceiro: params.gerarFinanceiro,
 			gerarEstoque: params.gerarEstoque,
 			pagamento: params.pagamento,
+			dataFaturamento: params.dataFaturamento,
+			diasPagamento: params.diasPagamento,
 			transporte: params.transporte,
 			informarEnderecoEntregaManual: params.informarEnderecoEntregaManual,
 			enderecoEntrega: params.enderecoEntrega,
