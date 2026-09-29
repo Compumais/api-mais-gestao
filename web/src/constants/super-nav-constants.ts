@@ -1,4 +1,5 @@
 import {
+	IconArrowLeft,
 	IconBuilding,
 	IconChartBar,
 	IconCreditCard,
@@ -19,6 +20,11 @@ export const SUPER_NAV = {
 			title: "Usuários",
 			url: "/super/usuarios",
 			icon: IconUsers,
+		},
+		{
+			title: "Empresas",
+			url: "/super/empresas",
+			icon: IconBuilding,
 		},
 		{
 			title: "Planos e módulos",
@@ -45,7 +51,7 @@ export const SUPER_NAV = {
 		{
 			title: "Voltar ao ERP",
 			url: "/dashboard",
-			icon: IconBuilding,
+			icon: IconArrowLeft,
 		},
 	],
 };

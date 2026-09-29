@@ -2,7 +2,7 @@
 
 ## Propósito
 
-Área da plataforma (perfil `super`): usuários globais, planos SaaS, cadastro, informativos e CMS. Não usa o shell do ERP nem a empresa ativa do tenant como guarda. O catálogo de planos editado aqui é o que o tenant enxerga em [assinatura.md](assinatura.md) depois que a API devolve `["meu-plano"]`.
+Área da plataforma (perfil `super`): usuários globais, empresas, planos SaaS, cadastro, informativos e CMS. Não usa o shell do ERP nem a empresa ativa do tenant como guarda. O catálogo de planos editado aqui é o que o tenant enxerga em [assinatura.md](assinatura.md) depois que a API devolve `["meu-plano"]`.
 
 ## Rotas
 
@@ -11,6 +11,7 @@ Grupo `src/app/(super)/super`, layout com `SuperProtectedRoute` + `SuperSidebar`
 - `/super` — redirect para `/super/dashboard`
 - `/super/dashboard`
 - `/super/usuarios`
+- `/super/empresas` — listagem (cards/tabela) com atalho de plano/módulos do proprietário
 - `/super/planos`
 - `/super/cadastro`
 - `/super/informativos`
@@ -26,7 +27,9 @@ Lista espelhada em `SUPER_ALLOWED_ROUTES` (`src/lib/perfis.ts`).
 
 Chaves confirmadas:
 
+- `["admin-empresas"]` — listagem em `/super/empresas` e select em Cadastro
 - `["admin-planos-saas"]` — mutations em `/super/planos` invalidam essa chave
+- `["admin-entitlement"]` — dialog compartilhado `DialogEntitlementProprietario` (Usuários e Empresas)
 - `["admin-informativos"]` e `["informativos-publicos"]` — salvar/remover informativo invalida as duas. O banner do ERP (`src/components/informativos-banner.tsx`) lê `["informativos-publicos"]`
 
 Empresa do `EmpresaProvider` continua montada no root, mas o layout super **não** chama `ProtectedRoute` e portanto **não** força `/empresas/nova`.

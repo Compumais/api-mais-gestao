@@ -104,4 +104,8 @@ describe("rotas super", () => {
 		expect(isRouteAllowedForSuper("/super/planos")).toBe(true);
 		expect(isRouteAllowedForSuper("/super/planos/editar")).toBe(true);
 	});
+
+	it("permite /super/empresas", () => {
+		expect(isRouteAllowedForSuper("/super/empresas")).toBe(true);
+	});
 });

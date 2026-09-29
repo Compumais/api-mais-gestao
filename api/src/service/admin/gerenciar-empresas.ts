@@ -151,8 +151,20 @@ export async function listarEmpresasAdminService(): Promise<
 			email: schema.empresa.email,
 			idproprietario: schema.empresa.idproprietario,
 			criadoem: schema.empresa.criadoem,
+			proprietarioNome: schema.usuarios.nome,
+			proprietarioEmail: schema.usuarios.email,
+			planoCodigo: schema.usuarios.plano,
+			planoNome: schema.planosSaas.nome,
 		})
 		.from(schema.empresa)
+		.leftJoin(
+			schema.usuarios,
+			eq(schema.empresa.idproprietario, schema.usuarios.id),
+		)
+		.leftJoin(
+			schema.planosSaas,
+			eq(schema.usuarios.plano, schema.planosSaas.codigo),
+		)
 		.orderBy(desc(schema.empresa.criadoem));
 
 	return httpOk({ empresas });

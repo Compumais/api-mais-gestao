@@ -72,6 +72,10 @@ export interface AdminEmpresa {
 	email: string;
 	idproprietario: string;
 	criadoem: string;
+	proprietarioNome: string | null;
+	proprietarioEmail: string | null;
+	planoCodigo: string | null;
+	planoNome: string | null;
 }
 
 export interface Informativo {
