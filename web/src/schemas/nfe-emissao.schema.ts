@@ -217,6 +217,10 @@ export const emissaoNfeFormSchema = z.object({
 	formasPagamento: z.array(formaPagamentoIntegracaoSchema).optional(),
 	gerarFinanceiro: z.boolean().optional().default(true),
 	gerarEstoque: z.boolean().optional().default(true),
+	/** Base dos vencimentos das duplicatas (não altera dhEmi). */
+	dataFaturamento: z.iso.date().optional(),
+	/** Dias até o pagamento quando não há condição de pagamento. */
+	diasPagamento: z.coerce.number().int().min(0).optional(),
 	iddav: z.string().uuid().optional(),
 	iddavs: listaUuidNaoVaziaOpcional,
 	codigosPedidos: z.array(z.number().int()).optional(),

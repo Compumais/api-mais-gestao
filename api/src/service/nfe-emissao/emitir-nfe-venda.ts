@@ -190,6 +190,8 @@ function montarDadosNotaPersistencia(params: {
 	formasPagamento?: FormaPagamentoNfVenda[];
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
+	dataFaturamento?: string;
+	diasPagamento?: number;
 }): NovaNotaFiscal {
 	const {
 		idnotafiscal,
@@ -237,6 +239,8 @@ function montarDadosNotaPersistencia(params: {
 		formasPagamento,
 		gerarFinanceiro,
 		gerarEstoque,
+		dataFaturamento,
+		diasPagamento,
 	} = params;
 
 	const totais = totaisFiscais;
@@ -342,6 +346,8 @@ function montarDadosNotaPersistencia(params: {
 			gerarFinanceiro,
 			gerarEstoque,
 			pagamento,
+			dataFaturamento,
+			diasPagamento,
 			transporte,
 			informarEnderecoEntregaManual,
 			enderecoEntrega,
@@ -440,6 +446,8 @@ export async function emitirNfeVendaService(
 		totais,
 		tipoDevolucao,
 		idAuditoriaFiscal,
+		dataFaturamentoResolvida,
+		diasPagamentoResolvido,
 	} = prep;
 
 	const { numeroNf, serie, idserie, idnotafiscal, reemissao } = numeracao;
@@ -521,6 +529,8 @@ export async function emitirNfeVendaService(
 		formasPagamento: formasPagamentoResolvidas,
 		gerarFinanceiro: gerarFinanceiroResolvido,
 		gerarEstoque: gerarEstoqueResolvido,
+		dataFaturamento: dataFaturamentoResolvida,
+		diasPagamento: diasPagamentoResolvido,
 	});
 
 	const itensPersistencia = montarItensPersistencia(

@@ -552,6 +552,31 @@ final class NfeEmissaoService
 			$mk->tagdetPag((object) $detPag);
 		}
 
+		// ── cobrança (fatura / duplicatas) ────────────────────────────────────
+		$cobranca = $payloadNfe['cobranca'] ?? null;
+		if (is_array($cobranca)) {
+			$fat = $cobranca['fat'] ?? [];
+			$duplicatas = $cobranca['duplicatas'] ?? [];
+			if (is_array($fat) && is_array($duplicatas) && count($duplicatas) > 0) {
+				$mk->tagfat((object) [
+					'nFat' => (string) ($fat['nFat'] ?? $ide['nNF'] ?? '1'),
+					'vOrig' => (float) ($fat['vOrig'] ?? $vNF),
+					'vDesc' => (float) ($fat['vDesc'] ?? 0),
+					'vLiq' => (float) ($fat['vLiq'] ?? $vNF),
+				]);
+				foreach ($duplicatas as $dup) {
+					if (!is_array($dup)) {
+						continue;
+					}
+					$mk->tagdup((object) [
+						'nDup' => (string) ($dup['nDup'] ?? ''),
+						'dVenc' => (string) ($dup['dVenc'] ?? ''),
+						'vDup' => (float) ($dup['vDup'] ?? 0),
+					]);
+				}
+			}
+		}
+
 		// ── informações adicionais ────────────────────────────────────────────
 		if (!empty($infoAdic)) {
 			$mk->taginfAdic((object) ['infCpl' => mb_substr((string) $infoAdic, 0, 2000)]);

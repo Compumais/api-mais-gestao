@@ -29,6 +29,8 @@ type DadosEmissaoSalvos = {
 	idserienfe?: string;
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
+	dataFaturamento?: string;
+	diasPagamento?: number;
 	transporte?: { modFrete?: number };
 	informarEnderecoEntregaManual?: boolean;
 	enderecoEntrega?: EmissaoNfeFormData["enderecoEntrega"];
@@ -69,6 +71,8 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 	idlocalestoque?: string;
 	gerarFinanceiro: boolean;
 	gerarEstoque: boolean;
+	dataFaturamento?: string;
+	diasPagamento?: number;
 	totais: NonNullable<EmissaoNfeFormData["totais"]>;
 	transporte: NonNullable<EmissaoNfeFormData["transporte"]>;
 	informarEnderecoEntregaManual: boolean;
@@ -121,6 +125,8 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 		idlocalestoque: notaFiscal.idlocalestoque ?? undefined,
 		gerarFinanceiro: emissao?.gerarFinanceiro ?? true,
 		gerarEstoque: emissao?.gerarEstoque ?? true,
+		dataFaturamento: emissao?.dataFaturamento,
+		diasPagamento: emissao?.diasPagamento,
 		totais,
 		transporte,
 		informarEnderecoEntregaManual:

@@ -94,6 +94,8 @@ export type DadosEmissaoNfeSalvos = {
 	}>;
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
+	dataFaturamento?: string;
+	diasPagamento?: number;
 	integracao?: {
 		financeiroGeradoEm?: string;
 		estoqueGeradoEm?: string;
@@ -146,6 +148,8 @@ export function montarSnapshotEmissaoNfe(params: {
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
 	pagamento?: { formas?: Array<{ tPag?: string }> };
+	dataFaturamento?: string;
+	diasPagamento?: number;
 	transporte?: { modFrete?: number };
 	informarEnderecoEntregaManual?: boolean;
 	enderecoEntrega?: Partial<EnderecoEntregaPayloadNfe>;
@@ -183,6 +187,8 @@ export function montarSnapshotEmissaoNfe(params: {
 			gerarFinanceiro: params.gerarFinanceiro,
 			gerarEstoque: params.gerarEstoque,
 			formaPagamento: params.pagamento?.formas?.[0]?.tPag ?? "01",
+			dataFaturamento: params.dataFaturamento,
+			diasPagamento: params.diasPagamento,
 			transporte: {
 				modFrete: params.transporte?.modFrete ?? 9,
 			},

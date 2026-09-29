@@ -103,11 +103,25 @@ export type PagamentoPayloadNfe = {
 		vPag: number;
 		indPag?: number;
 		card?: {
-			tpIntegra: 1 | 2;
+			tpIntegra?: number;
 			CNPJ?: string;
 			tBand?: string;
 			cAut?: string;
 		};
+	}>;
+};
+
+export type CobrancaPayloadNfe = {
+	fat: {
+		nFat: string;
+		vOrig: number;
+		vDesc: number;
+		vLiq: number;
+	};
+	duplicatas: Array<{
+		nDup: string;
+		dVenc: string;
+		vDup: number;
 	}>;
 };
 
@@ -307,6 +321,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	itens,
 	totais,
 	pagamento,
+	cobranca,
 	transporte,
 	localEntrega,
 	enderecoEntrega,
@@ -333,6 +348,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	itens: ItemPayloadNfe[];
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
+	cobranca?: CobrancaPayloadNfe;
 	transporte?: TransportePayloadNfe;
 	localEntrega?: LocalEntregaPayloadNfe;
 	enderecoEntrega?: EnderecoEntregaPayloadNfe;
@@ -429,6 +445,7 @@ export async function montarPayloadGatewayEmissaoItens({
 			itens: itensGateway,
 			totais: totais ?? {},
 			pagamento: pagamento ?? {},
+			cobranca,
 			transporte: transporte ?? {},
 			localEntrega,
 			enderecoEntrega,

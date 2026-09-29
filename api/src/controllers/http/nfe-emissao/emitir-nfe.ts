@@ -59,6 +59,8 @@ export async function emitirNfe(request: FastifyRequest, reply: FastifyReply) {
 			formasPagamento: dados.formasPagamento,
 			gerarFinanceiro: dados.gerarFinanceiro,
 			gerarEstoque: dados.gerarEstoque,
+			dataFaturamento: dados.dataFaturamento,
+			diasPagamento: dados.diasPagamento,
 		});
 
 		if (!resultado.success) {

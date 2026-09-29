@@ -49,6 +49,8 @@ type GerarContasReceberNfParametros = {
 	razaosocial?: string | undefined;
 	formasPagamento?: FormaPagamentoNfVenda[] | undefined;
 	codigosPedidos?: number[] | undefined;
+	/** Base dos vencimentos; se omitido, usa `emissao`. */
+	dataFaturamento?: string | undefined;
 };
 
 type GerarContasReceberNfResposta = {
@@ -102,7 +104,9 @@ async function gerarParcelasPorCondicao(
 		resolverParcelasCondicaoPagamento(condicao);
 
 	const valores = distribuirValor(valorTotal, totalParcelas);
-	const dataAtual = parametros.emissao.substring(0, 10);
+	const dataAtual = (
+		parametros.dataFaturamento ?? parametros.emissao
+	).substring(0, 10);
 	const dataRegistro = new Date().toISOString();
 
 	let parcelasGeradas = 0;
@@ -191,7 +195,9 @@ export async function gerarContasReceberNfService(
 		});
 	}
 
-	const dataEmissao = parametros.emissao.substring(0, 10);
+	const dataEmissao = (
+		parametros.dataFaturamento ?? parametros.emissao
+	).substring(0, 10);
 	const dataRegistro = new Date().toISOString();
 	let parcelasGeradas = 0;
 	let lancamentosCaixa = 0;

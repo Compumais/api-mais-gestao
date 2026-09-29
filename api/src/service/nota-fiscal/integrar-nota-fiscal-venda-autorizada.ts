@@ -190,6 +190,7 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 				idplanocontas: nota.idplanocontas ?? undefined,
 				valortotalnota: nota.valortotalnota ?? "0",
 				emissao: nota.emissao ?? agora,
+				dataFaturamento: emissaoSalva?.dataFaturamento,
 				numero: nota.numeronotafiscal ?? nota.numero ?? undefined,
 				serie: nota.serie ?? undefined,
 				chavenfe: nota.chavenfe ?? undefined,
