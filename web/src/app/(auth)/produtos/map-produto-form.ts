@@ -72,7 +72,10 @@ export function mapProdutoToForm(
 		enviamobile: data.enviamobile === 1,
 		quantidadepadrao: data.quantidadepadrao ?? 0,
 		quantidademinima: data.quantidademinima ?? null,
-		quantidademaxima: data.quantidademaxima ?? null,
+		quantidademaxima:
+			data.quantidademaxima != null && data.quantidademaxima > 0
+				? data.quantidademaxima
+				: null,
 	};
 }
 

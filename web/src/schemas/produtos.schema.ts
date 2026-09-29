@@ -208,10 +208,13 @@ export const produtoFormSchema = z.object({
 		(valor) => valor === null || valor === undefined || valor >= 0,
 		"Quantidade mínima não pode ser negativa",
 	),
-	quantidademaxima: numeroInteiroOpcional().refine(
-		(valor) => valor === null || valor === undefined || valor > 0,
-		"Quantidade máxima deve ser maior que zero",
-	),
+	quantidademaxima: z.preprocess((valor) => {
+		if (valor === "" || valor === null || valor === undefined) return null;
+		if (typeof valor === "number" && (Number.isNaN(valor) || valor <= 0)) {
+			return null;
+		}
+		return valor;
+	}, z.number().int().positive().optional().nullable()),
 });
 
 export type ProdutoFormData = z.infer<typeof produtoFormSchema>;

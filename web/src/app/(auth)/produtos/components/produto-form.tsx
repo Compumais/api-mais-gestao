@@ -122,7 +122,7 @@ function buildProdutoPayload(
 	if (data.quantidademinima != null) {
 		payload.quantidademinima = data.quantidademinima;
 	}
-	if (data.quantidademaxima != null) {
+	if (data.quantidademaxima != null && data.quantidademaxima > 0) {
 		payload.quantidademaxima = data.quantidademaxima;
 	}
 
@@ -477,7 +477,16 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	}
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)}>
+		<form
+			onSubmit={handleSubmit(onSubmit, (errosValidacao) => {
+				const primeira = Object.values(errosValidacao)[0];
+				const mensagem =
+					primeira && "message" in primeira && primeira.message
+						? String(primeira.message)
+						: "Verifique os campos do formulário";
+				toast.error(mensagem);
+			})}
+		>
 			<Tabs defaultValue="geral" className="w-full">
 				<TabsList className="mb-6 grid w-full grid-cols-2 md:grid-cols-5">
 					<TabsTrigger value="geral">Geral</TabsTrigger>
@@ -814,16 +823,23 @@ export function ProdutoForm(props: ProdutoFormProps) {
 									<Input
 										id="quantidademaxima"
 										type="number"
-										min={1}
+										min={0}
 										step={1}
 										placeholder="Opcional"
 										aria-invalid={!!errors.quantidademaxima}
 										{...register("quantidademaxima", {
-											valueAsNumber: true,
-											setValueAs: (value) =>
-												value === "" || value === null || value === undefined
-													? null
-													: Number(value),
+											setValueAs: (value) => {
+												if (
+													value === "" ||
+													value === null ||
+													value === undefined
+												) {
+													return null;
+												}
+												const numero = Number(value);
+												if (Number.isNaN(numero) || numero <= 0) return null;
+												return numero;
+											},
 										})}
 									/>
 									<FieldError
