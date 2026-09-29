@@ -8,6 +8,7 @@ export const SUPER_ALLOWED_ROUTES = [
 	"/super",
 	"/super/dashboard",
 	"/super/usuarios",
+	"/super/empresas",
 	"/super/planos",
 	"/super/cadastro",
 	"/super/informativos",
