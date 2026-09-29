@@ -30,6 +30,10 @@ import { verificarEAtualizarPdv } from "./update/verificar-update";
 
 registrarEsquemaImagemLocal();
 
+const LAN_SERVICE_MODE =
+	process.env.PDV_LAN_SERVICE === "1" ||
+	process.argv.includes("--lan-service");
+
 function erroFechamentoWsBaileys(err: unknown): boolean {
 	const msg = err instanceof Error ? err.message : String(err ?? "");
 	return msg.includes("WebSocket was closed before the connection was established");
@@ -114,8 +118,12 @@ function registerIpc(): void {
 
 app.whenReady().then(async () => {
 	registrarProtocoloImagemLocal();
-	registerIpc();
-	createWindow();
+	if (!LAN_SERVICE_MODE) {
+		registerIpc();
+		createWindow();
+	} else {
+		console.log("[pdv] Modo serviço LAN (--lan-service): sem UI, API :5050 ativa");
+	}
 	syncTimer = iniciarSyncPeriodico(20000);
 	void startLanServer();
 	try {
@@ -125,45 +133,58 @@ app.whenReady().then(async () => {
 		pararSyncNfce = iniciarReconciliacaoNfcePeriodica(60_000, 5_000).parar;
 		pararPollerCardapio = iniciarPollerCardapioDelivery();
 		await restartLanServer();
-		await iniciarTecnibra().catch((err) => {
-			console.error(
-				err instanceof Error ? err.message : "Falha ao iniciar Tecnibra",
-			);
-		});
-		await iniciarWhatsapp().catch((err) => {
-			console.error(
-				err instanceof Error ? err.message : "Falha ao iniciar WhatsApp",
-			);
-		});
-		await iniciarBackupAgendado().catch((err) => {
-			console.error(
-				err instanceof Error ? err.message : "Falha ao iniciar backup agendado",
-			);
-		});
-		void verificarEAtualizarPdv({ parent: mainWindow }).catch((err) => {
-			console.error(
-				err instanceof Error ? err.message : "Falha ao verificar atualização",
-			);
-		});
+		if (!LAN_SERVICE_MODE) {
+			await iniciarTecnibra().catch((err) => {
+				console.error(
+					err instanceof Error ? err.message : "Falha ao iniciar Tecnibra",
+				);
+			});
+			await iniciarWhatsapp().catch((err) => {
+				console.error(
+					err instanceof Error ? err.message : "Falha ao iniciar WhatsApp",
+				);
+			});
+			await iniciarBackupAgendado().catch((err) => {
+				console.error(
+					err instanceof Error ? err.message : "Falha ao iniciar backup agendado",
+				);
+			});
+			void verificarEAtualizarPdv({ parent: mainWindow }).catch((err) => {
+				console.error(
+					err instanceof Error ? err.message : "Falha ao verificar atualização",
+				);
+			});
+		} else {
+			// Com API key + empresa já vinculada, sincroniza fiscal/catálogo sem operador na UI.
+			const { sincronizarFiscalPdv, pullCatalogo } = await import("./sync/outbox");
+			void sincronizarFiscalPdv().catch(() => undefined);
+			void pullCatalogo().catch(() => undefined);
+		}
 	} catch (err) {
 		console.error(
 			err instanceof Error
 				? err.message
 				: "Falha ao conectar no PostgreSQL local",
 		);
-		void verificarEAtualizarPdv({ parent: mainWindow }).catch(() => {
-			/* offline / sem DB */
-		});
+		if (!LAN_SERVICE_MODE) {
+			void verificarEAtualizarPdv({ parent: mainWindow }).catch(() => {
+				/* offline / sem DB */
+			});
+		}
 	}
 
 	app.on("activate", () => {
-		if (BrowserWindow.getAllWindows().length === 0) {
+		if (!LAN_SERVICE_MODE && BrowserWindow.getAllWindows().length === 0) {
 			createWindow();
 		}
 	});
 });
 
 app.on("window-all-closed", () => {
+	if (LAN_SERVICE_MODE) {
+		// Serviço headless: não encerra ao “fechar janelas” (não há UI).
+		return;
+	}
 	if (syncTimer) {
 		clearInterval(syncTimer);
 	}

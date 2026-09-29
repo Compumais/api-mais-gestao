@@ -1,5 +1,6 @@
 import { obterSessao } from "../db/repos";
 import { ehSecundario, puxarDoPrincipal } from "../pdv-secundario/servico";
+import { temAuthNuvem } from "./auth-nuvem";
 import { puxarNfceDaRetaguarda } from "./nfce-retaguarda";
 import { pullCatalogo } from "./outbox";
 
@@ -43,9 +44,9 @@ export async function executarCargaLocal(): Promise<ResultadoCargaLocal> {
 
 async function realizarCargaLocal(): Promise<ResultadoCargaLocal> {
 	const sessao = await obterSessao();
-	if (!sessao.token || !sessao.idempresa) {
+	if (!sessao.idempresa || !(await temAuthNuvem())) {
 		throw new Error(
-			"Faça login e selecione a empresa antes de carregar o catálogo.",
+			"Configure a API key do terminal (ou faça login) e selecione a empresa antes de carregar o catálogo.",
 		);
 	}
 

@@ -38,6 +38,7 @@ import { listarIpsLan } from "./ips";
 const ROTAS_PUBLICAS = new Set([
 	"GET /pos/health",
 	"POST /pos/login",
+	"POST /pos/estacao/sessao",
 	"GET /pos/pdv/identidade",
 	"GET /pos/pdv/terminais",
 	"POST /pos/pdv/handshake",
@@ -506,6 +507,41 @@ async function despachar(
 						? result.offline
 						: false,
 				),
+			},
+		};
+	}
+
+	/** Estação de balança: só IP + identificador — não altera a sessão do caixa. */
+	if (method === "POST" && path === "/pos/estacao/sessao") {
+		const identificador = String(body.identificador ?? "").trim();
+		if (!identificador) {
+			return {
+				status: 400,
+				body: { error: "Identificador da estação ausente." },
+			};
+		}
+		const sessao = await obterSessao();
+		const apiKey = (await getConfig("pdv_api_key", "")).trim();
+		const empresaOk = Boolean(sessao.idempresa);
+		const authOk =
+			Boolean(sessao.token) ||
+			(apiKey.startsWith("pdv_") && empresaOk);
+		if (!empresaOk || !authOk) {
+			return {
+				status: 503,
+				body: {
+					error:
+						"Configure a API key do terminal (ou faça login) com empresa vinculada no PDV para a estação operar.",
+				},
+			};
+		}
+		const token = await registrarTerminalPos(identificador);
+		return {
+			status: 200,
+			body: {
+				token,
+				idempresa: sessao.idempresa,
+				nomeempresa: sessao.nomeempresa,
 			},
 		};
 	}

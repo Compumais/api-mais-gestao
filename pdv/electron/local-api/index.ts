@@ -19,6 +19,7 @@ import {
 	obterMeuPlano,
 	obterPerfilUsuario,
 	pingApi,
+	autenticarDevicePdv as autenticarDevicePdvApi,
 	retransmitirNfceVendaPdv,
 	substituirAtalhosRemotos,
 	transmitirNfceContingencia,
@@ -43,6 +44,7 @@ import {
 	obterDatabaseUrl,
 	reconectarDb,
 	salvarDatabaseUrlArquivo,
+	setConfig,
 } from "../db/database";
 import {
 	ehMeioPagamento,
@@ -98,6 +100,7 @@ import {
 	type ItemCarrinho,
 	ingestPedidoDelivery,
 	juntarContas,
+	juntarVariasContas as juntarVariasContasRepo,
 	type LancamentoPagamento,
 	limparContasVazias,
 	limparFilaPedidos,
@@ -350,18 +353,31 @@ async function loginOfflineLocal(login: string, password: string) {
 	const empresas = empresasDoUsuarioCache(usuario);
 	const tokenOffline = `offline:${usuario.id}:${uuidv4()}`;
 	await lembrarEmpresaDaSessao();
+	const sessaoAtual = await obterSessao();
+	const apiKey = (await getConfig("pdv_api_key", "")).trim();
+	const manterEmpresaDevice =
+		apiKey.startsWith("pdv_") && Boolean(sessaoAtual.idempresa);
 	await salvarSessao({
 		token: tokenOffline,
 		userid: usuario.id,
 		username: usuario.nome || usuario.email,
 		roles: usuario.perfil,
-		idempresa: null,
-		nomeempresa: null,
-		modulogourmet: null,
+		idempresa: manterEmpresaDevice ? sessaoAtual.idempresa : null,
+		nomeempresa: manterEmpresaDevice ? sessaoAtual.nomeempresa : null,
+		modulogourmet: manterEmpresaDevice ? sessaoAtual.modulogourmet : null,
 	});
 	return {
 		username: usuario.nome || usuario.email,
-		empresas,
+		empresas: manterEmpresaDevice
+			? empresas.filter((e) => e.id === sessaoAtual.idempresa).length
+				? empresas.filter((e) => e.id === sessaoAtual.idempresa)
+				: [
+						{
+							id: sessaoAtual.idempresa as string,
+							nome: sessaoAtual.nomeempresa || "Empresa",
+						},
+					]
+			: empresas,
 		offline: true as const,
 	};
 }
@@ -709,9 +725,28 @@ export const localApi = {
 	async login(email: string, password: string) {
 		const url = await apiBaseUrl();
 		const login = email.trim();
+		const apiKey = (await getConfig("pdv_api_key", "")).trim();
+		const usaApiKey = apiKey.startsWith("pdv_");
+
+		// Modelo B: com API key, operador autentica só no cache local.
+		if (usaApiKey) {
+			const local = await loginOfflineLocal(login, password);
+			if (local) return local;
+			throw new Error(
+				"Usuário ou senha inválidos. Sincronize as credenciais com a API key nas configurações (Carga / sync).",
+			);
+		}
+
+		let emailParaApi = login;
+		if (!login.includes("@")) {
+			const cached = await buscarUsuarioCachePorLogin(login);
+			if (cached?.email) {
+				emailParaApi = cached.email;
+			}
+		}
 		try {
 			await lembrarEmpresaDaSessao();
-			const result = await loginEmail(login, password);
+			const result = await loginEmail(emailParaApi, password);
 			await salvarSessao({
 				token: result.token,
 				userid: result.userid,
@@ -727,7 +762,7 @@ export const localApi = {
 				await upsertUsuariosCache([
 					{
 						id: result.userid,
-						email: result.email ?? login,
+						email: result.email ?? emailParaApi,
 						nome: result.username ?? login,
 						empresas,
 						ativo: true,
@@ -738,9 +773,11 @@ export const localApi = {
 		} catch (err) {
 			const offlineRede =
 				err instanceof ApiError && (err.status === 0 || err.status === 408);
-			if (offlineRede) {
+			if (offlineRede || !login.includes("@")) {
 				const local = await loginOfflineLocal(login, password);
 				if (local) return local;
+			}
+			if (offlineRede) {
 				throw new Error(
 					`Não foi possível conectar em ${url}. Verifique a URL e se a API está no ar. Faça login online ao menos uma vez (com empresa selecionada) para habilitar o modo offline.`,
 				);
@@ -750,6 +787,26 @@ export const localApi = {
 			}
 			throw err instanceof Error ? err : new Error(`Falha no login (${url})`);
 		}
+	},
+
+	async autenticarDevicePdv(forcar = false) {
+		const device = await autenticarDevicePdvApi({ forcar });
+		await setConfig("numeropdv", String(device.numeropdv));
+		const empresaNome =
+			(await getConfig("nomeempresa_device", "")) || device.descricao || "";
+		await salvarSessao({
+			idempresa: device.idempresa,
+			nomeempresa: empresaNome || `Empresa ${device.idempresa.slice(0, 8)}`,
+		});
+		await sincronizarModuloGourmet(await obterSessao());
+		// Fiscal/numeração/certificado primeiro — independente do catálogo.
+		await sincronizarFiscalPdv().catch(() => undefined);
+		try {
+			await pullCatalogo();
+		} catch {
+			// sync de catálogo opcional no bind; não desfaz o vínculo do device
+		}
+		return device;
 	},
 
 	async selecionarEmpresa(idempresa: string, nomeempresa: string) {
@@ -1429,6 +1486,7 @@ export const localApi = {
 		return {
 			ok: true as const,
 			itensVendidos: fechamento.itensVendidos,
+			vendasTurno: fechamento.vendasTurno,
 			nomeempresa: fechamento.nomeempresa,
 			username: fechamento.username,
 			numeropdv: fechamento.numeropdv,
@@ -1693,8 +1751,10 @@ export const localApi = {
 
 		// Em rejeição NFC-e o cupom não fiscal já foi impresso; não imprime produção/pedido.
 		if (fiscal.modo !== "erro") {
+			const sessao = await obterSessao();
 			void imprimirProducaoPedido({
 				origem: "Balcão",
+				garcom: sessao.username,
 				itens: input.itens,
 			});
 		}
@@ -2068,12 +2128,14 @@ export const localApi = {
 		});
 		if (conta.pedidoNovo) {
 			try {
+				const sessao = await obterSessao();
 				void imprimirProducaoPedido({
 					origem: await rotuloOrigemConta(conta),
 					cliente: conta.nomecliente,
 					observacaoPedido: conta.observacaoPedido,
 					mesaFisica: conta.mesaFisica,
 					localizacao: conta.localizacao,
+					garcom: sessao.username,
 					itens: conta.itensProducao,
 				});
 			} catch {
@@ -2149,6 +2211,7 @@ export const localApi = {
 			observacaoPedido: pedido.observacaoPedido,
 			mesaFisica: pedido.mesaFisica,
 			localizacao: pedido.localizacao,
+			garcom: (await obterSessao()).username,
 			itens: pedido.itens,
 			reimpressao: true,
 		});
@@ -2200,6 +2263,7 @@ export const localApi = {
 			void imprimirProducaoPedido({
 				origem: await rotuloOrigemMesa(conta.numero_mesa),
 				cliente: conta.nomecliente,
+				garcom: (await obterSessao()).username,
 				itens: [
 					{
 						idproduto: item.idproduto,
@@ -2444,6 +2508,7 @@ export const localApi = {
 							protocolo: result.conta.orderidintegracao,
 						}),
 					cliente: result.conta.nomecliente,
+					garcom: (await obterSessao()).username,
 					itens: result.itensProducao,
 				});
 			} catch {
@@ -2629,6 +2694,19 @@ export const localApi = {
 			throw new Error("Destino sem conta aberta");
 		}
 		const conta = await juntarContas(idOrigem, mesa.idconta);
+		avisarTecnibra();
+		return conta;
+	},
+
+	async juntarVariasContas(idsOrigem: string[], idDestino: string) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			throw new Error(
+				"Juntar várias contas no secundário ainda não é suportado. Use o PDV principal.",
+			);
+		}
+		const conta = await juntarVariasContasRepo(idsOrigem, idDestino);
 		avisarTecnibra();
 		return conta;
 	},

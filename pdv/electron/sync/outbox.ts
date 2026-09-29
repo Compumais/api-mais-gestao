@@ -94,6 +94,7 @@ import {
 import { sincronizarImagensProdutos } from "./imagens-produtos";
 import { sincronizarImagensGruposGourmet } from "./imagens-grupos-gourmet";
 import { invalidarSessaoExpirada } from "./sessao-expirada";
+import { temAuthNuvem, usaApiKeyDevice } from "./auth-nuvem";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 export type DetalheCicloOutbox = {
@@ -188,7 +189,7 @@ export async function pullCatalogo(): Promise<{
 	acessoNegado?: boolean;
 }> {
 	const sessao = await obterSessao();
-	if (!sessao.idempresa || !sessao.token) {
+	if (!sessao.idempresa || !(await temAuthNuvem())) {
 		return {
 			produtos: 0,
 			atalhos: 0,
@@ -205,11 +206,14 @@ export async function pullCatalogo(): Promise<{
 		return await puxarCatalogoDaEmpresa(sessao.idempresa);
 	} catch (err) {
 		if (isEmpresaAcessoNegado(err)) {
-			await salvarSessao({
-				idempresa: null,
-				nomeempresa: null,
-				modulogourmet: null,
-			});
+			// Com API key, 403 de membership é bug de auth device — não desfaz o bind.
+			if (!(await usaApiKeyDevice())) {
+				await salvarSessao({
+					idempresa: null,
+					nomeempresa: null,
+					modulogourmet: null,
+				});
+			}
 			return {
 				produtos: 0,
 				atalhos: 0,
@@ -585,7 +589,7 @@ export async function sincronizarFiscalPdv(): Promise<{
 	erro?: string;
 }> {
 	const sessao = await obterSessao();
-	if (!sessao.idempresa || !sessao.token) {
+	if (!sessao.idempresa || !(await temAuthNuvem())) {
 		return { ok: false, erro: "Sessão inválida" };
 	}
 
@@ -695,11 +699,16 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 		}
 
 		const sessao = await obterSessao();
-		if (!sessao.idempresa || !sessao.token || !sessao.userid) {
+		if (!sessao.idempresa || !(await temAuthNuvem())) {
 			return montarResultado();
 		}
 
 		await sincronizarFiscalPdv().catch(() => undefined);
+
+		// Push de vendas/outbox exige operador (userid) na sessão local.
+		if (!sessao.userid) {
+			return montarResultado();
+		}
 
 		for (;;) {
 			const [item] = await reivindicarOutboxPendentes(OUTBOX_WORKER_ID, 1);
