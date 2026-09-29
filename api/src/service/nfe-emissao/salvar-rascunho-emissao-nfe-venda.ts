@@ -174,6 +174,8 @@ function montarDadosNotaRascunho(params: {
 	formasPagamento?: FormaPagamentoNfVenda[];
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
+	dataFaturamento?: string;
+	diasPagamento?: number;
 }): NovaNotaFiscal {
 	const valortotalnota = Math.max(
 		0,
@@ -359,6 +361,8 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 		formasPagamento: params.formasPagamento,
 		gerarFinanceiro: params.gerarFinanceiro,
 		gerarEstoque: params.gerarEstoque,
+		dataFaturamento: params.dataFaturamento,
+		diasPagamento: params.diasPagamento,
 	});
 
 	const itensPersistencia = montarItensRascunho(idnotafiscal, params.itens);

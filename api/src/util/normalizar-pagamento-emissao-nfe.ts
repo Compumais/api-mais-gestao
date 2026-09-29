@@ -32,11 +32,17 @@ export function normalizarPagamentoEmissaoNfe(
 				return { tPag: TPAG_SEM_PAGAMENTO, vPag: 0 };
 			}
 
-			return complementarCardPagamentoNfe({
-				...forma,
+			const vPag = forma.vPag ?? valorNota;
+			const comCard = complementarCardPagamentoNfe({
 				tPag,
-				vPag: forma.vPag ?? valorNota,
-			});
+				vPag,
+				...(forma.indPag !== undefined ? { indPag: forma.indPag } : {}),
+			}) as PagamentoPayloadNfe["formas"][number];
+
+			return {
+				...comCard,
+				...(forma.card ? { card: forma.card } : {}),
+			};
 		}),
 	};
 }
