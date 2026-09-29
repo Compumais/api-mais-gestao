@@ -20,7 +20,7 @@ export const nfeconfiguracao = pgTable(
 		idempresa: text().notNull(),
 		ambiente: smallint().default(2).notNull(),
 		versaoleiaute: varchar({ length: 10 }).default("4.00").notNull(),
-		schema: varchar({ length: 30 }).default("PL_009_V4").notNull(),
+		schema: varchar({ length: 30 }).default("PL_010_V1.30").notNull(),
 		idcertificadoativo: text(),
 		verproc: varchar({ length: 20 }).default("MaisGestao 1.0.0"),
 		tokenibpt: varchar({ length: 100 }),

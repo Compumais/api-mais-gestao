@@ -57,7 +57,7 @@ final class NfeEmissaoService
 		string $senha,
 		array $payloadNfe
 	): array {
-		$schema = (string) ($configJson['schemes'] ?? 'PL_009_V4');
+		$schema = (string) ($configJson['schemes'] ?? 'PL_010_V1.30');
 		$mk = new Make($schema);
 		$mk->setOnlyAscii(false);
 

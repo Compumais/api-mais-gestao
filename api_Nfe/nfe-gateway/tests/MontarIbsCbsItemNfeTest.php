@@ -35,8 +35,8 @@ assertTrue(MontarIbsCbsItemNfe::normalizarClassTrib('1') === '000001', 'cClassTr
 assertTrue(MontarIbsCbsItemNfe::normalizarClassTrib('000001') === '000001', 'cClassTrib 000001 permanece');
 
 assertTrue(
-	MontarIbsCbsItemNfe::schemaSuportaIbsCbs(['schemes' => 'PL_010b_NT2025_002_v1.30']),
-	'PL_010b suporta IBSCBS',
+	MontarIbsCbsItemNfe::schemaSuportaIbsCbs(['schemes' => 'PL_010_V1.30']),
+	'PL_010_V1.30 suporta IBSCBS',
 );
 assertTrue(
 	!MontarIbsCbsItemNfe::schemaSuportaIbsCbs(['schemes' => 'PL_009_V4']),
@@ -82,20 +82,31 @@ $itensLp = [[
 ]];
 
 $configPl009 = ['schemes' => 'PL_009_V4'];
-$configPl010 = ['schemes' => 'PL_010b_NT2025_002_v1.30'];
+$configPl010 = ['schemes' => 'PL_010_V1.30'];
 
 $xmlPl009 = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 3], $itensLp, $configPl009);
 assertTrue(!str_contains($xmlPl009, '<IBSCBS>'), 'PL_009_V4 omite IBSCBS (XSD não aceita)');
 assertTrue(!str_contains($xmlPl009, '<IBSCBSTot>'), 'PL_009_V4 omite IBSCBSTot');
 
 $xmlLp = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 3], $itensLp, $configPl010);
-assertTrue(str_contains($xmlLp, '<IBSCBS>'), 'PL_010b LP inclui grupo IBSCBS');
+assertTrue(str_contains($xmlLp, '<IBSCBS>'), 'PL_010 LP inclui grupo IBSCBS');
 assertTrue(str_contains($xmlLp, '<CST>000</CST>'), 'LP com CST 000');
 assertTrue(str_contains($xmlLp, '<cClassTrib>000001</cClassTrib>'), 'LP com cClassTrib');
 assertTrue(str_contains($xmlLp, '<gIBSCBS>'), 'LP com gIBSCBS');
 assertTrue(str_contains($xmlLp, '<pIBSUF>0.1000</pIBSUF>'), 'LP com pIBSUF');
 assertTrue(str_contains($xmlLp, '<pCBS>0.9000</pCBS>'), 'LP com pCBS');
 assertTrue(str_contains($xmlLp, '<IBSCBSTot>'), 'LP inclui totais IBSCBS');
+assertTrue(
+	(bool) preg_match(
+		'/<IBSCBSTot>.*<vBCIBSCBS>.*<gIBS>.*<gIBSUF>.*<vIBSUF>.*<\/gIBSUF>.*<gIBSMun>.*<\/gIBSMun>.*<vIBS>.*<\/gIBS>.*<gCBS>.*<vCBS>.*<\/gCBS>.*<\/IBSCBSTot>/s',
+		$xmlLp,
+	),
+	'IBSCBSTot segue TIBSCBSMonoTot (gIBS/gCBS, sem vIBSUF solto)',
+);
+assertTrue(
+	!preg_match('/<IBSCBSTot>\s*<vBCIBSCBS>[^<]*<\/vBCIBSCBS>\s*<vIBSUF>/s', $xmlLp),
+	'IBSCBSTot não coloca vIBSUF logo após vBCIBSCBS',
+);
 assertTrue(
 	(bool) preg_match('/<\/COFINS>.*<IBSCBS>/s', $xmlLp),
 	'IBSCBS vem após COFINS',

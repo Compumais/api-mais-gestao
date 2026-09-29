@@ -98,6 +98,7 @@ export const corsOptions: FastifyCorsOptions = {
 		"Content-Type",
 		"Authorization",
 		"X-Empresa-Id",
+		"X-PDV-Instance-Id",
 		"X-Requested-With",
 		"X-File-Name",
 		"Accept",

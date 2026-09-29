@@ -1,9 +1,11 @@
 "use client";
 
+import { IconReceipt } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	flexRender,
 	getCoreRowModel,
+	type RowSelectionState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
@@ -25,6 +27,10 @@ import {
 	useInterpretarRejeicaoNfce,
 	useNfceDetalhes,
 } from "@/hooks/use-nfce-detalhes";
+import {
+	nfceService,
+	type ResultadoEmitirNfceVendasNaoFiscaisLote,
+} from "@/services/nfce.service";
 import { produtosService } from "@/services/produtos.service";
 import { usuariosService } from "@/services/usuarios.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
@@ -32,6 +38,8 @@ import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import { PageContainer } from "../components/page-container";
 import { DialogDetalhesNfce } from "../nfce/components/dialog-detalhes-nfce";
 import { DialogCancelarVendaNaoFiscal } from "./dialog-cancelar-venda-nao-fiscal";
+import { DialogConfirmarEmitirNfceLote } from "./dialog-confirmar-emitir-nfce-lote";
+import { DialogResultadoEmitirNfceLote } from "./dialog-resultado-emitir-nfce-lote";
 import { ItensVendaDialog } from "./itens-venda-dialog";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_VENDAS_PDV,
@@ -49,7 +57,27 @@ import {
 	type FiltrosColunaVendasPdvState,
 	idNfceVenda,
 	ordenarVendasPdvColuna,
+	podeEmitirNfceVendaNaoFiscal,
 } from "./vendas-pdv-helpers";
+
+function mensagemErroApi(error: unknown, fallback: string): string {
+	if (
+		error &&
+		typeof error === "object" &&
+		"response" in error &&
+		error.response &&
+		typeof error.response === "object" &&
+		"data" in error.response &&
+		error.response.data &&
+		typeof error.response.data === "object" &&
+		"error" in error.response.data &&
+		typeof error.response.data.error === "string"
+	) {
+		return error.response.data.error;
+	}
+	if (error instanceof Error && error.message) return error.message;
+	return fallback;
+}
 
 export default function VendasPdvPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
@@ -63,6 +91,7 @@ export default function VendasPdvPage() {
 		pageIndex: 0,
 		pageSize: 15,
 	});
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
 	const [vendaSelecionada, setVendaSelecionada] =
 		useState<VendaPdvGourmet | null>(null);
@@ -71,6 +100,10 @@ export default function VendasPdvPage() {
 	const [vendaCancelar, setVendaCancelar] = useState<VendaPdvGourmet | null>(
 		null,
 	);
+	const [confirmarLoteAberto, setConfirmarLoteAberto] = useState(false);
+	const [resultadoLote, setResultadoLote] =
+		useState<ResultadoEmitirNfceVendasNaoFiscaisLote | null>(null);
+	const [resultadoLoteAberto, setResultadoLoteAberto] = useState(false);
 
 	const { data: produtosData } = useQuery({
 		queryKey: ["produtos-lista", empresa?.id],
@@ -193,6 +226,72 @@ export default function VendasPdvPage() {
 		},
 	});
 
+	const emitirUnitariaMutation = useMutation({
+		mutationFn: async (venda: VendaPdvGourmet) => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return nfceService.emitirDeVendaNaoFiscal({
+				idempresa: empresa.id,
+				idvenda: venda.id,
+			});
+		},
+		onSuccess: (resultado) => {
+			void queryClient.invalidateQueries({ queryKey: ["vendas-pdv-gourmet"] });
+			void queryClient.invalidateQueries({ queryKey: ["nfce"] });
+			if (resultado.emitida) {
+				toast.success(
+					resultado.jaEmitida
+						? "NFC-e já estava autorizada"
+						: "NFC-e autorizada com sucesso",
+				);
+				if (resultado.avisosEstoque?.length) {
+					toast.warning(resultado.avisosEstoque.join(" "));
+				}
+				if (resultado.idnotafiscal) {
+					setDetalhesNotaId(resultado.idnotafiscal);
+				}
+				return;
+			}
+			const mensagem =
+				resultado.xMotivo ??
+				resultado.erro ??
+				resultado.pendencias?.map((p) => p.mensagem).join("; ") ??
+				"NFC-e não autorizada";
+			toast.error(mensagem);
+			if (resultado.idnotafiscal) {
+				setDetalhesNotaId(resultado.idnotafiscal);
+			}
+		},
+		onError: (error: unknown) => {
+			toast.error(mensagemErroApi(error, "Não foi possível emitir a NFC-e"));
+		},
+	});
+
+	const emitirLoteMutation = useMutation({
+		mutationFn: async (idsVendas: string[]) => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return nfceService.emitirLoteVendasNaoFiscais({
+				idempresa: empresa.id,
+				idsVendas,
+			});
+		},
+		onSuccess: (resultado) => {
+			setConfirmarLoteAberto(false);
+			setRowSelection({});
+			setResultadoLote(resultado);
+			setResultadoLoteAberto(true);
+			void queryClient.invalidateQueries({ queryKey: ["vendas-pdv-gourmet"] });
+			void queryClient.invalidateQueries({ queryKey: ["nfce"] });
+			toast.success(
+				`Lote: ${resultado.autorizadas} autorizada(s), ${resultado.falhas} falha(s), ${resultado.ignoradas} ignorada(s)`,
+			);
+		},
+		onError: (error: unknown) => {
+			toast.error(
+				mensagemErroApi(error, "Não foi possível emitir o lote de NFC-e"),
+			);
+		},
+	});
+
 	const onOrdenarColuna = useCallback(
 		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
 			if (!direcao) {
@@ -243,6 +342,13 @@ export default function VendasPdvPage() {
 		setVendaCancelar(venda);
 	}, []);
 
+	const handleEmitirNfce = useCallback(
+		(venda: VendaPdvGourmet) => {
+			emitirUnitariaMutation.mutate(venda);
+		},
+		[emitirUnitariaMutation],
+	);
+
 	const detalhesQuery = useNfceDetalhes({
 		idempresa: empresa?.id ?? "",
 		idnotafiscal: detalhesNotaId,
@@ -271,6 +377,10 @@ export default function VendasPdvPage() {
 				onVerItens: handleVerItens,
 				onVerNfce: handleVerNfce,
 				onCancelarVendaNaoFiscal: handleCancelarVendaNaoFiscal,
+				onEmitirNfce: handleEmitirNfce,
+				emitindoId: emitirUnitariaMutation.isPending
+					? (emitirUnitariaMutation.variables?.id ?? null)
+					: null,
 			}),
 		[
 			usuariosPorId,
@@ -283,18 +393,29 @@ export default function VendasPdvPage() {
 			handleVerItens,
 			handleVerNfce,
 			handleCancelarVendaNaoFiscal,
+			handleEmitirNfce,
+			emitirUnitariaMutation.isPending,
+			emitirUnitariaMutation.variables?.id,
 		],
 	);
 
 	const table = useReactTable({
 		data: vendasExibidas,
 		columns,
-		state: { pagination },
+		state: { pagination, rowSelection },
 		onPaginationChange: setPagination,
+		onRowSelectionChange: setRowSelection,
 		getCoreRowModel: getCoreRowModel(),
+		getRowId: (row) => row.id,
+		enableRowSelection: (row) => podeEmitirNfceVendaNaoFiscal(row.original),
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
+
+	const idsSelecionados = useMemo(
+		() => Object.keys(rowSelection).filter((id) => rowSelection[id]),
+		[rowSelection],
+	);
 
 	const comFiltros = filtrosColunaVendasPdvAtivos(filtrosColuna) || !!ordenarPor;
 
@@ -306,26 +427,39 @@ export default function VendasPdvPage() {
 						<h1 className="text-2xl font-bold">Histórico de vendas PDV</h1>
 						<p className="text-sm text-muted-foreground">
 							Filtros e ordenação nos cabeçalhos das colunas. Vendas sem NFC-e
-							autorizada podem ser canceladas a qualquer tempo.
+							autorizada podem ser canceladas ou convertidas em NFC-e.
 						</p>
 					</div>
-					{comFiltros ? (
-						<div className="flex items-center gap-2">
-							<Badge variant="secondary">Filtros ativos</Badge>
+					<div className="flex items-center gap-2">
+						{idsSelecionados.length > 0 ? (
 							<Button
-								variant="outline"
 								size="sm"
-								onClick={() => {
-									setFiltrosColuna(filtrosColunaVendasPdvVazios);
-									setOrdenarPor(null);
-									setOrdem(null);
-									setPagination((p) => ({ ...p, pageIndex: 0 }));
-								}}
+								className="gap-1.5"
+								disabled={emitirLoteMutation.isPending}
+								onClick={() => setConfirmarLoteAberto(true)}
 							>
-								Limpar
+								<IconReceipt className="size-4" aria-hidden="true" />
+								Emitir NFC-e em lote ({idsSelecionados.length})
 							</Button>
-						</div>
-					) : null}
+						) : null}
+						{comFiltros ? (
+							<>
+								<Badge variant="secondary">Filtros ativos</Badge>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => {
+										setFiltrosColuna(filtrosColunaVendasPdvVazios);
+										setOrdenarPor(null);
+										setOrdem(null);
+										setPagination((p) => ({ ...p, pageIndex: 0 }));
+									}}
+								>
+									Limpar
+								</Button>
+							</>
+						) : null}
+					</div>
 				</div>
 
 				<div className="mx-4 overflow-x-auto rounded-lg border bg-card">
@@ -336,7 +470,8 @@ export default function VendasPdvPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<TableSkeleton rows={10} columns={9}>
+						<TableSkeleton rows={10} columns={10}>
+							<TableHead />
 							<TableHead>Nº PDV</TableHead>
 							<TableHead>Data / Hora</TableHead>
 							<TableHead>Origem</TableHead>
@@ -453,6 +588,29 @@ export default function VendasPdvPage() {
 				onConfirmar={(motivo) => {
 					if (!vendaCancelar) return;
 					cancelarMutation.mutate({ venda: vendaCancelar, motivo });
+				}}
+			/>
+
+			<DialogConfirmarEmitirNfceLote
+				open={confirmarLoteAberto}
+				onClose={() => {
+					if (!emitirLoteMutation.isPending) setConfirmarLoteAberto(false);
+				}}
+				carregando={emitirLoteMutation.isPending}
+				quantidade={idsSelecionados.length}
+				onConfirmar={() => {
+					if (idsSelecionados.length === 0) return;
+					emitirLoteMutation.mutate(idsSelecionados);
+				}}
+			/>
+
+			<DialogResultadoEmitirNfceLote
+				open={resultadoLoteAberto}
+				onClose={() => setResultadoLoteAberto(false)}
+				resultado={resultadoLote}
+				onConsultarNota={(idnotafiscal) => {
+					setResultadoLoteAberto(false);
+					setDetalhesNotaId(idnotafiscal);
 				}}
 			/>
 

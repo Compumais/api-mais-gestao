@@ -4,6 +4,8 @@ import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { requireFeature } from "../../middleware/verify-plano.js";
 import {
 	buscarDetalhesNfceSchema,
+	emitirNfceVendaNaoFiscalSchema,
+	emitirNfceVendasNaoFiscaisLoteSchema,
 	interpretarRejeicaoNfceSchema,
 } from "./doc-schema/schema.js";
 import {
@@ -13,6 +15,8 @@ import {
 	buscarNfceParaEditar,
 	cancelarNfce,
 	cancelarNfceVenda,
+	emitirNfceVendaNaoFiscal,
+	emitirNfceVendasNaoFiscaisLote,
 	interpretarRejeicaoNfce,
 	inutilizarNfcePorNota,
 	inutilizarNfceVenda,
@@ -31,6 +35,16 @@ export async function nfceRotas(app: FastifyInstance) {
 
 	app.get("/nfce/pendentes", listarNfcePendentes);
 	app.post("/nfce/pendentes/transmitir", transmitirNfcePendentesLote);
+	app.post(
+		"/nfce/vendas-nao-fiscais/emitir-lote",
+		{ schema: emitirNfceVendasNaoFiscaisLoteSchema },
+		emitirNfceVendasNaoFiscaisLote,
+	);
+	app.post(
+		"/nfce/venda/:idvenda/emitir",
+		{ schema: emitirNfceVendaNaoFiscalSchema },
+		emitirNfceVendaNaoFiscal,
+	);
 	app.post("/nfce/venda/:idvenda/retransmitir", retransmitirNfceVenda);
 	app.post("/nfce/venda/:idvenda/inutilizar", inutilizarNfceVenda);
 	app.post("/nfce/venda/:idvenda/cancelar", cancelarNfceVenda);

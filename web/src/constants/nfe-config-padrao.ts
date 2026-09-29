@@ -1,7 +1,7 @@
 /** Espelha os padrões técnicos definidos na API (`api/src/util/nfe-config-padrao.ts`). */
 export const NFE_CONFIG_PADRAO = {
 	versaoleiaute: "4.00",
-	schema: "PL_009_V4",
+	schema: "PL_010_V1.30",
 	verproc: "MaisGestao 1.0.0",
 } as const;
 

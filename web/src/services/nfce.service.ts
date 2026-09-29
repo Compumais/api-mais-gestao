@@ -53,6 +53,40 @@ export interface ResultadoTransmitirPendentesLote {
 	itens: ItemTransmitirPendentesLote[];
 }
 
+export interface ResultadoEmitirNfceVendaNaoFiscal {
+	emitida: boolean;
+	jaEmitida?: boolean;
+	idnotafiscal?: string;
+	chave?: string;
+	protocolo?: string;
+	serie?: string;
+	numero?: number;
+	cStat?: string;
+	xMotivo?: string;
+	erro?: string;
+	pendencias?: Array<{ codigo: string; mensagem: string }>;
+	avisosEstoque?: string[];
+}
+
+export interface ItemEmitirNfceVendasNaoFiscaisLote {
+	idvenda: string;
+	idnotafiscal: string | null;
+	numeronotafiscal: string | null;
+	serie: string | null;
+	sucesso: boolean;
+	ignorada: boolean;
+	cStat: string | null;
+	mensagem: string;
+}
+
+export interface ResultadoEmitirNfceVendasNaoFiscaisLote {
+	total: number;
+	autorizadas: number;
+	falhas: number;
+	ignoradas: number;
+	itens: ItemEmitirNfceVendasNaoFiscaisLote[];
+}
+
 export interface DadosCupomNfceApi {
 	vendaId?: string;
 	empresaNome: string;
@@ -271,6 +305,31 @@ export const nfceService = {
 			{
 				idempresa: params.idempresa,
 				...(params.limite !== undefined ? { limite: params.limite } : {}),
+			},
+		);
+		return data;
+	},
+
+	async emitirDeVendaNaoFiscal(params: {
+		idempresa: string;
+		idvenda: string;
+	}): Promise<ResultadoEmitirNfceVendaNaoFiscal> {
+		const { data } = await api.post<ResultadoEmitirNfceVendaNaoFiscal>(
+			`/nfce/venda/${params.idvenda}/emitir`,
+			{ idempresa: params.idempresa },
+		);
+		return data;
+	},
+
+	async emitirLoteVendasNaoFiscais(params: {
+		idempresa: string;
+		idsVendas: string[];
+	}): Promise<ResultadoEmitirNfceVendasNaoFiscaisLote> {
+		const { data } = await api.post<ResultadoEmitirNfceVendasNaoFiscaisLote>(
+			"/nfce/vendas-nao-fiscais/emitir-lote",
+			{
+				idempresa: params.idempresa,
+				idsVendas: params.idsVendas,
 			},
 		);
 		return data;
