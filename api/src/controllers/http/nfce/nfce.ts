@@ -7,7 +7,12 @@ import { buscarDetalhesNfceService } from "@/service/nfce-emissao/buscar-detalhe
 import { buscarNfceParaEditarService } from "@/service/nfce-emissao/buscar-nfce-para-editar.js";
 import { cancelarNfceService } from "@/service/nfce-emissao/cancelar-nfce.js";
 import { cancelarNfceVendaPdvService } from "@/service/nfce-emissao/cancelar-nfce-venda-pdv.js";
-import { conciliarNfcePendentesService } from "@/service/nfce-emissao/conciliar-nfce-pendentes.js";
+import {
+	conciliarNfcePendentesService,
+	consultarSituacaoNfceService,
+} from "@/service/nfce-emissao/conciliar-nfce-pendentes.js";
+import { emitirNfceVendaNaoFiscalService } from "@/service/nfce-emissao/emitir-nfce-venda-nao-fiscal.js";
+import { emitirNfceVendasNaoFiscaisLoteService } from "@/service/nfce-emissao/emitir-nfce-vendas-nao-fiscais-lote.js";
 import { interpretarRejeicaoNfceService } from "@/service/nfce-emissao/interpretar-rejeicao-nfce.js";
 import { inutilizarNfcePorNotaService } from "@/service/nfce-emissao/inutilizar-nfce-por-nota.js";
 import { inutilizarNfceVendaPdvService } from "@/service/nfce-emissao/inutilizar-nfce-venda-pdv.js";
@@ -19,8 +24,6 @@ import {
 import { reemitirNfceService } from "@/service/nfce-emissao/reemitir-nfce.js";
 import { registrarInutilizacaoNumeracaoNfceService } from "@/service/nfce-emissao/registrar-inutilizacao-numeracao-nfce.js";
 import { retransmitirNfceVendaPdvService } from "@/service/nfce-emissao/retransmitir-nfce-venda-pdv.js";
-import { emitirNfceVendaNaoFiscalService } from "@/service/nfce-emissao/emitir-nfce-venda-nao-fiscal.js";
-import { emitirNfceVendasNaoFiscaisLoteService } from "@/service/nfce-emissao/emitir-nfce-vendas-nao-fiscais-lote.js";
 import { transmitirNfceContingenciaService } from "@/service/nfce-emissao/transmitir-nfce-contingencia.js";
 import { transmitirNfcePendentesLoteService } from "@/service/nfce-emissao/transmitir-nfce-pendentes-lote.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
@@ -260,6 +263,41 @@ export async function atualizarVendaNfce(
 				valorcouverartistico: body.pagamentos.valorcouverartistico ?? null,
 				valorentrega: body.pagamentos.valorentrega ?? null,
 			},
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function consultarSituacaoNfce(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const { idnotafiscal } = paramsNotaSchema.parse(request.params);
+		const { idempresa } = bodyReemitirSchema.parse(request.body);
+		const resultado = await consultarSituacaoNfceService({
+			idnotafiscal,
+			idempresa,
+			idusuario: request.user.id,
 		});
 
 		if (!resultado.success) {

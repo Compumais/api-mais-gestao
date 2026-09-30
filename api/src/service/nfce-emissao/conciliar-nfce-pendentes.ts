@@ -8,7 +8,13 @@ import { executarComLockEmissaoNfce } from "@/repositories/reconciliacao-nfce-pd
 import { buscarVendaPdvGourmetPorNotaFiscalNfce } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { conciliarNfceDocumento } from "@/service/nfce-emissao/conciliar-nfce-documento.js";
 import type { ResultadoEmissaoNfcePdv } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import { mensagemNfceConcorrencia } from "@/util/conciliacao-nfce/mensagens-conciliacao-nfce.js";
+import {
+	httpBadRequest,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 
 export type ResumoConciliacaoNfcePendentes = {
@@ -130,4 +136,45 @@ export async function conciliarNfcePendentesService(params: {
 		limite: 20,
 	});
 	return httpOk(resumo);
+}
+
+export async function consultarSituacaoNfceService(params: {
+	idusuario: string;
+	idempresa: string;
+	idnotafiscal: string;
+}): Promise<HttpResponse<ResultadoEmissaoNfcePdv>> {
+	const pertence = await verificarUsuarioPertenceEmpresa(
+		params.idusuario,
+		params.idempresa,
+	);
+	if (!pertence) return httpProibido();
+
+	const nota = await buscarNotaFiscalPorId(params.idnotafiscal);
+	if (!nota || nota.idempresa !== params.idempresa) return httpNaoEncontrado();
+	if (nota.modelo !== "65") {
+		return httpBadRequest("Somente NFC-e (modelo 65) podem ser consultadas");
+	}
+
+	const venda = await buscarVendaPdvGourmetPorNotaFiscalNfce(nota.id);
+	const idLock = venda?.id ?? `nota:${nota.id}`;
+	const lock = await executarComLockEmissaoNfce(nota.idempresa, idLock, () =>
+		conciliarNfceDocumento({
+			nota,
+			idusuario: params.idusuario,
+			motivoTentativa: "consulta_situacao_manual",
+		}),
+	);
+	if (!lock.adquirido) {
+		const mensagem = mensagemNfceConcorrencia();
+		return httpOk({
+			emitida: false,
+			idnotafiscal: nota.id,
+			situacao: "pendente_consulta",
+			erro: mensagem,
+			xMotivo: mensagem,
+			mensagemOperacional: mensagem,
+		});
+	}
+
+	return httpOk(lock.resultado.resultado);
 }

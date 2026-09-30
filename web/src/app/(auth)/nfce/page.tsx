@@ -131,6 +131,7 @@ export default function NfcePage() {
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 	const [reemitindoId, setReemitindoId] = useState<string | null>(null);
+	const [consultandoId, setConsultandoId] = useState<string | null>(null);
 	const [cupomDados, setCupomDados] = useState<CupomNaoFiscalData | null>(null);
 	const [carregandoCupomId, setCarregandoCupomId] = useState<string | null>(
 		null,
@@ -212,6 +213,38 @@ export default function NfcePage() {
 				...(ordem ? { ordem } : {}),
 			}),
 		enabled: !!idempresa,
+	});
+
+	const consultarSituacaoMutation = useMutation({
+		mutationFn: (idnotafiscal: string) =>
+			nfceService.consultarSituacao({ idempresa, idnotafiscal }),
+		onSuccess: (resultado) => {
+			const mensagem =
+				resultado.mensagemOperacional ?? resultado.xMotivo ?? resultado.erro;
+			if (resultado.emitida || resultado.situacao === "recuperada") {
+				toast.success(
+					mensagem ??
+						"NFC-e recuperada automaticamente. A SEFAZ já havia autorizado este documento.",
+				);
+			} else if (resultado.situacao === "pendente_consulta") {
+				toast.warning(
+					mensagem ??
+						"A situação fiscal desta NFC-e está sendo confirmada com a SEFAZ. Não realize uma nova emissão enquanto a conciliação estiver pendente.",
+				);
+			} else {
+				toast.error(
+					mensagem ??
+						"A NFC-e não pôde ser recuperada automaticamente. Consulte os detalhes da ocorrência.",
+				);
+			}
+			queryClient.invalidateQueries({ queryKey: ["nfce", idempresa] });
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao consultar a situação da NFC-e");
+		},
+		onSettled: () => {
+			setConsultandoId(null);
+		},
 	});
 
 	const reemitirMutation = useMutation({
@@ -347,7 +380,12 @@ export default function NfcePage() {
 				onFiltrarColuna,
 				configFiltroPorColuna,
 				reemitindoId,
+				consultandoId,
 				carregandoCupomId,
+				onConsultarSituacao: (idnotafiscal) => {
+					setConsultandoId(idnotafiscal);
+					consultarSituacaoMutation.mutate(idnotafiscal);
+				},
 				onRetransmitir: (idnotafiscal) => {
 					setReemitindoId(idnotafiscal);
 					reemitirMutation.mutate(idnotafiscal);
@@ -367,7 +405,9 @@ export default function NfcePage() {
 			onFiltrarColuna,
 			configFiltroPorColuna,
 			reemitindoId,
+			consultandoId,
 			carregandoCupomId,
+			consultarSituacaoMutation,
 			reemitirMutation,
 			handleImprimirCupom,
 		],
