@@ -614,8 +614,6 @@ export async function faturarDavNfceService({
 			totaisFiscais.valorIcmsSt > 0
 				? totaisFiscais.valorIcmsSt.toFixed(2)
 				: null,
-		arquivoxmlassinado: null,
-		arquivoxmlautorizada: null,
 		datahoraautorizacao: null,
 		mensagemtransmissaonfe: "Transmitindo NFC-e para a SEFAZ.",
 		codigostatusprotocolonfe: null,
@@ -778,11 +776,12 @@ export async function faturarDavNfceService({
 			totaisFiscais.valorIcmsSt > 0
 				? totaisFiscais.valorIcmsSt.toFixed(2)
 				: null,
-		arquivoxmlassinado: respostaGateway.xmlEnviado ?? null,
-		arquivoxmlautorizada:
-			statusPersistido === NFE_STATUS.AUTORIZADA
-				? (respostaGateway.xmlRetorno ?? null)
-				: null,
+		...(respostaGateway.xmlEnviado
+			? { arquivoxmlassinado: respostaGateway.xmlEnviado }
+			: {}),
+		...(statusPersistido === NFE_STATUS.AUTORIZADA && respostaGateway.xmlRetorno
+			? { arquivoxmlautorizada: respostaGateway.xmlRetorno }
+			: {}),
 		datahoraautorizacao:
 			statusPersistido === NFE_STATUS.AUTORIZADA
 				? resolverDataHoraAutorizacao({

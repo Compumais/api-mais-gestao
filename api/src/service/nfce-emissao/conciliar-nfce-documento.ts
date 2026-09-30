@@ -251,6 +251,11 @@ export async function conciliarNfceDocumento(params: {
 		xMotivoConsulta = resposta.xMotivo;
 		xmlConsulta = resposta.xml?.trim() || undefined;
 		protNFe = resposta.protNFe;
+		if (xmlConsulta) {
+			await atualizarNotaFiscal(nota.id, {
+				arquivoxmlconsultasituacao: xmlConsulta,
+			});
+		}
 	} catch (erro) {
 		const mensagem = mensagemNfceAguardandoConsulta();
 		logConciliacaoNfce("falha_consulta", {
