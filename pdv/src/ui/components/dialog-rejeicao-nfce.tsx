@@ -50,15 +50,22 @@ export function DialogRejeicaoNfce({
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 			<div className="pdv-surface w-[28rem] max-w-[95vw] space-y-4 p-5 ring-destructive/40">
 				<h2 className="text-lg font-semibold text-destructive">
-					{sucesso ? "NFC-e" : "NFC-e rejeitada"}
+					{sucesso
+						? "NFC-e"
+						: /confirmada com a SEFAZ|não pôde ser recuperada|recuperada automaticamente/i.test(
+									mensagem,
+								)
+							? "NFC-e"
+							: "NFC-e rejeitada"}
 				</h2>
 				<p className="whitespace-pre-wrap break-words text-sm">
 					{sucesso ?? erro ?? mensagem}
 				</p>
 				{!sucesso ? (
 					<p className="text-xs text-muted-foreground">
-						A venda já está na retaguarda. Retransmita após corrigir o cadastro,
-						ou inutilize a numeração rejeitada na SEFAZ.
+						{/confirmada com a SEFAZ|não pôde ser recuperada/i.test(mensagem)
+							? "Não emita outro cupom para esta venda enquanto a situação fiscal não for confirmada."
+							: "A venda já está na retaguarda. Retransmita após corrigir o cadastro, ou inutilize a numeração rejeitada na SEFAZ."}
 					</p>
 				) : null}
 				<div className="flex flex-col gap-2">

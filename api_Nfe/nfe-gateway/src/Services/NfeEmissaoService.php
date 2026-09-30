@@ -98,7 +98,7 @@ final class NfeEmissaoService
 		$mk->taginfNFe((object) ['versao' => $configJson['versao'] ?? '4.00']);
 
 		// ── ide ─────────────────────────────────────────────────────────────
-		$mk->tagide((object) [
+		$ideTag = [
 			'cUF'    => (int) ($ide['cUF'] ?? 35),
 			'natOp'  => ($natOp = trim((string) ($ide['natOp'] ?? ''))) !== '' ? $natOp : 'VENDA',
 			'mod'    => $mod,
@@ -116,7 +116,12 @@ final class NfeEmissaoService
 			'indPres'  => (int) ($ide['indPres'] ?? 1),
 			'procEmi'  => 0,
 			'verProc'  => (string) ($ide['verProc'] ?? 'MaisGestao 1.0.0'),
-		]);
+		];
+		$cNF = preg_replace('/\D/', '', (string) ($ide['cNF'] ?? '')) ?? '';
+		if (strlen($cNF) === 8 && $cNF !== '00000000') {
+			$ideTag['cNF'] = $cNF;
+		}
+		$mk->tagide((object) $ideTag);
 
 		foreach ($refs as $ref) {
 			$chaveRef = preg_replace('/\D/', '', (string) ($ref['refNFe'] ?? ''));

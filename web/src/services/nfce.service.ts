@@ -34,6 +34,8 @@ export interface ResultadoReemissaoNfce {
 	cStat?: string;
 	xMotivo?: string;
 	erro?: string;
+	situacao?: string;
+	mensagemOperacional?: string;
 	pendencias?: Array<{ codigo: string; mensagem: string }>;
 }
 
@@ -64,6 +66,8 @@ export interface ResultadoEmitirNfceVendaNaoFiscal {
 	cStat?: string;
 	xMotivo?: string;
 	erro?: string;
+	situacao?: string;
+	mensagemOperacional?: string;
 	pendencias?: Array<{ codigo: string; mensagem: string }>;
 	avisosEstoque?: string[];
 }

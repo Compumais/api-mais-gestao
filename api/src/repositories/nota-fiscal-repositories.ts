@@ -762,6 +762,31 @@ export async function buscarNotaFiscalNfcePorSerieNumero(
 	return registro;
 }
 
+export async function listarNfceAguardandoConciliacao(limite = 20) {
+	return db
+		.select()
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.modelo, "65"),
+				or(
+					inArray(notafiscal.status, [
+						NFE_STATUS.TRANSMITINDO,
+						NFE_STATUS.PENDENTE_CONSULTA,
+						NFE_STATUS.RECUPERANDO,
+						NFE_STATUS.CONFLITO,
+					]),
+					and(
+						eq(notafiscal.status, NFE_STATUS.REJEITADA),
+						inArray(notafiscal.codigostatusprotocolonfe, [204, 539]),
+					),
+				),
+			),
+		)
+		.orderBy(desc(notafiscal.datainclusao))
+		.limit(limite);
+}
+
 /**
  * Busca nota pela chave NF-e que ainda bloqueia reentrada
  * (ignora rascunho de importação e compra cancelada).

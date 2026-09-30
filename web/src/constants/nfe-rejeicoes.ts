@@ -84,7 +84,7 @@ export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 	"539": {
 		descricao: "Duplicidade de NF-e/NFC-e, com diferença na Chave de Acesso",
 		instrucao:
-			"A SEFAZ já autorizou este número/série com outra chave. Consulte a chave na retaguarda e não retransmita o mesmo número em outra venda.",
+			"A SEFAZ já autorizou este número com outra chave. O ERP consulta essa chave e recupera a autorização se o documento for o mesmo. Não gere outra NFC-e enquanto a conciliação não terminar.",
 	},
 	"591": {
 		descricao: "Informar a tributação do ICMS para cada item",

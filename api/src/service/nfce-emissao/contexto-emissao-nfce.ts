@@ -80,6 +80,8 @@ export async function montarPayloadGatewayEmissaoNfce({
 	destinatario,
 	natOp,
 	informacoesAdicionais,
+	dhEmi,
+	cNF,
 }: {
 	empresa: NonNullable<Awaited<ReturnType<typeof buscarEmpresaPorId>>>;
 	empresaFiscal: NonNullable<
@@ -99,6 +101,8 @@ export async function montarPayloadGatewayEmissaoNfce({
 	destinatario?: DestinatarioPayloadNfe;
 	natOp?: string;
 	informacoesAdicionais?: string;
+	dhEmi?: string;
+	cNF?: string;
 }) {
 	const configJson = montarConfigJsonSpedNfce({
 		empresa,
@@ -161,7 +165,8 @@ export async function montarPayloadGatewayEmissaoNfce({
 				tpImp: 4,
 				serie: Number(serie),
 				nNF: numeroNf,
-				dhEmi: agoraBrasiliaIsoOffset(),
+				dhEmi: dhEmi?.trim() || agoraBrasiliaIsoOffset(),
+				...(cNF ? { cNF } : {}),
 				tpAmb: nfceConfiguracao.ambiente,
 				verProc,
 				idDest: 1,

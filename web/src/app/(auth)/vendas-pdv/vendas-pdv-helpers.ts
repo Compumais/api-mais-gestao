@@ -91,6 +91,14 @@ export function podeCancelarVendaNaoFiscal(venda: VendaPdvGourmet): boolean {
 
 	const status = venda.nfce?.status;
 	if (status == null) return true;
+	if (
+		status === NFE_STATUS.TRANSMITINDO ||
+		status === NFE_STATUS.PENDENTE_CONSULTA ||
+		status === NFE_STATUS.RECUPERANDO ||
+		status === NFE_STATUS.CONFLITO
+	) {
+		return false;
+	}
 	return (
 		status === NFE_STATUS.PENDENTE ||
 		status === NFE_STATUS.REJEITADA ||
@@ -117,7 +125,11 @@ export function podeEmitirNfceVendaNaoFiscal(venda: VendaPdvGourmet): boolean {
 		status === NFE_STATUS.REJEITADA ||
 		status === NFE_STATUS.INUTILIZADA ||
 		status === NFE_STATUS.DENEGADA ||
-		status === NFE_STATUS.RASCUNHO
+		status === NFE_STATUS.RASCUNHO ||
+		status === NFE_STATUS.TRANSMITINDO ||
+		status === NFE_STATUS.PENDENTE_CONSULTA ||
+		status === NFE_STATUS.RECUPERANDO ||
+		status === NFE_STATUS.CONFLITO
 	);
 }
 

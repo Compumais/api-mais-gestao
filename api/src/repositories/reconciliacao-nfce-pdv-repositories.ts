@@ -2,6 +2,37 @@ import { and, asc, eq, gt, isNotNull, lte, or, sql } from "drizzle-orm";
 import { notafiscal, vendapdvgourmet } from "@/repositories/schema.js";
 import { db, pool } from "./connection.js";
 
+export async function executarComLockEmissaoNfce<T>(
+	idempresa: string,
+	idvenda: string,
+	executar: () => Promise<T>,
+): Promise<{ adquirido: true; resultado: T } | { adquirido: false }> {
+	const cliente = await pool.connect();
+	const chaveLock = `nfce-emissao:${idempresa}:${idvenda}`;
+
+	try {
+		const resultadoLock = await cliente.query<{ adquirido: boolean }>(
+			"SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS adquirido",
+			[chaveLock],
+		);
+
+		if (resultadoLock.rows[0]?.adquirido !== true) {
+			return { adquirido: false };
+		}
+
+		try {
+			return { adquirido: true, resultado: await executar() };
+		} finally {
+			await cliente.query(
+				"SELECT pg_advisory_unlock(hashtextextended($1, 0))",
+				[chaveLock],
+			);
+		}
+	} finally {
+		cliente.release();
+	}
+}
+
 export async function executarComLockReconciliacaoNfce<T>(
 	idempresa: string,
 	numeropdv: number,
