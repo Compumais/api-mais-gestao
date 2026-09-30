@@ -128,6 +128,7 @@ export async function reconciliarNfceAutorizadaSefaz(
 			mensagemtransmissaonfe:
 				resposta.xMotivo?.trim() || "Autorizado o uso da NF-e",
 			codigostatusprotocolonfe: normalizarCodigoStatusNfe(resposta.cStat),
+			...(xmlConsulta ? { arquivoxmlconsultasituacao: xmlConsulta } : {}),
 			arquivoxmlautorizada: xmlAutorizado ?? nota.arquivoxmlautorizada,
 			datahoraautorizacao,
 		});
