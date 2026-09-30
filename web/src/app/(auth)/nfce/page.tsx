@@ -218,15 +218,21 @@ export default function NfcePage() {
 		mutationFn: (idnotafiscal: string) =>
 			nfceService.reemitir({ idempresa, idnotafiscal }),
 		onSuccess: (resultado) => {
-			if (resultado.emitida) {
+			if (resultado.emitida && resultado.situacao === "recuperada") {
+				toast.success(
+					resultado.mensagemOperacional ??
+						"NFC-e recuperada automaticamente. A SEFAZ já havia autorizado este documento.",
+				);
+			} else if (resultado.emitida) {
 				toast.success("NFC-e autorizada com sucesso!");
 			} else {
 				const motivo =
+					resultado.mensagemOperacional ??
 					resultado.xMotivo ??
 					resultado.erro ??
 					resultado.pendencias?.map((p) => p.mensagem).join("; ") ??
-					"Falha na reemissão";
-				toast.error(`NFC-e não autorizada: ${motivo}`);
+					"A situação fiscal desta NFC-e precisa ser confirmada antes de uma nova emissão.";
+				toast.error(motivo);
 			}
 			queryClient.invalidateQueries({ queryKey: ["nfce", idempresa] });
 		},

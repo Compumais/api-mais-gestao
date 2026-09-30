@@ -83,7 +83,10 @@ export async function reconciliarNfceAutorizadaSefaz(
 
 	if (
 		nota.status !== NFE_STATUS.PENDENTE &&
-		nota.status !== NFE_STATUS.REJEITADA
+		nota.status !== NFE_STATUS.REJEITADA &&
+		nota.status !== NFE_STATUS.TRANSMITINDO &&
+		nota.status !== NFE_STATUS.PENDENTE_CONSULTA &&
+		nota.status !== NFE_STATUS.RECUPERANDO
 	) {
 		return null;
 	}

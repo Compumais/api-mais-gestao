@@ -7,6 +7,7 @@ import { buscarDetalhesNfceService } from "@/service/nfce-emissao/buscar-detalhe
 import { buscarNfceParaEditarService } from "@/service/nfce-emissao/buscar-nfce-para-editar.js";
 import { cancelarNfceService } from "@/service/nfce-emissao/cancelar-nfce.js";
 import { cancelarNfceVendaPdvService } from "@/service/nfce-emissao/cancelar-nfce-venda-pdv.js";
+import { conciliarNfcePendentesService } from "@/service/nfce-emissao/conciliar-nfce-pendentes.js";
 import { interpretarRejeicaoNfceService } from "@/service/nfce-emissao/interpretar-rejeicao-nfce.js";
 import { inutilizarNfcePorNotaService } from "@/service/nfce-emissao/inutilizar-nfce-por-nota.js";
 import { inutilizarNfceVendaPdvService } from "@/service/nfce-emissao/inutilizar-nfce-venda-pdv.js";
@@ -697,6 +698,45 @@ export async function emitirNfceVendasNaoFiscaisLote(
 			idusuario: request.user.id,
 			idempresa: body.idempresa,
 			idsVendas: body.idsVendas,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+const bodyConciliarNfceSchema = z.object({
+	idempresa: z.string().uuid(),
+	idnotafiscal: z.string().uuid().optional(),
+});
+
+export async function conciliarNfce(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const body = bodyConciliarNfceSchema.parse(request.body);
+		const resultado = await conciliarNfcePendentesService({
+			idusuario: request.user.id,
+			idempresa: body.idempresa,
+			...(body.idnotafiscal ? { idnotafiscal: body.idnotafiscal } : {}),
 		});
 
 		if (!resultado.success) {

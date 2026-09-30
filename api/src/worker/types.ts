@@ -9,6 +9,7 @@ export type TipoTarefaExecucao =
 	| "sync_inbound_nfe"
 	| "processar_automacoes"
 	| "sync_dominio"
+	| "conciliar_nfce"
 	| `automacao:${string}`;
 
 export type JobContext = {
@@ -28,6 +29,7 @@ export const LOCK_AGENDADOR_PRINCIPAL = 871_234_001;
 export const LOCK_AGENDADOR_INBOUND_NFE = 871_234_002;
 export const LOCK_AGENDADOR_AUTOMACOES = 871_234_003;
 export const LOCK_AGENDADOR_DOMINIO = 871_234_004;
+export const LOCK_AGENDADOR_NFCE = 871_234_005;
 
 export const CONFIGURACAO_NOTIFICACOES_PADRAO: ConfiguracaoNotificacoes = {
 	alertasFinanceiros: {

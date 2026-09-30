@@ -24,6 +24,7 @@ import {
 	reconciliarNfcePdv,
 	reemitirNfce,
 	registrarInutilizacaoNumeracaoNfce,
+	conciliarNfce,
 	retransmitirNfceVenda,
 	transmitirNfceContingencia,
 	transmitirNfcePendentesLote,
@@ -34,6 +35,7 @@ export async function nfceRotas(app: FastifyInstance) {
 	app.addHook("onRequest", requireFeature(FEATURES_SAAS.NOTAS_FISCAIS));
 
 	app.get("/nfce/pendentes", listarNfcePendentes);
+	app.post("/nfce/conciliar", conciliarNfce);
 	app.post("/nfce/pendentes/transmitir", transmitirNfcePendentesLote);
 	app.post(
 		"/nfce/vendas-nao-fiscais/emitir-lote",
