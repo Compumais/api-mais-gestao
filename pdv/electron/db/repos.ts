@@ -4014,6 +4014,43 @@ export async function atualizarNumeracaoNfce(dados: {
 	await setConfig("fiscal_ambiente_ativo", String(ambiente));
 }
 
+/**
+ * Maior nNF que ainda ocupa a série: qualquer NFC-e local que não esteja
+ * cancelada nem inutilizada. Nota só histórica nesses status não prende
+ * o contador quando a retaguarda rebaixa a numeração.
+ */
+export async function obterMaxNumeroNfceOcupado(
+	serie?: number,
+	ambiente?: number,
+): Promise<number | null> {
+	const ambienteEfetivo =
+		ambiente === 1 || ambiente === 2
+			? ambiente
+			: await ambienteNumeracaoNfceAtivo();
+	const filtroStatus = `AND status NOT IN ('cancelada', 'inutilizada')`;
+	const row =
+		serie != null && Number.isFinite(serie) && serie >= 1
+			? await queryOne<{ max: number | null }>(
+					`SELECT MAX(numero)::int AS max
+					 FROM nfce_local
+					 WHERE serie = $1 AND ambiente = $2
+					 ${filtroStatus}`,
+					[serie, ambienteEfetivo],
+				)
+			: await queryOne<{ max: number | null }>(
+					`SELECT MAX(numero)::int AS max
+					 FROM nfce_local
+					 WHERE ambiente = $1
+					 ${filtroStatus}`,
+					[ambienteEfetivo],
+				);
+	const max = row?.max;
+	if (max == null || !Number.isFinite(max) || max < 1) {
+		return null;
+	}
+	return max;
+}
+
 /** Maior nNF já usado no ambiente atual (opcionalmente filtrado pela série). */
 export async function obterMaxNumeroNfceLocal(
 	serie?: number,
@@ -4064,8 +4101,8 @@ export async function numeroNfceLocalJaUsado(
 }
 
 /**
- * Reserva o próximo nNF livre na série atual, pulando números já presentes
- * em nfce_local (evita colisão após rewind histórico do contador).
+ * Reserva o próximo nNF livre na série atual. NFC-e cancelada ou inutilizada
+ * não ocupa o número; as demais da mesma série e ambiente são puladas.
  */
 export async function reservarNumeroNfce(): Promise<{
 	serie: number;
@@ -4076,7 +4113,14 @@ export async function reservarNumeroNfce(): Promise<{
 	const serie = atual.serie;
 	const limite = numero + 10_000;
 	while (numero < limite) {
-		if (!(await numeroNfceLocalJaUsado(serie, numero, atual.ambiente))) {
+		const ocupado = await queryOne<{ id: string }>(
+			`SELECT id FROM nfce_local
+			 WHERE serie = $1 AND numero = $2 AND ambiente = $3
+			   AND status NOT IN ('cancelada', 'inutilizada')
+			 LIMIT 1`,
+			[serie, numero, atual.ambiente],
+		);
+		if (!ocupado) {
 			await atualizarNumeracaoNfce({
 				ambiente: atual.ambiente,
 				proximo_numero: numero + 1,

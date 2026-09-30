@@ -50,6 +50,39 @@ describe("resolverProximoNumeroMonotonico", () => {
 			1,
 		);
 	});
+
+	it("adota o remoto quando ele é menor que o contador local", () => {
+		assert.equal(
+			resolverProximoNumeroMonotonico({
+				remoto: 6,
+				localAtual: 76979,
+				maxNumeroUsadoLocal: null,
+			}),
+			6,
+		);
+	});
+
+	it("adota o remoto se o ocupado local já ficou para trás", () => {
+		assert.equal(
+			resolverProximoNumeroMonotonico({
+				remoto: 6,
+				localAtual: 76979,
+				maxNumeroUsadoLocal: 5,
+			}),
+			6,
+		);
+	});
+
+	it("não rebobina para cima de um nNF local ainda ocupado", () => {
+		assert.equal(
+			resolverProximoNumeroMonotonico({
+				remoto: 6,
+				localAtual: 6,
+				maxNumeroUsadoLocal: 76978,
+			}),
+			76979,
+		);
+	});
 });
 
 describe("classificarConflitosNumeracao", () => {

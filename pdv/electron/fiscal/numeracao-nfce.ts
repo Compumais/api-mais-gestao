@@ -17,31 +17,35 @@ export const STATUS_NFCE_CONTINGENCIA_ATIVA = new Set([
 ]);
 
 /**
- * Próximo número monotônico: nunca rebobina abaixo do remoto, do local atual
- * nem do maior nNF já gravado em nfce_local (+1).
+ * Próximo número da série. A retaguarda (`remoto`) é a autoridade: se for
+ * menor que o contador local, o local cede. Não rebobina para um nNF que
+ * ainda esteja ocupado nesta série/ambiente (não cancelado e não inutilizado).
+ * O contador local sozinho não prende a numeração.
  */
 export function resolverProximoNumeroMonotonico(params: {
 	remoto: number;
 	localAtual: number;
+	/** Maior nNF ainda ocupado (não cancelado / não inutilizado), ou null. */
 	maxNumeroUsadoLocal: number | null;
 }): number {
-	const candidatos: number[] = [];
-	for (const n of [params.remoto, params.localAtual]) {
-		if (Number.isFinite(n) && n >= 1) {
-			candidatos.push(Math.floor(n));
-		}
-	}
+	const remotoOk =
+		Number.isFinite(params.remoto) && params.remoto >= 1
+			? Math.floor(params.remoto)
+			: null;
+	const localOk =
+		Number.isFinite(params.localAtual) && params.localAtual >= 1
+			? Math.floor(params.localAtual)
+			: null;
+	const base = remotoOk ?? localOk ?? 1;
 	if (
 		params.maxNumeroUsadoLocal != null &&
 		Number.isFinite(params.maxNumeroUsadoLocal) &&
 		params.maxNumeroUsadoLocal >= 1
 	) {
-		candidatos.push(Math.floor(params.maxNumeroUsadoLocal) + 1);
+		const aposOcupado = Math.floor(params.maxNumeroUsadoLocal) + 1;
+		if (aposOcupado > base) return aposOcupado;
 	}
-	if (candidatos.length === 0) {
-		return 1;
-	}
-	return Math.max(...candidatos);
+	return base;
 }
 
 export type NfceNumeracaoResumo = {
