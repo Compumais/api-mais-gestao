@@ -289,6 +289,17 @@ export const nfceService = {
 		return data;
 	},
 
+	async consultarSituacao(params: {
+		idempresa: string;
+		idnotafiscal: string;
+	}): Promise<ResultadoReemissaoNfce> {
+		const { data } = await api.post<ResultadoReemissaoNfce>(
+			`/nfce/${params.idnotafiscal}/consultar-situacao`,
+			{ idempresa: params.idempresa },
+		);
+		return data;
+	},
+
 	async reemitir(params: {
 		idempresa: string;
 		idnotafiscal: string;

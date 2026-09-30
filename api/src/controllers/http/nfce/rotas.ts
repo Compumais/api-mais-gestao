@@ -15,6 +15,8 @@ import {
 	buscarNfceParaEditar,
 	cancelarNfce,
 	cancelarNfceVenda,
+	conciliarNfce,
+	consultarSituacaoNfce,
 	emitirNfceVendaNaoFiscal,
 	emitirNfceVendasNaoFiscaisLote,
 	interpretarRejeicaoNfce,
@@ -24,7 +26,6 @@ import {
 	reconciliarNfcePdv,
 	reemitirNfce,
 	registrarInutilizacaoNumeracaoNfce,
-	conciliarNfce,
 	retransmitirNfceVenda,
 	transmitirNfceContingencia,
 	transmitirNfcePendentesLote,
@@ -71,6 +72,7 @@ export async function nfceRotas(app: FastifyInstance) {
 	app.get("/nfce/:idnotafiscal/editar", buscarNfceParaEditar);
 	app.put("/nfce/:idnotafiscal/venda", atualizarVendaNfce);
 	app.post("/nfce/:idnotafiscal/reemitir", reemitirNfce);
+	app.post("/nfce/:idnotafiscal/consultar-situacao", consultarSituacaoNfce);
 	app.post("/nfce/:idnotafiscal/cancelar", cancelarNfce);
 	app.post("/nfce/:idnotafiscal/inutilizar", inutilizarNfcePorNota);
 }

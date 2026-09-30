@@ -29,6 +29,7 @@ import {
 } from "@/util/conciliacao-nfce/mensagens-conciliacao-nfce.js";
 import { resolverAcaoConciliacaoNfce } from "@/util/conciliacao-nfce/regras-conciliacao-nfce.js";
 import type { ResumoDocumentoNfce } from "@/util/conciliacao-nfce/tipos-conciliacao-nfce.js";
+import { agoraBrasiliaNaiveIso } from "@/util/data-hora-brasilia.js";
 import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
 import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
@@ -251,11 +252,10 @@ export async function conciliarNfceDocumento(params: {
 		xMotivoConsulta = resposta.xMotivo;
 		xmlConsulta = resposta.xml?.trim() || undefined;
 		protNFe = resposta.protNFe;
-		if (xmlConsulta) {
-			await atualizarNotaFiscal(nota.id, {
-				arquivoxmlconsultasituacao: xmlConsulta,
-			});
-		}
+		await atualizarNotaFiscal(nota.id, {
+			datahoraconsultasituacao: agoraBrasiliaNaiveIso(),
+			...(xmlConsulta ? { arquivoxmlconsultasituacao: xmlConsulta } : {}),
+		});
 	} catch (erro) {
 		const mensagem = mensagemNfceAguardandoConsulta();
 		logConciliacaoNfce("falha_consulta", {
@@ -489,12 +489,19 @@ export async function conciliarNfceDocumento(params: {
 			numero: nota.numeronotafiscal,
 			serie: nota.serie,
 		});
+		const mensagemReenvio =
+			xMotivoConsulta ??
+			"A SEFAZ não localizou esta NFC-e. A mesma chave pode ser retransmitida. Nenhuma nova numeração foi gerada.";
 		return {
 			prosseguirTransmissao: true,
 			resultado: resultadoBase(nota, {
 				emitida: false,
 				situacao: "pendente_consulta",
 				chave: chaveConsulta,
+				cStat: cStatConsulta,
+				xMotivo: mensagemReenvio,
+				erro: mensagemReenvio,
+				mensagemOperacional: mensagemReenvio,
 			}),
 		};
 	}
