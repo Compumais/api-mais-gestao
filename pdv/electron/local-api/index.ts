@@ -130,6 +130,7 @@ import {
 	obterContaPorNumero,
 	obterMesa,
 	obterNfcePorVenda,
+	atualizarNumeracaoNfce,
 	obterNumeracaoNfce,
 	obterSessao,
 	obterSyncMeta,
@@ -1673,6 +1674,18 @@ export const localApi = {
 			throw new Error(resultado.erro ?? "Falha ao buscar dados fiscais");
 		}
 		return resultado;
+	},
+
+	async definirProximoNumeroNfce(numero: number) {
+		if (await ehSecundario()) {
+			throw new Error("A numeração NFC-e só é gravada no PDV principal.");
+		}
+		const proximo = Math.floor(Number(numero));
+		if (!Number.isInteger(proximo) || proximo < 1) {
+			throw new Error("O próximo número deve ser um inteiro maior que zero.");
+		}
+		await atualizarNumeracaoNfce({ proximo_numero: proximo });
+		return { proximoNumero: proximo };
 	},
 
 	async statusFiscalPdv() {

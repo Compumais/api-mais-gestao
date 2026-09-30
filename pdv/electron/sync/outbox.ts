@@ -63,7 +63,7 @@ import {
 	marcarOutboxErro,
 	marcarProdutosAusentesInativos,
 	obterCaixaTurno,
-	obterMaxNumeroNfceLocal,
+	obterMaxNumeroNfceOcupado,
 	obterNumeracaoNfce,
 	obterSessao,
 	obterVenda,
@@ -602,7 +602,7 @@ export async function sincronizarFiscalPdv(): Promise<{
 			Number.isFinite(serie) && serie > 0 ? serie : undefined;
 		const atual = await obterNumeracaoNfce(fiscal.ambiente);
 		const serieParaMax = serieEfetiva ?? atual.serie;
-		const maxLocal = await obterMaxNumeroNfceLocal(
+		const maxLocal = await obterMaxNumeroNfceOcupado(
 			serieParaMax,
 			fiscal.ambiente,
 		);

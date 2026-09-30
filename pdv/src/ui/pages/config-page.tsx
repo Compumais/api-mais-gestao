@@ -259,6 +259,7 @@ export function ConfigPage() {
 	const [statusLan, setStatusLan] = useState<StatusLan | null>(null);
 	const [conexoesQrPos, setConexoesQrPos] = useState<ConexaoQrPos[]>([]);
 	const [statusFiscal, setStatusFiscal] = useState<StatusFiscal | null>(null);
+	const [proximoNumeroNfce, setProximoNumeroNfce] = useState("");
 	const [testando, setTestando] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [msg, setMsg] = useState("");
@@ -311,6 +312,12 @@ export function ConfigPage() {
 		config.modelo_atendimento === "comanda" ? "comanda" : "mesa",
 	);
 	const modoSecundario = (config.pdv_modo ?? "principal") === "secundario";
+
+	useEffect(() => {
+		if (statusFiscal?.proximoNumero != null) {
+			setProximoNumeroNfce(String(statusFiscal.proximoNumero));
+		}
+	}, [statusFiscal?.proximoNumero]);
 	const gourmet = Boolean(status?.moduloGourmet);
 	const abasVisiveis = ABAS.filter((item) => {
 		if (item.id === "tecnibra" && !gourmet) return false;
@@ -587,6 +594,28 @@ export function ConfigPage() {
 		} catch (err) {
 			setMsg(
 				err instanceof Error ? err.message : "Falha ao carregar dados da nuvem",
+			);
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	async function gravarProximoNumeroNfce() {
+		const proximo = Math.floor(Number(proximoNumeroNfce));
+		if (!Number.isInteger(proximo) || proximo < 1) {
+			setMsg("O próximo número deve ser um inteiro maior que zero.");
+			return;
+		}
+		setTestando("fiscal-numero");
+		setMsg("");
+		try {
+			await pdvInvoke("definirProximoNumeroNfce", proximo);
+			setStatusFiscal(await pdvInvoke<StatusFiscal>("statusFiscalPdv"));
+			setProximoNumeroNfce(String(proximo));
+			setMsg(`Próximo número da NFC-e gravado: ${proximo}.`);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Falha ao gravar a numeração",
 			);
 		} finally {
 			setTestando(null);
@@ -2753,7 +2782,38 @@ export function ConfigPage() {
 											A1 é baixado automaticamente.
 										</p>
 										{!modoSecundario ? (
-											<div className="sm:col-span-2">
+											<div className="sm:col-span-2 flex flex-wrap items-end gap-2">
+												<div className="space-y-1">
+													<Label htmlFor="nfce_proximo_numero">
+														Definir próximo número
+													</Label>
+													<Input
+														id="nfce_proximo_numero"
+														inputMode="numeric"
+														className="w-36"
+														value={proximoNumeroNfce}
+														placeholder={
+															statusFiscal?.proximoNumero != null
+																? String(statusFiscal.proximoNumero)
+																: "1"
+														}
+														onChange={(e) =>
+															setProximoNumeroNfce(
+																e.target.value.replace(/\D/g, ""),
+															)
+														}
+													/>
+												</div>
+												<Button
+													type="button"
+													variant="outline"
+													disabled={testando === "fiscal-numero"}
+													onClick={() => void gravarProximoNumeroNfce()}
+												>
+													{testando === "fiscal-numero"
+														? "Gravando…"
+														: "Gravar numeração"}
+												</Button>
 												<Button
 													type="button"
 													variant="outline"

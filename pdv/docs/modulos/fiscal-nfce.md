@@ -12,9 +12,9 @@ Emite NFC-e modelo 65 na venda, ou guarda XML em contingência offline (`tpEmis=
 
 `concluirFiscalVenda` (`local-api`): se `emitir_nfce` está desligado ou o meio não emite, cupom não fiscal. Senão `emitirOuContingencia`: tenta online; falha de rede gera XML local.
 
-`reservarNumeroNfce` pega `proximo_numero`, pula número já usado em `nfce_local` na mesma série/ambiente e grava o próximo. Não rebobina.
+`reservarNumeroNfce` pega `proximo_numero`, pula número já usado em `nfce_local` na mesma série/ambiente e grava o próximo.
 
-`sincronizarFiscalPdv` (também no início de cada ciclo de outbox) busca a série remota e aplica `resolverProximoNumeroMonotonico`: o próximo número é o máximo entre remoto, local atual e maior número já gravado + 1.
+`sincronizarFiscalPdv` (também no início de cada ciclo de outbox) busca a série remota e aplica `resolverProximoNumeroMonotonico`. O `numeroproximo` da retaguarda é a autoridade da série: se for menor que o contador local, o PDV adota o remoto. O contador local antigo não segura o número. A única trava é um nNF ainda ocupado na mesma série e ambiente (NFC-e que não está cancelada nem inutilizada): o próximo não fica menor ou igual a esse número. O operador também pode gravar o próximo número no card NFC-e do PDV principal; o sync seguinte não restaura o contador local antigo.
 
 Conflito (dois registros com o mesmo número ocupado) marca `conflito_numeracao`. Reemissão com número novo está em `reemitirContingenciaComNovaNumeracao` e pode inutilizar o número abandonado.
 
@@ -71,7 +71,7 @@ Ambiente 1 e 2 vêm da API (`fiscal.ambiente`). O código não documenta no sche
 
 ## O que quebra na operação da loja se remover
 
-- Reserva monotônica de número: NFC-e rejeitada por duplicidade ou faixa inutilizada errada.
+- Reserva que ignora nNF ainda ocupado (não cancelado e não inutilizado): NFC-e rejeitada por duplicidade ou faixa inutilizada errada.
 - XML + hash: contingência não transmite ou transmite documento alterado.
 - Ordem venda → baixa/NFC-e: nota sem venda na retaguarda, ou estoque sem documento.
 - Pasta `xml-nfce`: exportação e DANFC-e de contingência ficam só com o que ainda estiver na coluna `xml` (se a coluna também for esvaziada, perde os dois).
