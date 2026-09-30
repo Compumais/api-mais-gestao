@@ -88,6 +88,7 @@ export function montarLinhasPedidoProducao(params: {
 	observacaoPedido?: string | null;
 	mesaFisica?: string | null;
 	localizacao?: string | null;
+	garcom?: string | null;
 	itens: ItemPedidoProducaoLayout[];
 	reimpressao?: boolean;
 	agruparPorGrupo?: boolean;
@@ -116,6 +117,9 @@ export function montarLinhasPedidoProducao(params: {
 	}
 	if (params.cliente?.trim()) {
 		linhas.push(`Cliente: ${params.cliente.trim()}`);
+	}
+	if (params.garcom?.trim()) {
+		linhas.push(`Garcom: ${params.garcom.trim()}`);
 	}
 	linhas.push(`Hora: ${agora.toLocaleString("pt-BR")}`);
 	if (params.observacaoPedido?.trim()) {
