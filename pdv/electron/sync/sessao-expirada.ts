@@ -30,6 +30,8 @@ function notificarUiSessaoExpirada(): void {
 /**
  * Token inválido/expirado: limpa sessão (fila outbox permanece),
  * libera backoff e avisa a UI para forçar novo login.
+ * Com API key de terminal, não derruba o vínculo do device nem o caixa —
+ * só limpa o operador se o token for sessão Better Auth (não offline/local).
  */
 export async function invalidarSessaoExpirada(): Promise<boolean> {
 	if (invalidacaoEmAndamento) {
@@ -39,6 +41,28 @@ export async function invalidarSessaoExpirada(): Promise<boolean> {
 		const sessao = await obterSessao();
 		if (!sessao.token) {
 			return false;
+		}
+		const apiKey = (await getConfig("pdv_api_key", "")).trim();
+		if (apiKey.startsWith("pdv_")) {
+			// Device permanece autenticado pela API key; não força logout completo.
+			await liberarBackoffOutboxPendente().catch(() => undefined);
+			if (
+				sessao.token.startsWith("offline:") ||
+				sessao.token.startsWith("local:")
+			) {
+				return false;
+			}
+			await lembrarEmpresaDaSessao().catch(() => undefined);
+			const { salvarSessao } = await import("../db/repos");
+			await salvarSessao({
+				token: null,
+				userid: null,
+				username: null,
+				roles: null,
+			});
+			await setConfig(CHAVE_AVISO_SESSAO_EXPIRADA, "1").catch(() => undefined);
+			notificarUiSessaoExpirada();
+			return true;
 		}
 		await liberarBackoffOutboxPendente().catch(() => undefined);
 		await lembrarEmpresaDaSessao().catch(() => undefined);

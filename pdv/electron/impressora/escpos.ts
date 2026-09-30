@@ -252,6 +252,7 @@ export async function imprimirPedidoProducao(params: {
 	observacaoPedido?: string | null;
 	mesaFisica?: string | null;
 	localizacao?: string | null;
+	garcom?: string | null;
 	itens: Array<{
 		quantidade: number;
 		descricao: string;
@@ -278,6 +279,7 @@ export async function imprimirPedidoProducao(params: {
 		observacaoPedido: params.observacaoPedido,
 		mesaFisica: params.mesaFisica,
 		localizacao: params.localizacao,
+		garcom: params.garcom,
 		itens: params.itens,
 		reimpressao: params.reimpressao,
 		agruparPorGrupo: params.agruparPorGrupo,

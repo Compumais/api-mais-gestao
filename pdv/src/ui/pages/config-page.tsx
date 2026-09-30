@@ -411,6 +411,32 @@ export function ConfigPage() {
 		setConfig((prev) => ({ ...prev, [chave]: valor }));
 	}
 
+	async function autenticarDevice(forcar = false) {
+		setLoading(true);
+		setMsg("");
+		try {
+			await pdvInvoke("saveConfig", {
+				api_url: config.api_url ?? "",
+				pdv_api_key: config.pdv_api_key ?? "",
+			});
+			const device = await pdvInvoke<{
+				idempresa: string;
+				numeropdv: number;
+				descricao: string | null;
+			}>("autenticarDevicePdv", forcar);
+			set("numeropdv", String(device.numeropdv));
+			setMsg(
+				`API key válida — PDV ${device.numeropdv}${device.descricao ? ` (${device.descricao})` : ""}. Credenciais sincronizadas.`,
+			);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Falha ao validar a API key",
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
+
 	async function salvar() {
 		setLoading(true);
 		setMsg("");
@@ -428,6 +454,7 @@ export function ConfigPage() {
 			const saved = await pdvInvoke<Config>("saveConfig", {
 				database_url: config.database_url ?? "",
 				api_url: config.api_url ?? "",
+				pdv_api_key: config.pdv_api_key ?? "",
 				numeropdv: config.numeropdv ?? "1",
 				pdv_modo: config.pdv_modo ?? "principal",
 				pdv_principal_host: config.pdv_principal_host ?? "",
@@ -2626,6 +2653,42 @@ export function ConfigPage() {
 												value={config.api_url ?? ""}
 												onChange={(e) => set("api_url", e.target.value)}
 											/>
+										</div>
+										<div className="space-y-2 sm:col-span-2">
+											<Label htmlFor="pdv_api_key">API key do PDV</Label>
+											<Input
+												id="pdv_api_key"
+												type="password"
+												autoComplete="off"
+												value={config.pdv_api_key ?? ""}
+												onChange={(e) => set("pdv_api_key", e.target.value)}
+												placeholder="pdv_…"
+											/>
+											<p className="text-xs text-muted-foreground">
+												Gere na retaguarda (Configurações → Terminais PDV) e cole
+												aqui. Substitui o login na nuvem para sync; o operador
+												loga com usuário/senha local. Só 1 instância por key.
+											</p>
+											<div className="flex flex-wrap gap-2">
+												<Button
+													type="button"
+													variant="secondary"
+													size="sm"
+													disabled={loading}
+													onClick={() => void autenticarDevice()}
+												>
+													Validar API key
+												</Button>
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													disabled={loading}
+													onClick={() => void autenticarDevice(true)}
+												>
+													Forçar (desconecta outra instância)
+												</Button>
+											</div>
 										</div>
 									</CardContent>
 								</Card>

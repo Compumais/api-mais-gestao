@@ -6,7 +6,7 @@ import {
 	Search,
 	UtensilsCrossed,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import type { LeituraComandaNormalizada } from "@/lib/comanda-scanner";
 import { marcarBootPendente } from "@/lib/boot-state";
@@ -38,6 +38,7 @@ import { BalcaoPage } from "@/ui/pages/balcao-page";
 
 type DialogoAbertura =
 	| null
+	| { tipo: "pedir-numero" }
 	| { tipo: "nome"; numero: number }
 	| {
 			tipo: "continuar";
@@ -94,12 +95,15 @@ export function HomePage() {
 	const [novaNumero, setNovaNumero] = useState("");
 	const [dialogo, setDialogo] = useState<DialogoAbertura>(null);
 	const [nomeCliente, setNomeCliente] = useState("");
+	const [numeroDialogo, setNumeroDialogo] = useState("");
 	const [modalAbrirMesaHabilitado, setModalAbrirMesaHabilitado] =
 		useState(true);
+	const inputNumeroRef = useRef<HTMLInputElement>(null);
 
 	useEscapeFechaModal(dialogo !== null, () => {
 		setDialogo(null);
 		setNomeCliente("");
+		setNumeroDialogo("");
 	});
 
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
@@ -181,6 +185,9 @@ export function HomePage() {
 		(m) => m.statusAtividade === "consumindo",
 	).length;
 	const ociosas = mesas.filter((m) => m.statusAtividade === "ociosa").length;
+	const totalAberto = mesas
+		.filter((m) => m.status === "ocupada")
+		.reduce((acc, m) => acc + (Number(m.valortotal) || 0), 0);
 	const numeroInformado = Number(novaNumero);
 	const podeAbrirNumero =
 		Number.isInteger(numeroInformado) && numeroInformado >= 1;
@@ -223,16 +230,17 @@ export function HomePage() {
 		setDialogo({ tipo: "nome", numero: mesa.numero });
 	}
 
-	async function abrirNova() {
+	async function abrirPorNumero(numeroRaw: string | number) {
 		if (bloqueado) {
 			setMsg(
 				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
 			);
 			return;
 		}
-		const numero = Number(novaNumero);
+		const numero = Number(numeroRaw);
 		if (!Number.isInteger(numero) || numero < 1) {
 			setMsg(`Informe um número válido de ${rotulo.singular.toLowerCase()}.`);
+			inputNumeroRef.current?.focus();
 			return;
 		}
 		setLoading(true);
@@ -249,6 +257,22 @@ export function HomePage() {
 		} finally {
 			setLoading(false);
 		}
+	}
+
+	async function abrirNova() {
+		if (bloqueado) {
+			setMsg(
+				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
+			);
+			return;
+		}
+		const numero = Number(novaNumero);
+		if (!Number.isInteger(numero) || numero < 1) {
+			setNumeroDialogo("");
+			setDialogo({ tipo: "pedir-numero" });
+			return;
+		}
+		await abrirPorNumero(numero);
 	}
 
 	async function abrirComandaLida(leitura: LeituraComandaNormalizada) {
@@ -328,6 +352,7 @@ export function HomePage() {
 					<div className="mx-auto flex max-w-xl items-center rounded-xl border border-white/15 bg-white/10 px-3 text-white shadow-inner">
 						<Search className="size-4 shrink-0 opacity-70" />
 						<input
+							ref={inputNumeroRef}
 							type="text"
 							inputMode="search"
 							className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-white/55"
@@ -395,7 +420,7 @@ export function HomePage() {
 						<Button
 							size="sm"
 							className="ml-auto gap-2"
-							disabled={loading || bloqueado || !podeAbrirNumero}
+							disabled={loading || bloqueado}
 							onClick={() => void abrirNova()}
 						>
 							<Plus className="size-4" />
@@ -448,6 +473,58 @@ export function HomePage() {
 					</div>
 				</div>
 			</div>
+
+			{dialogo?.tipo === "pedir-numero" && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
+					<div className="pdv-surface w-96 space-y-4 p-5">
+						<h2 className="text-lg font-semibold">
+							Abrir {rotulo.singular.toLowerCase()}
+						</h2>
+						<p className="text-sm text-muted-foreground">
+							Informe o número da {rotulo.singular.toLowerCase()} para abrir.
+						</p>
+						<Input
+							autoFocus
+							inputMode="numeric"
+							placeholder={`Número da ${rotulo.singular.toLowerCase()}`}
+							value={numeroDialogo}
+							onChange={(e) => setNumeroDialogo(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									const n = numeroDialogo.trim();
+									setDialogo(null);
+									setNovaNumero(n);
+									void abrirPorNumero(n);
+								}
+							}}
+						/>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => {
+									setDialogo(null);
+									setNumeroDialogo("");
+								}}
+							>
+								Cancelar
+							</Button>
+							<Button
+								className="flex-1"
+								disabled={loading}
+								onClick={() => {
+									const n = numeroDialogo.trim();
+									setDialogo(null);
+									setNovaNumero(n);
+									void abrirPorNumero(n);
+								}}
+							>
+								Abrir
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
 
 			{dialogo?.tipo === "nome" && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
@@ -576,7 +653,8 @@ export function HomePage() {
 						tone: ociosas ? "warning" : "default",
 					},
 					{ label: "Ocupadas", value: ocupadas },
-					{ label: "Total hoje", value: money(totalHoje) },
+					{ label: "Aberto", value: money(totalAberto) },
+					{ label: "Total vendido", value: money(totalHoje) },
 				]}
 			/>
 			<FunctionBar

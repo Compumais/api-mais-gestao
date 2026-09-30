@@ -1715,6 +1715,65 @@ export async function listarItensVendidosTurno(caixa: {
 	return agruparItensVendidosTurno(linhas);
 }
 
+export type VendaTurnoResumo = {
+	id: string;
+	criadoem: string;
+	valortotal: number;
+	origem: string;
+	numeroComanda: number | null;
+	rotulo: string;
+};
+
+export async function listarVendasTurno(caixa: {
+	numeropdv: number;
+	abertoem: string;
+}): Promise<VendaTurnoResumo[]> {
+	const linhas = await query<{
+		id: string;
+		criadoem: string;
+		valortotal: number;
+		origem: string;
+		numero_mesa: number | null;
+	}>(
+		`SELECT v.id, v.criadoem, v.valortotal, v.origem, c.numero_mesa
+		 FROM venda v
+		 LEFT JOIN conta_mesa c ON c.id = v.idconta
+		 WHERE v.numeropdv = $1
+		   AND v.criadoem >= $2
+		   AND v.status = 'fechada'
+		 ORDER BY v.criadoem ASC`,
+		[caixa.numeropdv, caixa.abertoem],
+	);
+	return linhas.map((row) => {
+		const numero =
+			row.numero_mesa != null && Number.isFinite(Number(row.numero_mesa))
+				? Number(row.numero_mesa)
+				: null;
+		let rotulo = "Balcão";
+		if (numero != null) {
+			rotulo = `Comanda/Mesa ${numero}`;
+		} else if (row.origem && row.origem !== "rapida") {
+			rotulo = row.origem;
+		}
+		return {
+			id: row.id,
+			criadoem: row.criadoem,
+			valortotal: Number(row.valortotal) || 0,
+			origem: row.origem,
+			numeroComanda: numero,
+			rotulo,
+		};
+	});
+}
+
+export async function listarVendasTurnoAberto(): Promise<VendaTurnoResumo[]> {
+	const caixa = await caixaAberto();
+	if (!caixa) {
+		throw new Error("Nenhum caixa aberto para este operador");
+	}
+	return listarVendasTurno(caixa);
+}
+
 export async function calcularResumoTurnoAberto(): Promise<ResumoTurnoCaixa> {
 	const caixa = await caixaAberto();
 	if (!caixa) {
@@ -1736,14 +1795,16 @@ export async function fecharCaixa(params: {
 	observacao: string | null;
 	nomeempresa: string | null;
 	itensVendidos: ItemVendidoTurnoAgrupado[];
+	vendasTurno: VendaTurnoResumo[];
 }> {
 	const caixa = await caixaAberto();
 	if (!caixa) {
 		throw new Error("Nenhum caixa aberto para este operador");
 	}
-	const [resumo, itensVendidos] = await Promise.all([
+	const [resumo, itensVendidos, vendasTurno] = await Promise.all([
 		calcularResumoTurno(caixa),
 		listarItensVendidosTurno(caixa),
+		listarVendasTurno(caixa),
 	]);
 	const conferencia = calcularConferenciaCaixa(
 		params.saldoinformado,
@@ -1786,6 +1847,7 @@ export async function fecharCaixa(params: {
 		observacao,
 		nomeempresa: sessao.nomeempresa,
 		itensVendidos,
+		vendasTurno,
 	};
 }
 
@@ -3493,9 +3555,11 @@ export async function aplicarAjustesConta(params: {
 			: conta.taxa_ativa === 1;
 	const pessoasMudou =
 		params.numeropessoas !== undefined && numeropessoas !== conta.numeropessoas;
-	const valorcouvert = pessoasMudou
-		? arredondarMoeda(numeropessoas * (await couvertConfig()))
-		: conta.valorcouvert;
+	const forcarCouvert = params.numeropessoas !== undefined;
+	const valorcouvert =
+		pessoasMudou || forcarCouvert
+			? arredondarMoeda(numeropessoas * (await couvertConfig()))
+			: conta.valorcouvert;
 
 	await execute(
 		`UPDATE conta_mesa SET
@@ -3879,13 +3943,19 @@ export async function juntarContas(
 	return atualizada;
 }
 
+/** Une várias contas de origem na conta destino em uma única transação. */
 export async function juntarVariasContas(
 	idsOrigem: string[],
 	idDestino: string,
 ): Promise<ContaMesaLocal> {
-	const origensIds = [...new Set(idsOrigem)];
-	if (!origensIds.length || origensIds.some((id) => id === idDestino)) {
-		throw new Error("Escolha duas contas diferentes");
+	const origensIds = [
+		...new Set(idsOrigem.map((id) => id.trim()).filter(Boolean)),
+	];
+	if (!origensIds.length) {
+		throw new Error("Selecione ao menos uma comanda para juntar");
+	}
+	if (origensIds.includes(idDestino)) {
+		throw new Error("A conta atual não pode ser origem e destino");
 	}
 	const destino = await obterContaMesa(idDestino);
 	if (!destino || destino.status !== "aberta") {
