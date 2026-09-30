@@ -7,6 +7,12 @@ import {
 	useParams,
 } from "react-router-dom";
 import {
+	CHAVE_CATALOGO_LAYOUT_PRODUTOS,
+	classeContainerCatalogo,
+	type LayoutCatalogoProdutos,
+	normalizarLayoutCatalogo,
+} from "@/lib/catalogo-layout";
+import {
 	ESTADO_BUSCA_PRODUTOS_VAZIO,
 	type EstadoBuscaProdutos,
 	obterModoCatalogoProdutos,
@@ -42,6 +48,7 @@ import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { ChatWhatsappPedido } from "@/ui/components/chat-whatsapp-pedido";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogEscolherMesa } from "@/ui/components/dialog-escolher-mesa";
+import { DialogJuntarComandas } from "@/ui/components/dialog-juntar-comandas";
 import { DialogMaisAcoesMesa } from "@/ui/components/dialog-mais-acoes-mesa";
 import { DialogObservacaoItem } from "@/ui/components/dialog-observacao-item";
 import { DialogObservacaoPedido } from "@/ui/components/dialog-observacao-pedido";
@@ -60,6 +67,7 @@ import { DialogSenhaGerencial } from "@/ui/components/dialog-senha-gerencial";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { GrupoGourmetCard } from "@/ui/components/grupo-gourmet-card";
 import { ProdutoCard } from "@/ui/components/produto-card";
+import { SeletorLayoutCatalogo } from "@/ui/components/seletor-layout-catalogo";
 import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
@@ -192,6 +200,13 @@ export function MesaContaPage() {
 	const [chatWhatsappAberto, setChatWhatsappAberto] = useState(false);
 	const [naoLidasWhatsapp, setNaoLidasWhatsapp] = useState(0);
 	const [maisAcoesAberto, setMaisAcoesAberto] = useState(false);
+	const [ajustesFecharAberto, setAjustesFecharAberto] = useState(false);
+	const [pessoasFechar, setPessoasFechar] = useState("1");
+	const [taxaFechar, setTaxaFechar] = useState(true);
+	const [couvertUnitarioCfg, setCouvertUnitarioCfg] = useState(0);
+	const [taxaPercentualCfg, setTaxaPercentualCfg] = useState(10);
+	const [layoutCatalogo, setLayoutCatalogo] =
+		useState<LayoutCatalogoProdutos>("grade");
 	const [itemCancelar, setItemCancelar] = useState<
 		ContaMesa["itens"][number] | null
 	>(null);
@@ -208,12 +223,36 @@ export function MesaContaPage() {
 	useEscapeFechaModal(Boolean(obsFilaChave), () => setObsFilaChave(null));
 	useEscapeFechaModal(obsPedidoAberto, () => setObsPedidoAberto(false));
 	useEscapeFechaModal(Boolean(itemCancelar), () => setItemCancelar(null));
+	useEscapeFechaModal(ajustesFecharAberto, () => setAjustesFecharAberto(false));
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa/conta muda
 	useEffect(() => {
 		void iniciar();
 		void pdvInvoke<GrupoLocal[]>("listarGruposGourmet").then(setGrupos);
 	}, [numeroMesa, idContaParam]);
+
+	useEffect(() => {
+		void pdvInvoke<Record<string, string>>("getConfig").then((cfg) => {
+			setLayoutCatalogo(
+				normalizarLayoutCatalogo(cfg[CHAVE_CATALOGO_LAYOUT_PRODUTOS]),
+			);
+			const couvert = Number(cfg.couvert_valor ?? "0");
+			const taxaPct = Number(cfg.taxa_servico_percentual ?? "10");
+			setCouvertUnitarioCfg(Number.isFinite(couvert) ? couvert : 0);
+			setTaxaPercentualCfg(Number.isFinite(taxaPct) ? taxaPct : 10);
+		});
+	}, []);
+
+	async function alterarLayoutCatalogo(layout: LayoutCatalogoProdutos) {
+		setLayoutCatalogo(layout);
+		try {
+			await pdvInvoke("saveConfig", {
+				[CHAVE_CATALOGO_LAYOUT_PRODUTOS]: layout,
+			});
+		} catch {
+			// Preferência visual: mantém o estado local se o save falhar.
+		}
+	}
 
 	useEffect(() => {
 		if (!modoEntrega || !idContaParam) return;
@@ -789,17 +828,7 @@ export function MesaContaPage() {
 		setLoading(true);
 		setMsg("");
 		try {
-			if (destinoAberto === "juntar") {
-				const atualizada = await pdvInvoke<ContaMesa>(
-					"juntarContas",
-					conta.id,
-					numero,
-				);
-				setConta(atualizada);
-				setMsg(
-					`Contas juntadas na ${rotulo.singular.toLowerCase()} ${numero}.`,
-				);
-			} else if (destinoAberto === "itens") {
+			if (destinoAberto === "itens") {
 				const result = await pdvInvoke<{
 					origem: ContaMesa | null;
 					destino: ContaMesa;
@@ -824,6 +853,30 @@ export function MesaContaPage() {
 			setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Erro ao mover a conta");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function confirmarJuntarComandas(idsOrigem: string[]) {
+		if (!conta) return;
+		setLoading(true);
+		setMsg("");
+		try {
+			const atualizada = await pdvInvoke<ContaMesa>(
+				"juntarVariasContas",
+				idsOrigem,
+				conta.id,
+			);
+			setConta(atualizada);
+			setDestinoAberto(null);
+			setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
+			navigate(`/mesas/${atualizada.numero_mesa}`, { replace: true });
+			setMsg(
+				`Contas juntadas na ${rotulo.singular.toLowerCase()} ${atualizada.numero_mesa}.`,
+			);
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Erro ao juntar as contas");
 		} finally {
 			setLoading(false);
 		}
@@ -859,6 +912,43 @@ export function MesaContaPage() {
 	function abrirPagarPorItens() {
 		if (!conta || filtrarItensAbertosConta(conta.itens).length === 0) return;
 		setPagarItensAberto(true);
+	}
+
+	function iniciarRecebimentoIntegral() {
+		if (!conta || !itensAbertos.length || fila.length > 0) return;
+		setPagandoFatia(false);
+		setFatiaValor(null);
+		setPessoasFechar(String(Math.max(1, conta.numeropessoas || 1)));
+		setTaxaFechar(
+			taxaPercentualCfg > 0
+				? true
+				: conta.taxa_ativa === 1,
+		);
+		setAjustesFecharAberto(true);
+	}
+
+	async function confirmarAjustesEReceber() {
+		if (!conta) return;
+		const pessoas = Math.max(1, Math.floor(Number(pessoasFechar) || 1));
+		setLoading(true);
+		setMsg("");
+		try {
+			const atualizada = await pdvInvoke<ContaMesa>("aplicarAjustesConta", conta.id, {
+				numeropessoas: pessoas,
+				taxaAtiva: taxaPercentualCfg > 0 ? taxaFechar : false,
+			});
+			setConta(atualizada);
+			setAjustesFecharAberto(false);
+			setPagando(true);
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Erro ao aplicar couvert/taxa",
+			);
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	function confirmarSelecaoItensParaPagamento() {
@@ -1048,17 +1138,25 @@ export function MesaContaPage() {
 									Selecione um grupo ou pesquise pelo nome e código
 								</p>
 							</div>
-							{grupoAtivo && (
-								<Button
-									variant="secondary"
-									size="sm"
-									className="gap-1.5"
-									onClick={() => setGrupoAtivo(null)}
-								>
-									<ChevronLeft className="size-4" />
-									Trocar grupo
-								</Button>
-							)}
+							<div className="flex shrink-0 items-center gap-2">
+								{(modoCatalogo === "busca" || modoCatalogo === "produtos") && (
+									<SeletorLayoutCatalogo
+										valor={layoutCatalogo}
+										onChange={(layout) => void alterarLayoutCatalogo(layout)}
+									/>
+								)}
+								{grupoAtivo && (
+									<Button
+										variant="secondary"
+										size="sm"
+										className="gap-1.5"
+										onClick={() => setGrupoAtivo(null)}
+									>
+										<ChevronLeft className="size-4" />
+										Trocar grupo
+									</Button>
+								)}
+							</div>
 						</div>
 
 						{!pronto ? (
@@ -1068,11 +1166,12 @@ export function MesaContaPage() {
 								<h2 className="shrink-0 text-sm font-semibold">
 									Resultados para “{buscaProdutos.termo}”
 								</h2>
-								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto">
+								<div className={classeContainerCatalogo(layoutCatalogo, "mesa")}>
 									{buscaProdutos.produtos.map((produto) => (
 										<ProdutoCard
 											key={produto.id}
 											produto={produto}
+											variante={layoutCatalogo}
 											disabled={loading}
 											onClick={() => enfileirarProduto(produto)}
 										/>
@@ -1117,7 +1216,7 @@ export function MesaContaPage() {
 								</div>
 							</div>
 						) : (
-							<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto">
+							<div className={classeContainerCatalogo(layoutCatalogo, "mesa")}>
 								{carregandoProdutos ? (
 									<p className="col-span-full text-sm text-muted-foreground">
 										Carregando produtos…
@@ -1127,6 +1226,7 @@ export function MesaContaPage() {
 										<ProdutoCard
 											key={p.id}
 											produto={p}
+											variante={layoutCatalogo}
 											disabled={loading}
 											onClick={() => enfileirarProduto(p)}
 										/>
@@ -1512,11 +1612,7 @@ export function MesaContaPage() {
 								variant="secondary"
 								className="w-full"
 								disabled={!itensAbertos.length || fila.length > 0 || loading}
-								onClick={() => {
-									setPagandoFatia(false);
-									setFatiaValor(null);
-									setPagando(true);
-								}}
+								onClick={() => iniciarRecebimentoIntegral()}
 							>
 								Receber
 							</Button>
@@ -1676,6 +1772,79 @@ export function MesaContaPage() {
 				/>
 			)}
 
+			{ajustesFecharAberto && conta && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
+					<div className="pdv-surface w-[26rem] max-w-[95vw] space-y-4 p-5">
+						<h2 className="text-lg font-semibold">Fechar conta</h2>
+						<p className="text-sm text-muted-foreground">
+							Informe a quantidade de pessoas para o couvert e confirme a taxa
+							de serviço antes de receber.
+						</p>
+						<label className="block space-y-1 text-sm">
+							<span className="text-muted-foreground">Pessoas na mesa</span>
+							<input
+								type="number"
+								min={1}
+								className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+								value={pessoasFechar}
+								onChange={(e) => setPessoasFechar(e.target.value)}
+							/>
+						</label>
+						{couvertUnitarioCfg > 0 ? (
+							<p className="text-sm">
+								Couvert estimado:{" "}
+								<span className="font-semibold">
+									{money(
+										couvertUnitarioCfg *
+											Math.max(1, Math.floor(Number(pessoasFechar) || 1)),
+									)}
+								</span>{" "}
+								<span className="text-muted-foreground">
+									({money(couvertUnitarioCfg)} ×{" "}
+									{Math.max(1, Math.floor(Number(pessoasFechar) || 1))}{" "}
+									pessoas)
+								</span>
+							</p>
+						) : (
+							<p className="text-sm text-muted-foreground">
+								Couvert não configurado (R$ 0).
+							</p>
+						)}
+						{taxaPercentualCfg > 0 ? (
+							<label className="flex items-center gap-2 text-sm">
+								<input
+									type="checkbox"
+									checked={taxaFechar}
+									onChange={(e) => setTaxaFechar(e.target.checked)}
+								/>
+								Incluir taxa de serviço ({taxaPercentualCfg}%)
+							</label>
+						) : (
+							<p className="text-sm text-muted-foreground">
+								Taxa de serviço não configurada.
+							</p>
+						)}
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								className="flex-1"
+								disabled={loading}
+								onClick={() => setAjustesFecharAberto(false)}
+							>
+								Cancelar
+							</Button>
+							<Button
+								className="flex-1"
+								disabled={loading}
+								onClick={() => void confirmarAjustesEReceber()}
+							>
+								Continuar
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
 			<DialogPagamentoMisto
 				aberto={pagando}
 				total={totalPagar}
@@ -1753,18 +1922,24 @@ export function MesaContaPage() {
 				/>
 			</DialogSenhaGerencial>
 
+			<DialogJuntarComandas
+				aberto={destinoAberto === "juntar" && Boolean(conta)}
+				destinoNumero={conta?.numero_mesa ?? numeroMesa}
+				destinoId={conta?.id ?? ""}
+				mesas={mesas}
+				loading={loading}
+				onCancelar={() => setDestinoAberto(null)}
+				onConfirmar={(ids) => void confirmarJuntarComandas(ids)}
+			/>
+
 			<DialogEscolherMesa
-				aberto={destinoAberto !== null}
+				aberto={destinoAberto === "transferir" || destinoAberto === "itens"}
 				titulo={
-					destinoAberto === "juntar"
-						? `Juntar nesta ${rotulo.singular.toLowerCase()}`
-						: destinoAberto === "itens"
-							? "Mover itens para"
-							: `Transferir para`
+					destinoAberto === "itens" ? "Mover itens para" : "Transferir para"
 				}
 				mesas={mesas}
 				excluirNumero={numeroMesa}
-				apenasOcupadas={destinoAberto === "juntar"}
+				apenasOcupadas={false}
 				loading={loading}
 				onCancelar={() => setDestinoAberto(null)}
 				onConfirmar={(n) => void confirmarDestino(n)}
@@ -2018,11 +2193,7 @@ export function MesaContaPage() {
 						variant: "secondary",
 						disabled:
 							!itensAbertos.length || fila.length > 0 || loading || pagando,
-						onClick: () => {
-							setPagandoFatia(false);
-							setFatiaValor(null);
-							setPagando(true);
-						},
+						onClick: () => iniciarRecebimentoIntegral(),
 					},
 					{
 						key: "pagar-itens",

@@ -510,10 +510,10 @@ export function LoginPage() {
 									</div>
 								)}
 								<div className="space-y-2">
-									<Label htmlFor="email">E-mail</Label>
+									<Label htmlFor="email">E-mail ou usuário</Label>
 									<Input
 										id="email"
-										type="email"
+										type="text"
 										autoComplete="username"
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}

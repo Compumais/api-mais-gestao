@@ -78,6 +78,7 @@ export const CHAVES_CONFIG_OPERADOR = [
 	"filtro_apenas_abertas",
 	"teclas_funcao",
 	"teclado_virtual_pagamento",
+	"catalogo_layout_produtos",
 ] as const;
 
 /** Sem sessão: conexão na tela de login (API, banco e identidade de PDV secundário). */
@@ -88,6 +89,8 @@ export const CHAVES_CONFIG_PRE_LOGIN = [
 	"pdv_principal_host",
 	"pdv_principal_porta",
 	"numeropdv",
+	"pdv_api_key",
+	"pdv_instance_id",
 ] as const;
 
 export function payloadSoTemChaves(

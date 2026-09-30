@@ -253,6 +253,7 @@ export async function imprimirProducaoPedido(params: {
 	observacaoPedido?: string | null;
 	mesaFisica?: string | null;
 	localizacao?: string | null;
+	garcom?: string | null;
 	itens: ItemProducao[];
 	reimpressao?: boolean;
 }): Promise<void> {
@@ -284,6 +285,7 @@ export async function imprimirProducaoPedido(params: {
 				observacaoPedido: params.observacaoPedido,
 				mesaFisica: params.mesaFisica,
 				localizacao: params.localizacao,
+				garcom: params.garcom,
 				itens,
 				reimpressao: params.reimpressao,
 				agruparPorGrupo,

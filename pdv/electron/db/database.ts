@@ -852,6 +852,8 @@ async function seedDefaults(database: Pool): Promise<void> {
 	const agora = new Date().toISOString();
 	const defaults: Array<[string, string]> = [
 		["api_url", API_URL_PADRAO],
+		["pdv_api_key", ""],
+		["pdv_instance_id", ""],
 		["numeropdv", "1"],
 		["qtd_mesas", "20"],
 		["modelo_atendimento", "mesa"],
@@ -859,6 +861,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["comanda_pedir_mesa_local", "0"],
 		["tempo_ociosidade_min", "15"],
 		["filtro_apenas_abertas", "0"],
+		["catalogo_layout_produtos", "grade"],
 		["emitir_nfce", "1"],
 		[
 			"nfce_meios_pagamento",

@@ -10,6 +10,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { marcarBootPendente } from "@/lib/boot-state";
 import {
+	CHAVE_CATALOGO_LAYOUT_PRODUTOS,
+	classeContainerCatalogo,
+	type LayoutCatalogoProdutos,
+	normalizarLayoutCatalogo,
+} from "@/lib/catalogo-layout";
+import {
 	ESTADO_BUSCA_PRODUTOS_VAZIO,
 	type EstadoBuscaProdutos,
 	obterModoCatalogoProdutos,
@@ -48,6 +54,7 @@ import { FunctionBar } from "@/ui/components/function-bar";
 import { GrupoGourmetCard } from "@/ui/components/grupo-gourmet-card";
 import { PdvShell } from "@/ui/components/pdv-shell";
 import { ProdutoCard } from "@/ui/components/produto-card";
+import { SeletorLayoutCatalogo } from "@/ui/components/seletor-layout-catalogo";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
@@ -91,6 +98,8 @@ export function BalcaoPage() {
 	const [obsFilaChave, setObsFilaChave] = useState<string | null>(null);
 	const [fechando, setFechando] = useState(false);
 	const [iniciarComDesconto, setIniciarComDesconto] = useState(false);
+	const [layoutCatalogo, setLayoutCatalogo] =
+		useState<LayoutCatalogoProdutos>("grade");
 
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
@@ -105,6 +114,25 @@ export function BalcaoPage() {
 		buscaProdutos.termo,
 		Boolean(grupoAtivo),
 	);
+
+	useEffect(() => {
+		void pdvInvoke<Record<string, string>>("getConfig").then((cfg) => {
+			setLayoutCatalogo(
+				normalizarLayoutCatalogo(cfg[CHAVE_CATALOGO_LAYOUT_PRODUTOS]),
+			);
+		});
+	}, []);
+
+	async function alterarLayoutCatalogo(layout: LayoutCatalogoProdutos) {
+		setLayoutCatalogo(layout);
+		try {
+			await pdvInvoke("saveConfig", {
+				[CHAVE_CATALOGO_LAYOUT_PRODUTOS]: layout,
+			});
+		} catch {
+			// Preferência visual: mantém o estado local se o save falhar.
+		}
+	}
 
 	useEffect(() => {
 		const listarGrupos = gourmet ? "listarGruposGourmet" : "listarGrupos";
@@ -530,14 +558,21 @@ export function BalcaoPage() {
 
 					{modoCatalogo === "busca" ? (
 							<div className="flex min-h-0 flex-1 flex-col gap-2">
-								<h2 className="shrink-0 text-base font-semibold">
-									Resultados para “{buscaProdutos.termo}”
-								</h2>
-								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3 overflow-auto p-0.5">
+								<div className="flex shrink-0 items-center justify-between gap-2">
+									<h2 className="text-base font-semibold">
+										Resultados para “{buscaProdutos.termo}”
+									</h2>
+									<SeletorLayoutCatalogo
+										valor={layoutCatalogo}
+										onChange={(layout) => void alterarLayoutCatalogo(layout)}
+									/>
+								</div>
+								<div className={classeContainerCatalogo(layoutCatalogo, "balcao")}>
 									{buscaProdutos.produtos.map((produto) => (
 										<ProdutoCard
 											key={produto.id}
 											produto={produto}
+											variante={layoutCatalogo}
 											disabled={loading}
 											onClick={() => adicionarProdutoSimples(produto)}
 										/>
@@ -560,9 +595,17 @@ export function BalcaoPage() {
 						) : modoCatalogo === "grupos" ? (
 							<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
 								<div className="shrink-0">
-									<h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-										{gourmet ? "Categorias gourmet" : "Categorias"}
-									</h2>
+									<div className="mb-2 flex items-center justify-between gap-2">
+										<h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+											{gourmet ? "Categorias gourmet" : "Categorias"}
+										</h2>
+										{!gourmet && atalhos.length > 0 ? (
+											<SeletorLayoutCatalogo
+												valor={layoutCatalogo}
+												onChange={(layout) => void alterarLayoutCatalogo(layout)}
+											/>
+										) : null}
+									</div>
 									<div className="flex gap-2 overflow-x-auto p-0.5 pb-2">
 										{grupos.map((g) => (
 											<GrupoGourmetCard
@@ -586,11 +629,14 @@ export function BalcaoPage() {
 										<h2 className="mb-2 text-base font-semibold">
 											Acesso rápido
 										</h2>
-										<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3">
+										<div
+											className={classeContainerCatalogo(layoutCatalogo, "balcao")}
+										>
 											{atalhos.map((p) => (
 												<ProdutoCard
 													key={`atalho-${p.id}`}
 													produto={p}
+													variante={layoutCatalogo}
 													destaque
 													onClick={() => adicionarProdutoSimples(p)}
 												/>
@@ -610,14 +656,20 @@ export function BalcaoPage() {
 											{grupoAtivo?.nome ?? "Produtos"}
 										</h2>
 									</div>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setGrupoAtivo(null)}
-									>
-										<ArrowLeft className="size-4" />
-										Categorias
-									</Button>
+									<div className="flex shrink-0 items-center gap-2">
+										<SeletorLayoutCatalogo
+											valor={layoutCatalogo}
+											onChange={(layout) => void alterarLayoutCatalogo(layout)}
+										/>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => setGrupoAtivo(null)}
+										>
+											<ArrowLeft className="size-4" />
+											Categorias
+										</Button>
+									</div>
 								</div>
 								<div className="flex shrink-0 gap-2 overflow-x-auto p-0.5 pb-2">
 									{grupos.map((g) => (
@@ -629,7 +681,7 @@ export function BalcaoPage() {
 										/>
 									))}
 								</div>
-								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3 overflow-auto p-0.5">
+								<div className={classeContainerCatalogo(layoutCatalogo, "balcao")}>
 									{carregandoProdutos ? (
 										<p className="col-span-full text-sm text-muted-foreground">
 											Carregando produtos…
@@ -639,6 +691,7 @@ export function BalcaoPage() {
 											<ProdutoCard
 												key={p.id}
 												produto={p}
+												variante={layoutCatalogo}
 												onClick={() => adicionarProdutoSimples(p)}
 											/>
 										))
