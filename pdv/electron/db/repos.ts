@@ -3943,22 +3943,60 @@ export async function juntarContas(
 	return atualizada;
 }
 
-/** Une várias contas de origem na conta destino (transação por origem). */
+/** Une várias contas de origem na conta destino em uma única transação. */
 export async function juntarVariasContas(
 	idsOrigem: string[],
 	idDestino: string,
 ): Promise<ContaMesaLocal> {
-	const unicos = [...new Set(idsOrigem.map((id) => id.trim()).filter(Boolean))];
-	if (!unicos.length) {
+	const origensIds = [
+		...new Set(idsOrigem.map((id) => id.trim()).filter(Boolean)),
+	];
+	if (!origensIds.length) {
 		throw new Error("Selecione ao menos uma comanda para juntar");
 	}
-	if (unicos.includes(idDestino)) {
+	if (origensIds.includes(idDestino)) {
 		throw new Error("A conta atual não pode ser origem e destino");
 	}
-	let atualizada: ContaMesaLocal | null = null;
-	for (const idOrigem of unicos) {
-		atualizada = await juntarContas(idOrigem, idDestino);
+	const destino = await obterContaMesa(idDestino);
+	if (!destino || destino.status !== "aberta") {
+		throw new Error("Conta de destino inválida");
 	}
+	const origens: ContaMesaLocal[] = [];
+	for (const idOrigem of origensIds) {
+		const origem = await obterContaMesa(idOrigem);
+		if (!origem || origem.status !== "aberta") {
+			throw new Error("Conta de origem inválida");
+		}
+		origens.push(origem);
+	}
+
+	await withTransaction(async (client) => {
+		for (const origem of origens) {
+			await execute(
+				"UPDATE item_conta SET idconta = $1 WHERE idconta = $2 AND COALESCE(pago, 0) = 0",
+				[idDestino, origem.id],
+				client,
+			);
+			await execute(
+				"UPDATE pedido_fila SET idconta = $1, numero_mesa = $2 WHERE idconta = $3",
+				[idDestino, destino.numero_mesa, origem.id],
+				client,
+			);
+			await execute(
+				`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL WHERE numero = $1`,
+				[origem.numero_mesa],
+				client,
+			);
+			await execute(
+				`UPDATE conta_mesa SET status = 'fechada', fechadoem = $1 WHERE id = $2`,
+				[new Date().toISOString(), origem.id],
+				client,
+			);
+		}
+		await recalcularContaPersistida(idDestino, client);
+	});
+
+	const atualizada = await obterContaMesa(idDestino);
 	if (!atualizada) {
 		throw new Error("Falha ao juntar as contas");
 	}
