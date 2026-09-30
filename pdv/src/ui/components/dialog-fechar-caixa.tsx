@@ -7,11 +7,21 @@ import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
 
-type Etapa = "conferencia" | "itens";
+type Etapa = "conferencia" | "confirmacao" | "itens";
+
+type VendaTurnoResumo = {
+	id: string;
+	criadoem: string;
+	valortotal: number;
+	origem: string;
+	numeroComanda: number | null;
+	rotulo: string;
+};
 
 type FechamentoCaixaResult = {
 	ok: true;
 	itensVendidos: ItemVendidoTurnoAgrupado[];
+	vendasTurno?: VendaTurnoResumo[];
 	nomeempresa: string | null;
 	username: string | null;
 	numeropdv: number;
@@ -68,6 +78,7 @@ export function DialogFecharCaixa({
 	const [itensVendidos, setItensVendidos] = useState<ItemVendidoTurnoAgrupado[]>(
 		[],
 	);
+	const [vendasTurno, setVendasTurno] = useState<VendaTurnoResumo[]>([]);
 	const [metaImpressao, setMetaImpressao] = useState<{
 		nomeempresa: string | null;
 		username: string | null;
@@ -82,8 +93,14 @@ export function DialogFecharCaixa({
 	const [observacao, setObservacao] = useState("");
 
 	useEscapeFechaModal(
-		aberto && !enviando && etapa === "conferencia",
-		onFechar,
+		aberto && !enviando && (etapa === "conferencia" || etapa === "confirmacao"),
+		() => {
+			if (etapa === "confirmacao") {
+				setEtapa("conferencia");
+				return;
+			}
+			onFechar();
+		},
 	);
 
 	useEffect(() => {
@@ -91,6 +108,7 @@ export function DialogFecharCaixa({
 			setEtapa("conferencia");
 			setResumo(null);
 			setItensVendidos([]);
+			setVendasTurno([]);
 			setMetaImpressao(null);
 			setDigitos("0");
 			setObservacao("");
@@ -143,6 +161,7 @@ export function DialogFecharCaixa({
 				observacao.trim() || undefined,
 			);
 			setItensVendidos(resultado.itensVendidos ?? []);
+			setVendasTurno(resultado.vendasTurno ?? []);
 			setMetaImpressao({
 				nomeempresa: resultado.nomeempresa,
 				username: resultado.username,
@@ -188,6 +207,39 @@ export function DialogFecharCaixa({
 		onFechar();
 	}
 
+	if (etapa === "confirmacao") {
+		return (
+			<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
+				<div className="pdv-surface w-[26rem] max-w-[95vw] space-y-4 p-5">
+					<h2 className="text-lg font-semibold">Confirmar fechamento</h2>
+					<p className="text-sm text-muted-foreground">
+						Deseja realmente fechar o caixa? Esta ação encerra o turno e não
+						pode ser desfeita.
+					</p>
+					{erro ? <p className="text-sm text-destructive">{erro}</p> : null}
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							className="flex-1"
+							disabled={enviando}
+							onClick={() => setEtapa("conferencia")}
+						>
+							Voltar
+						</Button>
+						<Button
+							variant="destructive"
+							className="flex-1"
+							disabled={enviando}
+							onClick={() => void confirmar()}
+						>
+							{enviando ? "Fechando..." : "Sim, fechar caixa"}
+						</Button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	if (etapa === "itens") {
 		return (
 			<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
@@ -195,8 +247,8 @@ export function DialogFecharCaixa({
 					<div>
 						<h2 className="text-lg font-semibold">Caixa fechado</h2>
 						<p className="text-sm text-muted-foreground">
-							Itens vendidos no turno. Você pode imprimir a lista antes de
-							concluir.
+							Itens vendidos no turno e vendas por comanda/mesa (ordem
+							cronológica).
 						</p>
 					</div>
 
@@ -219,13 +271,34 @@ export function DialogFecharCaixa({
 								Nenhum item vendido neste turno.
 							</p>
 						) : (
-							<ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+							<ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
 								{itensVendidos.map((item) => (
 									<li
 										key={item.idproduto || item.descricao}
 										className="font-medium tracking-wide"
 									>
 										{linhaItemVendido(item)}
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+
+					<div className="space-y-2 rounded-lg border p-3">
+						<p className="text-sm font-medium">Vendas do turno</p>
+						{vendasTurno.length === 0 ? (
+							<p className="text-sm text-muted-foreground">
+								Nenhuma venda neste turno.
+							</p>
+						) : (
+							<ul className="max-h-48 space-y-1.5 overflow-y-auto text-sm">
+								{vendasTurno.map((venda) => (
+									<li
+										key={venda.id}
+										className="flex items-baseline justify-between gap-3"
+									>
+										<span className="font-medium">{venda.rotulo}</span>
+										<span className="tabular-nums">{money(venda.valortotal)}</span>
 									</li>
 								))}
 							</ul>
@@ -322,7 +395,7 @@ export function DialogFecharCaixa({
 						onChange={setDigitos}
 						disabled={enviando || carregando}
 						onEnter={() => {
-							if (!enviando && resumo) void confirmar();
+							if (!enviando && resumo) setEtapa("confirmacao");
 						}}
 					/>
 				</div>
@@ -371,9 +444,9 @@ export function DialogFecharCaixa({
 					<Button
 						className="flex-1"
 						disabled={enviando || carregando || !resumo}
-						onClick={() => void confirmar()}
+						onClick={() => setEtapa("confirmacao")}
 					>
-						{enviando ? "Fechando..." : "Fechar caixa"}
+						Fechar caixa
 					</Button>
 				</div>
 			</div>
