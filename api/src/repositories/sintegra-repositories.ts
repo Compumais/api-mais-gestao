@@ -38,7 +38,7 @@ import { condicaoAmbienteFiscalProducao } from "@/util/ambiente-sefaz.js";
 import { obterDataCompetenciaNotaFiscal } from "@/util/data-competencia-nota-fiscal.js";
 import { NFE_STATUS, statusEhCancelada } from "@/util/nfe-status.js";
 import { STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
-import { escolherNumeroEndereco } from "@/util/numero-endereco-fiscal.js";
+import { resolverNumeroEndereco } from "@/util/numero-endereco-fiscal.js";
 import { db } from "./connection.js";
 
 const STATUS_RASCUNHO_IMPORTACAO = 99;
@@ -110,8 +110,7 @@ export async function buscarDadosContribuinteSintegra(
 		uf: registro.uf ?? "MG",
 		fax: registro.fax ?? "",
 		logradouro: registro.logradouro ?? "",
-		numero:
-			escolherNumeroEndereco(registro.numero, registro.numeroEmpresa) ?? "",
+		numero: resolverNumeroEndereco(registro.numero, registro.numeroEmpresa),
 		complemento: registro.complemento ?? "",
 		bairro: registro.bairro ?? "",
 		cep: registro.cep ?? "",

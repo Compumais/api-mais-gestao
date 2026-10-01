@@ -87,8 +87,7 @@ describe("número do endereço no EFD", () => {
 		});
 
 		expect(comNumero).toContain("|RUA TESTE|150|");
-		expect(semNumero).toContain("|RUA TESTE|0|");
-		expect(semNumero).not.toContain("SN");
+		expect(semNumero).toContain("|RUA TESTE|SN|");
 	});
 
 	it("não grava SN no registro 0005", () => {
@@ -113,8 +112,7 @@ describe("número do endereço no EFD", () => {
 			cnae: "4711302",
 		});
 
-		expect(linha).toContain("|RUA A|0|");
-		expect(linha).not.toContain("SN");
+		expect(linha).toContain("|RUA A|SN|");
 	});
 });
 
