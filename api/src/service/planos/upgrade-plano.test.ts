@@ -25,6 +25,17 @@ vi.mock("@/service/asaas/asaas.service.js", () => ({
 	createPayment: vi.fn(),
 }));
 
+function cicloAberto() {
+	const inicio = new Date();
+	inicio.setUTCDate(inicio.getUTCDate() - 1);
+	const fim = new Date();
+	fim.setUTCDate(fim.getUTCDate() + 20);
+	return {
+		plano_inicio_ciclo: inicio.toISOString().slice(0, 10),
+		plano_fim_ciclo: fim.toISOString().slice(0, 10),
+	};
+}
+
 describe("upgradePlanoService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -39,12 +50,12 @@ describe("upgradePlanoService", () => {
 			"@/repositories/assinatura-repositories.js"
 		);
 		const asaas = await import("@/service/asaas/asaas.service.js");
+		const ciclo = cicloAberto();
 
 		vi.mocked(usuariosRepo.buscarUsuarioPorId).mockResolvedValue({
 			id: "usuario-1",
 			plano: "BASIC",
-			plano_inicio_ciclo: "2026-03-01",
-			plano_fim_ciclo: "2026-03-31",
+			...ciclo,
 		} as any);
 
 		vi.mocked(
@@ -68,7 +79,7 @@ describe("upgradePlanoService", () => {
 			plano: "BASIC",
 			valor: "99.00",
 			ciclo: "MONTHLY",
-			proximovencimento: "2026-03-31",
+			proximovencimento: ciclo.plano_fim_ciclo,
 			urlpagamento: null,
 			criadoem: new Date(),
 			atualizadoem: new Date(),
@@ -79,12 +90,36 @@ describe("upgradePlanoService", () => {
 			customer: "cust-1",
 			billingType: "CREDIT_CARD",
 			value: 10,
-			dueDate: "2026-03-11",
+			dueDate: ciclo.plano_fim_ciclo,
 			status: "CONFIRMED",
 			invoiceUrl: "https://example.com/invoice",
 		} as any);
 
-		vi.mocked(assinaturaRepo.atualizarAssinatura).mockResolvedValue({} as any);
+		vi.mocked(asaas.createSubscription).mockResolvedValue({
+			id: "sub-nova",
+			customer: "cust-1",
+			billingType: "CREDIT_CARD",
+			value: 199,
+			nextDueDate: ciclo.plano_fim_ciclo,
+			cycle: "MONTHLY",
+			status: "ACTIVE",
+			invoiceUrl: "https://example.com/subscription",
+		} as any);
+
+		vi.mocked(assinaturaRepo.atualizarAssinatura).mockResolvedValue({
+			id: "ass-1",
+			idempresa: "empresa-1",
+			idassinaturaasaas: "sub-1",
+			status: "ACTIVE",
+			plano: "PREMIUM",
+			valor: "199.00",
+			ciclo: "MONTHLY",
+			proximovencimento: ciclo.plano_fim_ciclo,
+			urlpagamento: null,
+			criadoem: new Date(),
+			atualizadoem: new Date(),
+		} as any);
+
 		vi.mocked(usuariosRepo.atualizarPlanoUsuario).mockResolvedValue({} as any);
 
 		const resultado = await upgradePlanoService({
@@ -124,8 +159,7 @@ describe("upgradePlanoService", () => {
 		vi.mocked(usuariosRepo.buscarUsuarioPorId).mockResolvedValue({
 			id: "usuario-1",
 			plano: "BASIC",
-			plano_inicio_ciclo: "2026-03-01",
-			plano_fim_ciclo: "2026-03-31",
+			...cicloAberto(),
 		} as any);
 		vi.mocked(
 			empresaRepo.buscarEmpresaCobrancaDoProprietario,
