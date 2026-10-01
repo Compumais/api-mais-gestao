@@ -65,7 +65,7 @@ describe("listarNfcePendentesService", () => {
 				numeronotafiscal: "101",
 				serie: "1",
 				valortotalnota: "18.00",
-				datahoraemissao: "2026-08-18T13:32:00-03:00",
+				datahoraemissao: "2026-08-18T16:32:00.000Z",
 				emissao: "2026-08-18",
 			}),
 		);

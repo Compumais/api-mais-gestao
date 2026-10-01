@@ -198,10 +198,10 @@ export async function listarEmpresas({
 
 	// Se houver condiÃ§Ãµes OR (idusuario ou idproprietario), adicionar ao where
 	if (orConditions.length === 1) {
-		// Se houver apenas uma condiÃ§Ã£o, adicionar diretamente (nÃ£o precisa de OR)
+		// Se houver apenas uma condição, adicionar diretamente (não precisa de OR)
 		where.push(orConditions[0]);
 	} else if (orConditions.length > 1) {
-		// Se houver mÃºltiplas condiÃ§Ãµes, usar OR
+		// Se houver múltiplas condições, usar OR
 		where.push(or(...orConditions));
 	}
 

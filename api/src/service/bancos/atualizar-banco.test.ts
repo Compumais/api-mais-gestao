@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Banco } from "@/model/banco-model.js";
+import type { Banco } from "@/model/banco-model";
 import * as bancoRepository from "@/repositories/banco-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { atualizarBancoService } from "./atualizar-banco.js";
@@ -58,13 +58,13 @@ describe("atualizarBancoService", () => {
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledWith("usuario-123", "empresa-123");
 		expect(bancoRepository.atualizarBanco).toHaveBeenCalledTimes(1);
-		expect(bancoRepository.atualizarBanco).toHaveBeenCalledWith(
-			"banco-123",
-			expect.objectContaining({
+		expect(bancoRepository.atualizarBanco).toHaveBeenCalledWith({
+			id: "banco-123",
+			dados: expect.objectContaining({
 				nome: "Banco do Brasil S.A.",
 				currenttimemillis: expect.any(Number),
 			}),
-		);
+		});
 	});
 
 	it("deve retornar erro 404 quando banco não é encontrado na busca inicial", async () => {
@@ -167,13 +167,14 @@ describe("atualizarBancoService", () => {
 			expect(resultado.status).toBe(200);
 			expect(resultado.body?.nome).toBe("Apenas Nome Atualizado");
 		}
-		expect(bancoRepository.atualizarBanco).toHaveBeenCalledWith(
-			"banco-123",
-			expect.objectContaining({
+
+		expect(bancoRepository.atualizarBanco).toHaveBeenCalledWith({
+			id: "banco-123",
+			dados: expect.objectContaining({
 				nome: "Apenas Nome Atualizado",
 				currenttimemillis: expect.any(Number),
 			}),
-		);
+		});
 	});
 
 	it("deve atualizar currenttimemillis automaticamente", async () => {
@@ -193,11 +194,11 @@ describe("atualizarBancoService", () => {
 			},
 		});
 
-		expect(bancoRepository.atualizarBanco).toHaveBeenCalledWith(
-			"banco-123",
-			expect.objectContaining({
+		expect(bancoRepository.atualizarBanco).toHaveBeenCalledWith({
+			id: "banco-123",
+			dados: expect.objectContaining({
 				currenttimemillis: expect.any(Number),
 			}),
-		);
+		});
 	});
 });

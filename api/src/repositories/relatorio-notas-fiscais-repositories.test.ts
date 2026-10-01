@@ -6,6 +6,10 @@ describe("statusParaFiltroRelatorio", () => {
 	it("agrupa pendentes, rejeitadas e denegadas sem incluir terminais", () => {
 		expect(statusParaFiltroRelatorio("pendente")).toEqual([
 			NFE_STATUS.PENDENTE,
+			NFE_STATUS.TRANSMITINDO,
+			NFE_STATUS.PENDENTE_CONSULTA,
+			NFE_STATUS.CONFLITO,
+			NFE_STATUS.RECUPERANDO,
 			NFE_STATUS.REJEITADA,
 			NFE_STATUS.DENEGADA,
 		]);
