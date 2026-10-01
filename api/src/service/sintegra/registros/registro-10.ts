@@ -1,3 +1,4 @@
+import { escolherNumeroEndereco } from "@/util/numero-endereco-fiscal.js";
 import {
 	formatarAlfanumerico,
 	formatarCnpjCpf,
@@ -37,11 +38,13 @@ export function montarRegistro10({
 	]);
 }
 
-export function montarRegistro11(contribuinte: DadosContribuinteSintegra): string {
+export function montarRegistro11(
+	contribuinte: DadosContribuinteSintegra,
+): string {
 	return montarLinha([
 		"11",
 		formatarAlfanumerico(contribuinte.logradouro, 34),
-		formatarNumerico(contribuinte.numero, 5),
+		formatarNumerico(escolherNumeroEndereco(contribuinte.numero), 5),
 		formatarAlfanumerico(contribuinte.complemento, 22),
 		formatarAlfanumerico(contribuinte.bairro, 15),
 		formatarNumerico(contribuinte.cep, 8),
