@@ -5,7 +5,7 @@ import {
 	campoTexto,
 	montarLinhaPipe,
 } from "@/util/efd/formatador-pipe.js";
-import { escolherNumeroEndereco } from "@/util/numero-endereco-fiscal.js";
+import { resolverNumeroEndereco } from "@/util/numero-endereco-fiscal.js";
 import type { ContribuinteEfd } from "../tipos-efd-icms.js";
 
 export function montarRegistro0000(params: {
@@ -45,7 +45,7 @@ export function montarRegistro0005(contribuinte: ContribuinteEfd): string {
 		campoTexto(contribuinte.nomefantasia ?? contribuinte.razaosocial, 60),
 		campoNumerico(contribuinte.cep).slice(0, 8),
 		campoTexto(contribuinte.logradouro, 60),
-		campoTexto(escolherNumeroEndereco(contribuinte.numero) ?? "0", 10),
+		campoTexto(resolverNumeroEndereco(contribuinte.numero), 10),
 		campoTexto(contribuinte.complemento, 60),
 		campoTexto(contribuinte.bairro, 60),
 		campoNumerico(contribuinte.telefone).slice(0, 11),
@@ -78,7 +78,7 @@ export function montarRegistro0150(params: {
 		campoNumerico(params.codigoMunicipio).padStart(7, "0").slice(-7),
 		"",
 		campoTexto(params.endereco, 60),
-		campoTexto(escolherNumeroEndereco(params.numero) ?? "0", 10),
+		campoTexto(resolverNumeroEndereco(params.numero), 10),
 		campoTexto(params.complemento, 60),
 		campoTexto(params.bairro, 60),
 	]);

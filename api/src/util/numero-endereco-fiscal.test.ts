@@ -1,32 +1,28 @@
 import { describe, expect, it } from "vitest";
 import {
-	escolherNumeroEndereco,
-	numeroEnderecoUtil,
+	ehSemNumeroEndereco,
+	resolverNumeroEndereco,
 } from "./numero-endereco-fiscal.js";
 
-describe("numeroEnderecoUtil", () => {
+describe("resolverNumeroEndereco", () => {
 	it("mantém o número do imóvel", () => {
-		expect(numeroEnderecoUtil("150")).toBe("150");
-		expect(numeroEnderecoUtil(" 12A ")).toBe("12A");
+		expect(resolverNumeroEndereco("150")).toBe("150");
+		expect(resolverNumeroEndereco(" 12A ")).toBe("12A");
 	});
 
-	it("descarta SN e variações de sem número", () => {
-		expect(numeroEnderecoUtil("SN")).toBeNull();
-		expect(numeroEnderecoUtil("S/N")).toBeNull();
-		expect(numeroEnderecoUtil("s.n.")).toBeNull();
-		expect(numeroEnderecoUtil("sem número")).toBeNull();
-		expect(numeroEnderecoUtil("")).toBeNull();
-		expect(numeroEnderecoUtil(null)).toBeNull();
-	});
-});
-
-describe("escolherNumeroEndereco", () => {
-	it("ignora SN e usa o próximo número real", () => {
-		expect(escolherNumeroEndereco("SN", "150")).toBe("150");
-		expect(escolherNumeroEndereco("S/N", null, "88")).toBe("88");
+	it("grava SN quando o endereço é sem número", () => {
+		expect(ehSemNumeroEndereco("SN")).toBe(true);
+		expect(ehSemNumeroEndereco("S/N")).toBe(true);
+		expect(ehSemNumeroEndereco("s.n.")).toBe(true);
+		expect(ehSemNumeroEndereco("sem número")).toBe(true);
+		expect(resolverNumeroEndereco("SN")).toBe("SN");
+		expect(resolverNumeroEndereco("S/N")).toBe("SN");
+		expect(resolverNumeroEndereco("")).toBe("SN");
+		expect(resolverNumeroEndereco(null)).toBe("SN");
 	});
 
-	it("retorna nulo quando nenhum candidato tem número", () => {
-		expect(escolherNumeroEndereco("SN", "S/N", "")).toBeNull();
+	it("prefere o número real quando o outro campo está SN", () => {
+		expect(resolverNumeroEndereco("SN", "150")).toBe("150");
+		expect(resolverNumeroEndereco("S/N", null, "88")).toBe("88");
 	});
 });

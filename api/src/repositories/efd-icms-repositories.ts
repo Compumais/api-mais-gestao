@@ -24,7 +24,7 @@ import { condicaoAmbienteFiscalProducao } from "@/util/ambiente-sefaz.js";
 import { obterDataCompetenciaNotaFiscal } from "@/util/data-competencia-nota-fiscal.js";
 import { NFE_STATUS, statusEhCancelada } from "@/util/nfe-status.js";
 import { STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
-import { escolherNumeroEndereco } from "@/util/numero-endereco-fiscal.js";
+import { resolverNumeroEndereco } from "@/util/numero-endereco-fiscal.js";
 import { listarAjustesApuracaoEfd } from "./apuracao-efd-ajuste-repositories.js";
 import { db } from "./connection.js";
 
@@ -142,7 +142,7 @@ export async function buscarContribuinteEfd(
 		uf: registro.uf ?? "MG",
 		codigoMunicipioIbge: registro.codigoMunicipioIbge,
 		logradouro: registro.logradouro,
-		numero: escolherNumeroEndereco(registro.numero, registro.numeroEmpresa),
+		numero: resolverNumeroEndereco(registro.numero, registro.numeroEmpresa),
 		complemento: registro.complemento,
 		bairro: registro.bairro,
 		cep: registro.cep,

@@ -29,9 +29,13 @@ describe("registro 11 SINTEGRA", () => {
 		expect(linha).not.toContain("SN");
 	});
 
-	it("não grava SN quando o endereço não tem número", () => {
+	it("grava SN quando o endereço não tem número", () => {
 		const linha = montarRegistro11(contribuinte("SN"));
-		expect(linha.slice(36, 41)).toBe("00000");
-		expect(linha).not.toContain("SN");
+		expect(linha.slice(36, 41)).toBe("SN   ");
+	});
+
+	it("grava SN quando o número vem como S/N", () => {
+		const linha = montarRegistro11(contribuinte("S/N"));
+		expect(linha.slice(36, 41)).toBe("SN   ");
 	});
 });
