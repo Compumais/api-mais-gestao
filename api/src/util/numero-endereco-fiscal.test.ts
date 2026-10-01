@@ -19,6 +19,8 @@ describe("resolverNumeroEndereco", () => {
 		expect(resolverNumeroEndereco("S/N")).toBe("SN");
 		expect(resolverNumeroEndereco("")).toBe("SN");
 		expect(resolverNumeroEndereco(null)).toBe("SN");
+		expect(resolverNumeroEndereco("0")).toBe("SN");
+		expect(resolverNumeroEndereco("00000")).toBe("SN");
 	});
 
 	it("prefere o número real quando o outro campo está SN", () => {
