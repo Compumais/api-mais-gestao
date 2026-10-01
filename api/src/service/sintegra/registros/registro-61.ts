@@ -16,7 +16,9 @@ export function montarRegistro61(resumo: ResumoNfceDiarioSintegra): string {
 		formatarAlfanumerico("", 14),
 		formatarDataAaaammdd(resumo.data),
 		formatarNumerico(resumo.modelo, 2),
-		formatarSerie(resumo.serie),
+		// Item 17.1.3.1 do Convênio 57/95: no registro 61 a série numérica
+		// (001) é rejeitada. NFC-e (modelo 65) entra como série D.
+		resumo.modelo === "65" ? formatarSerie("D") : formatarSerie(resumo.serie),
 		formatarAlfanumerico("", 2),
 		formatarNumeroDocumento(resumo.numeroInicial),
 		formatarNumeroDocumento(resumo.numeroFinal),
