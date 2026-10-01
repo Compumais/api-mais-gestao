@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { montarLinhaPipe } from "@/util/efd/formatador-pipe.js";
 import { codigoVersaoEfdIcms } from "@/util/efd/vigencia.js";
-import { montarRegistro0000 } from "./registros/bloco-0.js";
+import {
+	montarRegistro0000,
+	montarRegistro0005,
+	montarRegistro0150,
+} from "./registros/bloco-0.js";
 import {
 	agruparItensC190,
 	conferirC190IgualC170,
@@ -54,6 +58,63 @@ describe("registro 0000", () => {
 		expect(linha.startsWith("|0000|020|0|01012026|31012026|")).toBe(true);
 		expect(linha).toContain("|10579611000190|");
 		expect(linha).toContain("|A|1|");
+	});
+});
+
+describe("número do endereço no EFD", () => {
+	it("mantém o número do cliente e não grava SN", () => {
+		const comNumero = montarRegistro0150({
+			codigo: "1",
+			nome: "CLIENTE",
+			cnpjCpf: "12345678000190",
+			ie: null,
+			codigoMunicipio: "3106200",
+			endereco: "RUA TESTE",
+			numero: "150",
+			complemento: null,
+			bairro: "CENTRO",
+		});
+		const semNumero = montarRegistro0150({
+			codigo: "1",
+			nome: "CLIENTE",
+			cnpjCpf: "12345678000190",
+			ie: null,
+			codigoMunicipio: "3106200",
+			endereco: "RUA TESTE",
+			numero: "SN",
+			complemento: null,
+			bairro: "CENTRO",
+		});
+
+		expect(comNumero).toContain("|RUA TESTE|150|");
+		expect(semNumero).toContain("|RUA TESTE|0|");
+		expect(semNumero).not.toContain("SN");
+	});
+
+	it("não grava SN no registro 0005", () => {
+		const linha = montarRegistro0005({
+			cnpj: "10579611000190",
+			inscricaoEstadual: "001234567",
+			inscricaoMunicipal: null,
+			razaosocial: "EMPRESA TESTE",
+			nomefantasia: "TESTE",
+			uf: "MG",
+			codigoMunicipioIbge: "3106200",
+			logradouro: "RUA A",
+			numero: "S/N",
+			complemento: null,
+			bairro: "CENTRO",
+			cep: "30130100",
+			telefone: "31999999999",
+			email: "a@b.com",
+			crt: 3,
+			indperfil: "A",
+			indativ: 1,
+			cnae: "4711302",
+		});
+
+		expect(linha).toContain("|RUA A|0|");
+		expect(linha).not.toContain("SN");
 	});
 });
 
