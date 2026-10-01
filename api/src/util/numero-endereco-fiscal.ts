@@ -13,12 +13,13 @@ export function ehSemNumeroEndereco(valor: string | null | undefined): boolean {
 	const texto = String(valor ?? "").trim();
 	if (!texto) return true;
 	const chave = chaveNumero(texto);
-	return !chave || SEM_NUMERO.has(chave);
+	if (!chave || SEM_NUMERO.has(chave)) return true;
+	return /^0+$/.test(chave);
 }
 
 /**
- * Prefere o número real. Sem numeral, devolve "SN" para o arquivo não sair
- * com o campo vazio nem zerado — a crítica do validador é a ausência do SN.
+ * Prefere o número real. Sem numeral — inclusive 0 e 00000, que o validador
+ * lê como número vazio — devolve "SN" para o complemento receber a cidade.
  */
 export function resolverNumeroEndereco(
 	...candidatos: Array<string | null | undefined>

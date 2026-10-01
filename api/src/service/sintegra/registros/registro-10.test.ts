@@ -41,7 +41,7 @@ describe("registro 11 SINTEGRA", () => {
 
 	it("sem número preenche o complemento com o nome da cidade", () => {
 		const linha = montarRegistro11({
-			...contribuinte("SN"),
+			...contribuinte("0"),
 			municipio: "Sacramento",
 		});
 
