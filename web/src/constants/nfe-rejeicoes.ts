@@ -95,6 +95,12 @@ export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 			"O número de série e/ou número da NF-e informado já foi utilizado",
 		instrucao: "Aguarde a emissão ser processada ou utilize outra numeração.",
 	},
+	"704": {
+		descricao:
+			"NFC-e ou NF-e com DANFE Simplificado Tipo 2 com Data-Hora de emissão atrasada",
+		instrucao:
+			"A SEFAZ só aceita a NFC-e online se o horário de emissão estiver a no máximo 5 minutos do recebimento. Retransmita para gerar um horário novo. Se a rejeição continuar na hora, sincronize o relógio do servidor com o horário de Brasília.",
+	},
 	"747": {
 		descricao: "Certificado Revogado",
 		instrucao: "O certificado digital foi revogado. Renove o certificado.",

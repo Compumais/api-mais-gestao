@@ -108,6 +108,9 @@ export function mesclarConciliacaoNfce(
 	};
 }
 
+/** Contingência EPEC (4) e off-line (9): o cupom já impresso fixa dhEmi e dhCont. */
+const TP_EMIS_PRESERVA_DHEMI = new Set([4, 9]);
+
 export function resolverIdentidadeEmissaoNfce(params: {
 	dhEmi: string;
 	cUF: number | string;
@@ -124,15 +127,32 @@ export function resolverIdentidadeEmissaoNfce(params: {
 		(daChave ? chave.slice(35, 43) : null) ??
 		params.conciliacao?.cNF ??
 		gerarCodigoNumericoNfce();
-	const tpEmis = daChave
+	const tpEmisBruto = daChave
 		? Number(chave.slice(34, 35))
 		: (params.conciliacao?.tpEmis ?? params.tpEmisPadrao ?? 1);
-	const dhEmi = params.conciliacao?.dhEmi?.trim() || params.dhEmi;
-	const anoMes = daChave ? chave.slice(2, 6) : anoMesChaveDeDhEmi(dhEmi);
+	const tpEmis = Number.isFinite(tpEmisBruto) ? tpEmisBruto : 1;
+	const dhEmiAtual = params.dhEmi.trim();
+	const dhEmiPersistido = params.conciliacao?.dhEmi?.trim() ?? "";
+	// NT 2026.002, regra B09-40 (cStat 704): emissão normal (tpEmis 1, 6 ou 7)
+	// rejeita dhEmi com atraso superior a 5 minutos em relação à recepção.
+	// Retransmitir com o horário gravado na primeira tentativa repete a rejeição.
+	const preservarDhEmi =
+		TP_EMIS_PRESERVA_DHEMI.has(tpEmis) && dhEmiPersistido !== "";
+	const dhEmi = preservarDhEmi
+		? dhEmiPersistido
+		: dhEmiAtual || dhEmiPersistido;
+	const anoMesDhEmi = anoMesChaveDeDhEmi(dhEmi);
+	const anoMesChave = daChave ? chave.slice(2, 6) : "";
+	const anoMes =
+		preservarDhEmi && anoMesChave
+			? anoMesChave
+			: anoMesChave && anoMesChave === anoMesDhEmi
+				? anoMesChave
+				: anoMesDhEmi || anoMesChave;
 
 	return {
 		cNF,
-		tpEmis: Number.isFinite(tpEmis) ? tpEmis : 1,
+		tpEmis,
 		dhEmi,
 		anoMes,
 		chavePrevista: montarChaveAcessoNfce({
