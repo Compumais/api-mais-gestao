@@ -38,4 +38,14 @@ describe("registro 11 SINTEGRA", () => {
 		const linha = montarRegistro11(contribuinte("S/N"));
 		expect(linha.slice(36, 41)).toBe("SN   ");
 	});
+
+	it("sem número preenche o complemento com o nome da cidade", () => {
+		const linha = montarRegistro11({
+			...contribuinte("SN"),
+			municipio: "Sacramento",
+		});
+
+		expect(linha.slice(36, 41)).toBe("SN   ");
+		expect(linha.slice(41, 63)).toBe("SACRAMENTO".padEnd(22, " "));
+	});
 });

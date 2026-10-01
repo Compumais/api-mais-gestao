@@ -46,12 +46,18 @@ export function montarRegistro11(
 		numero === "SN"
 			? formatarAlfanumerico("SN", 5)
 			: formatarNumerico(numero, 5);
+	const municipio = contribuinte.municipio?.trim() ?? "";
+	const municipioEhCodigo = /^\d{7}$/.test(municipio);
+	const complemento =
+		numero === "SN" && !contribuinte.complemento?.trim() && !municipioEhCodigo
+			? municipio
+			: contribuinte.complemento;
 
 	return montarLinha([
 		"11",
 		formatarAlfanumerico(contribuinte.logradouro, 34),
 		numeroImovel,
-		formatarAlfanumerico(contribuinte.complemento, 22),
+		formatarAlfanumerico(complemento, 22),
 		formatarAlfanumerico(contribuinte.bairro, 15),
 		formatarNumerico(contribuinte.cep, 8),
 		formatarAlfanumerico(contribuinte.contato, 28),
