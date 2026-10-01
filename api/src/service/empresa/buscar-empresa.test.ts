@@ -70,7 +70,7 @@ describe("buscarEmpresaService", () => {
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
+			expect(resultado.error).toBe("Recurso não encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledTimes(1);
@@ -112,7 +112,7 @@ describe("buscarEmpresaService", () => {
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
+			expect(resultado.error).toBe("Recurso não encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledTimes(1);
