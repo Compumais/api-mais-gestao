@@ -1,6 +1,7 @@
-import type {
-	DocumentoReferenciadoNfe,
-	EmissaoNfeFormData,
+import {
+	type DocumentoReferenciadoNfe,
+	type EmissaoNfeFormData,
+	uuidValido,
 } from "@/schemas/nfe-emissao.schema";
 
 type NotaReemissao = {
@@ -118,7 +119,11 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 		natOp: emissao?.natOp,
 		indPres: emissao?.indPres,
 		formaPagamento: emissao?.formaPagamento ?? "01",
-		idserienfe: notaFiscal.idserie ?? emissao?.idserienfe ?? undefined,
+		idserienfe: uuidValido(notaFiscal.idserie)
+			? notaFiscal.idserie
+			: uuidValido(emissao?.idserienfe)
+				? emissao.idserienfe
+				: undefined,
 		idtipodocumento: notaFiscal.idtipodocumento ?? undefined,
 		idcondicaopagto: notaFiscal.idcondicaopagto ?? undefined,
 		idplanocontas: notaFiscal.idplanocontas ?? undefined,

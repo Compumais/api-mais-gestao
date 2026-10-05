@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { uuidOpcionalSchema } from "@/controllers/http/nfe-emissao/emissao-nfe-body-schema.js";
 import { faturarDavNfeService } from "@/service/dav/faturar-dav-nfe.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
@@ -9,7 +10,7 @@ const faturarDavParamsSchema = z.object({
 
 const faturarDavBodySchema = z.object({
 	idempresa: z.string().uuid(),
-	idserienfe: z.string().uuid().optional(),
+	idserienfe: uuidOpcionalSchema,
 	confirmarProducao: z.boolean().optional().default(false),
 	gerarFinanceiro: z.boolean().optional().default(true),
 	gerarEstoque: z.boolean().optional().default(true),
