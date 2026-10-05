@@ -17,6 +17,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Controller,
+	type DefaultValues,
 	type FieldErrors,
 	type Resolver,
 	useFieldArray,
@@ -420,7 +421,11 @@ export default function NovaEmissaoNfePage() {
 		);
 	}
 
-	function resetarFormularioEmissao(valores: EmissaoNfeFormData) {
+	function resetarFormularioEmissao(
+		valores: DefaultValues<EmissaoNfeFormData> & {
+			itens: EmissaoNfeFormData["itens"];
+		},
+	) {
 		form.reset(valores);
 		replaceItens(valores.itens ?? []);
 	}
