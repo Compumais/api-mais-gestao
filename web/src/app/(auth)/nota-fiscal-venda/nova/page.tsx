@@ -111,6 +111,7 @@ import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emiss
 import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-form";
 import {
 	empresaUsaCsosn,
+	escolherItensFormularioEmissao,
 	mapearItemNotaReemissaoParaForm,
 	prepararItemEmissaoFormulario,
 } from "@/util/mapear-produto-item-nfe";
@@ -413,10 +414,36 @@ export default function NovaEmissaoNfePage() {
 		name: "itens",
 	});
 
+	function referenciasCfopEmissao() {
+		return [...(cfopsSaida ?? []), ...(cfopsEntrada ?? [])].flatMap((cfop) =>
+			cfop.codigo ? [{ id: cfop.id, codigo: cfop.codigo }] : [],
+		);
+	}
+
+	function resetarFormularioEmissao(valores: EmissaoNfeFormData) {
+		form.reset(valores);
+		replaceItens(valores.itens ?? []);
+	}
+
 	const {
 		formState: { errors },
 	} = form;
 	const itensValue = form.watch("itens");
+
+	function sincronizarItensFormularioEmissao() {
+		const itens = escolherItensFormularioEmissao(
+			form.getValues("itens"),
+			itensValue,
+		);
+		if (itens.length > 0) {
+			replaceItens(itens);
+			form.setValue("itens", itens, {
+				shouldValidate: false,
+				shouldDirty: true,
+			});
+		}
+		return itens;
+	}
 	const informacoesAdicionaisWatch = form.watch("informacoesAdicionais");
 	const localEntregaWatch = form.watch("localEntrega");
 	const observacoesComLotes = useMemo(
@@ -781,7 +808,11 @@ export default function NovaEmissaoNfePage() {
 		);
 
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(item, usaCsosn),
+			mapearItemNotaReemissaoParaForm(
+				item,
+				usaCsosn,
+				referenciasCfopEmissao(),
+			),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -824,7 +855,7 @@ export default function NovaEmissaoNfePage() {
 
 		reemitirAplicadoRef.current = reemitirProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			idnotafiscal: notaFiscal.id,
 			iddestinatario: notaFiscal.identidade ?? undefined,
@@ -882,6 +913,7 @@ export default function NovaEmissaoNfePage() {
 			dadosClonar.notaFiscal.id,
 			empresa.id,
 			empresaFiscal.crt,
+			dadosClonar.itens.length,
 			dadosClonar.notaFiscal.datahoraemissao ?? "",
 			dadosClonar.notaFiscal.frete ?? "",
 			dadosClonar.notaFiscal.tipofrete ?? "",
@@ -890,6 +922,7 @@ export default function NovaEmissaoNfePage() {
 	}, [
 		clonarId,
 		dadosClonar?.notaFiscal?.id,
+		dadosClonar?.itens.length,
 		dadosClonar?.notaFiscal?.datahoraemissao,
 		dadosClonar?.notaFiscal?.frete,
 		dadosClonar?.notaFiscal?.tipofrete,
@@ -922,7 +955,11 @@ export default function NovaEmissaoNfePage() {
 		);
 
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(item, usaCsosn),
+			mapearItemNotaReemissaoParaForm(
+				item,
+				usaCsosn,
+				referenciasCfopEmissao(),
+			),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -974,7 +1011,7 @@ export default function NovaEmissaoNfePage() {
 
 		clonarAplicadoRef.current = clonarProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddestinatario: notaFiscal.identidade ?? undefined,
 			idserienfe: serieEncontrada?.id ?? contextoClone.idserienfe ?? undefined,
@@ -1057,7 +1094,11 @@ export default function NovaEmissaoNfePage() {
 
 		const usaCsosn = empresaUsaCsosn(empresaFiscal.crt);
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(item, usaCsosn),
+			mapearItemNotaReemissaoParaForm(
+				item,
+				usaCsosn,
+				referenciasCfopEmissao(),
+			),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -1081,7 +1122,7 @@ export default function NovaEmissaoNfePage() {
 
 		rascunhoAplicadoRef.current = rascunhoProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			idnotafiscal: notaFiscal.id,
 			iddestinatario: notaFiscal.identidade ?? undefined,
@@ -1194,7 +1235,7 @@ export default function NovaEmissaoNfePage() {
 
 		pedidoAplicadoRef.current = pedidoProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddav: contextoPedido.iddav,
 			iddavs: [contextoPedido.iddav],
@@ -1315,7 +1356,7 @@ export default function NovaEmissaoNfePage() {
 
 		pedidoAplicadoRef.current = loteProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddav: contextoLote.iddavs[0],
 			iddavs: contextoLote.iddavs,
@@ -1518,13 +1559,11 @@ export default function NovaEmissaoNfePage() {
 	function resolverItensEmissaoFormulario(
 		dados: EmissaoNfeFormData,
 	): EmissaoNfeFormData {
-		const itensForm = form.getValues("itens") ?? [];
-		const itens =
-			(dados.itens?.length ?? 0) > 0
-				? dados.itens
-				: itensForm.length > 0
-					? itensForm
-					: [];
+		const itens = escolherItensFormularioEmissao(
+			dados.itens,
+			form.getValues("itens"),
+			itensValue,
+		);
 		return { ...dados, itens };
 	}
 
@@ -1875,8 +1914,17 @@ export default function NovaEmissaoNfePage() {
 		});
 
 	function handleInvalidSubmit(erros: FieldErrors<EmissaoNfeFormData>) {
-		const itensForm = form.getValues("itens") ?? [];
-		if (itensForm.length > 0 && erros.itens?.message === "Informe ao menos um item") {
+		const itensForm = escolherItensFormularioEmissao(
+			form.getValues("itens"),
+			itensValue,
+		);
+		const mensagemItens =
+			typeof erros.itens?.message === "string"
+				? erros.itens.message
+				: undefined;
+		if (itensForm.length > 0 && mensagemItens === "Informe ao menos um item") {
+			replaceItens(itensForm);
+			form.setValue("itens", itensForm, { shouldValidate: false });
 			toast.error("Não foi possível emitir a NF-e", {
 				description:
 					"Revise os itens da nota (descrição, NCM, CFOP, quantidade, valor e tributação).",
@@ -2027,6 +2075,7 @@ export default function NovaEmissaoNfePage() {
 	}
 
 	function handlePreview() {
+		sincronizarItensFormularioEmissao();
 		const dados = montarDadosEmissaoFormulario(
 			resolverItensEmissaoFormulario(form.getValues()),
 		);
@@ -2100,13 +2149,16 @@ export default function NovaEmissaoNfePage() {
 	}
 
 	function handleSalvarRascunho() {
-		const dados = montarDadosRascunhoFormulario(form.getValues());
+		const dados = montarDadosRascunhoFormulario(
+			resolverItensEmissaoFormulario(form.getValues()),
+		);
 		if (!dados) return;
 		salvarRascunho(dados);
 	}
 
 	function handleConfirmarProducao() {
 		setModalConfirmacaoAberto(false);
+		sincronizarItensFormularioEmissao();
 		form.handleSubmit(
 			(dadosBrutos) => {
 				const dados = resolverItensEmissaoFormulario(dadosBrutos);
@@ -2356,7 +2408,11 @@ export default function NovaEmissaoNfePage() {
 
 				<form
 					id="form-emissao-nfe"
-					onSubmit={form.handleSubmit(handleSubmit, handleInvalidSubmit)}
+					onSubmit={(evento) => {
+						evento.preventDefault();
+						sincronizarItensFormularioEmissao();
+						void form.handleSubmit(handleSubmit, handleInvalidSubmit)();
+					}}
 					className="space-y-0"
 				>
 					{/* ── 1. IDENTIFICAÇÃO ──────────────────────────────────────────── */}
