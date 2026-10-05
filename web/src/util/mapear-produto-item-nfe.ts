@@ -178,9 +178,30 @@ function extrairTributacaoItemEmissaoSalva(dadosimportacao: unknown) {
 	return emissao;
 }
 
+export function codigoCfopPorId(
+	idcfop: string | null | undefined,
+	referencias: Array<{ id: string; codigo: string }>,
+): string | undefined {
+	if (!idcfop) return undefined;
+	return referencias.find((cfop) => cfop.id === idcfop)?.codigo;
+}
+
+export function escolherItensFormularioEmissao(
+	...listas: Array<ItemNfe[] | null | undefined>
+): ItemNfe[] {
+	let melhor: ItemNfe[] = [];
+	for (const lista of listas) {
+		if ((lista?.length ?? 0) > melhor.length) {
+			melhor = lista ?? [];
+		}
+	}
+	return melhor;
+}
+
 export function mapearItemNotaReemissaoParaForm(
 	item: Record<string, unknown>,
 	usaCsosn: boolean,
+	referenciasCfop: Array<{ id: string; codigo: string }> = [],
 ): ItemNfe {
 	const quantidadeBruta = Number(item.quantidade ?? 1);
 	const valorBruto = Number(item.precounitario ?? 0);
@@ -192,6 +213,27 @@ export function mapearItemNotaReemissaoParaForm(
 	const tributacaoImportacao = (
 		item.dadosimportacao as { tributacao?: Record<string, unknown> } | null
 	)?.tributacao;
+	const cfopTexto = String(item.cfop ?? "")
+		.replace(/\D/g, "")
+		.slice(0, 4);
+	const cfop =
+		cfopTexto.length >= 4
+			? cfopTexto
+			: (codigoCfopPorId(
+					typeof item.idcfop === "string" ? item.idcfop : undefined,
+					referenciasCfop,
+				) ?? "");
+	const situacaoTributaria =
+		String(item.situacaotributaria ?? "").trim() ||
+		String(item.situacaotributariasn ?? "").trim() ||
+		undefined;
+	const cestDigitos = [
+		tributacaoSalva?.cest,
+		item.cest,
+		tributacaoImportacao?.cest,
+	]
+		.map((valor) => String(valor ?? "").replace(/\D/g, ""))
+		.find((digitos) => digitos.length === 7);
 
 	return prepararItemEmissaoFormulario(
 		{
@@ -201,9 +243,7 @@ export function mapearItemNotaReemissaoParaForm(
 					: undefined,
 			descricao: String(item.descricao ?? "").trim(),
 			ncm: (ncmDigitos || "00000000").padStart(8, "0").slice(0, 8),
-			cfop: String(item.cfop ?? "")
-				.replace(/\D/g, "")
-				.slice(0, 4),
+			cfop,
 			unidade: String(item.unidade ?? "UN").trim() || "UN",
 			quantidade:
 				Number.isFinite(quantidadeBruta) && quantidadeBruta > 0
@@ -211,15 +251,8 @@ export function mapearItemNotaReemissaoParaForm(
 					: 1,
 			valorUnitario:
 				Number.isFinite(valorBruto) && valorBruto > 0 ? valorBruto : 0.01,
-			cst: item.situacaotributaria
-				? String(item.situacaotributaria).trim()
-				: undefined,
-			cest: (() => {
-				const cestSalvo = tributacaoSalva?.cest
-					? String(tributacaoSalva.cest).replace(/\D/g, "")
-					: "";
-				return cestSalvo.length === 7 ? cestSalvo : undefined;
-			})(),
+			cst: situacaoTributaria,
+			cest: cestDigitos,
 			orig: Number(item.origem ?? 0) || 0,
 			cstPis: item.cstpis ? String(item.cstpis).trim() : undefined,
 			cstCofins: item.cstcofins ? String(item.cstcofins).trim() : undefined,
@@ -530,14 +563,6 @@ function mapearDadosStProduto(produto: {
 function textoPreenchido(valor?: string | null): string | undefined {
 	const texto = valor?.trim();
 	return texto ? texto : undefined;
-}
-
-export function codigoCfopPorId(
-	idcfop: string | null | undefined,
-	referencias: Array<{ id: string; codigo: string }>,
-): string | undefined {
-	if (!idcfop) return undefined;
-	return referencias.find((cfop) => cfop.id === idcfop)?.codigo;
 }
 
 export function itemEmissaoSemTributacaoCompleta(
