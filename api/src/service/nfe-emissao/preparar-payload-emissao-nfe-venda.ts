@@ -412,7 +412,6 @@ export async function prepararPayloadEmissaoNfeVenda(
 		idnotafiscal: idnotafiscalReemissao,
 		iddestinatario,
 		idserienfe,
-		confirmarProducao = false,
 		natOp,
 		indPres,
 		itens,
@@ -467,12 +466,6 @@ export async function prepararPayloadEmissaoNfeVenda(
 		);
 	}
 	const ambiente = nfeConfiguracao.ambiente;
-
-	if (opcoes.modo === "emitir" && ambiente === 1 && !confirmarProducao) {
-		return httpBadRequest(
-			"Emissão em produção requer confirmação explícita (confirmarProducao: true)",
-		);
-	}
 
 	const numeracao = await resolverNumeracaoEmissao({
 		idempresa,

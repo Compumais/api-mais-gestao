@@ -2,6 +2,19 @@ import { z } from "zod";
 import { isIndPresNfeValido } from "@/constants/ind-pres-nfe";
 import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
 
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function uuidValido(valor: unknown): valor is string {
+	return typeof valor === "string" && UUID_REGEX.test(valor.trim());
+}
+
+const uuidOpcionalSchema = z.preprocess((valor) => {
+	if (valor == null || valor === "") return undefined;
+	const texto = String(valor).trim();
+	return UUID_REGEX.test(texto) ? texto : undefined;
+}, z.string().uuid().optional());
+
 const cestItemEmissaoSchema = z.preprocess(
 	(valor) => {
 		if (valor == null || valor === "") return undefined;
@@ -192,7 +205,7 @@ export const emissaoNfeFormSchema = z.object({
 	idempresa: z.string().uuid(),
 	idnotafiscal: z.string().uuid().optional(),
 	iddestinatario: z.string().uuid().optional(),
-	idserienfe: z.string().uuid().optional(),
+	idserienfe: uuidOpcionalSchema,
 	confirmarProducao: z.boolean().default(false),
 	natOp: z.string().max(60).optional(),
 	indPres: z.coerce

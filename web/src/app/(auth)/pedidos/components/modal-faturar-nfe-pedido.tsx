@@ -1,6 +1,5 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { uuidValido } from "@/schemas/nfe-emissao.schema";
 import type { NfeSerie } from "@/services/nfe-configuracao.service";
 
 type ModalFaturarNfePedidoProps = {
@@ -41,27 +41,31 @@ export function ModalFaturarNfePedido({
 	onClose,
 	onConfirmar,
 	carregando = false,
-	ambienteProducao = false,
 	series = [],
 }: ModalFaturarNfePedidoProps) {
 	const [idserienfe, setIdserienfe] = useState("");
 	const [gerarFinanceiro, setGerarFinanceiro] = useState(true);
 	const [gerarEstoque, setGerarEstoque] = useState(true);
-	const [confirmadoProducao, setConfirmadoProducao] = useState(false);
 
-	const seriesAtivas = series.filter((serie) => serie.ativo && serie.modelo === "55");
+	const seriesAtivas = series.filter(
+		(serie) => serie.ativo && serie.modelo === "55",
+	);
+	const seriePadraoId = seriesAtivas.find((serie) => serie.padrao)?.id;
 
 	function handleClose() {
-		setConfirmadoProducao(false);
 		onClose();
 	}
 
 	function handleConfirmar() {
-		if (ambienteProducao && !confirmadoProducao) return;
+		const serieId = uuidValido(idserienfe)
+			? idserienfe
+			: uuidValido(seriePadraoId)
+				? seriePadraoId
+				: undefined;
 
 		onConfirmar({
-			...(idserienfe ? { idserienfe } : {}),
-			confirmarProducao: ambienteProducao,
+			...(serieId ? { idserienfe: serieId } : {}),
+			confirmarProducao: true,
 			gerarFinanceiro,
 			gerarEstoque,
 		});
@@ -83,16 +87,18 @@ export function ModalFaturarNfePedido({
 					<Field>
 						<FieldLabel htmlFor="serie-nfe-pedido">Série NF-e</FieldLabel>
 						<Select
-							value={idserienfe || "padrao"}
+							value={uuidValido(idserienfe) ? idserienfe : "padrao"}
 							onValueChange={(valor) =>
-								setIdserienfe(valor === "padrao" ? "" : valor)
+								setIdserienfe(uuidValido(valor) ? valor : "")
 							}
 						>
 							<SelectTrigger id="serie-nfe-pedido">
 								<SelectValue placeholder="Série padrão da configuração" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="padrao">Série padrão da configuração</SelectItem>
+								<SelectItem value="padrao">
+									Série padrão da configuração
+								</SelectItem>
 								{seriesAtivas.map((serie) => (
 									<SelectItem key={serie.id} value={serie.id}>
 										Série {serie.serie}
@@ -129,45 +135,13 @@ export function ModalFaturarNfePedido({
 							</Label>
 						</div>
 					</div>
-
-					{ambienteProducao && (
-						<div className="space-y-3 rounded-lg border border-red-200 bg-red-50 p-3">
-							<p className="flex items-center gap-2 text-sm font-medium text-red-800">
-								<AlertTriangle className="h-4 w-4" />
-								Ambiente de produção
-							</p>
-							<p className="text-sm text-red-700">
-								A NF-e terá validade fiscal real e será transmitida à SEFAZ.
-							</p>
-							<div className="flex items-center gap-2">
-								<Checkbox
-									id="confirmar-producao-pedido"
-									checked={confirmadoProducao}
-									onCheckedChange={(checked) =>
-										setConfirmadoProducao(checked === true)
-									}
-								/>
-								<Label
-									htmlFor="confirmar-producao-pedido"
-									className="text-sm cursor-pointer"
-								>
-									Confirmo a emissão em produção
-								</Label>
-							</div>
-						</div>
-					)}
 				</div>
 
 				<DialogFooter>
 					<Button variant="outline" onClick={handleClose} disabled={carregando}>
 						Cancelar
 					</Button>
-					<Button
-						onClick={handleConfirmar}
-						disabled={
-							carregando || (ambienteProducao && !confirmadoProducao)
-						}
-					>
+					<Button onClick={handleConfirmar} disabled={carregando}>
 						{carregando ? "Faturando..." : "Faturar NF-e"}
 					</Button>
 				</DialogFooter>
