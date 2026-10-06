@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
-import { emitirNfeGateway } from "@/lib/nfe-gateway-client.js";
+import {
+	emitirNfeGateway,
+	formatarErroConexaoGateway,
+} from "@/lib/nfe-gateway-client.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
@@ -15,6 +18,7 @@ import {
 } from "@/repositories/nfe-serie-repositories.js";
 import {
 	atualizarNotaFiscal,
+	buscarNotaFiscalNfcePorSerieNumero,
 	buscarNotaFiscalPorId,
 	criarNotaFiscalComItens,
 	substituirItensNotaFiscal,
@@ -22,11 +26,13 @@ import {
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { montarItensEmissaoDav } from "@/service/dav/montar-itens-emissao-dav.js";
 import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
+import { conciliarNfceDocumento } from "@/service/nfce-emissao/conciliar-nfce-documento.js";
 import {
 	carregarContextoEmissaoNfce,
 	montarPayloadGatewayEmissaoNfce,
 } from "@/service/nfce-emissao/contexto-emissao-nfce.js";
 import type { ResultadoEmissaoNfcePdv } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
+import { registrarTentativaEmissaoNfce } from "@/service/nfce-emissao/registrar-tentativa-emissao-nfce.js";
 import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
@@ -44,8 +50,20 @@ import {
 	montarCardPagamentoNfce,
 	normalizarTPag,
 } from "@/util/card-pagamento-nfce.js";
+import { classificarResultadoTransmissaoNfce } from "@/util/conciliacao-nfce/classificar-resultado-transmissao-nfce.js";
+import {
+	lerConciliacaoPersistida,
+	mesclarConciliacaoNfce,
+	resolverIdentidadeEmissaoNfce,
+} from "@/util/conciliacao-nfce/identidade-emissao-nfce.js";
+import {
+	mensagemConflitoNumeracao,
+	mensagemNfceAguardandoConsulta,
+} from "@/util/conciliacao-nfce/mensagens-conciliacao-nfce.js";
+import { decidirProximaAcaoEmissaoNfce } from "@/util/conciliacao-nfce/regras-conciliacao-nfce.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import {
+	agoraBrasiliaIsoOffset,
 	agoraBrasiliaNaiveIso,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
@@ -57,6 +75,8 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { validarIbsCbsItensEmissao } from "@/util/ibs-cbs-emissao-nfe.js";
+import { obterCodigoUfIbge } from "@/util/montar-config-sped-nfe.js";
 import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import { montarPagamentosPdvParaNfce } from "@/util/montar-pagamentos-pdv-nfce.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
@@ -68,10 +88,8 @@ import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
 import {
 	normalizarCodigoStatusNfe,
 	normalizarCStatGateway,
-	resolverStatusPersistenciaEmissao,
 } from "@/util/resolver-status-emissao-nfe.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
-import { validarIbsCbsItensEmissao } from "@/util/ibs-cbs-emissao-nfe.js";
 
 type FaturarDavNfceParametros = {
 	idusuario: string;
@@ -101,7 +119,12 @@ async function resolverNumeracaoEmissaoNfce(
 			notaExistente &&
 			notaExistente.idempresa === idempresa &&
 			(notaExistente.status === NFE_STATUS.REJEITADA ||
-				notaExistente.status === NFE_STATUS.PENDENTE)
+				notaExistente.status === NFE_STATUS.PENDENTE ||
+				notaExistente.status === NFE_STATUS.PENDENTE_CONSULTA ||
+				notaExistente.status === NFE_STATUS.TRANSMITINDO ||
+				notaExistente.status === NFE_STATUS.RECUPERANDO ||
+				notaExistente.status === NFE_STATUS.CONFLITO) &&
+			notaExistente.codigostatusprotocolonfe !== 206
 		) {
 			const numeroNf = Number(notaExistente.numeronotafiscal);
 			if (
@@ -306,6 +329,38 @@ export async function faturarDavNfceService({
 
 			return httpOk(resultadoExistente);
 		}
+
+		if (notaExistente && notaExistente.idempresa === idempresa) {
+			const acao = decidirProximaAcaoEmissaoNfce(notaExistente);
+			const chaveConhecida =
+				(notaExistente.chavenfe?.replace(/\D/g, "").length ?? 0) === 44 ||
+				Boolean(
+					lerConciliacaoPersistida(notaExistente.dadosimportacao).chavePrevista,
+				);
+			if (acao === "bloquear") {
+				return httpOk({
+					emitida: false,
+					idnotafiscal: notaExistente.id,
+					situacao: "rejeitada",
+					erro: "NFC-e cancelada ou inutilizada não pode ser transmitida novamente.",
+					xMotivo:
+						"NFC-e cancelada ou inutilizada não pode ser transmitida novamente.",
+				});
+			}
+			if (
+				acao === "conciliar" ||
+				(acao === "transmitir_mesma_identidade" && chaveConhecida)
+			) {
+				const conciliacao = await conciliarNfceDocumento({
+					nota: notaExistente,
+					idusuario,
+					motivoTentativa: "antes_de_transmitir_dav",
+				});
+				if (!conciliacao.prosseguirTransmissao) {
+					return httpOk(conciliacao.resultado);
+				}
+			}
+		}
 	}
 
 	const contexto = await carregarContextoEmissaoNfce(idempresa);
@@ -449,6 +504,41 @@ export async function faturarDavNfceService({
 
 	const idnotafiscal = reserva.idnotafiscal;
 	const ambiente = nfceConfiguracao.ambiente;
+	const notaIdentidade = reserva.reemissao
+		? await buscarNotaFiscalPorId(idnotafiscal)
+		: null;
+	const identidade = resolverIdentidadeEmissaoNfce({
+		dhEmi: agoraBrasiliaIsoOffset(),
+		cUF: obterCodigoUfIbge(empresaFiscal.uf ?? ""),
+		cnpj: empresa.cnpj,
+		serie: reserva.serie,
+		numero: reserva.numeroNf,
+		chaveAtual: notaIdentidade?.chavenfe,
+		conciliacao: lerConciliacaoPersistida(notaIdentidade?.dadosimportacao),
+		tpEmisPadrao: 1,
+	});
+	const notaOcupandoNumero = await buscarNotaFiscalNfcePorSerieNumero(
+		idempresa,
+		reserva.serie,
+		reserva.numeroNf,
+		ambiente,
+	);
+	if (notaOcupandoNumero && notaOcupandoNumero.id !== idnotafiscal) {
+		const mensagem = mensagemConflitoNumeracao({
+			numero: reserva.numeroNf,
+			serie: reserva.serie,
+		});
+		return httpOk({
+			emitida: false,
+			idnotafiscal: notaOcupandoNumero.id,
+			serie: reserva.serie,
+			numero: reserva.numeroNf,
+			situacao: "conflito",
+			erro: mensagem,
+			xMotivo: mensagem,
+			mensagemOperacional: mensagem,
+		});
+	}
 	const gerarFinanceiroResolvido = isAmbienteHomologacao(ambiente)
 		? false
 		: gerarFinanceiro;
@@ -466,13 +556,146 @@ export async function faturarDavNfceService({
 		itens: itensNormalizados,
 		pagamento: pagamentoNormalizado,
 		natOp,
+		dhEmi: identidade.dhEmi,
+		cNF: identidade.cNF,
 		...(destinatario ? { destinatario } : {}),
 		...(dav.observacao?.trim()
 			? { informacoesAdicionais: dav.observacao.trim() }
 			: {}),
 	});
 
-	const respostaGateway = await emitirNfeGateway(payload);
+	const agoraTransmissao = agoraBrasiliaNaiveIso();
+	const dadosTransmissao: NovaNotaFiscal = {
+		id: idnotafiscal,
+		idempresa,
+		identidade: dav.idcliente ?? null,
+		idplanocontas: null,
+		idcondicaopagto: dav.idcondicaopagamento ?? null,
+		idlocalestoque: dav.idlocalestoque ?? null,
+		idtipodocumento: dav.idtipodocumentofinanceiro ?? null,
+		idusuarioinclusao: idusuario,
+		datainclusao: agoraTransmissao,
+		emissao: hojeBrasiliaIsoDate(),
+		datahoraemissao: agoraTransmissao,
+		currenttimemillis: Date.now(),
+		modelo: "65",
+		serie: reserva.serie,
+		idserie: reserva.idserie,
+		numeronotafiscal: String(reserva.numeroNf),
+		chavenfe: identidade.chavePrevista,
+		protocolonfe: null,
+		tipoambientenfe: ambiente,
+		tipoorigem: 1,
+		status: NFE_STATUS.TRANSMITINDO,
+		razaosocial: destinatario?.razaosocial ?? dav.nomecliente ?? null,
+		cnpjcpf: destinatario?.cnpjcpf ?? dav.cnpjcpfcliente ?? null,
+		inscricaoestadual: destinatario?.ie ?? null,
+		endereco: destinatario?.logradouro ?? null,
+		numeroendereco: destinatario?.numero ?? null,
+		bairro: destinatario?.bairro ?? null,
+		cep: destinatario?.cep ?? null,
+		cidade: destinatario?.cidade ?? null,
+		estado: destinatario?.estado ?? null,
+		valortotalnota: totaisFiscais.totalNota.toFixed(2),
+		totalproduto: totaisFiscais.totalProdutos.toFixed(2),
+		frete: null,
+		seguro: null,
+		descontosubtotal: desconto > 0 ? desconto.toFixed(2) : null,
+		outrasdespesas: null,
+		tipofrete: 9,
+		baseicms: totaisFiscais.baseIcms.toFixed(2),
+		icms: totaisFiscais.valorIcms.toFixed(2),
+		ipi: null,
+		pis: totaisFiscais.valorPis.toFixed(2),
+		cofins: totaisFiscais.valorCofins.toFixed(2),
+		baseicmssubstituicao:
+			totaisFiscais.baseIcmsSt > 0 ? totaisFiscais.baseIcmsSt.toFixed(2) : null,
+		icmssubstituicao:
+			totaisFiscais.valorIcmsSt > 0
+				? totaisFiscais.valorIcmsSt.toFixed(2)
+				: null,
+		datahoraautorizacao: null,
+		mensagemtransmissaonfe: "Transmitindo NFC-e para a SEFAZ.",
+		codigostatusprotocolonfe: null,
+		codigostatustransmissaonfe: null,
+		observacao: dav.observacao ?? null,
+		finalidadeemissaonfe: 1,
+		chavedocumentoreferenciado: null,
+		modelodocumentoreferenciado: null,
+		seriedocumentoreferenciado: null,
+		numerodocumentoreferenciado: null,
+		datadocumentoreferenciado: null,
+		tiponotadocumentoreferenciado: null,
+		dadosimportacao: mesclarConciliacaoNfce(
+			{
+				origem: "dav-pos-nfce",
+				iddav,
+				natOp,
+				pagamento: pagamentoNormalizado,
+				emissao: {
+					gerarFinanceiro: gerarFinanceiroResolvido,
+					gerarEstoque: gerarEstoqueResolvido,
+				},
+			},
+			{
+				cNF: identidade.cNF,
+				tpEmis: identidade.tpEmis,
+				dhEmi: identidade.dhEmi,
+				...(identidade.chavePrevista
+					? { chavePrevista: identidade.chavePrevista }
+					: {}),
+			},
+		),
+	};
+	const itensTransmissao = montarItensPersistencia(
+		idnotafiscal,
+		itensNormalizados,
+	);
+	if (reserva.reemissao) {
+		await atualizarNotaFiscal(idnotafiscal, dadosTransmissao);
+		await substituirItensNotaFiscal(idnotafiscal, itensTransmissao);
+	} else {
+		await criarNotaFiscalComItens(dadosTransmissao, itensTransmissao);
+	}
+	await atualizarDav(iddav, {
+		idnfce: idnotafiscal,
+	});
+
+	let respostaGateway: Awaited<ReturnType<typeof emitirNfeGateway>>;
+	try {
+		respostaGateway = await emitirNfeGateway(payload);
+	} catch (erro) {
+		const mensagem = mensagemNfceAguardandoConsulta();
+		await atualizarNotaFiscal(idnotafiscal, {
+			status: NFE_STATUS.PENDENTE_CONSULTA,
+			mensagemtransmissaonfe: mensagem,
+		});
+		await registrarTentativaEmissaoNfce({
+			idusuario,
+			idempresa,
+			idnotafiscal,
+			tipo: "erro_comunicacao",
+			motivo: "excecao_durante_transmissao_dav",
+			statusAnterior: NFE_STATUS.TRANSMITINDO,
+			statusPosterior: NFE_STATUS.PENDENTE_CONSULTA,
+			numero: String(reserva.numeroNf),
+			serie: reserva.serie,
+			chave: identidade.chavePrevista,
+			tpEmis: identidade.tpEmis,
+			xMotivo: formatarErroConexaoGateway("", erro),
+		});
+		return httpOk({
+			emitida: false,
+			idnotafiscal,
+			serie: reserva.serie,
+			numero: reserva.numeroNf,
+			chave: identidade.chavePrevista ?? undefined,
+			situacao: "pendente_consulta",
+			erro: mensagem,
+			xMotivo: mensagem,
+			mensagemOperacional: mensagem,
+		});
+	}
 
 	const cStat = normalizarCStatGateway(respostaGateway.cStat);
 	const cStatLote = normalizarCStatGateway(respostaGateway.cStatLote);
@@ -480,16 +703,25 @@ export async function faturarDavNfceService({
 		respostaGateway.xMotivo?.trim() ||
 		(!respostaGateway.sucesso ? respostaGateway.erro?.trim() : undefined) ||
 		null;
-	const erroTransmissao =
-		!respostaGateway.sucesso && !cStat ? (respostaGateway.erro ?? null) : null;
-
-	const statusPersistido = resolverStatusPersistenciaEmissao({
-		...(cStat ? { cStat } : {}),
-		...(respostaGateway.protocolo
-			? { protocolo: respostaGateway.protocolo }
-			: {}),
-		...(erroTransmissao ? { erroTransmissao } : {}),
+	const classeTransmissao = classificarResultadoTransmissaoNfce({
+		cStat,
+		protocolo: respostaGateway.protocolo,
+		erro: respostaGateway.erro,
+		xMotivo,
+		sucesso: respostaGateway.sucesso,
 	});
+	const statusPersistido =
+		classeTransmissao === "autorizada"
+			? NFE_STATUS.AUTORIZADA
+			: classeTransmissao === "desconhecida"
+				? NFE_STATUS.PENDENTE_CONSULTA
+				: classeTransmissao === "duplicidade"
+					? NFE_STATUS.RECUPERANDO
+					: NFE_STATUS.REJEITADA;
+	const mensagemPersistida =
+		classeTransmissao === "desconhecida"
+			? mensagemNfceAguardandoConsulta()
+			: xMotivo;
 
 	const agora = agoraBrasiliaNaiveIso();
 	const dataEmissao = hojeBrasiliaIsoDate();
@@ -544,11 +776,12 @@ export async function faturarDavNfceService({
 			totaisFiscais.valorIcmsSt > 0
 				? totaisFiscais.valorIcmsSt.toFixed(2)
 				: null,
-		arquivoxmlassinado: respostaGateway.xmlEnviado ?? null,
-		arquivoxmlautorizada:
-			statusPersistido === NFE_STATUS.AUTORIZADA
-				? (respostaGateway.xmlRetorno ?? null)
-				: null,
+		...(respostaGateway.xmlEnviado
+			? { arquivoxmlassinado: respostaGateway.xmlEnviado }
+			: {}),
+		...(statusPersistido === NFE_STATUS.AUTORIZADA && respostaGateway.xmlRetorno
+			? { arquivoxmlautorizada: respostaGateway.xmlRetorno }
+			: {}),
 		datahoraautorizacao:
 			statusPersistido === NFE_STATUS.AUTORIZADA
 				? resolverDataHoraAutorizacao({
@@ -556,7 +789,7 @@ export async function faturarDavNfceService({
 						fallbackIso: agora,
 					})
 				: null,
-		mensagemtransmissaonfe: xMotivo,
+		mensagemtransmissaonfe: mensagemPersistida,
 		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),
 		codigostatustransmissaonfe: normalizarCodigoStatusNfe(cStatLote ?? cStat),
 		observacao: dav.observacao ?? null,
@@ -567,16 +800,26 @@ export async function faturarDavNfceService({
 		numerodocumentoreferenciado: null,
 		datadocumentoreferenciado: null,
 		tiponotadocumentoreferenciado: null,
-		dadosimportacao: {
-			origem: "dav-pos-nfce",
-			iddav,
-			natOp,
-			pagamento: pagamentoNormalizado,
-			emissao: {
-				gerarFinanceiro: gerarFinanceiroResolvido,
-				gerarEstoque: gerarEstoqueResolvido,
+		dadosimportacao: mesclarConciliacaoNfce(
+			{
+				origem: "dav-pos-nfce",
+				iddav,
+				natOp,
+				pagamento: pagamentoNormalizado,
+				emissao: {
+					gerarFinanceiro: gerarFinanceiroResolvido,
+					gerarEstoque: gerarEstoqueResolvido,
+				},
 			},
-		},
+			{
+				cNF: identidade.cNF,
+				tpEmis: identidade.tpEmis,
+				dhEmi: identidade.dhEmi,
+				...(identidade.chavePrevista
+					? { chavePrevista: identidade.chavePrevista }
+					: {}),
+			},
+		),
 	};
 
 	const itensPersistencia = montarItensPersistencia(
@@ -584,12 +827,8 @@ export async function faturarDavNfceService({
 		itensNormalizados,
 	);
 
-	if (reserva.reemissao) {
-		await atualizarNotaFiscal(idnotafiscal, dadosNota);
-		await substituirItensNotaFiscal(idnotafiscal, itensPersistencia);
-	} else {
-		await criarNotaFiscalComItens(dadosNota, itensPersistencia);
-	}
+	await atualizarNotaFiscal(idnotafiscal, dadosNota);
+	await substituirItensNotaFiscal(idnotafiscal, itensPersistencia);
 
 	await atualizarDav(iddav, {
 		idnfce: idnotafiscal,
@@ -640,6 +879,23 @@ export async function faturarDavNfceService({
 		});
 	}
 
+	if (classeTransmissao === "duplicidade") {
+		const notaDuplicada = await buscarNotaFiscalPorId(idnotafiscal);
+		if (notaDuplicada) {
+			const conciliacao = await conciliarNfceDocumento({
+				nota: {
+					...notaDuplicada,
+					mensagemtransmissaonfe: xMotivo,
+					codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),
+					chavenfe: respostaGateway.chave ?? notaDuplicada.chavenfe,
+				},
+				idusuario,
+				motivoTentativa: "rejeicao_duplicidade_dav",
+			});
+			return httpOk(conciliacao.resultado);
+		}
+	}
+
 	const emitida = statusPersistido === NFE_STATUS.AUTORIZADA;
 	const resultado: ResultadoEmissaoNfcePdv = {
 		emitida,
@@ -650,9 +906,12 @@ export async function faturarDavNfceService({
 	if (respostaGateway.protocolo)
 		resultado.protocolo = respostaGateway.protocolo;
 	if (cStat) resultado.cStat = cStat;
-	if (xMotivo) resultado.xMotivo = xMotivo;
-	if (!emitida && !cStat && respostaGateway.erro) {
-		resultado.erro = respostaGateway.erro;
+	if (mensagemPersistida) resultado.xMotivo = mensagemPersistida;
+	if (!emitida) {
+		resultado.erro = mensagemPersistida ?? respostaGateway.erro;
+		resultado.situacao =
+			classeTransmissao === "desconhecida" ? "pendente_consulta" : "rejeitada";
+		resultado.mensagemOperacional = mensagemPersistida ?? undefined;
 	}
 
 	const xmlQr =

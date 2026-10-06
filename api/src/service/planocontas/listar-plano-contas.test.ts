@@ -91,11 +91,13 @@ describe("listarPlanoContasService", () => {
 		expect(
 			planoContasRepository.listarPlanoContasPorEmpresas,
 		).toHaveBeenCalledWith({
-			idempresas: ["empresa-123", "empresa-456"],
+			idempresas: ["empresa-123"],
 			idplanocontas: undefined,
 			inativo: 0,
 			page: 1,
+			listarTudo: false,
 			limit: 10,
+			tipomovimento: "E",
 		});
 	});
 

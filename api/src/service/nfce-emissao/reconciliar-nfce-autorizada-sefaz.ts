@@ -83,7 +83,10 @@ export async function reconciliarNfceAutorizadaSefaz(
 
 	if (
 		nota.status !== NFE_STATUS.PENDENTE &&
-		nota.status !== NFE_STATUS.REJEITADA
+		nota.status !== NFE_STATUS.REJEITADA &&
+		nota.status !== NFE_STATUS.TRANSMITINDO &&
+		nota.status !== NFE_STATUS.PENDENTE_CONSULTA &&
+		nota.status !== NFE_STATUS.RECUPERANDO
 	) {
 		return null;
 	}
@@ -125,6 +128,7 @@ export async function reconciliarNfceAutorizadaSefaz(
 			mensagemtransmissaonfe:
 				resposta.xMotivo?.trim() || "Autorizado o uso da NF-e",
 			codigostatusprotocolonfe: normalizarCodigoStatusNfe(resposta.cStat),
+			...(xmlConsulta ? { arquivoxmlconsultasituacao: xmlConsulta } : {}),
 			arquivoxmlautorizada: xmlAutorizado ?? nota.arquivoxmlautorizada,
 			datahoraautorizacao,
 		});

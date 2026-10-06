@@ -156,7 +156,7 @@ describe("buscarFinanceiroService", () => {
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
+			expect(resultado.error).toBe("Recurso não encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(financeiroRepository.buscarFinanceiroPorId).toHaveBeenCalledTimes(1);
@@ -198,7 +198,7 @@ describe("buscarFinanceiroService", () => {
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
+			expect(resultado.error).toBe("Recurso não encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(financeiroRepository.buscarFinanceiroPorId).toHaveBeenCalledTimes(1);

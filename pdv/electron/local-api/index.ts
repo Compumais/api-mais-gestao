@@ -592,6 +592,7 @@ async function emitirNfceOnlineDaVenda(
 			idnotafiscal: nfce.idnotafiscal,
 			cStat: nfce.cStat,
 			erro: nfce.erro,
+			situacao: nfce.situacao,
 			indisponivel: !nfce.emitida && !nfce.erro,
 			xml: nfce.xml,
 			serie: nfce.serie,

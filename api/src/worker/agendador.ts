@@ -6,6 +6,7 @@ import {
 import { executarJob } from "./executar-job.js";
 import { executarAlertasVencimento } from "./jobs/alertas-vencimento.js";
 import { executarConciliacaoPendente } from "./jobs/conciliacao-pendente.js";
+import { executarConciliacaoNfcePendentes } from "./jobs/conciliar-nfce-pendentes.js";
 import { executarProcessarAutomacoes } from "./jobs/processar-automacoes.js";
 import { executarRelatoriosAutomaticos } from "./jobs/relatorios-automaticos.js";
 import { executarSaldoBaixo } from "./jobs/saldo-baixo.js";
@@ -16,6 +17,7 @@ import {
 	LOCK_AGENDADOR_AUTOMACOES,
 	LOCK_AGENDADOR_DOMINIO,
 	LOCK_AGENDADOR_INBOUND_NFE,
+	LOCK_AGENDADOR_NFCE,
 	LOCK_AGENDADOR_PRINCIPAL,
 } from "./types.js";
 
@@ -111,6 +113,27 @@ async function executarCicloAutomacoes() {
 	}
 }
 
+async function executarCicloConciliacaoNfce() {
+	const adquiriu = await tentarAdquirirLockAgendador(LOCK_AGENDADOR_NFCE);
+	if (!adquiriu) {
+		return;
+	}
+
+	try {
+		await executarJob(
+			"conciliar_nfce",
+			executarConciliacaoNfcePendentes,
+			{ agora: new Date() },
+			null,
+			180_000,
+		);
+	} catch (error) {
+		console.error("[agendador] Erro na conciliação de NFC-e:", error);
+	} finally {
+		await liberarLockAgendador(LOCK_AGENDADOR_NFCE);
+	}
+}
+
 async function executarCicloDominio() {
 	const adquiriu = await tentarAdquirirLockAgendador(LOCK_AGENDADOR_DOMINIO);
 	if (!adquiriu) {
@@ -159,12 +182,17 @@ export function iniciarAgendador() {
 		void executarCicloDominio();
 	});
 
+	const cronNfce = cron.schedule("*/10 * * * *", () => {
+		void executarCicloConciliacaoNfce();
+	});
+
 	tarefasAgendadas = [
 		cronAlertas,
 		cronPlanos,
 		cronInboundNfe,
 		cronAutomacoes,
 		cronDominio,
+		cronNfce,
 	];
 	console.log(
 		"[agendador] Iniciado — alertas/automações a cada 5 min, ciclos de plano às 06:00, inbound NF-e a cada 10 min, Domínio a cada 2 min",
@@ -217,6 +245,14 @@ export const JOBS_DISPONIVEIS = {
 		executarJob(
 			"sync_dominio",
 			executarSyncDominio,
+			{ agora: new Date() },
+			null,
+			180_000,
+		),
+	conciliarNfce: () =>
+		executarJob(
+			"conciliar_nfce",
+			executarConciliacaoNfcePendentes,
 			{ agora: new Date() },
 			null,
 			180_000,

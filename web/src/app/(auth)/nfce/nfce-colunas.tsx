@@ -3,6 +3,7 @@ import {
 	IconPencil,
 	IconPrinter,
 	IconRefresh,
+	IconSearch,
 } from "@tabler/icons-react";
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import { Ban, FileX2 } from "lucide-react";
@@ -37,6 +38,14 @@ export const NFCE_STATUS_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 	{
 		value: String(NFE_STATUS.PENDENTE),
 		label: NFE_STATUS_LABELS[NFE_STATUS.PENDENTE],
+	},
+	{
+		value: String(NFE_STATUS.PENDENTE_CONSULTA),
+		label: NFE_STATUS_LABELS[NFE_STATUS.PENDENTE_CONSULTA],
+	},
+	{
+		value: String(NFE_STATUS.CONFLITO),
+		label: NFE_STATUS_LABELS[NFE_STATUS.CONFLITO],
 	},
 	{
 		value: String(NFE_STATUS.AUTORIZADA),
@@ -178,8 +187,10 @@ export type OpcoesColunasNfce = {
 	onFiltrarColuna: (colunaId: string, valor: string) => void;
 	configFiltroPorColuna: Record<string, ConfigFiltroColunaNfce>;
 	reemitindoId: string | null;
+	consultandoId: string | null;
 	carregandoCupomId: string | null;
 	onRetransmitir: (idnotafiscal: string) => void;
+	onConsultarSituacao: (idnotafiscal: string) => void;
 	onImprimir: (idnotafiscal: string) => void;
 	onVerDetalhes: (idnotafiscal: string) => void;
 	onCancelar: (nota: NfceListagem) => void;
@@ -237,6 +248,12 @@ export function criarColunasNfce(
 						nota.status === NFE_STATUS.PENDENTE ||
 						nota.status === NFE_STATUS.REJEITADA ||
 						nota.status === NFE_STATUS.DENEGADA;
+					const podeConsultar =
+						podeReemitir ||
+						nota.status === NFE_STATUS.TRANSMITINDO ||
+						nota.status === NFE_STATUS.PENDENTE_CONSULTA ||
+						nota.status === NFE_STATUS.RECUPERANDO ||
+						nota.status === NFE_STATUS.CONFLITO;
 					const podeAlterar = podeReemitir;
 					const podeImprimir = nota.status === NFE_STATUS.AUTORIZADA;
 					const podeCancelar = notaPodeSerCancelada(notaEmitida).permitido;
@@ -259,6 +276,20 @@ export function criarColunasNfce(
 										<IconPencil className="size-4" />
 										Alterar
 									</Link>
+								</Button>
+							)}
+							{podeConsultar && (
+								<Button
+									type="button"
+									size="sm"
+									variant="outline"
+									disabled={opcoes.consultandoId === nota.idnotafiscal}
+									onClick={() => opcoes.onConsultarSituacao(nota.idnotafiscal)}
+								>
+									<IconSearch className="size-4" />
+									{opcoes.consultandoId === nota.idnotafiscal
+										? "Consultando..."
+										: "Consultar situação"}
 								</Button>
 							)}
 							{podeReemitir && (

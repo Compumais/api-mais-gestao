@@ -55,7 +55,9 @@ export function formatarCnpjCpf(valor: string | null | undefined): string {
 	return formatarNumerico(valor, 14);
 }
 
-export function formatarInscricaoEstadual(valor: string | null | undefined): string {
+export function formatarInscricaoEstadual(
+	valor: string | null | undefined,
+): string {
 	const texto = String(valor ?? "")
 		.normalize("NFD")
 		.replace(/[\u0300-\u036f]/g, "")
@@ -72,19 +74,32 @@ export function formatarCfop(valor: string | null | undefined): string {
 }
 
 export function formatarSerie(valor: string | null | undefined): string {
-	return formatarAlfanumerico(valor ?? "", 3);
+	const texto = String(valor ?? "").trim();
+	if (/^\d+$/.test(texto)) {
+		return texto.padStart(3, "0").slice(-3);
+	}
+	return formatarAlfanumerico(texto, 3);
 }
 
-export function formatarNumeroDocumento(valor: string | null | undefined): string {
+export function formatarNumeroDocumento(
+	valor: string | null | undefined,
+): string {
 	return formatarNumerico(valor, 6);
 }
 
-export function formatarCodigoProduto(valor: string | number | null | undefined): string {
+export function formatarCodigoProduto(
+	valor: string | number | null | undefined,
+): string {
 	return formatarAlfanumerico(String(valor ?? ""), 14);
 }
 
-export function formatarCst(valor: string | null | undefined, csosn?: string | null): string {
-	const cst = String(valor ?? csosn ?? "000").replace(/\D/g, "").slice(0, 3);
+export function formatarCst(
+	valor: string | null | undefined,
+	csosn?: string | null,
+): string {
+	const cst = String(valor ?? csosn ?? "000")
+		.replace(/\D/g, "")
+		.slice(0, 3);
 	return formatarAlfanumerico(cst.padStart(3, "0"), 3);
 }
 

@@ -17,6 +17,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Controller,
+	type DefaultValues,
 	type FieldErrors,
 	type Resolver,
 	useFieldArray,
@@ -73,6 +74,7 @@ import { hojeBrasiliaIsoDate } from "@/lib/date";
 import {
 	type EmissaoNfeFormData,
 	emissaoNfeFormSchema,
+	uuidValido,
 } from "@/schemas/nfe-emissao.schema";
 import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
 import { extrairRelatorioFiscalErro } from "@/schemas/relatorio-fiscal.schema";
@@ -111,6 +113,7 @@ import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emiss
 import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-form";
 import {
 	empresaUsaCsosn,
+	escolherItensFormularioEmissao,
 	mapearItemNotaReemissaoParaForm,
 	prepararItemEmissaoFormulario,
 } from "@/util/mapear-produto-item-nfe";
@@ -127,7 +130,6 @@ import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
 import { CamposIntegracaoNfVenda } from "../components/campos-integracao-nf-venda";
 import { CardErroNfe } from "../components/card-erro-nfe";
 import { DialogRelatorioFiscal } from "../components/dialog-relatorio-fiscal";
-import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
 import { ModalEnviarEmailNfe } from "../components/modal-enviar-email-nfe";
 import { ModalItemEmissao } from "../components/modal-item-emissao";
 import { ModalPreviewDanfeNfe } from "../components/modal-preview-danfe-nfe";
@@ -244,7 +246,6 @@ export default function NovaEmissaoNfePage() {
 		queryFn: () => empresaFiscalService.buscar(empresa!.id),
 		enabled: !!empresa?.id,
 	});
-	const [modalConfirmacaoAberto, setModalConfirmacaoAberto] = useState(false);
 	const [modalPreviewAberto, setModalPreviewAberto] = useState(false);
 	const [relatorioFiscal, setRelatorioFiscal] =
 		useState<RelatorioAuditoriaFiscal | null>(null);
@@ -413,10 +414,40 @@ export default function NovaEmissaoNfePage() {
 		name: "itens",
 	});
 
+	function referenciasCfopEmissao() {
+		return [...(cfopsSaida ?? []), ...(cfopsEntrada ?? [])].flatMap((cfop) =>
+			cfop.codigo ? [{ id: cfop.id, codigo: cfop.codigo }] : [],
+		);
+	}
+
+	function resetarFormularioEmissao(
+		valores: DefaultValues<EmissaoNfeFormData> & {
+			itens: EmissaoNfeFormData["itens"];
+		},
+	) {
+		form.reset(valores);
+		replaceItens(valores.itens ?? []);
+	}
+
 	const {
 		formState: { errors },
 	} = form;
 	const itensValue = form.watch("itens");
+
+	function sincronizarItensFormularioEmissao() {
+		const itens = escolherItensFormularioEmissao(
+			form.getValues("itens"),
+			itensValue,
+		);
+		if (itens.length > 0) {
+			replaceItens(itens);
+			form.setValue("itens", itens, {
+				shouldValidate: false,
+				shouldDirty: true,
+			});
+		}
+		return itens;
+	}
 	const informacoesAdicionaisWatch = form.watch("informacoesAdicionais");
 	const localEntregaWatch = form.watch("localEntrega");
 	const observacoesComLotes = useMemo(
@@ -781,7 +812,11 @@ export default function NovaEmissaoNfePage() {
 		);
 
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(item, usaCsosn),
+			mapearItemNotaReemissaoParaForm(
+				item,
+				usaCsosn,
+				referenciasCfopEmissao(),
+			),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -824,12 +859,11 @@ export default function NovaEmissaoNfePage() {
 
 		reemitirAplicadoRef.current = reemitirProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			idnotafiscal: notaFiscal.id,
 			iddestinatario: notaFiscal.identidade ?? undefined,
-			idserienfe:
-				serieEncontrada?.id ?? contextoReemissao.idserienfe ?? undefined,
+			idserienfe: serieEncontrada?.id,
 			confirmarProducao: false,
 			natOp: natOpReemissao,
 			indPres:
@@ -882,6 +916,7 @@ export default function NovaEmissaoNfePage() {
 			dadosClonar.notaFiscal.id,
 			empresa.id,
 			empresaFiscal.crt,
+			dadosClonar.itens.length,
 			dadosClonar.notaFiscal.datahoraemissao ?? "",
 			dadosClonar.notaFiscal.frete ?? "",
 			dadosClonar.notaFiscal.tipofrete ?? "",
@@ -890,6 +925,7 @@ export default function NovaEmissaoNfePage() {
 	}, [
 		clonarId,
 		dadosClonar?.notaFiscal?.id,
+		dadosClonar?.itens.length,
 		dadosClonar?.notaFiscal?.datahoraemissao,
 		dadosClonar?.notaFiscal?.frete,
 		dadosClonar?.notaFiscal?.tipofrete,
@@ -922,7 +958,11 @@ export default function NovaEmissaoNfePage() {
 		);
 
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(item, usaCsosn),
+			mapearItemNotaReemissaoParaForm(
+				item,
+				usaCsosn,
+				referenciasCfopEmissao(),
+			),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -974,10 +1014,10 @@ export default function NovaEmissaoNfePage() {
 
 		clonarAplicadoRef.current = clonarProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddestinatario: notaFiscal.identidade ?? undefined,
-			idserienfe: serieEncontrada?.id ?? contextoClone.idserienfe ?? undefined,
+			idserienfe: serieEncontrada?.id,
 			confirmarProducao: false,
 			natOp: natOpClone,
 			indPres:
@@ -1057,7 +1097,11 @@ export default function NovaEmissaoNfePage() {
 
 		const usaCsosn = empresaUsaCsosn(empresaFiscal.crt);
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(item, usaCsosn),
+			mapearItemNotaReemissaoParaForm(
+				item,
+				usaCsosn,
+				referenciasCfopEmissao(),
+			),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -1081,11 +1125,13 @@ export default function NovaEmissaoNfePage() {
 
 		rascunhoAplicadoRef.current = rascunhoProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			idnotafiscal: notaFiscal.id,
 			iddestinatario: notaFiscal.identidade ?? undefined,
-			idserienfe: contexto.idserienfe ?? undefined,
+			idserienfe: uuidValido(contexto.idserienfe)
+				? contexto.idserienfe
+				: undefined,
 			confirmarProducao: false,
 			natOp: natOpRascunho,
 			indPres:
@@ -1194,7 +1240,7 @@ export default function NovaEmissaoNfePage() {
 
 		pedidoAplicadoRef.current = pedidoProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddav: contextoPedido.iddav,
 			iddavs: [contextoPedido.iddav],
@@ -1315,7 +1361,7 @@ export default function NovaEmissaoNfePage() {
 
 		pedidoAplicadoRef.current = loteProntoKey;
 
-		form.reset({
+		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddav: contextoLote.iddavs[0],
 			iddavs: contextoLote.iddavs,
@@ -1518,13 +1564,11 @@ export default function NovaEmissaoNfePage() {
 	function resolverItensEmissaoFormulario(
 		dados: EmissaoNfeFormData,
 	): EmissaoNfeFormData {
-		const itensForm = form.getValues("itens") ?? [];
-		const itens =
-			(dados.itens?.length ?? 0) > 0
-				? dados.itens
-				: itensForm.length > 0
-					? itensForm
-					: [];
+		const itens = escolherItensFormularioEmissao(
+			dados.itens,
+			form.getValues("itens"),
+			itensValue,
+		);
 		return { ...dados, itens };
 	}
 
@@ -1875,8 +1919,17 @@ export default function NovaEmissaoNfePage() {
 		});
 
 	function handleInvalidSubmit(erros: FieldErrors<EmissaoNfeFormData>) {
-		const itensForm = form.getValues("itens") ?? [];
-		if (itensForm.length > 0 && erros.itens?.message === "Informe ao menos um item") {
+		const itensForm = escolherItensFormularioEmissao(
+			form.getValues("itens"),
+			itensValue,
+		);
+		const mensagemItens =
+			typeof erros.itens?.message === "string"
+				? erros.itens.message
+				: undefined;
+		if (itensForm.length > 0 && mensagemItens === "Informe ao menos um item") {
+			replaceItens(itensForm);
+			form.setValue("itens", itensForm, { shouldValidate: false });
 			toast.error("Não foi possível emitir a NF-e", {
 				description:
 					"Revise os itens da nota (descrição, NCM, CFOP, quantidade, valor e tributação).",
@@ -1918,6 +1971,7 @@ export default function NovaEmissaoNfePage() {
 		const dadosNormalizados: EmissaoNfeFormData = {
 			...dados,
 			idempresa: empresa.id,
+			idserienfe: serieSelecionada?.id,
 			idnotafiscal: clonarId
 				? undefined
 				: reemitirId
@@ -2027,6 +2081,7 @@ export default function NovaEmissaoNfePage() {
 	}
 
 	function handlePreview() {
+		sincronizarItensFormularioEmissao();
 		const dados = montarDadosEmissaoFormulario(
 			resolverItensEmissaoFormulario(form.getValues()),
 		);
@@ -2052,15 +2107,7 @@ export default function NovaEmissaoNfePage() {
 			return;
 		}
 
-		if (
-			nfeConfiguracao?.ambiente === 1 &&
-			!dadosComPagamento.confirmarProducao
-		) {
-			setModalConfirmacaoAberto(true);
-			return;
-		}
-
-		emitir(dadosComPagamento);
+		emitir({ ...dadosComPagamento, confirmarProducao: true });
 	}
 
 	function montarDadosRascunhoFormulario(
@@ -2088,6 +2135,7 @@ export default function NovaEmissaoNfePage() {
 			idnotafiscal: rascunhoId
 				? (dados.idnotafiscal ?? rascunhoId)
 				: dados.idnotafiscal,
+			idserienfe: serieSelecionada?.id,
 			natOp,
 			itens: dados.itens.map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),
@@ -2100,38 +2148,11 @@ export default function NovaEmissaoNfePage() {
 	}
 
 	function handleSalvarRascunho() {
-		const dados = montarDadosRascunhoFormulario(form.getValues());
+		const dados = montarDadosRascunhoFormulario(
+			resolverItensEmissaoFormulario(form.getValues()),
+		);
 		if (!dados) return;
 		salvarRascunho(dados);
-	}
-
-	function handleConfirmarProducao() {
-		setModalConfirmacaoAberto(false);
-		form.handleSubmit(
-			(dadosBrutos) => {
-				const dados = resolverItensEmissaoFormulario(dadosBrutos);
-				const dadosComPagamento = montarDadosEmissaoFormulario({
-					...dados,
-					confirmarProducao: true,
-				});
-				if (!dadosComPagamento) return;
-
-				if (
-					!isOperacaoDevolucao &&
-					dadosComPagamento.gerarFinanceiro &&
-					!dadosComPagamento.idtipodocumento &&
-					!dadosComPagamento.idcondicaopagto
-				) {
-					toast.error(
-						"Informe o meio de pagamento (ERP) ou a condição de pagamento para gerar o financeiro.",
-					);
-					return;
-				}
-
-				emitir({ ...dadosComPagamento, confirmarProducao: true });
-			},
-			handleInvalidSubmit,
-		)();
 	}
 
 	if (!empresa) {
@@ -2356,7 +2377,11 @@ export default function NovaEmissaoNfePage() {
 
 				<form
 					id="form-emissao-nfe"
-					onSubmit={form.handleSubmit(handleSubmit, handleInvalidSubmit)}
+					onSubmit={(evento) => {
+						evento.preventDefault();
+						sincronizarItensFormularioEmissao();
+						void form.handleSubmit(handleSubmit, handleInvalidSubmit)();
+					}}
 					className="space-y-0"
 				>
 					{/* ── 1. IDENTIFICAÇÃO ──────────────────────────────────────────── */}
@@ -2371,11 +2396,11 @@ export default function NovaEmissaoNfePage() {
 										name="idserienfe"
 										render={({ field }) => (
 											<Select
-												value={field.value ?? "_padrao"}
+												value={
+													uuidValido(field.value) ? field.value : "_padrao"
+												}
 												onValueChange={(valor) =>
-													field.onChange(
-														valor === "_padrao" ? undefined : valor,
-													)
+													field.onChange(uuidValido(valor) ? valor : undefined)
 												}
 											>
 												<SelectTrigger>
@@ -3700,13 +3725,6 @@ export default function NovaEmissaoNfePage() {
 				itemParaEditar={
 					itemEditando !== null ? itensValue[itemEditando.index] : null
 				}
-			/>
-
-			<ModalConfirmacaoProducao
-				open={modalConfirmacaoAberto}
-				onClose={() => setModalConfirmacaoAberto(false)}
-				onConfirmar={handleConfirmarProducao}
-				carregando={isPending}
 			/>
 
 			<DialogRelatorioFiscal

@@ -19,6 +19,7 @@ vi.mock("@/repositories/produtos-repositories", async (importOriginal) => {
 		listarTodosProdutosParaExportacao: vi.fn(),
 	};
 });
+
 vi.mock("@/repositories/entidade-repositories");
 
 const produtoFiscal = {
@@ -127,7 +128,9 @@ describe("exportarProdutosService", () => {
 		expect(resultado.success).toBe(true);
 		if (resultado.success && resultado.body) {
 			const workbook = new ExcelJS.Workbook();
-			await workbook.xlsx.load(resultado.body.content);
+			await workbook.xlsx.load(
+				resultado.body.content as unknown as ArrayBuffer,
+			);
 			const planilha = workbook.getWorksheet("Produtos");
 			expect(planilha).toBeDefined();
 
