@@ -42,7 +42,7 @@ import {
 } from "@/util/http-util.js";
 import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
-import { resolverIdDestNfe } from "@/util/resolver-ide-emissao-nfe.js";
+import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 
 export type SalvarRascunhoEmissaoNfeVendaParametros = {
 	idusuario: string;
@@ -298,12 +298,17 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 		destinatario,
 	});
 	const empresaFiscal = await buscarEmpresaFiscalPorEmpresa(params.idempresa);
-	const idDest = resolverIdDestNfe({
+	const idDest = resolverIdeEmissaoNfe({
 		ufEmitente: empresaFiscal?.uf,
 		ufDestinatario: destinatario?.estado,
-		ufLocalEntrega: params.localEntrega?.uf ?? enderecoEntregaResolvido?.uf,
+		ufLocalEntrega:
+			params.localEntrega?.uf ??
+			(params.informarEnderecoEntregaManual
+				? enderecoEntregaResolvido?.uf
+				: undefined),
 		paisDestinatario: destinatario?.pais,
-	});
+		indPres: params.indPres,
+	}).idDest;
 
 	let idnotafiscal = params.idnotafiscal ?? uuidv4();
 	let atualizacao = false;

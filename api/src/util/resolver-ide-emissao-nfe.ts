@@ -28,11 +28,20 @@ export function destinatarioEhExterior(params: {
 	return !PAISES_BRASIL.has(pais);
 }
 
+/** indPres 1: comprador presente no estabelecimento (retirada no local). */
+const IND_PRES_PRESENCIAL_ESTABELECIMENTO = 1;
+
 export function resolverIdDestNfe(params: {
 	ufEmitente?: string | null;
 	ufDestinatario?: string | null;
 	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
+	/**
+	 * Quando 1, a operação ocorre na UF do emitente mesmo que o destinatário
+	 * esteja cadastrado em outra UF. Entrega explícita em outra UF continua
+	 * interestadual. Os demais indPres seguem a comparação de UF.
+	 */
+	indPres?: number | null;
 }): number {
 	if (
 		destinatarioEhExterior({
@@ -44,19 +53,52 @@ export function resolverIdDestNfe(params: {
 	}
 
 	const ufEmitente = normalizarUf(params.ufEmitente);
-	const ufDestinatario = normalizarUf(
-		params.ufLocalEntrega || params.ufDestinatario,
-	);
+	const ufEntrega = normalizarUf(params.ufLocalEntrega);
+	const ufDestinatario = normalizarUf(params.ufDestinatario);
 
-	if (!ufDestinatario) {
+	if (params.indPres === IND_PRES_PRESENCIAL_ESTABELECIMENTO) {
+		if (ufEntrega && ufEmitente && ufEntrega !== ufEmitente) {
+			return ID_DEST_NFE.INTERESTADUAL;
+		}
 		return ID_DEST_NFE.INTERNA;
 	}
 
-	if (!ufEmitente || ufEmitente === ufDestinatario) {
+	const ufOperacao = ufEntrega || ufDestinatario;
+
+	if (!ufOperacao) {
+		return ID_DEST_NFE.INTERNA;
+	}
+
+	if (!ufEmitente || ufEmitente === ufOperacao) {
 		return ID_DEST_NFE.INTERNA;
 	}
 
 	return ID_DEST_NFE.INTERESTADUAL;
+}
+
+/**
+ * Na venda presencial no estabelecimento, o endereço cadastral do destinatário
+ * não é local de entrega. Enviá-lo no grupo entrega com UF diferente da do
+ * emitente faz a SEFAZ tratar a operação como interestadual.
+ */
+export function omitirEnderecoEntregaCadastralPresencial(params: {
+	indPres?: number | null;
+	informarManual?: boolean;
+	ufEmitente?: string | null;
+	ufEndereco?: string | null;
+}): boolean {
+	if (
+		params.indPres !== IND_PRES_PRESENCIAL_ESTABELECIMENTO ||
+		params.informarManual
+	) {
+		return false;
+	}
+
+	const ufEmitente = normalizarUf(params.ufEmitente);
+	const ufEndereco = normalizarUf(params.ufEndereco);
+	if (ufEmitente.length !== 2 || ufEndereco.length !== 2) return false;
+
+	return ufEmitente !== ufEndereco;
 }
 
 export function resolverIndPresNfe(params: {
@@ -83,17 +125,20 @@ export function resolverIdeEmissaoNfe(params: {
 	indPres?: number | null;
 	finNFe?: number | null;
 }): { idDest: number; indPres: IndPresNfe; indFinal: 1 } {
+	const indPres = resolverIndPresNfe({
+		indPres: params.indPres,
+		finNFe: params.finNFe,
+	});
+
 	return {
 		idDest: resolverIdDestNfe({
 			ufEmitente: params.ufEmitente,
 			ufDestinatario: params.ufDestinatario,
 			ufLocalEntrega: params.ufLocalEntrega,
 			paisDestinatario: params.paisDestinatario,
+			indPres,
 		}),
-		indPres: resolverIndPresNfe({
-			indPres: params.indPres,
-			finNFe: params.finNFe,
-		}),
+		indPres,
 		indFinal: 1,
 	};
 }
