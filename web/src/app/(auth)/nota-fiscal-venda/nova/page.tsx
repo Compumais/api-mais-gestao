@@ -113,7 +113,7 @@ import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emiss
 import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-form";
 import {
 	empresaUsaCsosn,
-	escolherItensFormularioEmissao,
+	itensVisiveisParaEmissao,
 	mapearItemNotaReemissaoParaForm,
 	prepararItemEmissaoFormulario,
 } from "@/util/mapear-produto-item-nfe";
@@ -433,21 +433,11 @@ export default function NovaEmissaoNfePage() {
 		formState: { errors },
 	} = form;
 	const itensValue = form.watch("itens");
-
-	function sincronizarItensFormularioEmissao() {
-		const itens = escolherItensFormularioEmissao(
-			form.getValues("itens"),
-			itensValue,
-		);
-		if (itens.length > 0) {
-			replaceItens(itens);
-			form.setValue("itens", itens, {
-				shouldValidate: false,
-				shouldDirty: true,
-			});
-		}
-		return itens;
-	}
+	const itensEmissaoRef = useRef<EmissaoNfeFormData["itens"]>([]);
+	itensEmissaoRef.current = itensVisiveisParaEmissao(
+		form.getValues("itens"),
+		itensValue,
+	);
 	const informacoesAdicionaisWatch = form.watch("informacoesAdicionais");
 	const localEntregaWatch = form.watch("localEntrega");
 	const observacoesComLotes = useMemo(
@@ -812,11 +802,7 @@ export default function NovaEmissaoNfePage() {
 		);
 
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(
-				item,
-				usaCsosn,
-				referenciasCfopEmissao(),
-			),
+			mapearItemNotaReemissaoParaForm(item, usaCsosn, referenciasCfopEmissao()),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -958,11 +944,7 @@ export default function NovaEmissaoNfePage() {
 		);
 
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(
-				item,
-				usaCsosn,
-				referenciasCfopEmissao(),
-			),
+			mapearItemNotaReemissaoParaForm(item, usaCsosn, referenciasCfopEmissao()),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -1097,11 +1079,7 @@ export default function NovaEmissaoNfePage() {
 
 		const usaCsosn = empresaUsaCsosn(empresaFiscal.crt);
 		const itensForm = itens.map((item) =>
-			mapearItemNotaReemissaoParaForm(
-				item,
-				usaCsosn,
-				referenciasCfopEmissao(),
-			),
+			mapearItemNotaReemissaoParaForm(item, usaCsosn, referenciasCfopEmissao()),
 		);
 
 		const primeiroCfop = itensForm[0]?.cfop;
@@ -1564,8 +1542,9 @@ export default function NovaEmissaoNfePage() {
 	function resolverItensEmissaoFormulario(
 		dados: EmissaoNfeFormData,
 	): EmissaoNfeFormData {
-		const itens = escolherItensFormularioEmissao(
+		const itens = itensVisiveisParaEmissao(
 			dados.itens,
+			itensEmissaoRef.current,
 			form.getValues("itens"),
 			itensValue,
 		);
@@ -1918,31 +1897,40 @@ export default function NovaEmissaoNfePage() {
 			},
 		});
 
-	function handleInvalidSubmit(erros: FieldErrors<EmissaoNfeFormData>) {
-		const itensForm = escolherItensFormularioEmissao(
+	function validarDadosVisiveisEmissao(): EmissaoNfeFormData | null {
+		const itens = itensVisiveisParaEmissao(
+			itensEmissaoRef.current,
 			form.getValues("itens"),
 			itensValue,
 		);
-		const mensagemItens =
-			typeof erros.itens?.message === "string"
-				? erros.itens.message
-				: undefined;
-		if (itensForm.length > 0 && mensagemItens === "Informe ao menos um item") {
-			replaceItens(itensForm);
-			form.setValue("itens", itensForm, { shouldValidate: false });
-			toast.error("Não foi possível emitir a NF-e", {
-				description:
-					"Revise os itens da nota (descrição, NCM, CFOP, quantidade, valor e tributação).",
+
+		if (itens.length === 0) {
+			toast.error("Informe ao menos um item na nota.", {
+				description: "Adicione produtos na seção Itens antes de emitir.",
 			});
-			return;
+			return null;
 		}
 
-		const mensagem =
-			extrairPrimeiraMensagemErroForm(erros) ??
-			"Verifique os campos obrigatórios da nota.";
-		toast.error("Não foi possível emitir a NF-e", {
-			description: mensagem,
+		form.clearErrors("itens");
+		const valores = form.getValues();
+		const parsed = emissaoNfeFormSchema.safeParse({
+			...valores,
+			idempresa: empresa?.id || valores.idempresa,
+			itens,
 		});
+
+		if (!parsed.success) {
+			const issue = parsed.error.issues[0];
+			const caminho = issue?.path.length ? `${issue.path.join(".")}: ` : "";
+			toast.error("Não foi possível emitir a NF-e", {
+				description: issue
+					? `${caminho}${issue.message}`
+					: "Verifique os campos obrigatórios da nota.",
+			});
+			return null;
+		}
+
+		return parsed.data;
 	}
 
 	function montarDadosEmissaoFormulario(
@@ -2081,10 +2069,9 @@ export default function NovaEmissaoNfePage() {
 	}
 
 	function handlePreview() {
-		sincronizarItensFormularioEmissao();
-		const dados = montarDadosEmissaoFormulario(
-			resolverItensEmissaoFormulario(form.getValues()),
-		);
+		const dadosValidos = validarDadosVisiveisEmissao();
+		if (!dadosValidos) return;
+		const dados = montarDadosEmissaoFormulario(dadosValidos);
 		if (!dados) return;
 		setErroPreview(null);
 		gerarPreview(dados);
@@ -2379,8 +2366,9 @@ export default function NovaEmissaoNfePage() {
 					id="form-emissao-nfe"
 					onSubmit={(evento) => {
 						evento.preventDefault();
-						sincronizarItensFormularioEmissao();
-						void form.handleSubmit(handleSubmit, handleInvalidSubmit)();
+						const dadosValidos = validarDadosVisiveisEmissao();
+						if (!dadosValidos) return;
+						handleSubmit(dadosValidos);
 					}}
 					className="space-y-0"
 				>
@@ -3152,9 +3140,11 @@ export default function NovaEmissaoNfePage() {
 									/>
 									{distribuicaoDescontos.descontoItens > 0 && (
 										<p className="text-xs text-muted-foreground">
-											Itens: {formatarMoeda(distribuicaoDescontos.descontoItens)}
+											Itens:{" "}
+											{formatarMoeda(distribuicaoDescontos.descontoItens)}
 											{" · "}
-											Total: {formatarMoeda(distribuicaoDescontos.descontoTotal)}
+											Total:{" "}
+											{formatarMoeda(distribuicaoDescontos.descontoTotal)}
 										</p>
 									)}
 									{errors.totais?.desconto && (
@@ -3284,12 +3274,20 @@ export default function NovaEmissaoNfePage() {
 								{informarEnderecoEntregaManual && (
 									<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 										<Field data-invalid={!!errors.enderecoEntrega?.cep}>
-											<FieldLabel htmlFor="endereco-entrega-cep">CEP</FieldLabel>
+											<FieldLabel htmlFor="endereco-entrega-cep">
+												CEP
+											</FieldLabel>
 											<Input
 												id="endereco-entrega-cep"
 												{...form.register("enderecoEntrega.cep")}
 											/>
-											<FieldError errors={errors.enderecoEntrega?.cep ? [errors.enderecoEntrega.cep] : []} />
+											<FieldError
+												errors={
+													errors.enderecoEntrega?.cep
+														? [errors.enderecoEntrega.cep]
+														: []
+												}
+											/>
 										</Field>
 										<Field data-invalid={!!errors.enderecoEntrega?.logradouro}>
 											<FieldLabel htmlFor="endereco-entrega-logradouro">

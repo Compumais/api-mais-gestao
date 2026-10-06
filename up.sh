@@ -7,7 +7,8 @@
 #
 # Fluxo: pull ff-only → deps API → migrations → build+reload API →
 # build+up nfe-gateway (Docker: sped-nfe + gateway) → deps Web →
-# build:live (next build em staging + publica .next + restart web-mais-gestao).
+# limpa cache da Web → build:live (next build em staging + publica .next +
+# restart web-mais-gestao) → apaga .next/cache publicado e reinicia a Web.
 # Não publica PDV/POS/Android. Não grava senha. Não altera .env.
 #
 # Opcional: SKIP_PULL=1  SKIP_MIGRATE=1  MIGRATE_SQL=api/drizzle/XXXX.sql
@@ -255,9 +256,30 @@ instalar_web() {
 	)
 }
 
+# Cache do Next (fetch/ISR/imagens), staging antigo e cache de ferramenta.
+# Não remove web/.next inteiro: o site no ar continua até o build:live publicar.
+limpar_cache_web() {
+	log "Limpando cache da Web"
+	local relativo alvo
+	for relativo in \
+		"web/.next/cache" \
+		"web/.next-staging" \
+		"web/node_modules/.cache"
+	do
+		alvo="$ROOT/$relativo"
+		if [[ -e "$alvo" ]]; then
+			rm -rf "$alvo"
+			ok "removido $relativo"
+		else
+			ok "já limpo $relativo"
+		fi
+	done
+}
+
 subir_web() {
 	precisa pm2
 	instalar_web
+	limpar_cache_web
 	if pm2_existe "$WEB_PM2"; then
 		log "Build live da Web (next build + publica .next + restart $WEB_PM2)"
 		(
@@ -271,6 +293,12 @@ subir_web() {
 			pnpm_run run build
 			pm2 start "pnpm start -- -p 3000" --name "$WEB_PM2"
 		)
+	fi
+	if [[ -d "$ROOT/web/.next/cache" ]]; then
+		log "Removendo cache publicado da Web e reiniciando $WEB_PM2"
+		rm -rf "$ROOT/web/.next/cache"
+		pm2 restart "$WEB_PM2" --update-env
+		ok "cache de web/.next/cache removido"
 	fi
 	pm2 save
 	esperar_http "$WEB_CHECK_URL" "Web"

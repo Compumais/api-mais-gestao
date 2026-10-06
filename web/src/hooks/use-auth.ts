@@ -3,6 +3,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import {
+	acessoBaseEstaAtivo,
+	limparAcessoBaseAtivo,
+} from "@/lib/acesso-base";
 import { authClient } from "@/lib/auth-client";
 import { limparSessaoFrontend, marcarSessaoFrontend } from "@/lib/auth-session-cookie";
 import {
@@ -11,6 +15,7 @@ import {
 	setSessionToken,
 } from "@/lib/auth-token";
 import { limparEmpresaSelecionada } from "@/provider/empresa-provider";
+import { acessoBaseService } from "@/services/acesso-base.service";
 import { authService } from "@/services/auth.service";
 
 export interface User {
@@ -58,6 +63,10 @@ export function useAuth() {
 
 	const logout = async () => {
 		try {
+			if (acessoBaseEstaAtivo()) {
+				await acessoBaseService.descartar();
+				limparAcessoBaseAtivo();
+			}
 			// authClient.signOut() invalida o cookie de sessão para todos os provedores
 			// (email/senha e Google OAuth)
 			await authClient.signOut();

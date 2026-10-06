@@ -13,6 +13,7 @@ import {
 	getPrimaryClientOrigin,
 } from "../util/cors-origins.js";
 import { resolverPerfilNaCriacao } from "../util/usuario-perfil.js";
+import { acessoBasePlugin } from "./acesso-base-plugin.js";
 
 const PLANO_INICIAL_FALLBACK: TipoPlano = "BASIC";
 
@@ -158,6 +159,7 @@ export const auth = betterAuth({
 		cookiePrefix: "mais-gestao",
 	},
 	plugins: [
+		acessoBasePlugin(),
 		customSession(async ({ user, session }) => {
 			const dadosUsuario = await db
 				.select({

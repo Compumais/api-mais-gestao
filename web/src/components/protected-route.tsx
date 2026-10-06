@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { BannerAcessoBase } from "@/components/banner-acesso-base";
 import { LogoMaisGestao } from "@/components/logo-mais-gestao";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
@@ -221,5 +222,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		return loadingScreen;
 	}
 
-	return <>{children}</>;
+	return (
+		<>
+			<BannerAcessoBase />
+			{children}
+		</>
+	);
 }
