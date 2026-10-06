@@ -27,7 +27,7 @@ export function montarRegistro53(nota: NotaSintegra): string {
 		formatarDecimal(nota.baseIcmsSt, 13, 2),
 		formatarDecimal(nota.valorIcmsSt, 13, 2),
 		formatarDecimal("0", 13, 2),
-		formatarDecimal("0", 13, 2),
 		nota.situacao,
+		" ",
 	]);
 }

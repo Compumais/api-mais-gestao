@@ -46,10 +46,9 @@ export function asApiDecimal(
 }
 
 async function baseUrl(): Promise<string> {
-	return (await getConfig("api_url", "https://apimaisgestao.compumais.com")).replace(
-		/\/$/,
-		"",
-	);
+	return (
+		await getConfig("api_url", "https://apimaisgestao.compumais.com")
+	).replace(/\/$/, "");
 }
 
 function mensagemErroApi(json: unknown, status: number): string {
@@ -237,7 +236,10 @@ export async function baixarImagemProduto(
 			signal: controller.signal,
 		});
 		if (!resposta.ok) {
-			throw new ApiError(`Falha ao baixar imagem: HTTP ${resposta.status}`, resposta.status);
+			throw new ApiError(
+				`Falha ao baixar imagem: HTTP ${resposta.status}`,
+				resposta.status,
+			);
 		}
 		const tipo = resposta.headers.get("content-type")?.split(";")[0] ?? "";
 		if (!["image/jpeg", "image/png", "image/webp"].includes(tipo)) {
@@ -269,7 +271,10 @@ export async function baixarImagemGrupoGourmet(
 		headers: authHeaders,
 	});
 	if (!resposta.ok) {
-		throw new ApiError(`Falha ao baixar imagem: HTTP ${resposta.status}`, resposta.status);
+		throw new ApiError(
+			`Falha ao baixar imagem: HTTP ${resposta.status}`,
+			resposta.status,
+		);
 	}
 	const tipo = resposta.headers.get("content-type")?.split(";")[0] ?? "";
 	if (!["image/jpeg", "image/png", "image/webp"].includes(tipo)) {
@@ -1186,6 +1191,7 @@ export function extrairNfceDaBaixa(
 	idnotafiscal?: string;
 	cStat?: string;
 	erro?: string;
+	situacao?: string;
 	xml?: string;
 	serie?: string;
 	numero?: number;
@@ -1213,11 +1219,27 @@ export function extrairNfceDaBaixa(
 			? ((nfce as { cStat?: string }).cStat ?? undefined)
 			: undefined;
 
+	const situacao =
+		nfce && "situacao" in nfce
+			? ((nfce as { situacao?: string }).situacao ?? undefined)
+			: undefined;
+	const mensagemOperacional =
+		nfce && "mensagemOperacional" in nfce
+			? ((nfce as { mensagemOperacional?: string }).mensagemOperacional ??
+				undefined)
+			: undefined;
+
 	const emitida = Boolean(nfce?.emitida);
 
 	let erro: string | undefined;
 	if (!emitida) {
-		if (cStat && erroBase) {
+		if (mensagemOperacional) {
+			erro = mensagemOperacional;
+		} else if (situacao === "pendente_consulta" || situacao === "conflito") {
+			erro =
+				erroBase ??
+				"A situação fiscal desta NFC-e está sendo confirmada com a SEFAZ. Não realize uma nova emissão enquanto a conciliação estiver pendente.";
+		} else if (cStat && erroBase) {
 			erro = `Rejeição ${cStat}: ${erroBase}`;
 		} else if (erroBase) {
 			erro = erroBase;
@@ -1249,6 +1271,7 @@ export function extrairNfceDaBaixa(
 			baixa.emissaoNfce?.idnotafiscal ?? baixa.idnotafiscal ?? undefined,
 		cStat,
 		erro,
+		situacao,
 		xml,
 		serie,
 		numero,

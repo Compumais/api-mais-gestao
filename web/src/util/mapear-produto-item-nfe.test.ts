@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
 import {
 	ehCsosn,
+	escolherItensFormularioEmissao,
 	itemPrecisaAliquotaIcmsParaSt,
+	mapearItemNotaReemissaoParaForm,
 	sugerirIcmsStPeloMva,
 } from "./mapear-produto-item-nfe";
 
@@ -114,5 +116,64 @@ describe("itemPrecisaAliquotaIcmsParaSt", () => {
 				aliquotaIcmsSt: 0,
 			}),
 		).toBe(false);
+	});
+});
+
+describe("escolherItensFormularioEmissao", () => {
+	it("usa a lista com mais itens entre as fontes do formulário", () => {
+		const item: ItemNfe = {
+			descricao: "Produto",
+			ncm: "22084000",
+			cfop: "5102",
+			unidade: "UN",
+			quantidade: 1,
+			valorUnitario: 10,
+		};
+
+		expect(escolherItensFormularioEmissao([], [item], undefined)).toEqual([
+			item,
+		]);
+	});
+});
+
+describe("mapearItemNotaReemissaoParaForm", () => {
+	it("resolve o CFOP pelo idcfop quando a coluna cfop veio vazia", () => {
+		const mapeado = mapearItemNotaReemissaoParaForm(
+			{
+				descricao: "Cachaça",
+				ncm: "22084000",
+				quantidade: "2.000000",
+				precounitario: "8.50",
+				idcfop: "cfop-5405",
+				cest: "0300100",
+				situacaotributariasn: "102",
+			},
+			true,
+			[{ id: "cfop-5405", codigo: "5405" }],
+		);
+
+		expect(mapeado.cfop).toBe("5405");
+		expect(mapeado.cest).toBe("0300100");
+		expect(mapeado.csosn).toBe("102");
+		expect(mapeado.quantidade).toBe(2);
+		expect(mapeado.valorUnitario).toBe(8.5);
+	});
+
+	it("preserva o CFOP gravado na coluna da nota", () => {
+		const mapeado = mapearItemNotaReemissaoParaForm(
+			{
+				descricao: "Produto",
+				ncm: "22084000",
+				cfop: "5102",
+				idcfop: "cfop-5405",
+				precounitario: 10,
+				quantidade: 1,
+			},
+			false,
+			[{ id: "cfop-5405", codigo: "5405" }],
+		);
+
+		expect(mapeado.cfop).toBe("5102");
+		expect(mapeado.cst).toBe("00");
 	});
 });

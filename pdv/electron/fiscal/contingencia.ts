@@ -122,7 +122,10 @@ type ItemFiscalXml = ItemCarrinho & {
 	aliquotaCofins?: number;
 };
 
-function grupoIcmsXml(item: ItemFiscalXml, crt: number): {
+function grupoIcmsXml(
+	item: ItemFiscalXml,
+	crt: number,
+): {
 	xml: string;
 	base: number;
 	valor: number;
@@ -399,7 +402,10 @@ function validarEmitenteFiscal(emitente: EmitenteFiscalLocal): void {
 		["número", emitente.numero],
 		["bairro", emitente.bairro],
 		["município", emitente.municipio],
-		["código IBGE do município", onlyDigits(emitente.codigoMunicipio ?? "").length === 7],
+		[
+			"código IBGE do município",
+			onlyDigits(emitente.codigoMunicipio ?? "").length === 7,
+		],
 		["UF", emitente.uf],
 		["CRT", emitente.crt === 1 || emitente.crt === 2 || emitente.crt === 3],
 	] as const;
@@ -496,6 +502,7 @@ export async function emitirOuContingencia(params: {
 		idnotafiscal?: string;
 		cStat?: string;
 		erro?: string;
+		situacao?: string;
 		indisponivel?: boolean;
 		naoFiscal?: boolean;
 		xml?: string;
@@ -546,6 +553,22 @@ export async function emitirOuContingencia(params: {
 			chave: online.chave,
 			qrcode: online.qrCode,
 			mensagem: "NFC-e autorizada",
+		};
+	}
+
+	if (
+		online.situacao === "pendente_consulta" ||
+		online.situacao === "conflito"
+	) {
+		await atualizarVendaSync(params.idvenda, {
+			nfce_status: online.situacao,
+		});
+		return {
+			modo: "erro",
+			cStat: online.cStat,
+			mensagem:
+				online.erro ??
+				"A situação fiscal desta NFC-e está sendo confirmada com a SEFAZ. Não realize uma nova emissão enquanto a conciliação estiver pendente.",
 		};
 	}
 
@@ -659,10 +682,7 @@ export async function emitirContingencia(
 	}
 	let itensFiscais: ItemFiscalXml[];
 	try {
-		itensFiscais = await carregarItensFiscais(
-			venda.itens,
-			emitente.crt ?? 0,
-		);
+		itensFiscais = await carregarItensFiscais(venda.itens, emitente.crt ?? 0);
 	} catch (err) {
 		await atualizarVendaSync(idvenda, { nfce_status: "erro_config" });
 		return {

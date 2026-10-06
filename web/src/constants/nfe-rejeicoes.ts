@@ -84,7 +84,7 @@ export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 	"539": {
 		descricao: "Duplicidade de NF-e/NFC-e, com diferença na Chave de Acesso",
 		instrucao:
-			"A SEFAZ já autorizou este número/série com outra chave. Consulte a chave na retaguarda e não retransmita o mesmo número em outra venda.",
+			"A SEFAZ já autorizou este número com outra chave. O ERP consulta essa chave e recupera a autorização se o documento for o mesmo. Não gere outra NFC-e enquanto a conciliação não terminar.",
 	},
 	"591": {
 		descricao: "Informar a tributação do ICMS para cada item",
@@ -94,6 +94,12 @@ export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 		descricao:
 			"O número de série e/ou número da NF-e informado já foi utilizado",
 		instrucao: "Aguarde a emissão ser processada ou utilize outra numeração.",
+	},
+	"704": {
+		descricao:
+			"NFC-e ou NF-e com DANFE Simplificado Tipo 2 com Data-Hora de emissão atrasada",
+		instrucao:
+			"A SEFAZ só aceita a NFC-e online se o horário de emissão estiver a no máximo 5 minutos do recebimento. Retransmita para gerar um horário novo. Se a rejeição continuar na hora, sincronize o relógio do servidor com o horário de Brasília.",
 	},
 	"747": {
 		descricao: "Certificado Revogado",

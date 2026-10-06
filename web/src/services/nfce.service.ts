@@ -34,6 +34,8 @@ export interface ResultadoReemissaoNfce {
 	cStat?: string;
 	xMotivo?: string;
 	erro?: string;
+	situacao?: string;
+	mensagemOperacional?: string;
 	pendencias?: Array<{ codigo: string; mensagem: string }>;
 }
 
@@ -64,6 +66,8 @@ export interface ResultadoEmitirNfceVendaNaoFiscal {
 	cStat?: string;
 	xMotivo?: string;
 	erro?: string;
+	situacao?: string;
+	mensagemOperacional?: string;
 	pendencias?: Array<{ codigo: string; mensagem: string }>;
 	avisosEstoque?: string[];
 }
@@ -281,6 +285,17 @@ export const nfceService = {
 				})),
 				pagamentos: params.pagamento,
 			},
+		);
+		return data;
+	},
+
+	async consultarSituacao(params: {
+		idempresa: string;
+		idnotafiscal: string;
+	}): Promise<ResultadoReemissaoNfce> {
+		const { data } = await api.post<ResultadoReemissaoNfce>(
+			`/nfce/${params.idnotafiscal}/consultar-situacao`,
+			{ idempresa: params.idempresa },
 		);
 		return data;
 	},

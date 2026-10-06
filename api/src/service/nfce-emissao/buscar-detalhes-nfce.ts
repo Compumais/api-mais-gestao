@@ -166,7 +166,12 @@ function montarRejeicao(nota: {
 	codigostatustransmissaonfe?: number | null;
 }): RejeicaoDetalheNfce | null {
 	const statusComRejeicao =
-		nota.status === NFE_STATUS.REJEITADA || nota.status === NFE_STATUS.DENEGADA;
+		nota.status === NFE_STATUS.REJEITADA ||
+		nota.status === NFE_STATUS.DENEGADA ||
+		nota.status === NFE_STATUS.CONFLITO ||
+		nota.status === NFE_STATUS.PENDENTE_CONSULTA ||
+		nota.status === NFE_STATUS.TRANSMITINDO ||
+		nota.status === NFE_STATUS.RECUPERANDO;
 	if (!statusComRejeicao) {
 		return null;
 	}

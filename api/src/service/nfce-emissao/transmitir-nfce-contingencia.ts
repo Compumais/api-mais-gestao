@@ -21,6 +21,7 @@ import {
 	buscarVendaPdvGourmetPorNotaFiscalNfce,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
+import { conciliarNfceDocumento } from "@/service/nfce-emissao/conciliar-nfce-documento.js";
 import { reconciliarNfceAutorizadaSefaz } from "@/service/nfce-emissao/reconciliar-nfce-autorizada-sefaz.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { numeroFiscalPreenchido } from "@/util/completar-listagem-nfce.js";
@@ -311,6 +312,35 @@ async function processarTransmissaoNota(
 			xmlAssinado: transmissao.xmlAssinado,
 			xmlAutorizado,
 		};
+	}
+
+	if (transmissao.cStat === "539") {
+		await atualizarNotaFiscal(nota.id, {
+			status: NFE_STATUS.RECUPERANDO,
+			mensagemtransmissaonfe: transmissao.xMotivo ?? null,
+			codigostatusprotocolonfe: 539,
+			arquivoxmlassinado: transmissao.xmlAssinado ?? nota.arquivoxmlassinado,
+		});
+		const notaAtualizada = await buscarNotaFiscalPorId(nota.id);
+		if (notaAtualizada) {
+			const conciliacao = await conciliarNfceDocumento({
+				nota: notaAtualizada,
+				motivoTentativa: "contingencia_539",
+			});
+			return {
+				idnotafiscal: nota.id,
+				status: conciliacao.resultado.emitida ? "autorizada" : "revisao_manual",
+				transmitida: conciliacao.resultado.emitida,
+				chave: conciliacao.resultado.chave ?? chave,
+				hashXml: hash,
+				...(conciliacao.resultado.cStat
+					? { cStat: conciliacao.resultado.cStat }
+					: { cStat: "539" }),
+				motivo: conciliacao.resultado.mensagemOperacional ?? conciliacao.resultado.xMotivo,
+				protocolo: conciliacao.resultado.protocolo,
+				xmlAutorizado: conciliacao.resultado.xml,
+			};
+		}
 	}
 
 	if (!transmissao.cStat || transmissao.cStat === "204") {

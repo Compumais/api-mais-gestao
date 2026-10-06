@@ -8,6 +8,7 @@ import {
 	listarResumoNfceDiarioSintegra,
 	somarIpiPorNota,
 } from "@/repositories/sintegra-repositories.js";
+import { resolverNomeMunicipioIbge } from "@/util/resolver-nome-municipio-ibge.js";
 import { ContadorRegistrosSintegra } from "./contador-registros.js";
 import { montarRegistro10, montarRegistro11 } from "./registros/registro-10.js";
 import { montarRegistro50 } from "./registros/registro-50.js";
@@ -60,6 +61,17 @@ export async function gerarArquivoSintegra(
 		throw new Error("Contribuinte não encontrado.");
 	}
 
+	const codigoIbge = contribuinte.codigoMunicipioIbge?.replace(/\D/g, "") ?? "";
+	if (codigoIbge.length === 7) {
+		const nomeMunicipio = await resolverNomeMunicipioIbge(
+			codigoIbge,
+			contribuinte.uf,
+		);
+		if (nomeMunicipio) {
+			contribuinte.municipio = nomeMunicipio;
+		}
+	}
+
 	linhas.push(
 		montarRegistro10({
 			contribuinte,
@@ -94,10 +106,7 @@ export async function gerarArquivoSintegra(
 	}
 
 	for (const nota of notasReg50) {
-		if (
-			parseNumero(nota.baseIcmsSt) > 0 ||
-			parseNumero(nota.valorIcmsSt) > 0
-		) {
+		if (parseNumero(nota.baseIcmsSt) > 0 || parseNumero(nota.valorIcmsSt) > 0) {
 			linhas.push(montarRegistro53(nota));
 			contador.incrementar("53");
 		}
@@ -138,7 +147,7 @@ export async function gerarArquivoSintegra(
 
 	const codigosProdutos = [
 		...new Set(
-			[...itens, ...inventario.map((item) => ({ codigoProduto: item.codigoProduto }))]
+			[...itensReg54, ...(params.incluirInventario ? inventario : [])]
 				.map((item) => item.codigoProduto)
 				.filter(Boolean) as string[],
 		),
@@ -159,13 +168,11 @@ export async function gerarArquivoSintegra(
 		contador.incrementar("75");
 	}
 
-	const totalGeral =
-		contador.totalGeral() + 1;
 	const registros90 = montarRegistros90({
 		cnpj: contribuinte.cnpj,
 		inscricaoEstadual: contribuinte.inscricaoEstadual,
 		contadores: contador.obterTodos(),
-		totalGeral,
+		totalSemRegistros90: contador.totalGeral(),
 	});
 
 	for (const registro90 of registros90) {

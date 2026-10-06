@@ -57,7 +57,6 @@ import { PageContainer } from "../../components/page-container";
 import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
 import { CardErroNfe } from "../components/card-erro-nfe";
 import { DialogRelatorioFiscal } from "../components/dialog-relatorio-fiscal";
-import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
 import { ModalEventoNfe } from "../components/modal-evento-nfe";
 import { ResumoDestinatarioNfe } from "../components/resumo-destinatario-nfe";
 import { StatusNfeBadge } from "../components/status-nfe-badge";
@@ -115,7 +114,6 @@ export default function DetalheNfePage({
 	const { id } = use(params);
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const [modalConfirmacaoAberto, setModalConfirmacaoAberto] = useState(false);
 	const [relatorioFiscal, setRelatorioFiscal] =
 		useState<RelatorioAuditoriaFiscal | null>(null);
 	const [modalEvento, setModalEvento] = useState<
@@ -218,16 +216,6 @@ export default function DetalheNfePage({
 	});
 
 	function handleTransmitir() {
-		if (nfeConfiguracao?.ambiente === 1) {
-			setModalConfirmacaoAberto(true);
-			return;
-		}
-
-		transmitir(false);
-	}
-
-	function handleConfirmarTransmissaoProducao() {
-		setModalConfirmacaoAberto(false);
 		transmitir(true);
 	}
 
@@ -596,13 +584,6 @@ export default function DetalheNfePage({
 						<Button variant="ghost">Voltar</Button>
 					</Link>
 				</div>
-
-				<ModalConfirmacaoProducao
-					open={modalConfirmacaoAberto}
-					onClose={() => setModalConfirmacaoAberto(false)}
-					onConfirmar={handleConfirmarTransmissaoProducao}
-					carregando={transmitindo}
-				/>
 
 				<DialogRelatorioFiscal
 					aberto={relatorioFiscal != null}

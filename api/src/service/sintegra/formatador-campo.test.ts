@@ -5,6 +5,7 @@ import {
 	formatarDataAaaammdd,
 	formatarDecimal,
 	formatarNumerico,
+	formatarSerie,
 	montarLinha,
 	TAMANHO_LINHA,
 } from "./formatador-campo.js";
@@ -29,6 +30,11 @@ describe("formatador-campo SINTEGRA", () => {
 	it("deve normalizar alfanumérico sem acentos", () => {
 		expect(formatarAlfanumerico("São Paulo", 10).length).toBe(10);
 		expect(formatarAlfanumerico("São Paulo", 10).trim()).toBe("SAO PAULO");
+	});
+
+	it("completa série numérica com zeros à esquerda", () => {
+		expect(formatarSerie("1")).toBe("001");
+		expect(formatarSerie("D")).toBe("D  ");
 	});
 
 	it("deve montar linha com 126 posições", () => {
