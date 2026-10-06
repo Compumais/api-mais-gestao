@@ -382,6 +382,9 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE pedido_fila ADD COLUMN localizacao TEXT",
 			);
 		}
+		if (!pedidoFilaNomes.has("garcom")) {
+			await database.query("ALTER TABLE pedido_fila ADD COLUMN garcom TEXT");
+		}
 	}
 
 	const grupoGourmetCols = await database.query<{ column_name: string }>(

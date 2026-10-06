@@ -55,18 +55,37 @@ class ProdutoLan {
       };
 }
 
+class ItemContaLan {
+  const ItemContaLan({required this.id});
+
+  final String id;
+
+  factory ItemContaLan.fromJson(Map<String, dynamic> json) {
+    return ItemContaLan(id: '${json['id'] ?? ''}');
+  }
+}
+
 class ContaLan {
   const ContaLan({
     required this.id,
     required this.numero,
     this.nomecliente,
+    this.itens = const [],
   });
 
   final String id;
   final int numero;
   final String? nomecliente;
+  final List<ItemContaLan> itens;
 
   factory ContaLan.fromJson(Map<String, dynamic> json) {
+    final brutos = json['itens'];
+    final itens = brutos is List
+        ? brutos
+            .whereType<Map>()
+            .map((e) => ItemContaLan.fromJson(Map<String, dynamic>.from(e)))
+            .toList()
+        : const <ItemContaLan>[];
     return ContaLan(
       id: '${json['id'] ?? ''}',
       numero: (json['numero_mesa'] as num?)?.toInt() ??
@@ -74,6 +93,7 @@ class ContaLan {
           (json['numeromesa'] as num?)?.toInt() ??
           0,
       nomecliente: json['nomecliente']?.toString(),
+      itens: itens,
     );
   }
 }

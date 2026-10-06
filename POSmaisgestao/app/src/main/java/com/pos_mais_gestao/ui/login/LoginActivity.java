@@ -3,11 +3,13 @@ package com.pos_mais_gestao.ui.login;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -28,6 +30,7 @@ public class LoginActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private PrefsStore prefs;
     private ApiClient api;
+    private NestedScrollView scrollLogin;
     private TextInputLayout layoutUrlApi;
     private TextInputEditText inputUrlApi;
     private TextInputEditText inputEmail;
@@ -55,6 +58,7 @@ public class LoginActivity extends AppCompatActivity {
         prefs = app.getPrefsStore();
         api = app.getApiClient();
 
+        scrollLogin = findViewById(R.id.scrollLogin);
         layoutUrlApi = findViewById(R.id.layoutUrlApi);
         inputUrlApi = findViewById(R.id.inputUrlApi);
         inputEmail = findViewById(R.id.inputEmail);
@@ -83,8 +87,26 @@ public class LoginActivity extends AppCompatActivity {
             sugerirUrlPadrao(local);
         });
         SoftInputHelper.hideOnStart(this);
+        configurarScrollTeclado(inputUrlApi);
+        configurarScrollTeclado(inputEmail);
+        configurarScrollTeclado(inputSenha);
+        inputSenha.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                entrar();
+                return true;
+            }
+            return false;
+        });
         btnEntrar.setOnClickListener(v -> entrar());
         btnLerQrPdv.setOnClickListener(v -> scanHelper.iniciar());
+    }
+
+    private void configurarScrollTeclado(TextInputEditText campo) {
+        campo.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && scrollLogin != null) {
+                v.postDelayed(() -> scrollLogin.smoothScrollTo(0, Math.max(0, v.getBottom() - 80)), 180);
+            }
+        });
     }
 
     private void aplicarQrPdv(String conteudo) {
@@ -115,12 +137,12 @@ public class LoginActivity extends AppCompatActivity {
 
     private void entrar() {
         String url = text(inputUrlApi);
-        String email = text(inputEmail);
+        String login = text(inputEmail);
         String senha = text(inputSenha);
         boolean local = radioGrupoConexao.getCheckedRadioButtonId() == R.id.radioConexaoPdv;
 
-        if (url.isEmpty() || email.isEmpty() || senha.isEmpty()) {
-            Toast.makeText(this, "Preencha URL, e-mail e senha", Toast.LENGTH_SHORT).show();
+        if (url.isEmpty() || login.isEmpty() || senha.isEmpty()) {
+            Toast.makeText(this, R.string.login_preencha_campos, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -130,7 +152,7 @@ public class LoginActivity extends AppCompatActivity {
 
         executor.execute(() -> {
             try {
-                api.login(email, senha);
+                api.login(login, senha);
                 runOnUiThread(() -> {
                     setLoading(false);
                     Intent intent = new Intent(this, EmpresaActivity.class);

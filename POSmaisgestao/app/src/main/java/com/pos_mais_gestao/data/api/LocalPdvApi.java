@@ -58,6 +58,7 @@ public class LocalPdvApi {
     public JsonObject login(String email, String password) throws ApiException {
         JsonObject body = new JsonObject();
         body.addProperty("email", email);
+        body.addProperty("login", email);
         body.addProperty("password", password);
         body.addProperty("identificador", terminalId.get());
         return post("/pos/login", body.toString(), false);

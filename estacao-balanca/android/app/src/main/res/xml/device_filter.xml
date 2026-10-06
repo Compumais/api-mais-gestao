@@ -21,4 +21,7 @@
 
     <!-- 0x2341 Arduino CDC -->
     <usb-device vendor-id="9025" />
+
+    <!-- Impressora USB classe 7 (papel de 48 mm) -->
+    <usb-device class="7" subclass="1" protocol="2" />
 </resources>

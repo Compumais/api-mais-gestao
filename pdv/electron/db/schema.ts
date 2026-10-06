@@ -203,6 +203,7 @@ CREATE TABLE IF NOT EXISTS pedido_fila (
 	observacao_pedido TEXT,
 	mesa_fisica TEXT,
 	localizacao TEXT,
+	garcom TEXT,
 	status TEXT NOT NULL DEFAULT 'pendente',
 	criadoem TEXT NOT NULL,
 	entregueem TEXT
@@ -360,6 +361,24 @@ CREATE TABLE IF NOT EXISTS whatsapp_mensagem (
 	lida INTEGER NOT NULL DEFAULT 0,
 	criadoem TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS vistoria_conta (
+	id TEXT PRIMARY KEY NOT NULL,
+	acao TEXT NOT NULL,
+	idconta TEXT NOT NULL,
+	numero_mesa INTEGER NOT NULL DEFAULT 0,
+	nomecliente TEXT,
+	usuario TEXT NOT NULL,
+	origem TEXT NOT NULL DEFAULT 'pdv',
+	iditem TEXT,
+	descricao TEXT,
+	quantidade DOUBLE PRECISION,
+	precounitario DOUBLE PRECISION,
+	precototal DOUBLE PRECISION,
+	valortotal DOUBLE PRECISION,
+	detalhe TEXT,
+	criadoem TEXT NOT NULL
+);
 `;
 
 /**
@@ -391,6 +410,9 @@ CREATE INDEX IF NOT EXISTS idx_cliente_cnpjcpf ON cliente(cnpjcpf);
 CREATE INDEX IF NOT EXISTS idx_bandeira_descricao ON bandeira_cartao(descricao);
 CREATE INDEX IF NOT EXISTS idx_meio_pagamento_descricao ON meio_pagamento(descricao);
 CREATE INDEX IF NOT EXISTS idx_conta_mesa_modalidade ON conta_mesa(modalidade, status);
+CREATE INDEX IF NOT EXISTS idx_vistoria_conta_criadoem ON vistoria_conta(criadoem DESC);
+CREATE INDEX IF NOT EXISTS idx_vistoria_conta_acao ON vistoria_conta(acao, criadoem DESC);
+CREATE INDEX IF NOT EXISTS idx_vistoria_conta_numero ON vistoria_conta(numero_mesa, criadoem DESC);
 CREATE INDEX IF NOT EXISTS idx_cliente_pdv_telefone ON cliente_pdv(telefone);
 CREATE INDEX IF NOT EXISTS idx_cliente_pdv_nome ON cliente_pdv(nome);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_conversa_telefone ON whatsapp_conversa(telefone_e164);

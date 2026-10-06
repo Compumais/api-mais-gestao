@@ -16,6 +16,8 @@ type TerminalPos = {
 	identificador: string;
 	token: string;
 	vistoem: string;
+	userid?: string;
+	username?: string;
 };
 
 export async function lerTerminais(): Promise<TerminalPdv[]> {
@@ -66,10 +68,14 @@ async function lerTerminaisPos(): Promise<TerminalPos[]> {
 				const identificador = String(terminal.identificador ?? "").trim();
 				const token = String(terminal.token ?? "").trim();
 				if (!identificador || !token) return null;
+				const userid = String(terminal.userid ?? "").trim();
+				const username = String(terminal.username ?? "").trim();
 				return {
 					identificador,
 					token,
 					vistoem: String(terminal.vistoem ?? ""),
+					...(userid ? { userid } : {}),
+					...(username ? { username } : {}),
 				};
 			})
 			.filter((item): item is TerminalPos => item !== null);
@@ -80,6 +86,7 @@ async function lerTerminaisPos(): Promise<TerminalPos[]> {
 
 export async function registrarTerminalPos(
 	identificadorInformado: string,
+	operador?: { userid?: string | null; username?: string | null },
 ): Promise<string> {
 	const identificador = identificadorInformado.trim();
 	if (!identificador) {
@@ -90,10 +97,14 @@ export async function registrarTerminalPos(
 		(terminal) => terminal.identificador === identificador,
 	);
 	const token = existente?.token || uuidv4();
+	const userid = operador?.userid?.trim() || existente?.userid;
+	const username = operador?.username?.trim() || existente?.username;
 	const atualizado: TerminalPos = {
 		identificador,
 		token,
 		vistoem: new Date().toISOString(),
+		...(userid ? { userid } : {}),
+		...(username ? { username } : {}),
 	};
 	await setConfig(
 		CHAVE_POS,
@@ -105,6 +116,16 @@ export async function registrarTerminalPos(
 		]),
 	);
 	return token;
+}
+
+export async function garcomDoTokenPos(token: string): Promise<string | null> {
+	const limpo = token.trim();
+	if (!limpo) return null;
+	const terminais = await lerTerminaisPos();
+	const nome = terminais
+		.find((terminal) => terminal.token === limpo)
+		?.username?.trim();
+	return nome || null;
 }
 
 export async function numerosOcupadosPorSecundarios(

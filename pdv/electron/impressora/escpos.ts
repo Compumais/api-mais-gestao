@@ -18,6 +18,10 @@ import {
 	type TamanhoFonteImpressao,
 } from "./fonte-impressao";
 import {
+	type ContaEmergenciaImpressao,
+	montarTextoEmergenciaContas,
+} from "./emergencia-contas-layout";
+import {
 	type FormatoItemProducao,
 	montarLinhasPedidoProducao,
 } from "./pedido-producao-layout";
@@ -212,6 +216,21 @@ export async function imprimirPreConta(
 	linhas.push("Confira os itens antes de pagar.");
 	linhas.push("\n\n\n");
 	return enviarParaImpressora(linhas.join("\n"));
+}
+
+/** Relatório de emergência: não altera conta, caixa nem sessão. */
+export async function imprimirEmergenciaContas(
+	contas: ContaEmergenciaImpressao[],
+	rotulo: string,
+): Promise<{ ok: boolean; modo: string }> {
+	if (!contas.length) {
+		throw new Error("Nenhuma conta em aberto");
+	}
+	return enviarTextoImpressora(
+		montarTextoEmergenciaContas({ rotulo, contas }),
+		await destinoFiscal(),
+		{ estrito: true },
+	);
 }
 
 export async function imprimirComprovanteFechamentoCaixa(

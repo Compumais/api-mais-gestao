@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:estacao_balanca/core/lan_client.dart';
-import 'package:estacao_balanca/core/models.dart';
 import 'package:estacao_balanca/core/prefs.dart';
 import 'package:estacao_balanca/theme/mg_theme.dart';
 import 'package:estacao_balanca/widgets/mg_logo.dart';
@@ -17,12 +16,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _urlCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
-  final _senhaCtrl = TextEditingController();
   bool _busy = false;
   String? _erro;
-  List<EmpresaLan> _empresas = [];
-  EmpresaLan? _empresa;
 
   @override
   void initState() {
@@ -33,8 +28,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _urlCtrl.dispose();
-    _emailCtrl.dispose();
-    _senhaCtrl.dispose();
     super.dispose();
   }
 
@@ -46,38 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await widget.prefs.aplicarUrlOuQr(_urlCtrl.text);
       await widget.client.health();
-      await widget.client.login(_emailCtrl.text, _senhaCtrl.text);
-      final empresas = await widget.client.listarEmpresas();
-      if (!mounted) return;
-      if (empresas.isEmpty) {
-        Navigator.of(context).pushReplacementNamed('/estacao');
-        return;
-      }
-      if (empresas.length == 1) {
-        await widget.client.selecionarEmpresa(empresas.first);
-        if (!mounted) return;
-        Navigator.of(context).pushReplacementNamed('/estacao');
-        return;
-      }
-      setState(() {
-        _empresas = empresas;
-        _empresa = empresas.first;
-      });
-    } catch (e) {
-      setState(() => _erro = e.toString());
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _confirmarEmpresa() async {
-    if (_empresa == null) return;
-    setState(() {
-      _busy = true;
-      _erro = null;
-    });
-    try {
-      await widget.client.selecionarEmpresa(_empresa!);
+      await widget.client.conectarEstacao();
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed('/estacao');
     } catch (e) {
@@ -89,20 +51,13 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final selecionandoEmpresa = _empresas.isNotEmpty;
     final wide = MediaQuery.sizeOf(context).width >= 900;
 
     final form = _LoginCard(
-      selecionandoEmpresa: selecionandoEmpresa,
       urlCtrl: _urlCtrl,
-      emailCtrl: _emailCtrl,
-      senhaCtrl: _senhaCtrl,
-      empresas: _empresas,
-      empresa: _empresa,
-      onEmpresa: (v) => setState(() => _empresa = v),
       erro: _erro,
       busy: _busy,
-      onSubmit: selecionandoEmpresa ? _confirmarEmpresa : _entrar,
+      onSubmit: _entrar,
     );
 
     if (!wide) {
@@ -174,25 +129,13 @@ class _LoginPageState extends State<LoginPage> {
 
 class _LoginCard extends StatelessWidget {
   const _LoginCard({
-    required this.selecionandoEmpresa,
     required this.urlCtrl,
-    required this.emailCtrl,
-    required this.senhaCtrl,
-    required this.empresas,
-    required this.empresa,
-    required this.onEmpresa,
     required this.erro,
     required this.busy,
     required this.onSubmit,
   });
 
-  final bool selecionandoEmpresa;
   final TextEditingController urlCtrl;
-  final TextEditingController emailCtrl;
-  final TextEditingController senhaCtrl;
-  final List<EmpresaLan> empresas;
-  final EmpresaLan? empresa;
-  final ValueChanged<EmpresaLan?> onEmpresa;
   final String? erro;
   final bool busy;
   final VoidCallback onSubmit;
@@ -228,58 +171,27 @@ class _LoginCard extends StatelessWidget {
                     const SizedBox(height: 20),
                   ],
                   Text(
-                    selecionandoEmpresa ? 'Selecionar empresa' : 'Entrar',
+                    'Conectar ao PDV',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.5,
                         ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    selecionandoEmpresa
-                        ? 'Escolha a empresa para operar nesta estação'
-                        : 'Use o mesmo login da retaguarda / PDV local',
-                    style: const TextStyle(color: MgColors.mutedForeground),
+                  const Text(
+                    'Informe o IP ou URL do PDV na rede local. O caixa precisa estar aberto e logado.',
+                    style: TextStyle(color: MgColors.mutedForeground),
                   ),
                   const SizedBox(height: 22),
-                  if (!selecionandoEmpresa) ...[
-                    TextField(
-                      controller: urlCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'URL do PDV ou QR mgpos://',
-                        hintText: 'http://192.168.0.10:5050',
-                      ),
-                      textInputAction: TextInputAction.next,
+                  TextField(
+                    controller: urlCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'URL do PDV ou QR mgpos://',
+                      hintText: 'http://192.168.0.10:5050',
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: emailCtrl,
-                      decoration: const InputDecoration(labelText: 'E-mail'),
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: senhaCtrl,
-                      decoration: const InputDecoration(labelText: 'Senha'),
-                      obscureText: true,
-                      onSubmitted: (_) => onSubmit(),
-                    ),
-                  ] else ...[
-                    DropdownButtonFormField<EmpresaLan>(
-                      value: empresa,
-                      items: empresas
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e,
-                              child: Text(e.nome),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: onEmpresa,
-                      decoration: const InputDecoration(labelText: 'Empresa'),
-                    ),
-                  ],
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => onSubmit(),
+                  ),
                   if (erro != null) ...[
                     const SizedBox(height: 12),
                     Text(
@@ -299,7 +211,7 @@ class _LoginCard extends StatelessWidget {
                               color: Colors.white,
                             ),
                           )
-                        : Text(selecionandoEmpresa ? 'Continuar' : 'Entrar'),
+                        : const Text('Continuar'),
                   ),
                 ],
               ),

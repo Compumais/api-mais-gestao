@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:estacao_balanca/core/models.dart';
+import 'package:estacao_balanca/core/pesagem.dart';
 
 enum FontePeso { local, pdv, auto }
 
@@ -13,6 +14,8 @@ class AppPrefs {
   static const _uuid = Uuid();
   static const _atalhosKey = 'atalhoIds';
   static const _atalhosCacheKey = 'atalhosCacheJson';
+  static const _historicoKey = 'historicoPesagens';
+  static const _historicoLimite = 200;
 
   static Future<AppPrefs> create() async {
     final prefs = await SharedPreferences.getInstance();
@@ -94,6 +97,33 @@ class AppPrefs {
       return decoded
           .whereType<Map>()
           .map((e) => ProdutoLan.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> registrarPesagem(SessaoPesagem sessao) async {
+    final atuais = lerHistoricoPesagens();
+    final proximos = [
+      sessao,
+      ...atuais.where((item) => item.idItem != sessao.idItem),
+    ].take(_historicoLimite);
+    await _prefs.setString(
+      _historicoKey,
+      jsonEncode(proximos.map((item) => item.toJson()).toList()),
+    );
+  }
+
+  List<SessaoPesagem> lerHistoricoPesagens() {
+    final raw = _prefs.getString(_historicoKey);
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((e) => SessaoPesagem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
     } catch (_) {
       return const [];

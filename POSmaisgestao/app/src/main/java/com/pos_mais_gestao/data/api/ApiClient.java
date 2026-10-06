@@ -155,8 +155,11 @@ public class ApiClient {
             return;
         }
 
+        String identificador = email == null ? "" : email.trim();
         JsonObject body = new JsonObject();
-        body.addProperty("email", email);
+        // Aceita e-mail ou nome de usuário; a API resolve nome → e-mail.
+        body.addProperty("email", identificador);
+        body.addProperty("login", identificador);
         body.addProperty("password", password);
 
         JsonObject response = postJson("/api/auth/sign-in/email", body.toString(), false);
@@ -1791,6 +1794,10 @@ public class ApiClient {
         if (localizacao != null && !localizacao.trim().isEmpty()) {
             body.addProperty("localizacao", localizacao.trim());
         }
+        String garcom = prefsStore.getUserName();
+        if (garcom != null && !garcom.trim().isEmpty()) {
+            body.addProperty("garcom", garcom.trim());
+        }
         localPdv.enviarPedido(idConta, body);
     }
 
@@ -2387,11 +2394,25 @@ public class ApiClient {
             prefsStore.setNumeroPdv(pdv);
         }
         if (status.has("comandaPedirMesaLocal") && !status.get("comandaPedirMesaLocal").isJsonNull()) {
-            prefsStore.setComandaPedirMesaLocal(status.get("comandaPedirMesaLocal").getAsBoolean());
+            prefsStore.setComandaPedirMesaLocal(booleanFlexivel(status.get("comandaPedirMesaLocal")));
         }
         if (status.has("modalAbrirMesaHabilitado") && !status.get("modalAbrirMesaHabilitado").isJsonNull()) {
-            prefsStore.setModalAbrirMesaHabilitado(status.get("modalAbrirMesaHabilitado").getAsBoolean());
+            prefsStore.setModalAbrirMesaHabilitado(booleanFlexivel(status.get("modalAbrirMesaHabilitado")));
         }
+    }
+
+    private static boolean booleanFlexivel(JsonElement element) {
+        if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
+            return false;
+        }
+        if (element.getAsJsonPrimitive().isBoolean()) {
+            return element.getAsBoolean();
+        }
+        if (element.getAsJsonPrimitive().isNumber()) {
+            return element.getAsInt() != 0;
+        }
+        String raw = element.getAsString().trim().toLowerCase();
+        return "1".equals(raw) || "true".equals(raw) || "sim".equals(raw);
     }
 
     private VendaResultadoDto criarVendaRapidaLocal(
@@ -2412,6 +2433,10 @@ public class ApiClient {
         body.add("pagamentos", PagamentosMisto.toJsonArray(lancamentos));
         if (troco != null && troco.compareTo(BigDecimal.ZERO) > 0) {
             body.addProperty("troco", troco.doubleValue());
+        }
+        String garcom = prefsStore.getUserName();
+        if (garcom != null && !garcom.trim().isEmpty()) {
+            body.addProperty("garcom", garcom.trim());
         }
         return mapearResultadoFiscalPdv(localPdv.vendaRapida(body));
     }

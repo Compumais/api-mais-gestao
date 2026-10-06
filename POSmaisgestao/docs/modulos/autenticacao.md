@@ -6,7 +6,7 @@ Identifica o operador e a empresa antes de vender. O token fica no aparelho e va
 
 ## Classes e pacotes de entrada
 
-- `app/src/main/java/com/pos_mais_gestao/ui/login/LoginActivity.java` — e-mail, senha, modo de conexão e URL. Pode ler o QR do PDV (`PosConnectionQrParser`).
+- `app/src/main/java/com/pos_mais_gestao/ui/login/LoginActivity.java` — e-mail **ou nome de usuário**, senha, modo de conexão e URL. Pode ler o QR do PDV (`PosConnectionQrParser`). Tela com `NestedScrollView` e padding de IME para o teclado não cobrir os campos.
 - `app/src/main/java/com/pos_mais_gestao/ui/empresa/EmpresaActivity.java` — lista e seleção de empresa.
 - `app/src/main/java/com/pos_mais_gestao/data/api/ApiClient.java` — `login`, `validarSessao`, `listarEmpresas`, `selecionarEmpresaNoPdv`.
 - `app/src/main/java/com/pos_mais_gestao/data/api/LocalPdvApi.java` — `POST /pos/login` (corpo com `email`, `password`, `identificador` = `terminalId`), `GET /pos/empresas`, `POST /pos/empresa`.
@@ -17,13 +17,13 @@ Identifica o operador e a empresa antes de vender. O token fica no aparelho e va
 
 Modo `cloud`:
 
-- `POST /api/auth/sign-in/email` (Better Auth). `extrairToken` lê `session.token` e, se faltar, o campo `token` na raiz.
+- `POST /api/auth/sign-in/email` (Better Auth). Aceita e-mail **ou nome** no campo `email`/`login` (a API resolve nome → e-mail quando há correspondência única). `extrairToken` lê `session.token` e, se faltar, o campo `token` na raiz.
 - `GET /api/auth/get-session` na abertura (`validarSessao`).
 - `GET /empresas?page=1&limit=100`.
 
 Modo `pdv_local`:
 
-- Login e empresas só em `/pos/*`. `selecionarEmpresaNoPdv` também dispara `GET /pos/sync` (carga do catálogo).
+- Login e empresas só em `/pos/*`. O PDV resolve nome → e-mail via `usuario_cache` (ou login offline). `selecionarEmpresaNoPdv` também dispara `GET /pos/sync` (carga do catálogo).
 - `validarSessao` usa `GET /pos/status` e aplica modelo de atendimento, quantidade de mesas e número do PDV (`aplicarConfigPdv`).
 
 `PrefsStore.setToken` usa `commit()` (síncrono) para o token existir antes da Activity de login terminar. `isLoggedIn()` é “token não vazio”. `hasEmpresa()` é id de empresa não vazio.

@@ -27,7 +27,7 @@ Rotas confirmadas no servidor (além das públicas): `GET /pos/pdv/config-negoci
 
 A LAN não é a API. O POS fala com o PDV. O PDV fala com a API pela outbox quando a venda é gravada no principal.
 
-`POST /pos/login` usa o mesmo login de e-mail da retaguarda (através da local-api). Sem internet o login novo falha; sessão já aberta no desktop segue.
+`POST /pos/login` valida o mesmo login de e-mail da retaguarda, mas com `persistirSessao: false`. Não grava `sessao`, não troca o operador do caixa e não seleciona outra empresa. O POS recebe só o token do terminal e opera na empresa já aberta no PDV. Sem internet o login novo falha; a sessão do desktop segue intacta.
 
 Firewall: `garantirRegraFirewall` tenta liberar a porta. Falha de firewall deixa o POS sem conexão e o caixa local intacto.
 

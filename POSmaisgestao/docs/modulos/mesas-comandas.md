@@ -41,7 +41,7 @@ Local (`LocalPdvApi`):
 - `POST /pos/contas/{id}/pedido` com `clientOrderId` e itens (`idproduto`, `quantidade`, `idprodutomeio`, `observacao`).
 - Fila: `GET /pos/pedidos?pendentes=1|0`, `POST /pos/pedidos/{id}/entregue`, `POST /pos/pedidos/limpar-fila`.
 
-`GET /pos/status` pode gravar `modeloAtendimento` (`mesa` ou `comanda`), `modalAbrirMesaHabilitado`, `qtdMesas` e `numeropdv`. `isModeloComanda()` só é verdadeiro no modo local.
+`GET /pos/status` pode gravar `modeloAtendimento` (`mesa` ou `comanda`), `modalAbrirMesaHabilitado`, `comandaPedirMesaLocal`, `qtdMesas` e `numeropdv`. `isModeloComanda()` só é verdadeiro no modo local. Com `comandaPedirMesaLocal`, o envio do pedido em `PedidoActivity` abre o dialog de mesa física + localização antes de `POST /pos/contas/{id}/pedido`.
 
 Sem rede no modo local, `MesasActivity` bloqueia ações que dependem do desktop (`!online`). Fechar mesa no cloud sem rede é recusado em `PagamentoActivity` (`fechar_mesa_requer_rede`) — mesa não entra na outbox.
 
