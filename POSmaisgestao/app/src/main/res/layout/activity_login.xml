@@ -1,23 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollLogin"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipToPadding="false"
     android:descendantFocusability="beforeDescendants"
     android:fillViewport="true"
     android:focusableInTouchMode="true"
+    android:isScrollContainer="true"
     android:background="@color/surface">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingHorizontal="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="48dp">
 
         <ImageView
-            android:layout_width="220dp"
-            android:layout_height="124dp"
+            android:layout_width="200dp"
+            android:layout_height="112dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="16dp"
             android:adjustViewBounds="true"
             android:contentDescription="@string/brand_name"
             android:scaleType="fitCenter"
@@ -26,7 +31,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="20dp"
             android:gravity="center"
             android:text="@string/app_name"
             android:textColor="@color/muted_foreground"
@@ -75,6 +80,7 @@
                 android:id="@+id/inputUrlApi"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:imeOptions="actionNext"
                 android:inputType="textUri"
                 android:minHeight="56dp" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -88,16 +94,19 @@
             android:text="@string/ler_qr_pdv" />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:hint="@string/email">
+            android:hint="@string/email_ou_usuario">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textEmailAddress"
+                android:autofillHints="username"
+                android:imeOptions="actionNext"
+                android:inputType="textPersonName|textCapWords"
                 android:minHeight="56dp" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -111,6 +120,8 @@
                 android:id="@+id/inputSenha"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autofillHints="password"
+                android:imeOptions="actionDone"
                 android:inputType="textPassword"
                 android:minHeight="56dp" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -130,4 +141,4 @@
             android:layout_marginTop="16dp"
             android:visibility="gone" />
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

@@ -5,6 +5,7 @@ import 'package:estacao_balanca/features/atalhos/atalhos_page.dart';
 import 'package:estacao_balanca/features/auth/login_page.dart';
 import 'package:estacao_balanca/features/comanda/estacao_page.dart';
 import 'package:estacao_balanca/features/config/config_page.dart';
+import 'package:estacao_balanca/features/historico/historico_page.dart';
 import 'package:estacao_balanca/theme/mg_theme.dart';
 
 class EstacaoApp extends StatelessWidget {
@@ -29,6 +30,7 @@ class EstacaoApp extends StatelessWidget {
         '/estacao': (_) => EstacaoPage(prefs: prefs, client: client),
         '/atalhos': (_) => AtalhosPage(prefs: prefs, client: client),
         '/config': (_) => ConfigPage(prefs: prefs, client: client),
+        '/historico': (_) => HistoricoPage(prefs: prefs),
       },
     );
   }

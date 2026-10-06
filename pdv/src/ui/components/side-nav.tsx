@@ -1,6 +1,8 @@
 import {
 	Bike,
 	ClipboardList,
+	Printer,
+	ShieldCheck,
 	Receipt,
 	Settings,
 	ShoppingCart,
@@ -11,6 +13,7 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { onDeliveryEvent, pdvInvoke } from "@/lib/pdv-api";
 import {
@@ -20,7 +23,14 @@ import {
 } from "@/lib/pdv-types";
 import { cn } from "@/lib/utils";
 import { secundarioDesconectado } from "@/ui/components/aviso-secundario";
+import { Button } from "@/ui/components/ui/button";
+import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
 import { useSidebarState } from "@/ui/hooks/use-sidebar-state";
+
+type DialogoEmergencia =
+	| null
+	| { tipo: "confirmar" }
+	| { tipo: "aviso"; texto: string };
 
 type SideNavProps = {
 	/** Callback quando a navegação é bloqueada (PDV secundário offline). */
@@ -98,7 +108,14 @@ export function SideNav({
 	const path = location.pathname;
 	const { recolhida } = useSidebarState();
 	const [novosDelivery, setNovosDelivery] = useState(0);
+	const [dialogoEmergencia, setDialogoEmergencia] =
+		useState<DialogoEmergencia>(null);
+	const [imprimindoEmergencia, setImprimindoEmergencia] = useState(false);
 	const deliveryAtivo = path === "/delivery" || path.startsWith("/delivery/");
+
+	useEscapeFechaModal(dialogoEmergencia !== null && !imprimindoEmergencia, () => {
+		setDialogoEmergencia(null);
+	});
 
 	useEffect(() => {
 		if (!gourmet || bloqueado) {
@@ -138,6 +155,7 @@ export function SideNav({
 	const mesasAtivo = path === "/" || path.startsWith("/mesas/");
 	const balcaoAtivo = path === "/balcao" || (!gourmet && path === "/");
 	const pedidosAtivo = path === "/pedidos" || path.startsWith("/pedidos/");
+	const vistoriaAtivo = path === "/vistoria" || path.startsWith("/vistoria/");
 	const vendasAtivo = path === "/vendas" || path.startsWith("/vendas/");
 	const configAtivo = path === "/config";
 
@@ -147,6 +165,47 @@ export function SideNav({
 			return;
 		}
 		navigate(destino);
+	}
+
+	function pedirEmergencia() {
+		if (bloqueado) {
+			onBlocked?.(mensagemBloqueio(status));
+			return;
+		}
+		setDialogoEmergencia({ tipo: "confirmar" });
+	}
+
+	async function confirmarEmergencia() {
+		setImprimindoEmergencia(true);
+		try {
+			const result = await pdvInvoke<{
+				ok: boolean;
+				vazio?: boolean;
+				qtd?: number;
+			}>("imprimirEmergenciaContas");
+			if (!result?.ok || result.vazio) {
+				setDialogoEmergencia({
+					tipo: "aviso",
+					texto: `Nenhuma ${rotulo.singular.toLowerCase()} em aberto. Nada foi impresso.`,
+				});
+				return;
+			}
+			const qtd = Number(result.qtd) || 0;
+			setDialogoEmergencia({
+				tipo: "aviso",
+				texto: `Comprovante enviado para a impressora (${qtd} ${qtd === 1 ? rotulo.singular.toLowerCase() : rotulo.plural.toLowerCase()}).`,
+			});
+		} catch (err) {
+			setDialogoEmergencia({
+				tipo: "aviso",
+				texto:
+					err instanceof Error
+						? err.message
+						: "Falha ao imprimir as contas em aberto.",
+			});
+		} finally {
+			setImprimindoEmergencia(false);
+		}
 	}
 
 	return (
@@ -207,6 +266,18 @@ export function SideNav({
 						}}
 					/>
 				) : null}
+				{gourmet ? (
+					<SideButton
+						label="Vistoria"
+						icon={ShieldCheck}
+						active={vistoriaAtivo}
+						recolhida={recolhida}
+						onClick={() => {
+							if (vistoriaAtivo) return;
+							tentarNavegar("/vistoria");
+						}}
+					/>
+				) : null}
 				<SideButton
 					label="Histórico de vendas"
 					icon={Receipt}
@@ -227,42 +298,131 @@ export function SideNav({
 					/>
 				) : null}
 			</nav>
-			<div
-				className={cn(
-					"mt-2 rounded-lg border border-sidebar-border bg-black/10 p-2.5",
-					recolhida && "px-1.5",
-				)}
-				title={
-					recolhida
-						? `${status?.caixa?.username ?? status?.sessao.username ?? "Operador"} · Caixa ${status?.caixa?.numeropdv ?? status?.numeropdv ?? "—"}`
-						: undefined
-				}
-			>
+			<div className="mt-2 flex flex-col gap-2">
+				{gourmet ? (
+					<button
+						type="button"
+						onClick={pedirEmergencia}
+						disabled={imprimindoEmergencia}
+						aria-label="Emergência: imprimir contas em aberto"
+						title={
+							recolhida
+								? "Emergência: imprimir contas em aberto"
+								: "Imprime todas as contas em aberto"
+						}
+						className={cn(
+							"pdv-touch flex w-full items-center gap-3 rounded-lg border border-amber-300/50 bg-amber-400/15 px-3 py-2.5 text-left text-xs font-semibold text-amber-50 transition hover:bg-amber-400/25 disabled:opacity-60",
+							recolhida && "justify-center gap-0 px-0",
+						)}
+					>
+						<Printer className="size-[18px] shrink-0" />
+						<span className={cn("truncate", recolhida && "sr-only")}>
+							Emergência
+						</span>
+					</button>
+				) : null}
 				<div
 					className={cn(
-						"flex items-center gap-2",
-						recolhida && "justify-center",
+						"rounded-lg border border-sidebar-border bg-black/10 p-2.5",
+						recolhida && "px-1.5",
 					)}
+					title={
+						recolhida
+							? `${status?.caixa?.username ?? status?.sessao.username ?? "Operador"} · Caixa ${status?.caixa?.numeropdv ?? status?.numeropdv ?? "—"}`
+							: undefined
+					}
 				>
-					<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary">
-						<UserRound className="size-4" />
-					</div>
-					<div className={cn("min-w-0 flex-1", recolhida && "hidden")}>
-						<div className="truncate text-xs font-semibold">
-							{status?.caixa?.username ?? status?.sessao.username ?? "Operador"}
+					<div
+						className={cn(
+							"flex items-center gap-2",
+							recolhida && "justify-center",
+						)}
+					>
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary">
+							<UserRound className="size-4" />
 						</div>
-						<div className="truncate text-[10px] opacity-65">
-							Caixa {status?.caixa?.numeropdv ?? status?.numeropdv ?? "—"}
+						<div className={cn("min-w-0 flex-1", recolhida && "hidden")}>
+							<div className="truncate text-xs font-semibold">
+								{status?.caixa?.username ??
+									status?.sessao.username ??
+									"Operador"}
+							</div>
+							<div className="truncate text-[10px] opacity-65">
+								Caixa {status?.caixa?.numeropdv ?? status?.numeropdv ?? "—"}
+							</div>
 						</div>
+						{!recolhida &&
+							(status?.online ? (
+								<Wifi className="size-3.5 text-emerald-300" />
+							) : (
+								<WifiOff className="size-3.5 text-amber-300" />
+							))}
 					</div>
-					{!recolhida &&
-						(status?.online ? (
-							<Wifi className="size-3.5 text-emerald-300" />
-						) : (
-							<WifiOff className="size-3.5 text-amber-300" />
-						))}
 				</div>
 			</div>
+			{dialogoEmergencia
+				? createPortal(
+						<div
+							className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+							role="presentation"
+							onClick={() => {
+								if (!imprimindoEmergencia) setDialogoEmergencia(null);
+							}}
+						>
+							<div
+								role="dialog"
+								aria-modal="true"
+								aria-labelledby="titulo-emergencia-contas"
+								className="w-full max-w-sm rounded-xl border border-border bg-card p-4 text-card-foreground shadow-lg"
+								onClick={(event) => event.stopPropagation()}
+							>
+								<h2
+									id="titulo-emergencia-contas"
+									className="text-base font-semibold"
+								>
+									Emergência
+								</h2>
+								<p className="mt-2 text-sm text-muted-foreground">
+									{dialogoEmergencia.tipo === "confirmar"
+										? `Imprimir todas as ${rotulo.plural.toLowerCase()} em aberto, da menor para a maior, com itens e total? Não fecha contas nem mexe no caixa.`
+										: dialogoEmergencia.texto}
+								</p>
+								<div className="mt-4 flex justify-end gap-2">
+									{dialogoEmergencia.tipo === "confirmar" ? (
+										<>
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												disabled={imprimindoEmergencia}
+												onClick={() => setDialogoEmergencia(null)}
+											>
+												Cancelar
+											</Button>
+											<Button
+												type="button"
+												size="sm"
+												disabled={imprimindoEmergencia}
+												onClick={() => void confirmarEmergencia()}
+											>
+												{imprimindoEmergencia ? "Imprimindo..." : "Imprimir"}
+											</Button>
+										</>
+									) : (
+										<Button
+											type="button"
+											size="sm"
+											onClick={() => setDialogoEmergencia(null)}
+										>
+											OK
+										</Button>
+									)}
+								</div>
+							</div>
+						</div>,
+						document.body,
+					)
+				: null}
 		</aside>
 	);
 }

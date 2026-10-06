@@ -1,47 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:fillViewport="true"
+    android:overScrollMode="ifContentScrolls">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="8dp"
-        android:text="@string/mesa_local_ajuda"
-        android:textColor="@color/foreground"
-        android:textSize="13sp" />
+        android:orientation="vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="8dp">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/mesa_fisica">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/inputMesaFisica"
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:imeOptions="actionNext"
-            android:inputType="text"
-            android:maxLength="40"
-            android:maxLines="1"
-            android:minHeight="52dp" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:paddingBottom="12dp"
+            android:text="@string/mesa_local_ajuda"
+            android:textColor="@color/foreground"
+            android:textSize="13sp" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/localizacao_pedido">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/inputLocalizacaoPedido"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:imeOptions="actionDone"
-            android:inputType="textCapSentences"
-            android:maxLength="80"
-            android:maxLines="1"
-            android:minHeight="52dp" />
-    </com.google.android.material.textfield.TextInputLayout>
-</LinearLayout>
+            android:layout_marginBottom="12dp"
+            android:hint="@string/mesa_fisica">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputMesaFisica"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionNext"
+                android:inputType="text"
+                android:maxLength="40"
+                android:maxLines="1"
+                android:minHeight="56dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/localizacao_pedido">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputLocalizacaoPedido"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionDone"
+                android:inputType="textCapSentences"
+                android:maxLength="80"
+                android:maxLines="1"
+                android:minHeight="56dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+</ScrollView>

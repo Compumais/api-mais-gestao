@@ -47,7 +47,9 @@ public final class WindowInsetsHelper {
         content.setTag(R.id.pos_insets_applied, Boolean.TRUE);
         content.setBackgroundColor(ContextCompat.getColor(activity, R.color.primary));
         ViewCompat.setOnApplyWindowInsetsListener(content, (v, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets bars = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                            | WindowInsetsCompat.Type.ime());
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
             return WindowInsetsCompat.CONSUMED;
         });

@@ -66,7 +66,7 @@ function classeMesa(status: StatusAtividadeMesa) {
 		return "bg-primary text-primary-foreground ring-primary";
 	}
 	if (status === "ociosa") {
-		return "bg-accent text-accent-foreground ring-foreground/15";
+		return "bg-amber-300 text-amber-950 ring-amber-600/50 dark:bg-amber-400 dark:text-amber-950 dark:ring-amber-300";
 	}
 	return "bg-card text-muted-foreground ring-foreground/10";
 }

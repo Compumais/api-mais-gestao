@@ -18,6 +18,7 @@ import { MesaContaPage } from "@/ui/pages/mesa-conta-page";
 import { NotasNaoSincronizadasPage } from "@/ui/pages/notas-nao-sincronizadas-page";
 import { PedidosPage } from "@/ui/pages/pedidos-page";
 import { VendasPage } from "@/ui/pages/vendas-page";
+import { VistoriaPage } from "@/ui/pages/vistoria-page";
 
 export function App() {
 	useEffect(() => {
@@ -51,6 +52,7 @@ export function App() {
 							<Route path="/delivery" element={<DeliveryPage />} />
 							<Route path="/delivery/:id" element={<MesaContaPage />} />
 							<Route path="/pedidos" element={<PedidosPage />} />
+							<Route path="/vistoria" element={<VistoriaPage />} />
 						</Route>
 						<Route path="/balcao" element={<BalcaoPage />} />
 						<Route path="/vendas" element={<VendasPage />} />

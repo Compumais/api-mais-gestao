@@ -19,6 +19,7 @@ import { localApi } from "../local-api";
 import {
 	handshakeTerminal,
 	numerosOcupadosPorSecundarios,
+	garcomDoTokenPos,
 	registrarTerminalPos,
 	tokenTerminalValido,
 } from "../pdv-secundario/registro";
@@ -34,6 +35,12 @@ import {
 	type TipoImagemCatalogo,
 } from "./imagens";
 import { listarIpsLan } from "./ips";
+import {
+	empresaPosConfere,
+	operadorCompativelComEmpresa,
+	resolverGarcomPos,
+	sessaoPdvProntaParaPos,
+} from "./sessao-pos";
 
 const ROTAS_PUBLICAS = new Set([
 	"GET /pos/health",
@@ -282,7 +289,11 @@ async function tratarRequisicao(
 			method === "GET" || method === "HEAD"
 				? Object.fromEntries(url.searchParams.entries())
 				: await lerJson(req);
-		const resultado = await despachar(method, path, body);
+		const headerAuth = req.headers.authorization ?? "";
+		const tokenBearer = headerAuth.startsWith("Bearer ")
+			? headerAuth.slice(7).trim()
+			: "";
+		const resultado = await despachar(method, path, body, tokenBearer);
 		if (resultado === undefined) {
 			enviarJson(res, 404, { error: "Rota não encontrada" });
 			return;
@@ -374,15 +385,44 @@ async function autorizar(req: IncomingMessage): Promise<boolean> {
 	return Boolean(sessao.token && sessao.token === token);
 }
 
+async function garcomDaRequisicaoPos(
+	token: string,
+	body: Record<string, unknown>,
+): Promise<string | null> {
+	const ator = await atorDaRequisicaoPos(token, body);
+	return ator?.usuario ?? null;
+}
+
+async function atorDaRequisicaoPos(
+	token: string,
+	body: Record<string, unknown>,
+): Promise<{ usuario: string; origem: "pdv" | "pos" } | undefined> {
+	const garcomInformado =
+		body.garcom != null
+			? String(body.garcom)
+			: body.username != null
+				? String(body.username)
+				: null;
+	const garcom = resolverGarcomPos(garcomInformado, null);
+	if (garcom) return { usuario: garcom, origem: "pos" };
+	const usuarioPdv = body.usuario != null ? String(body.usuario).trim() : "";
+	if (usuarioPdv) return { usuario: usuarioPdv.slice(0, 80), origem: "pdv" };
+	const terminal = await garcomDoTokenPos(token);
+	if (terminal) return { usuario: terminal, origem: "pos" };
+	return undefined;
+}
+
 async function despachar(
 	method: string,
 	path: string,
 	body: Record<string, unknown>,
+	tokenBearer = "",
 ): Promise<{ status: number; body: unknown } | undefined> {
 	if (
 		path === "/pos/mesas" ||
 		path.startsWith("/pos/mesas/") ||
 		path.startsWith("/pos/contas/") ||
+		path === "/pos/vistoria" ||
 		path === "/pos/delivery" ||
 		path.startsWith("/pos/delivery/")
 	) {
@@ -492,16 +532,43 @@ async function despachar(
 				body: { error: "Informe usuário e senha." },
 			};
 		}
-		const result = await localApi.login(email, password);
+		const result = await localApi.login(email, password, {
+			persistirSessao: false,
+		});
 		const sessao = await obterSessao();
-		const token = await registrarTerminalPos(identificador);
+		if (!sessaoPdvProntaParaPos(sessao) || !sessao.idempresa) {
+			return {
+				status: 409,
+				body: {
+					error:
+						"Faça login e selecione a empresa no PDV antes de entrar no POS. O login do POS não altera o caixa.",
+				},
+			};
+		}
+		if (!operadorCompativelComEmpresa(result.empresas ?? [], sessao.idempresa)) {
+			return {
+				status: 403,
+				body: {
+					error: "Este usuário não tem acesso à empresa aberta no PDV.",
+				},
+			};
+		}
+		const token = await registrarTerminalPos(identificador, {
+			userid: result.userid,
+			username: result.username,
+		});
 		return {
 			status: 200,
 			body: {
 				token,
-				userid: sessao.userid,
+				userid: result.userid ?? null,
 				username: result.username,
-				empresas: result.empresas,
+				empresas: [
+					{
+						id: sessao.idempresa,
+						nome: sessao.nomeempresa || "Empresa",
+					},
+				],
 				offline: Boolean(
 					result && typeof result === "object" && "offline" in result
 						? result.offline
@@ -559,11 +626,37 @@ async function despachar(
 	}
 
 	if (method === "POST" && path === "/pos/empresa") {
-		const idempresa = String(body.idempresa ?? "");
-		const nomeempresa = String(body.nomeempresa ?? "");
+		const idempresa = String(body.idempresa ?? "").trim();
+		const sessao = await obterSessao();
+		const decisao = empresaPosConfere(
+			idempresa,
+			sessao.token ? sessao.idempresa : null,
+		);
+		if (decisao === "pdv_sem_empresa") {
+			return {
+				status: 409,
+				body: {
+					error:
+						"Faça login e selecione a empresa no PDV antes de usar o POS.",
+				},
+			};
+		}
+		if (decisao === "empresa_diferente") {
+			return {
+				status: 409,
+				body: {
+					error:
+						"O POS usa a empresa já aberta no PDV e não troca o operador do caixa.",
+				},
+			};
+		}
 		return {
 			status: 200,
-			body: await localApi.selecionarEmpresa(idempresa, nomeempresa),
+			body: {
+				ok: true,
+				idempresa: sessao.idempresa,
+				nomeempresa: sessao.nomeempresa,
+			},
 		};
 	}
 
@@ -636,12 +729,15 @@ async function despachar(
 
 	const mesaItensMatch = path.match(/^\/pos\/mesas\/(\d+)\/itens$/);
 	if (method === "POST" && mesaItensMatch) {
+		const ator = await atorDaRequisicaoPos(tokenBearer, body);
 		return {
 			status: 200,
 			body: await localApi.adicionarItemNaMesa(
 				Number(mesaItensMatch[1]),
 				itemDeBody(body),
 				body.nomecliente ? String(body.nomecliente) : undefined,
+				ator?.usuario,
+				ator?.origem,
 			),
 		};
 	}
@@ -659,6 +755,25 @@ async function despachar(
 				contaNomeMatch[1],
 				String(body.nomecliente ?? ""),
 			),
+		};
+	}
+
+	if (method === "GET" && path === "/pos/vistoria") {
+		const acao = String(body.acao ?? "");
+		const numero = Number(body.numero);
+		return {
+			status: 200,
+			body: {
+				data: await localApi.listarVistoria({
+					acao:
+						acao === "insercao" || acao === "exclusao" || acao === "fechamento"
+							? acao
+							: null,
+					numero: Number.isFinite(numero) ? numero : null,
+					usuario: body.usuario != null ? String(body.usuario) : null,
+					dia: body.dia != null ? String(body.dia) : null,
+				}),
+			},
 		};
 	}
 
@@ -687,6 +802,7 @@ async function despachar(
 						: null,
 				body.mesaFisica != null ? String(body.mesaFisica) : null,
 				body.localizacao != null ? String(body.localizacao) : null,
+				await garcomDaRequisicaoPos(tokenBearer, body),
 			),
 		};
 	}
@@ -698,6 +814,7 @@ async function despachar(
 			body: await localApi.adicionarItemConta(
 				contaItensMatch[1],
 				itemDeBody(body),
+				await atorDaRequisicaoPos(tokenBearer, body),
 			),
 		};
 	}
@@ -712,6 +829,7 @@ async function despachar(
 				contaItemCancelarMatch[1],
 				contaItemCancelarMatch[2],
 				body.senha != null ? String(body.senha) : undefined,
+				await atorDaRequisicaoPos(tokenBearer, body),
 			),
 		};
 	}
@@ -740,6 +858,7 @@ async function despachar(
 							cnpjcpf: cliente.cnpjcpf != null ? String(cliente.cnpjcpf) : null,
 						}
 					: null,
+				await atorDaRequisicaoPos(tokenBearer, body),
 			),
 		};
 	}
@@ -748,7 +867,10 @@ async function despachar(
 	if (method === "POST" && contaCancelarMatch) {
 		return {
 			status: 200,
-			body: await localApi.cancelarContaMesa(contaCancelarMatch[1]),
+			body: await localApi.cancelarContaMesa(
+				contaCancelarMatch[1],
+				await atorDaRequisicaoPos(tokenBearer, body),
+			),
 		};
 	}
 
@@ -783,6 +905,7 @@ async function despachar(
 				contaPagMatch[1],
 				lancamentosDeBody(body),
 				body.troco != null ? Number(body.troco) : undefined,
+				await atorDaRequisicaoPos(tokenBearer, body),
 			),
 		};
 	}
@@ -799,6 +922,8 @@ async function despachar(
 				ids,
 				lancamentosDeBody(body),
 				body.troco != null ? Number(body.troco) : undefined,
+				undefined,
+				await atorDaRequisicaoPos(tokenBearer, body),
 			),
 		};
 	}
@@ -815,6 +940,7 @@ async function despachar(
 					contaTransMatch[1],
 					ids,
 					Number(body.numeroDestino),
+					await atorDaRequisicaoPos(tokenBearer, body),
 				),
 			};
 		}
@@ -834,6 +960,7 @@ async function despachar(
 			body: await localApi.juntarContas(
 				contaJuntarMatch[1],
 				Number(body.numeroDestino),
+				await atorDaRequisicaoPos(tokenBearer, body),
 			),
 		};
 	}
@@ -870,6 +997,7 @@ async function despachar(
 				troco: body.troco != null ? Number(body.troco) : undefined,
 				valordesconto:
 					body.desconto != null ? Number(body.desconto) : undefined,
+				garcom: await garcomDaRequisicaoPos(tokenBearer, body),
 			}),
 		};
 	}
@@ -1126,13 +1254,16 @@ function itemDeBody(body: Record<string, unknown>): {
 	quantidade: number;
 	precounitario: number;
 	observacao?: string | null;
+	iditem?: string | null;
 } {
+	const idInformado = body.idItem ?? body.iditem;
 	return {
 		idproduto: String(body.idproduto ?? ""),
 		descricao: String(body.descricao ?? ""),
 		quantidade: Number(body.quantidade ?? 0),
 		precounitario: Number(body.precounitario ?? 0),
 		observacao: body.observacao != null ? String(body.observacao) : null,
+		iditem: idInformado != null ? String(idInformado) : null,
 	};
 }
 

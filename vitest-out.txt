@@ -1,0 +1,21 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm 
+help npmrc` for supported config options.
+No linha:1 caractere:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v4.1.8 C:/Users/Gomes/Documents/DEV/mais gest├úo/api-mais-gestao/api
+
+ Ô£ô src/service/sintegra/agregar-resumo-nfce.test.ts > classificarValoresSemIcms > coloca o total em Outras quando n├úo h├í base de ICMS (Simples/CSOSN 102) 2ms
+ Ô£ô src/service/sintegra/agregar-resumo-nfce.test.ts > classificarValoresSemIcms > mant├®m o remanescente em Outras quando h├í base parcial 0ms
+ Ô£ô src/service/sintegra/agregar-resumo-nfce.test.ts > agregarResumoNfceDiario > usa o menor e o maior n├║mero do dia, independente da ordem de emiss├úo 2ms
+ Ô£ô src/service/sintegra/agregar-resumo-nfce.test.ts > agregarResumoNfceDiario > inclui cancelada na faixa num├®rica sem somar valor 0ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  20:39:27
+   Duration  444ms (transform 68ms, setup 63ms, import 46ms, tests 8ms, environment 0ms)
+

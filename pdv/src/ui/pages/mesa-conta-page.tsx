@@ -22,6 +22,7 @@ import {
 	itemContaEstaPago,
 	totalFatiaItensSelecionados,
 } from "@/lib/conta-gourmet";
+import { couvertPedePessoas, parseNumeroConfig } from "@/lib/couvert-config";
 import { normalizarObservacaoItem } from "@/lib/observacao-item";
 import { normalizarObservacaoPedido } from "@/lib/observacao-pedido";
 import {
@@ -236,10 +237,8 @@ export function MesaContaPage() {
 			setLayoutCatalogo(
 				normalizarLayoutCatalogo(cfg[CHAVE_CATALOGO_LAYOUT_PRODUTOS]),
 			);
-			const couvert = Number(cfg.couvert_valor ?? "0");
-			const taxaPct = Number(cfg.taxa_servico_percentual ?? "10");
-			setCouvertUnitarioCfg(Number.isFinite(couvert) ? couvert : 0);
-			setTaxaPercentualCfg(Number.isFinite(taxaPct) ? taxaPct : 10);
+			setCouvertUnitarioCfg(parseNumeroConfig(cfg.couvert_valor, 0));
+			setTaxaPercentualCfg(parseNumeroConfig(cfg.taxa_servico_percentual, 10));
 		});
 	}, []);
 
@@ -914,28 +913,50 @@ export function MesaContaPage() {
 		setPagarItensAberto(true);
 	}
 
-	function iniciarRecebimentoIntegral() {
+	async function iniciarRecebimentoIntegral() {
 		if (!conta || !itensAbertos.length || fila.length > 0) return;
 		setPagandoFatia(false);
 		setFatiaValor(null);
-		setPessoasFechar(String(Math.max(1, conta.numeropessoas || 1)));
-		setTaxaFechar(
-			taxaPercentualCfg > 0
-				? true
-				: conta.taxa_ativa === 1,
-		);
+		const pessoas = Math.max(1, conta.numeropessoas || 1);
+		let couvert = couvertUnitarioCfg;
+		let taxaPct = taxaPercentualCfg;
+		try {
+			const cfg = await pdvInvoke<Record<string, string>>("getConfig");
+			couvert = parseNumeroConfig(cfg.couvert_valor, 0);
+			taxaPct = parseNumeroConfig(cfg.taxa_servico_percentual, 10);
+			setCouvertUnitarioCfg(couvert);
+			setTaxaPercentualCfg(taxaPct);
+		} catch {
+			// segue com o valor já carregado na tela
+		}
+		const taxaPadrao = taxaPct > 0;
+		setPessoasFechar(String(pessoas));
+		setTaxaFechar(taxaPadrao);
+		if (!couvertPedePessoas(couvert)) {
+			void confirmarAjustesEReceber({ pessoas, taxaAtiva: taxaPadrao });
+			return;
+		}
 		setAjustesFecharAberto(true);
 	}
 
-	async function confirmarAjustesEReceber() {
+	async function confirmarAjustesEReceber(opcoes?: {
+		pessoas?: number;
+		taxaAtiva?: boolean;
+	}) {
 		if (!conta) return;
-		const pessoas = Math.max(1, Math.floor(Number(pessoasFechar) || 1));
+		const pessoas = Math.max(
+			1,
+			Math.floor(opcoes?.pessoas ?? (Number(pessoasFechar) || 1)),
+		);
+		const taxaAtiva =
+			opcoes?.taxaAtiva ??
+			(taxaPercentualCfg > 0 ? taxaFechar : false);
 		setLoading(true);
 		setMsg("");
 		try {
 			const atualizada = await pdvInvoke<ContaMesa>("aplicarAjustesConta", conta.id, {
 				numeropessoas: pessoas,
-				taxaAtiva: taxaPercentualCfg > 0 ? taxaFechar : false,
+				taxaAtiva,
 			});
 			setConta(atualizada);
 			setAjustesFecharAberto(false);
@@ -1506,23 +1527,27 @@ export function MesaContaPage() {
 												/>
 											</div>
 										</div>
-									) : (
+									) : couvertUnitarioCfg > 0 || taxaPercentualCfg > 0 ? (
 										<div className="flex items-center justify-between gap-3 text-xs">
-											<div className="flex items-center gap-1.5">
-												<span>Pessoas</span>
-												<Input
-													type="number"
-													min={1}
-													className="h-8 w-14"
-													value={conta.numeropessoas ?? 1}
-													disabled={!conta || loading}
-													onChange={(e) =>
-														void aplicarAjustes({
-															numeropessoas: Number(e.target.value),
-														})
-													}
-												/>
-											</div>
+											{couvertUnitarioCfg > 0 ? (
+												<div className="flex items-center gap-1.5">
+													<span>Pessoas</span>
+													<Input
+														type="number"
+														min={1}
+														className="h-8 w-14"
+														value={conta.numeropessoas ?? 1}
+														disabled={!conta || loading}
+														onChange={(e) =>
+															void aplicarAjustes({
+																numeropessoas: Number(e.target.value),
+															})
+														}
+													/>
+												</div>
+											) : (
+												<span />
+											)}
 											<label className="flex items-center gap-1.5">
 												<span>Taxa</span>
 												<input
@@ -1536,7 +1561,7 @@ export function MesaContaPage() {
 												/>
 											</label>
 										</div>
-									)}
+									) : null}
 									{(conta.subtotal ?? 0) > 0 && (
 										<div className="flex justify-between text-xs text-muted-foreground">
 											<span>Subtotal</span>
@@ -1772,7 +1797,7 @@ export function MesaContaPage() {
 				/>
 			)}
 
-			{ajustesFecharAberto && conta && (
+			{ajustesFecharAberto && conta && couvertUnitarioCfg > 0 && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 					<div className="pdv-surface w-[26rem] max-w-[95vw] space-y-4 p-5">
 						<h2 className="text-lg font-semibold">Fechar conta</h2>
@@ -1790,26 +1815,19 @@ export function MesaContaPage() {
 								onChange={(e) => setPessoasFechar(e.target.value)}
 							/>
 						</label>
-						{couvertUnitarioCfg > 0 ? (
-							<p className="text-sm">
-								Couvert estimado:{" "}
-								<span className="font-semibold">
-									{money(
-										couvertUnitarioCfg *
-											Math.max(1, Math.floor(Number(pessoasFechar) || 1)),
-									)}
-								</span>{" "}
-								<span className="text-muted-foreground">
-									({money(couvertUnitarioCfg)} ×{" "}
-									{Math.max(1, Math.floor(Number(pessoasFechar) || 1))}{" "}
-									pessoas)
-								</span>
-							</p>
-						) : (
-							<p className="text-sm text-muted-foreground">
-								Couvert não configurado (R$ 0).
-							</p>
-						)}
+						<p className="text-sm">
+							Couvert estimado:{" "}
+							<span className="font-semibold">
+								{money(
+									couvertUnitarioCfg *
+										Math.max(1, Math.floor(Number(pessoasFechar) || 1)),
+								)}
+							</span>{" "}
+							<span className="text-muted-foreground">
+								({money(couvertUnitarioCfg)} ×{" "}
+								{Math.max(1, Math.floor(Number(pessoasFechar) || 1))} pessoas)
+							</span>
+						</p>
 						{taxaPercentualCfg > 0 ? (
 							<label className="flex items-center gap-2 text-sm">
 								<input

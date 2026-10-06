@@ -1,7 +1,7 @@
 "use client";
 
-import { IconFilter, IconX } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { IconCashRegister, IconFilter, IconTrash, IconX } from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
@@ -10,7 +10,18 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -42,6 +53,7 @@ import type { FechamentoCaixa } from "@/services/fechamento-caixa.service";
 import { fechamentoCaixaService } from "@/services/fechamento-caixa.service";
 import { usuariosService } from "@/services/usuarios.service";
 import { PageContainer } from "../components/page-container";
+import { DialogFecharCaixaPdv } from "./dialog-fechar-caixa-pdv";
 
 interface FiltrosState {
 	dataInicio: string;
@@ -83,8 +95,13 @@ function filtrarPorPeriodo(
 
 export default function FechamentosCaixaPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const queryClient = useQueryClient();
 
 	const [filtros, setFiltros] = useState<FiltrosState>(filtrosVazios);
+	const [fecharAberto, setFecharAberto] = useState(false);
+	const [turnoFecharId, setTurnoFecharId] = useState<number | null>(null);
+	const [fechamentoExcluir, setFechamentoExcluir] =
+		useState<FechamentoCaixa | null>(null);
 	const [filtrosAplicados, setFiltrosAplicados] =
 		useState<FiltrosState>(filtrosVazios);
 	const [pagination, setPagination] = useState({
@@ -110,7 +127,22 @@ export default function FechamentosCaixaPage() {
 		return map;
 	}, [usuariosLista]);
 
-	const { data, isLoading } = useQuery({
+	const excluirMutation = useMutation({
+		mutationFn: (id: number) => fechamentoCaixaService.deletar(id),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["fechamentos-caixa"] });
+			await queryClient.invalidateQueries({
+				queryKey: ["fechamentos-caixa-abertos"],
+			});
+			setFechamentoExcluir(null);
+			toast.success("Fechamento excluído");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao excluir o fechamento");
+		},
+	});
+
+	const { data, isLoading, isError, error, refetch } = useQuery({
 		queryKey: [
 			"fechamentos-caixa",
 			empresa?.id,
@@ -255,6 +287,40 @@ export default function FechamentosCaixaPage() {
 				);
 			},
 		},
+		{
+			id: "acoes",
+			header: () => <span className="sr-only">Ações</span>,
+			cell: ({ row }) => {
+				const aberto = row.original.status === STATUS_CAIXA.ABERTO;
+				return (
+					<div className="flex justify-end gap-1 whitespace-nowrap">
+						{aberto ? (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="gap-1.5"
+								onClick={() => {
+									setTurnoFecharId(row.original.id);
+									setFecharAberto(true);
+								}}
+							>
+								<IconCashRegister className="size-4" aria-hidden="true" />
+								Fechar
+							</Button>
+						) : null}
+						<Button
+							variant="ghost"
+							size="sm"
+							className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+							onClick={() => setFechamentoExcluir(row.original)}
+						>
+							<IconTrash className="size-4" aria-hidden="true" />
+							Excluir
+						</Button>
+					</div>
+				);
+			},
+		},
 	];
 
 	const table = useReactTable({
@@ -291,12 +357,28 @@ export default function FechamentosCaixaPage() {
 							Horários em Brasília (GMT−3).
 						</p>
 					</div>
-					{comFiltros && (
-						<Badge variant="secondary" className="gap-1">
-							<IconFilter className="size-3" />
-							Filtros ativos
-						</Badge>
-					)}
+					<div className="flex items-center gap-2">
+						{empresa ? (
+							<Button
+								variant="outline"
+								size="sm"
+								className="gap-1.5"
+								onClick={() => {
+									setTurnoFecharId(null);
+									setFecharAberto(true);
+								}}
+							>
+								<IconCashRegister className="size-4" aria-hidden="true" />
+								Fechar caixa
+							</Button>
+						) : null}
+						{comFiltros && (
+							<Badge variant="secondary" className="gap-1">
+								<IconFilter className="size-3" />
+								Filtros ativos
+							</Badge>
+						)}
+					</div>
 				</div>
 
 				<div className="mx-4 rounded-lg border bg-card p-4">
@@ -398,7 +480,7 @@ export default function FechamentosCaixaPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<TableSkeleton rows={8} columns={9}>
+						<TableSkeleton rows={8} columns={10}>
 							<TableHead>ID</TableHead>
 							<TableHead>Data</TableHead>
 							<TableHead>PDV</TableHead>
@@ -408,7 +490,23 @@ export default function FechamentosCaixaPage() {
 							<TableHead>Apurado</TableHead>
 							<TableHead>Informado</TableHead>
 							<TableHead>Diferença</TableHead>
+							<TableHead />
 						</TableSkeleton>
+					) : isError ? (
+						<div className="flex flex-col items-center justify-center gap-3 py-8">
+							<p className="text-sm text-destructive">
+								{error instanceof Error
+									? error.message
+									: "Não foi possível carregar os fechamentos."}
+							</p>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => void refetch()}
+							>
+								Tentar novamente
+							</Button>
+						</div>
 					) : (
 						<>
 							<Table>
@@ -486,6 +584,50 @@ export default function FechamentosCaixaPage() {
 					)}
 				</div>
 			</div>
+
+			{empresa ? (
+				<DialogFecharCaixaPdv
+					open={fecharAberto}
+					onOpenChange={setFecharAberto}
+					idempresa={empresa.id}
+					turnoInicialId={turnoFecharId}
+				/>
+			) : null}
+
+			<AlertDialog
+				open={fechamentoExcluir != null}
+				onOpenChange={(aberto) => {
+					if (!aberto && !excluirMutation.isPending) {
+						setFechamentoExcluir(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Excluir fechamento de caixa?</AlertDialogTitle>
+						<AlertDialogDescription>
+							O registro do PDV {fechamentoExcluir?.pdv ?? "—"} será removido.
+							As vendas deste turno permanecem. Esta ação não poderá ser
+							desfeita.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={excluirMutation.isPending}>
+							Voltar
+						</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={excluirMutation.isPending || !fechamentoExcluir}
+							onClick={(event) => {
+								event.preventDefault();
+								if (!fechamentoExcluir) return;
+								excluirMutation.mutate(fechamentoExcluir.id);
+							}}
+						>
+							{excluirMutation.isPending ? "Excluindo..." : "Confirmar exclusão"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</PageContainer>
 	);
 }

@@ -6,6 +6,7 @@ import type {
 	ItemCarrinho,
 	VendaLocal,
 } from "../db/repos";
+import type { AtorVistoria, FiltroVistoria } from "../db/vistoria";
 import {
 	PrincipalNaoAutorizadoError,
 	requisitarPrincipal,
@@ -22,6 +23,7 @@ type ItemContaInput = {
 	quantidade: number;
 	precounitario: number;
 	observacao?: string | null;
+	iditem?: string | null;
 };
 
 type ItemPedidoInput = {
@@ -78,6 +80,13 @@ function jsonBody(body: unknown): RequestInit {
 	};
 }
 
+function camposAtor(ator?: AtorVistoria | null): Record<string, string> {
+	const nome = ator?.usuario?.trim();
+	if (!nome) return {};
+	if (ator?.origem === "pdv") return { usuario: nome };
+	return { garcom: nome };
+}
+
 export async function listarMesasRemoto() {
 	const body = await remoto<{ data: unknown } | unknown[]>("/pos/mesas");
 	return unwrapDataEnvelope(body as { data: unknown[] });
@@ -105,10 +114,15 @@ export async function adicionarItemNaMesaRemoto(
 	numero: number,
 	item: ItemContaInput,
 	nomecliente?: string,
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	return remoto(
 		`/pos/mesas/${numero}/itens`,
-		jsonBody({ ...item, ...(nomecliente ? { nomecliente } : {}) }),
+		jsonBody({
+			...item,
+			...(nomecliente ? { nomecliente } : {}),
+			...camposAtor(ator),
+		}),
 	);
 }
 
@@ -132,10 +146,11 @@ export async function obterContaMesaRemoto(
 export async function adicionarItemContaRemoto(
 	idconta: string,
 	item: ItemContaInput,
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	return remoto(
 		`/pos/contas/${encodeURIComponent(idconta)}/itens`,
-		jsonBody(item),
+		jsonBody({ ...item, ...camposAtor(ator) }),
 	);
 }
 
@@ -156,6 +171,7 @@ export async function enviarPedidoContaRemoto(
 	observacaoPedido?: string | null,
 	mesaFisica?: string | null,
 	localizacao?: string | null,
+	garcom?: string | null,
 ): Promise<
 	ContaMesaLocal & { pedidoNovo?: boolean; itensProducao?: unknown[] }
 > {
@@ -167,16 +183,18 @@ export async function enviarPedidoContaRemoto(
 			observacaoPedido,
 			mesaFisica,
 			localizacao,
+			garcom,
 		}),
 	});
 }
 
 export async function cancelarContaMesaRemoto(
 	idconta: string,
+	ator?: AtorVistoria | null,
 ): Promise<{ ok: true }> {
 	return remoto(
 		`/pos/contas/${encodeURIComponent(idconta)}/cancelar`,
-		jsonBody({}),
+		jsonBody(camposAtor(ator)),
 	);
 }
 
@@ -184,10 +202,14 @@ export async function cancelarItemContaRemoto(
 	idconta: string,
 	iditem: string,
 	senha?: string,
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	return remoto(
 		`/pos/contas/${encodeURIComponent(idconta)}/itens/${encodeURIComponent(iditem)}/cancelar`,
-		jsonBody(senha != null && senha !== "" ? { senha } : {}),
+		jsonBody({
+			...(senha != null && senha !== "" ? { senha } : {}),
+			...camposAtor(ator),
+		}),
 	);
 }
 
@@ -211,10 +233,11 @@ export async function registrarPagamentoContaRemoto(
 	idconta: string,
 	lancamentos: LancamentoPagamento[],
 	troco?: number,
+	ator?: AtorVistoria | null,
 ) {
 	return remoto(
 		`/pos/contas/${encodeURIComponent(idconta)}/pagamento`,
-		jsonBody({ lancamentos, troco }),
+		jsonBody({ lancamentos, troco, ...camposAtor(ator) }),
 	);
 }
 
@@ -223,10 +246,11 @@ export async function fecharContaMesaRemoto(
 	lancamentos: LancamentoPagamento[],
 	troco?: number,
 	cliente?: ClienteVenda | null,
+	ator?: AtorVistoria | null,
 ) {
 	return remoto(
 		`/pos/contas/${encodeURIComponent(idconta)}/fechar`,
-		jsonBody({ lancamentos, troco, cliente }),
+		jsonBody({ lancamentos, troco, cliente, ...camposAtor(ator) }),
 	);
 }
 
@@ -236,10 +260,11 @@ export async function fecharFatiaItensRemoto(
 	lancamentos: LancamentoPagamento[],
 	troco?: number,
 	cliente?: ClienteVenda | null,
+	ator?: AtorVistoria | null,
 ) {
 	return remoto(
 		`/pos/contas/${encodeURIComponent(idconta)}/fatia`,
-		jsonBody({ idsItens, lancamentos, troco, cliente }),
+		jsonBody({ idsItens, lancamentos, troco, cliente, ...camposAtor(ator) }),
 	);
 }
 
@@ -257,21 +282,38 @@ export async function transferirItensRemoto(
 	idcontaOrigem: string,
 	idsItens: string[],
 	numeroDestino: number,
+	ator?: AtorVistoria | null,
 ) {
 	return remoto(
 		`/pos/contas/${encodeURIComponent(idcontaOrigem)}/transferir`,
-		jsonBody({ idsItens, numeroDestino }),
+		jsonBody({ idsItens, numeroDestino, ...camposAtor(ator) }),
 	);
 }
 
 export async function juntarContasRemoto(
 	idOrigem: string,
 	numeroDestino: number,
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	return remoto(
 		`/pos/contas/${encodeURIComponent(idOrigem)}/juntar`,
-		jsonBody({ numeroDestino }),
+		jsonBody({ numeroDestino, ...camposAtor(ator) }),
 	);
+}
+
+export async function listarVistoriaRemoto(filtro?: FiltroVistoria) {
+	const q = new URLSearchParams();
+	if (filtro?.acao) q.set("acao", filtro.acao);
+	if (filtro?.numero != null && Number.isFinite(filtro.numero)) {
+		q.set("numero", String(filtro.numero));
+	}
+	if (filtro?.usuario?.trim()) q.set("usuario", filtro.usuario.trim());
+	if (filtro?.dia?.trim()) q.set("dia", filtro.dia.trim());
+	const qs = q.toString();
+	const body = await remoto<{ data: unknown }>(
+		`/pos/vistoria${qs ? `?${qs}` : ""}`,
+	);
+	return unwrapDataEnvelope(body as { data: unknown[] });
 }
 
 export async function aplicarTaxaEntregaRemoto(

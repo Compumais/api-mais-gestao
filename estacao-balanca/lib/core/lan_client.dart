@@ -48,22 +48,28 @@ class LanClient {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> conectarEstacao() async {
     final body = jsonEncode({
-      'email': email.trim(),
-      'password': password,
       'identificador': prefs.terminalId,
     });
     final res = await http
-        .post(_uri('/pos/login'), headers: _headers(auth: false), body: body)
+        .post(
+          _uri('/pos/estacao/sessao'),
+          headers: _headers(auth: false),
+          body: body,
+        )
         .timeout(const Duration(seconds: 20));
     final json = await _decode(res);
     final token = json['token']?.toString() ?? '';
     if (token.isEmpty) {
-      throw LanException('Login sem token');
+      throw LanException('Conexão sem token');
     }
     await prefs.setToken(token);
-    await prefs.setUsername(json['username']?.toString() ?? email);
+    await prefs.setUsername('estação');
+    final idempresa = json['idempresa']?.toString() ?? '';
+    final nomeempresa = json['nomeempresa']?.toString() ?? '';
+    if (idempresa.isNotEmpty) await prefs.setEmpresaId(idempresa);
+    if (nomeempresa.isNotEmpty) await prefs.setEmpresaNome(nomeempresa);
     return json;
   }
 
@@ -173,17 +179,21 @@ class LanClient {
     return abrirComanda(numero);
   }
 
-  Future<void> adicionarItem({
+  Future<ContaLan> adicionarItem({
     required String idConta,
-    required ProdutoLan produto,
+    required String idItem,
+    required String idProduto,
+    required String descricao,
     required double quantidade,
+    required double precounitario,
     String? observacao,
   }) async {
     final body = jsonEncode({
-      'idproduto': produto.id,
-      'descricao': produto.descricao,
+      'idItem': idItem,
+      'idproduto': idProduto,
+      'descricao': descricao,
       'quantidade': quantidade,
-      'precounitario': produto.preco,
+      'precounitario': precounitario,
       if (observacao != null) 'observacao': observacao,
     });
     final res = await http
@@ -193,7 +203,8 @@ class LanClient {
           body: body,
         )
         .timeout(const Duration(seconds: 20));
-    await _decode(res);
+    final json = await _decode(res);
+    return ContaLan.fromJson(json);
   }
 
   Future<PesoPdv> lerPesoPdv() async {

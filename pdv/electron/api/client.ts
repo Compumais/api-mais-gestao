@@ -127,6 +127,8 @@ async function request<T>(
 		body?: unknown;
 		auth?: boolean;
 		timeoutMs?: number;
+		/** Token pontual. Não lê nem grava a sessão do caixa. */
+		bearer?: string;
 	} = {},
 ): Promise<T> {
 	const { method = "GET", body, auth = true, timeoutMs = 20000 } = options;
@@ -137,10 +139,14 @@ async function request<T>(
 		headers["Content-Type"] = "application/json";
 	}
 	if (auth) {
-		Object.assign(headers, await authHeadersForApi());
-		const sessao = await obterSessao();
-		if (sessao.idempresa) {
-			headers["x-empresa-id"] = sessao.idempresa;
+		if (options.bearer) {
+			headers.Authorization = `Bearer ${options.bearer}`;
+		} else {
+			Object.assign(headers, await authHeadersForApi());
+			const sessao = await obterSessao();
+			if (sessao.idempresa) {
+				headers["x-empresa-id"] = sessao.idempresa;
+			}
 		}
 	}
 
@@ -369,7 +375,10 @@ export async function obterMeuPlano(idempresa?: string | null): Promise<{
 	return { modulos: data.modulos ?? [] };
 }
 
-export async function listarEmpresas(idusuario?: string | null) {
+export async function listarEmpresas(
+	idusuario?: string | null,
+	tokenAvulso?: string | null,
+) {
 	let path = "/empresas?page=1&limit=100";
 	if (idusuario) {
 		path += `&idusuario=${encodeURIComponent(idusuario)}`;
@@ -381,7 +390,7 @@ export async function listarEmpresas(idusuario?: string | null) {
 			razaosocial?: string;
 			cnpj?: string;
 		}>;
-	}>(path);
+	}>(path, tokenAvulso ? { bearer: tokenAvulso } : {});
 	return (data.data ?? []).map((e) => ({
 		id: e.id,
 		nome: e.nome ?? e.razaosocial ?? e.id,

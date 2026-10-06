@@ -152,6 +152,11 @@ import {
 } from "../db/repos";
 import { verificarSenhaUsuario } from "../db/senha-usuario";
 import {
+	listarVistoria,
+	type AtorVistoria,
+	type FiltroVistoria,
+} from "../db/vistoria";
+import {
 	buscarConversaPorConta,
 	contarNaoLidasWhatsapp,
 	finalizarConversaPorConta,
@@ -167,6 +172,7 @@ import {
 	pedidosDeliveryNaoVistos,
 } from "../delivery/alertas";
 import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda";
+import { sessaoPdvProntaParaPos } from "../lan-api/sessao-pos";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
@@ -177,11 +183,13 @@ import {
 	imprimirComprovanteFechamentoCaixa,
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
+	imprimirEmergenciaContas as enviarImpressaoEmergenciaContas,
 	imprimirItensVendidosTurno,
 	imprimirPreConta,
 	listarImpressoras,
 	testarImpressora,
 } from "../impressora/escpos";
+import { selecionarContasEmergencia } from "../impressora/emergencia-contas-layout";
 import {
 	agruparLinhasPedidoFila,
 	imprimirProducaoPedido,
@@ -342,7 +350,42 @@ async function assertModuloGourmet(): Promise<void> {
 	}
 }
 
-async function loginOfflineLocal(login: string, password: string) {
+/** Mesas/comandas ocupadas com conta aberta. Não inclui delivery/retirada. */
+async function coletarContasEmergenciaSalao() {
+	const secundario = await ehSecundario();
+	const mesas = secundario
+		? ((await remoto.listarMesasRemoto()) as Awaited<
+				ReturnType<typeof listarMesas>
+			>)
+		: await listarMesas();
+	const ocupadas = mesas
+		.filter((mesa) => mesa.status === "ocupada" && mesa.idconta)
+		.sort((a, b) => a.numero - b.numero);
+	const fontes = [];
+	for (const mesa of ocupadas) {
+		const idconta = mesa.idconta;
+		if (!idconta) continue;
+		const conta = secundario
+			? await remoto.obterContaMesaRemoto(idconta)
+			: await obterContaMesa(idconta);
+		if (!conta) continue;
+		fontes.push({
+			numero: Number(conta.numero_mesa) || mesa.numero,
+			status: conta.status,
+			modalidade: conta.modalidade,
+			nomecliente: conta.nomecliente,
+			valorrestante: Number(conta.valorrestante) || 0,
+			itens: conta.itens,
+		});
+	}
+	return selecionarContasEmergencia(fontes);
+}
+
+async function loginOfflineLocal(
+	login: string,
+	password: string,
+	persistirSessao = true,
+) {
 	const usuario = await buscarUsuarioCachePorLogin(login);
 	if (!usuario?.password_hash) {
 		return null;
@@ -352,6 +395,15 @@ async function loginOfflineLocal(login: string, password: string) {
 		throw new Error("Usuário ou senha inválidos (modo offline).");
 	}
 	const empresas = empresasDoUsuarioCache(usuario);
+	const username = usuario.nome || usuario.email;
+	if (!persistirSessao) {
+		return {
+			userid: usuario.id,
+			username,
+			empresas,
+			offline: true as const,
+		};
+	}
 	const tokenOffline = `offline:${usuario.id}:${uuidv4()}`;
 	await lembrarEmpresaDaSessao();
 	const sessaoAtual = await obterSessao();
@@ -361,14 +413,15 @@ async function loginOfflineLocal(login: string, password: string) {
 	await salvarSessao({
 		token: tokenOffline,
 		userid: usuario.id,
-		username: usuario.nome || usuario.email,
+		username,
 		roles: usuario.perfil,
 		idempresa: manterEmpresaDevice ? sessaoAtual.idempresa : null,
 		nomeempresa: manterEmpresaDevice ? sessaoAtual.nomeempresa : null,
 		modulogourmet: manterEmpresaDevice ? sessaoAtual.modulogourmet : null,
 	});
 	return {
-		username: usuario.nome || usuario.email,
+		userid: usuario.id,
+		username,
 		empresas: manterEmpresaDevice
 			? empresas.filter((e) => e.id === sessaoAtual.idempresa).length
 				? empresas.filter((e) => e.id === sessaoAtual.idempresa)
@@ -615,6 +668,17 @@ async function concluirFiscalVenda(vendaId: string) {
 	return resultado;
 }
 
+async function atorNoPrincipal(
+	informado?: AtorVistoria | null,
+): Promise<AtorVistoria> {
+	const nome = informado?.usuario?.trim();
+	if (nome) {
+		return { usuario: nome.slice(0, 80), origem: informado?.origem ?? "pos" };
+	}
+	const sessao = await obterSessao();
+	return { usuario: sessao.username, origem: "pdv" };
+}
+
 /**
  * Fachada local-api: usada pela UI via IPC e exposta na LAN para o POS Android.
  */
@@ -723,15 +787,20 @@ export const localApi = {
 		};
 	},
 
-	async login(email: string, password: string) {
+	async login(
+		email: string,
+		password: string,
+		opcoes?: { persistirSessao?: boolean },
+	) {
 		const url = await apiBaseUrl();
 		const login = email.trim();
+		const persistirSessao = opcoes?.persistirSessao !== false;
 		const apiKey = (await getConfig("pdv_api_key", "")).trim();
 		const usaApiKey = apiKey.startsWith("pdv_");
 
 		// Modelo B: com API key, operador autentica só no cache local.
 		if (usaApiKey) {
-			const local = await loginOfflineLocal(login, password);
+			const local = await loginOfflineLocal(login, password, persistirSessao);
 			if (local) return local;
 			throw new Error(
 				"Usuário ou senha inválidos. Sincronize as credenciais com a API key nas configurações (Carga / sync).",
@@ -746,19 +815,34 @@ export const localApi = {
 			}
 		}
 		try {
-			await lembrarEmpresaDaSessao();
+			if (persistirSessao) {
+				await lembrarEmpresaDaSessao();
+			}
 			const result = await loginEmail(emailParaApi, password);
-			await salvarSessao({
-				token: result.token,
-				userid: result.userid,
-				username: result.username,
-				roles: null,
-				idempresa: null,
-				nomeempresa: null,
-				modulogourmet: null,
-			});
-			await sincronizarRolesSessao(await obterSessao());
-			const empresas = await listarEmpresas(result.userid);
+			let empresas: Array<{ id: string; nome: string; cnpj?: string | null }>;
+			if (persistirSessao) {
+				await salvarSessao({
+					token: result.token,
+					userid: result.userid,
+					username: result.username,
+					roles: null,
+					idempresa: null,
+					nomeempresa: null,
+					modulogourmet: null,
+				});
+				await sincronizarRolesSessao(await obterSessao());
+				empresas = await listarEmpresas(result.userid);
+			} else {
+				try {
+					empresas = await listarEmpresas(result.userid, result.token);
+				} catch {
+					const cached =
+						(result.userid
+							? await buscarUsuarioCachePorId(result.userid)
+							: null) ?? (await buscarUsuarioCachePorLogin(login));
+					empresas = cached ? empresasDoUsuarioCache(cached) : [];
+				}
+			}
 			if (result.userid) {
 				await upsertUsuariosCache([
 					{
@@ -770,12 +854,21 @@ export const localApi = {
 					},
 				]).catch(() => undefined);
 			}
-			return { username: result.username, empresas, offline: false as const };
+			return {
+				userid: result.userid,
+				username: result.username,
+				empresas,
+				offline: false as const,
+			};
 		} catch (err) {
 			const offlineRede =
 				err instanceof ApiError && (err.status === 0 || err.status === 408);
 			if (offlineRede || !login.includes("@")) {
-				const local = await loginOfflineLocal(login, password);
+				const local = await loginOfflineLocal(
+					login,
+					password,
+					persistirSessao,
+				);
 				if (local) return local;
 			}
 			if (offlineRede) {
@@ -1320,20 +1413,17 @@ export const localApi = {
 
 	async listarEmpresasLan() {
 		const sessao = await obterSessao();
-		if (!sessao.token || !sessao.userid) {
-			throw new Error("Sessão inválida");
+		if (!sessaoPdvProntaParaPos(sessao)) {
+			throw new Error(
+				"Faça login e selecione a empresa no PDV antes de usar o POS.",
+			);
 		}
-		try {
-			return await listarEmpresas(sessao.userid);
-		} catch (err) {
-			if (err instanceof ApiError && (err.status === 0 || err.status === 408)) {
-				const local =
-					(await buscarUsuarioCachePorId(sessao.userid)) ??
-					(await buscarUsuarioCachePorLogin(sessao.username ?? sessao.userid));
-				if (local) return empresasDoUsuarioCache(local);
-			}
-			throw err;
-		}
+		return [
+			{
+				id: sessao.idempresa as string,
+				nome: sessao.nomeempresa || "Empresa",
+			},
+		];
 	},
 
 	async catalogoCarga() {
@@ -1733,6 +1823,7 @@ export const localApi = {
 		troco?: number;
 		cliente?: ClienteVenda | null;
 		valordesconto?: number;
+		garcom?: string | null;
 	}) {
 		const desconto = Number(input.valordesconto) || 0;
 		const subtotal = input.itens.reduce(
@@ -1767,7 +1858,7 @@ export const localApi = {
 			const sessao = await obterSessao();
 			void imprimirProducaoPedido({
 				origem: "Balcão",
-				garcom: sessao.username,
+				garcom: input.garcom?.trim() || sessao.username,
 				itens: input.itens,
 			});
 		}
@@ -2005,16 +2096,28 @@ export const localApi = {
 		return removidas;
 	},
 
-	async cancelarContaMesa(idconta: string) {
+	async listarVistoria(filtro?: FiltroVistoria | null) {
+		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarVistoriaRemoto(filtro ?? undefined);
+		}
+		return listarVistoria(filtro ?? undefined);
+	},
+
+	async cancelarContaMesa(idconta: string, ator?: AtorVistoria | null) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		if (await ehSecundario()) {
-			const result = await remoto.cancelarContaMesaRemoto(idconta);
+			const result = await remoto.cancelarContaMesaRemoto(
+				idconta,
+				await atorNoPrincipal(ator),
+			);
 			avisarTecnibra();
 			return result;
 		}
 		const conta = await obterContaMesa(idconta);
-		await cancelarContaMesaRepo(idconta);
+		await cancelarContaMesaRepo(idconta, ator);
 		if (conta && ehModalidadeEntrega(conta.modalidade)) {
 			void notificarStatusPedidoWhatsapp({
 				idconta: conta.id,
@@ -2031,7 +2134,12 @@ export const localApi = {
 		return { ok: true as const };
 	},
 
-	async cancelarItemConta(idconta: string, iditem: string, senha?: string) {
+	async cancelarItemConta(
+		idconta: string,
+		iditem: string,
+		senha?: string,
+		ator?: AtorVistoria | null,
+	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		if (await ehSecundario()) {
@@ -2039,11 +2147,12 @@ export const localApi = {
 				idconta,
 				iditem,
 				senha,
+				await atorNoPrincipal(ator),
 			);
 			avisarTecnibra();
 			return conta;
 		}
-		const conta = await cancelarItemContaRepo(idconta, iditem, senha);
+		const conta = await cancelarItemContaRepo(idconta, iditem, senha, ator);
 		avisarTecnibra();
 		return conta;
 	},
@@ -2078,16 +2187,22 @@ export const localApi = {
 			quantidade: number;
 			precounitario: number;
 			observacao?: string | null;
+			iditem?: string | null;
 		},
+		ator?: AtorVistoria | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		if (await ehSecundario()) {
-			const conta = await remoto.adicionarItemContaRemoto(idconta, item);
+			const conta = await remoto.adicionarItemContaRemoto(
+				idconta,
+				item,
+				await atorNoPrincipal(ator),
+			);
 			avisarTecnibra();
 			return conta;
 		}
-		const conta = await adicionarItemConta(idconta, item);
+		const conta = await adicionarItemConta(idconta, item, ator);
 		avisarTecnibra();
 		return conta;
 	},
@@ -2113,6 +2228,7 @@ export const localApi = {
 		observacaoPedido?: string | null,
 		mesaFisica?: string | null,
 		localizacao?: string | null,
+		garcom?: string | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
@@ -2127,6 +2243,7 @@ export const localApi = {
 				obs,
 				mesa,
 				local,
+				garcom?.trim() || (await obterSessao()).username,
 			);
 			avisarTecnibra();
 			return conta;
@@ -2138,6 +2255,7 @@ export const localApi = {
 			observacaoPedido: obs,
 			mesaFisica: mesa,
 			localizacao: local,
+			garcom,
 		});
 		if (conta.pedidoNovo) {
 			try {
@@ -2148,7 +2266,7 @@ export const localApi = {
 					observacaoPedido: conta.observacaoPedido,
 					mesaFisica: conta.mesaFisica,
 					localizacao: conta.localizacao,
-					garcom: sessao.username,
+					garcom: conta.garcom || sessao.username,
 					itens: conta.itensProducao,
 				});
 			} catch {
@@ -2193,6 +2311,7 @@ export const localApi = {
 				observacaoPedido: primeiro.observacao_pedido,
 				mesaFisica: primeiro.mesa_fisica,
 				localizacao: primeiro.localizacao,
+				garcom: primeiro.garcom,
 				status: itens.some((item) => item.status === "pendente")
 					? "pendente"
 					: "entregue",
@@ -2224,7 +2343,7 @@ export const localApi = {
 			observacaoPedido: pedido.observacaoPedido,
 			mesaFisica: pedido.mesaFisica,
 			localizacao: pedido.localizacao,
-			garcom: (await obterSessao()).username,
+			garcom: pedido.garcom || (await obterSessao()).username,
 			itens: pedido.itens,
 			reimpressao: true,
 		});
@@ -2259,24 +2378,30 @@ export const localApi = {
 			observacao?: string | null;
 		},
 		nomecliente?: string,
+		garcom?: string | null,
+		origem?: "pdv" | "pos",
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		const atorItem = garcom?.trim()
+			? { usuario: garcom, origem: origem ?? "pos" }
+			: undefined;
 		if (await ehSecundario()) {
 			const conta = await remoto.adicionarItemNaMesaRemoto(
 				numero,
 				item,
 				nomecliente,
+				await atorNoPrincipal(atorItem),
 			);
 			avisarTecnibra();
 			return conta;
 		}
-		const conta = await adicionarItemNaMesa(numero, item, nomecliente);
+		const conta = await adicionarItemNaMesa(numero, item, nomecliente, atorItem);
 		try {
 			void imprimirProducaoPedido({
 				origem: await rotuloOrigemMesa(conta.numero_mesa),
 				cliente: conta.nomecliente,
-				garcom: (await obterSessao()).username,
+				garcom: garcom?.trim() || (await obterSessao()).username,
 				itens: [
 					{
 						idproduto: item.idproduto,
@@ -2298,6 +2423,7 @@ export const localApi = {
 		lancamentosOuMeio: LancamentoPagamento[] | MeioPagamento,
 		troco?: number,
 		cliente?: ClienteVenda | null,
+		ator?: AtorVistoria | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
@@ -2323,6 +2449,7 @@ export const localApi = {
 				lancamentos,
 				troco,
 				cliente,
+				await atorNoPrincipal(ator),
 			);
 			avisarTecnibra();
 			return result;
@@ -2332,6 +2459,7 @@ export const localApi = {
 			lancamentos,
 			troco,
 			cliente,
+			ator,
 		});
 		const fiscal = await concluirFiscalVenda(venda.id);
 
@@ -2594,10 +2722,26 @@ export const localApi = {
 		return imprimirPreConta(idconta);
 	},
 
+	async imprimirEmergenciaContas() {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const rotulo =
+			(await getConfig("modelo_atendimento", "mesa")) === "comanda"
+				? "Comanda"
+				: "Mesa";
+		const contas = await coletarContasEmergenciaSalao();
+		if (!contas.length) {
+			return { ok: false as const, vazio: true as const, qtd: 0 };
+		}
+		const impresso = await enviarImpressaoEmergenciaContas(contas, rotulo);
+		return { ...impresso, vazio: false as const, qtd: contas.length };
+	},
+
 	async registrarPagamentoConta(
 		idconta: string,
 		lancamentos: LancamentoPagamento[],
 		troco?: number,
+		ator?: AtorVistoria | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
@@ -2606,6 +2750,7 @@ export const localApi = {
 				idconta,
 				lancamentos,
 				troco,
+				await atorNoPrincipal(ator),
 			);
 			avisarTecnibra();
 			return result;
@@ -2614,6 +2759,7 @@ export const localApi = {
 			idconta,
 			lancamentos,
 			troco,
+			ator,
 		});
 		if (result.venda) {
 			await concluirFiscalVenda(result.venda.id);
@@ -2629,6 +2775,7 @@ export const localApi = {
 		lancamentos: LancamentoPagamento[],
 		troco?: number,
 		cliente?: ClienteVenda | null,
+		ator?: AtorVistoria | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
@@ -2639,6 +2786,7 @@ export const localApi = {
 				lancamentos,
 				troco,
 				cliente,
+				await atorNoPrincipal(ator),
 			);
 			avisarTecnibra();
 			return result;
@@ -2649,6 +2797,7 @@ export const localApi = {
 			lancamentos,
 			troco,
 			cliente,
+			ator,
 		});
 		await concluirFiscalVenda(result.venda.id);
 		void processarOutbox();
@@ -2673,6 +2822,7 @@ export const localApi = {
 		idcontaOrigem: string,
 		idsItens: string[],
 		numeroDestino: number,
+		ator?: AtorVistoria | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
@@ -2681,6 +2831,7 @@ export const localApi = {
 				idcontaOrigem,
 				idsItens,
 				numeroDestino,
+				await atorNoPrincipal(ator),
 			);
 			avisarTecnibra();
 			return result;
@@ -2689,16 +2840,25 @@ export const localApi = {
 			idcontaOrigem,
 			idsItens,
 			numeroDestino,
+			ator,
 		});
 		avisarTecnibra();
 		return result;
 	},
 
-	async juntarContas(idOrigem: string, numeroDestino: number) {
+	async juntarContas(
+		idOrigem: string,
+		numeroDestino: number,
+		ator?: AtorVistoria | null,
+	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		if (await ehSecundario()) {
-			const conta = await remoto.juntarContasRemoto(idOrigem, numeroDestino);
+			const conta = await remoto.juntarContasRemoto(
+				idOrigem,
+				numeroDestino,
+				await atorNoPrincipal(ator),
+			);
 			avisarTecnibra();
 			return conta;
 		}
@@ -2706,12 +2866,16 @@ export const localApi = {
 		if (!mesa.idconta) {
 			throw new Error("Destino sem conta aberta");
 		}
-		const conta = await juntarContas(idOrigem, mesa.idconta);
+		const conta = await juntarContas(idOrigem, mesa.idconta, ator);
 		avisarTecnibra();
 		return conta;
 	},
 
-	async juntarVariasContas(idsOrigem: string[], idDestino: string) {
+	async juntarVariasContas(
+		idsOrigem: string[],
+		idDestino: string,
+		ator?: AtorVistoria | null,
+	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		if (await ehSecundario()) {
@@ -2719,7 +2883,7 @@ export const localApi = {
 				"Juntar várias contas no secundário ainda não é suportado. Use o PDV principal.",
 			);
 		}
-		const conta = await juntarVariasContasRepo(idsOrigem, idDestino);
+		const conta = await juntarVariasContasRepo(idsOrigem, idDestino, ator);
 		avisarTecnibra();
 		return conta;
 	},

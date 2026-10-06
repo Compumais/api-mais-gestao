@@ -1,6 +1,6 @@
 "use client";
 
-import { IconReceipt } from "@tabler/icons-react";
+import { IconCashRegister, IconReceipt } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	flexRender,
@@ -36,6 +36,7 @@ import { usuariosService } from "@/services/usuarios.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import { PageContainer } from "../components/page-container";
+import { DialogFecharCaixaPdv } from "../fechamentos-caixa/dialog-fechar-caixa-pdv";
 import { DialogDetalhesNfce } from "../nfce/components/dialog-detalhes-nfce";
 import { DialogCancelarVendaNaoFiscal } from "./dialog-cancelar-venda-nao-fiscal";
 import { DialogConfirmarEmitirNfceLote } from "./dialog-confirmar-emitir-nfce-lote";
@@ -51,10 +52,10 @@ import {
 	PAGAMENTO_OPCOES_FILTRO,
 } from "./vendas-pdv-colunas";
 import {
+	type FiltrosColunaVendasPdvState,
 	filtrarVendasPdvColuna,
 	filtrosColunaVendasPdvAtivos,
 	filtrosColunaVendasPdvVazios,
-	type FiltrosColunaVendasPdvState,
 	idNfceVenda,
 	ordenarVendasPdvColuna,
 	podeEmitirNfceVendaNaoFiscal,
@@ -104,6 +105,7 @@ export default function VendasPdvPage() {
 	const [resultadoLote, setResultadoLote] =
 		useState<ResultadoEmitirNfceVendasNaoFiscaisLote | null>(null);
 	const [resultadoLoteAberto, setResultadoLoteAberto] = useState(false);
+	const [fecharCaixaAberto, setFecharCaixaAberto] = useState(false);
 
 	const { data: produtosData } = useQuery({
 		queryKey: ["produtos-lista", empresa?.id],
@@ -431,6 +433,17 @@ export default function VendasPdvPage() {
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
+						{empresa ? (
+							<Button
+								variant="outline"
+								size="sm"
+								className="gap-1.5"
+								onClick={() => setFecharCaixaAberto(true)}
+							>
+								<IconCashRegister className="size-4" aria-hidden="true" />
+								Fechar caixa
+							</Button>
+						) : null}
 						{idsSelecionados.length > 0 ? (
 							<Button
 								size="sm"
@@ -566,6 +579,14 @@ export default function VendasPdvPage() {
 					)}
 				</div>
 			</div>
+
+			{empresa ? (
+				<DialogFecharCaixaPdv
+					open={fecharCaixaAberto}
+					onOpenChange={setFecharCaixaAberto}
+					idempresa={empresa.id}
+				/>
+			) : null}
 
 			{empresa && (
 				<ItensVendaDialog

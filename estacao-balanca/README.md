@@ -35,6 +35,24 @@ flutter pub get
 flutter run -d windows --no-enable-impeller
 ```
 
+## APK (Android)
+
+Por causa do acento em `mais gestão`, o build AOT falha nesse path. Use um caminho sem acento (cópia) ou o script:
+
+```powershell
+# a partir de api-mais-gestao/estacao-balanca
+./build_apk.ps1
+```
+
+Saída: `build/apk/Estacao-Balanca-1.0.0.apk` (release, assinado com keystore debug).
+
+Ou manualmente:
+
+```powershell
+# copiar para path sem acento, depois:
+flutter build apk --release
+```
+
 ## Contrato LAN
 
 - `GET /pos/health`, `POST /pos/login`, `GET/POST empresas`

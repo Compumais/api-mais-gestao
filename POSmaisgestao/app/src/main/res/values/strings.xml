@@ -3,7 +3,9 @@
     <string name="brand_name">Mais Gestão</string>
     <string name="login_titulo">Entrar</string>
     <string name="email">E-mail</string>
+    <string name="email_ou_usuario">E-mail ou usuário</string>
     <string name="senha">Senha</string>
+    <string name="login_preencha_campos">Preencha URL, usuário/e-mail e senha</string>
     <string name="entrar">Entrar</string>
     <string name="url_api">URL da API</string>
     <string name="selecione_empresa">Selecione a empresa</string>

@@ -23,6 +23,7 @@ import {
 	withTransaction,
 } from "./database";
 import { mesaTemContaAberta } from "./estado-mesa";
+import { registrarVistoria, type AtorVistoria } from "./vistoria";
 import {
 	agruparItensVendidosTurno,
 	type ItemVendidoTurnoAgrupado,
@@ -271,6 +272,7 @@ export type PedidoFilaLocal = {
 	observacao_pedido: string | null;
 	mesa_fisica: string | null;
 	localizacao: string | null;
+	garcom: string | null;
 	status: string;
 	criadoem: string;
 	entregueem: string | null;
@@ -2578,7 +2580,10 @@ export async function limparContasVazias(): Promise<number> {
 }
 
 /** Descarta itens, libera a mesa/comanda/pedido e cancela outbox pendente da conta. */
-export async function cancelarContaMesa(idconta: string): Promise<void> {
+export async function cancelarContaMesa(
+	idconta: string,
+	ator?: AtorVistoria | null,
+): Promise<void> {
 	const conta = await obterContaMesa(idconta);
 	const rotulo =
 		(await getConfig("modelo_atendimento", "mesa")) === "comanda"
@@ -2650,6 +2655,34 @@ export async function cancelarContaMesa(idconta: string): Promise<void> {
 				// payload inválido: ignora
 			}
 		}
+	});
+
+	for (const item of conta.itens) {
+		await registrarVistoria({
+			acao: "exclusao",
+			idconta: conta.id,
+			numeroMesa: conta.numero_mesa,
+			nomecliente: conta.nomecliente,
+			usuario: ator?.usuario,
+			origem: ator?.origem,
+			iditem: item.id,
+			descricao: item.descricao,
+			quantidade: item.quantidade,
+			precounitario: item.precounitario,
+			precototal: item.precototal,
+			detalhe: "Conta cancelada",
+		});
+	}
+	await registrarVistoria({
+		acao: "fechamento",
+		idconta: conta.id,
+		numeroMesa: conta.numero_mesa,
+		nomecliente: conta.nomecliente,
+		usuario: ator?.usuario,
+		origem: ator?.origem,
+		valortotal: conta.valortotal,
+		descricao: "Conta cancelada",
+		detalhe: "Cancelada sem recebimento",
 	});
 }
 
@@ -2867,6 +2900,9 @@ export async function obterContaMesa(
 	return montarContaLocal(conta, itens, valorpago);
 }
 
+const UUID_ITEM =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function adicionarItemConta(
 	idconta: string,
 	item: {
@@ -2875,13 +2911,35 @@ export async function adicionarItemConta(
 		quantidade: number;
 		precounitario: number;
 		observacao?: string | null;
+		iditem?: string | null;
 	},
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	const conta = await obterContaMesa(idconta);
 	if (!conta || conta.status !== "aberta") {
 		throw new Error("Conta inválida");
 	}
-	const id = uuidv4();
+	const idInformado = item.iditem?.trim() || "";
+	if (idInformado && !UUID_ITEM.test(idInformado)) {
+		throw new Error("Identificador do item inválido");
+	}
+	if (idInformado) {
+		const ja = await queryOne<{ id: string; idconta: string }>(
+			"SELECT id, idconta FROM item_conta WHERE id = $1",
+			[idInformado],
+		);
+		if (ja) {
+			if (ja.idconta !== idconta) {
+				throw new Error("Este lançamento já entrou em outra comanda.");
+			}
+			const atual = await obterContaMesa(idconta);
+			if (!atual) {
+				throw new Error("Falha ao atualizar conta");
+			}
+			return atual;
+		}
+	}
+	const id = idInformado || uuidv4();
 	const precototal = item.quantidade * item.precounitario;
 	const agora = new Date().toISOString();
 	const observacao = item.observacao?.trim() || null;
@@ -2913,7 +2971,29 @@ export async function adicionarItemConta(
 	await enfileirarOutbox("conta_mesa", {
 		acao: "item",
 		idconta,
-		item: { ...item, precototal },
+		item: {
+			idproduto: item.idproduto,
+			descricao: item.descricao,
+			quantidade: item.quantidade,
+			precounitario: item.precounitario,
+			observacao: item.observacao,
+			precototal,
+		},
+	});
+
+	await registrarVistoria({
+		acao: "insercao",
+		idconta,
+		numeroMesa: conta.numero_mesa,
+		nomecliente: conta.nomecliente,
+		usuario: ator?.usuario,
+		origem: ator?.origem,
+		iditem: id,
+		descricao: item.descricao,
+		quantidade: item.quantidade,
+		precounitario: item.precounitario,
+		precototal,
+		detalhe: observacao,
 	});
 
 	const atualizada = await obterContaMesa(idconta);
@@ -2928,6 +3008,7 @@ export async function cancelarItemConta(
 	idconta: string,
 	iditem: string,
 	senha?: string,
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	const conta = await obterContaMesa(idconta);
 	const item = await queryOne<{
@@ -2935,9 +3016,12 @@ export async function cancelarItemConta(
 		idconta: string;
 		descricao: string;
 		quantidade: number;
+		precounitario: number;
+		precototal: number;
 		pago: number;
 	}>(
-		`SELECT id, idconta, descricao, quantidade, COALESCE(pago, 0)::int as pago
+		`SELECT id, idconta, descricao, quantidade, precounitario, precototal,
+			COALESCE(pago, 0)::int as pago
 		 FROM item_conta WHERE id = $1`,
 		[iditem],
 	);
@@ -2982,6 +3066,23 @@ export async function cancelarItemConta(
 		iditem,
 	});
 
+	if (conta && item) {
+		await registrarVistoria({
+			acao: "exclusao",
+			idconta: conta.id,
+			numeroMesa: conta.numero_mesa,
+			nomecliente: conta.nomecliente,
+			usuario: ator?.usuario,
+			origem: ator?.origem,
+			iditem: item.id,
+			descricao: item.descricao,
+			quantidade: item.quantidade,
+			precounitario: item.precounitario,
+			precototal: item.precototal,
+			detalhe: "Item excluído",
+		});
+	}
+
 	const atualizada = await obterContaMesa(idconta);
 	if (!atualizada) {
 		throw new Error("Falha ao cancelar item");
@@ -3000,13 +3101,14 @@ export async function adicionarItemNaMesa(
 		observacao?: string | null;
 	},
 	nomecliente?: string,
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	const existente = await obterContaPorNumero(numero);
 	if (existente) {
-		return adicionarItemConta(existente.id, item);
+		return adicionarItemConta(existente.id, item, ator);
 	}
 	const conta = await abrirContaMesa(numero, nomecliente);
-	return adicionarItemConta(conta.id, item);
+	return adicionarItemConta(conta.id, item, ator);
 }
 
 export async function atualizarNomeClienteConta(
@@ -3048,6 +3150,7 @@ export async function enviarPedidoConta(params: {
 	observacaoPedido?: string | null;
 	mesaFisica?: string | null;
 	localizacao?: string | null;
+	garcom?: string | null;
 	itens: Array<{
 		idproduto: string;
 		quantidade: number;
@@ -3060,6 +3163,7 @@ export async function enviarPedidoConta(params: {
 		observacaoPedido: string | null;
 		mesaFisica: string | null;
 		localizacao: string | null;
+		garcom: string | null;
 		itensProducao: Array<{
 			idproduto: string;
 			descricao: string;
@@ -3078,6 +3182,7 @@ export async function enviarPedidoConta(params: {
 	const observacaoPedido = params.observacaoPedido?.trim() || null;
 	const mesaFisica = normalizarTextoPedidoCurto(params.mesaFisica, 40);
 	const localizacao = normalizarTextoPedidoCurto(params.localizacao, 80);
+	const garcom = normalizarTextoPedidoCurto(params.garcom, 80);
 	const existente = await queryOne<{ id: string }>(
 		"SELECT id FROM pedido_fila WHERE client_order_id = $1 LIMIT 1",
 		[clientOrderId],
@@ -3093,6 +3198,7 @@ export async function enviarPedidoConta(params: {
 			observacaoPedido,
 			mesaFisica,
 			localizacao,
+			garcom,
 			itensProducao: [],
 		};
 	}
@@ -3153,6 +3259,15 @@ export async function enviarPedidoConta(params: {
 		});
 	}
 
+	const lancadosVistoria: Array<{
+		id: string;
+		descricao: string;
+		quantidade: number;
+		precounitario: number;
+		precototal: number;
+		observacao: string | null;
+	}> = [];
+
 	const pedidoNovo = await withTransaction(async (client) => {
 		await execute(
 			"SELECT pg_advisory_xact_lock(hashtext($1))",
@@ -3179,6 +3294,14 @@ export async function enviarPedidoConta(params: {
 		for (const item of itensResolvidos) {
 			const idItem = uuidv4();
 			const precototal = item.quantidade * item.precounitario;
+			lancadosVistoria.push({
+				id: idItem,
+				descricao: item.descricao,
+				quantidade: item.quantidade,
+				precounitario: item.precounitario,
+				precototal,
+				observacao: item.observacao,
+			});
 			await execute(
 				`INSERT INTO item_conta (
 					id, idconta, idproduto, descricao, quantidade, precounitario,
@@ -3201,8 +3324,8 @@ export async function enviarPedidoConta(params: {
 				`INSERT INTO pedido_fila (
 					id, client_order_id, idconta, numero_mesa, nomecliente,
 					idproduto, descricao, quantidade, observacao, observacao_pedido,
-					mesa_fisica, localizacao, status, criadoem
-				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pendente', $13)`,
+					mesa_fisica, localizacao, garcom, status, criadoem
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pendente', $14)`,
 				[
 					uuidv4(),
 					clientOrderId,
@@ -3216,6 +3339,7 @@ export async function enviarPedidoConta(params: {
 					observacaoPedido,
 					mesaFisica,
 					localizacao,
+					garcom,
 					agora,
 				],
 				client,
@@ -3240,6 +3364,25 @@ export async function enviarPedidoConta(params: {
 		return true;
 	});
 
+	if (pedidoNovo) {
+		for (const item of lancadosVistoria) {
+			await registrarVistoria({
+				acao: "insercao",
+				idconta: params.idconta,
+				numeroMesa: conta.numero_mesa,
+				nomecliente: conta.nomecliente,
+				usuario: garcom,
+				origem: garcom ? "pos" : "pdv",
+				iditem: item.id,
+				descricao: item.descricao,
+				quantidade: item.quantidade,
+				precounitario: item.precounitario,
+				precototal: item.precototal,
+				detalhe: item.observacao,
+			});
+		}
+	}
+
 	const atualizada = await obterContaMesa(params.idconta);
 	if (!atualizada) {
 		throw new Error("Falha ao enviar pedido");
@@ -3250,6 +3393,7 @@ export async function enviarPedidoConta(params: {
 		observacaoPedido,
 		mesaFisica,
 		localizacao,
+		garcom,
 		itensProducao: pedidoNovo ? itensResolvidos : [],
 	};
 }
@@ -3264,7 +3408,7 @@ export async function listarPedidosFila(
 		return query<PedidoFilaLocal>(
 			`SELECT id, client_order_id, idconta, numero_mesa, nomecliente, idproduto,
 				descricao, quantidade, observacao, observacao_pedido, mesa_fisica, localizacao,
-				status, criadoem, entregueem
+				garcom, status, criadoem, entregueem
 			 FROM pedido_fila
 			 WHERE criadoem >= $1 AND status = 'pendente'
 			 ORDER BY criadoem`,
@@ -3274,7 +3418,7 @@ export async function listarPedidosFila(
 	return query<PedidoFilaLocal>(
 		`SELECT id, client_order_id, idconta, numero_mesa, nomecliente, idproduto,
 			descricao, quantidade, observacao, observacao_pedido, mesa_fisica, localizacao,
-			status, criadoem, entregueem
+			garcom, status, criadoem, entregueem
 		 FROM pedido_fila
 		 WHERE criadoem >= $1
 		 ORDER BY criadoem`,
@@ -3305,6 +3449,7 @@ export async function fecharContaMesa(params: {
 	lancamentos: LancamentoPagamento[];
 	troco?: number;
 	cliente?: ClienteVenda | null;
+	ator?: AtorVistoria | null;
 }): Promise<VendaLocal> {
 	await recalcularContaPersistida(params.idconta);
 	const conta = await obterContaMesa(params.idconta);
@@ -3345,6 +3490,7 @@ export async function fecharContaMesa(params: {
 		fecharConta: true,
 		marcarItensIds: itensAbertos.map((i) => i.id),
 		cliente: params.cliente,
+		ator: params.ator,
 	});
 }
 
@@ -3362,6 +3508,7 @@ async function gravarVendaMesa(params: {
 	fecharConta: boolean;
 	marcarItensIds: string[];
 	cliente?: ClienteVenda | null;
+	ator?: AtorVistoria | null;
 }): Promise<VendaLocal> {
 	const sessao = await obterSessao();
 	if (!sessao.idempresa) {
@@ -3508,6 +3655,19 @@ async function gravarVendaMesa(params: {
 		identidade: cliente.idcliente,
 	});
 
+	if (params.fecharConta) {
+		await registrarVistoria({
+			acao: "fechamento",
+			idconta: params.conta.id,
+			numeroMesa: params.conta.numero_mesa,
+			nomecliente: nomecliente,
+			usuario: params.ator?.usuario,
+			origem: params.ator?.origem,
+			valortotal: params.total,
+			descricao: "Conta recebida",
+		});
+	}
+
 	return venda;
 }
 
@@ -3631,6 +3791,7 @@ export async function registrarPagamentoConta(params: {
 	idconta: string;
 	lancamentos: LancamentoPagamento[];
 	troco?: number;
+	ator?: AtorVistoria | null;
 }): Promise<{ conta: ContaMesaLocal; venda: VendaLocal | null }> {
 	await recalcularContaPersistida(params.idconta);
 	const conta = await obterContaMesa(params.idconta);
@@ -3655,6 +3816,7 @@ export async function registrarPagamentoConta(params: {
 			idconta: params.idconta,
 			lancamentos: params.lancamentos,
 			troco: restante.troco,
+			ator: params.ator,
 		});
 		return { conta: (await obterContaMesa(params.idconta)) ?? conta, venda };
 	}
@@ -3694,6 +3856,7 @@ export async function fecharFatiaItens(params: {
 	lancamentos: LancamentoPagamento[];
 	troco?: number;
 	cliente?: ClienteVenda | null;
+	ator?: AtorVistoria | null;
 }): Promise<{ conta: ContaMesaLocal | null; venda: VendaLocal }> {
 	await recalcularContaPersistida(params.idconta);
 	const conta = await obterContaMesa(params.idconta);
@@ -3749,6 +3912,7 @@ export async function fecharFatiaItens(params: {
 		fecharConta: restoIds.length === 0,
 		marcarItensIds: params.idsItens,
 		cliente: params.cliente,
+		ator: params.ator,
 	});
 
 	if (restoIds.length === 0) {
@@ -3836,6 +4000,7 @@ export async function transferirItens(params: {
 	idcontaOrigem: string;
 	idsItens: string[];
 	numeroDestino: number;
+	ator?: AtorVistoria | null;
 }): Promise<{ origem: ContaMesaLocal | null; destino: ContaMesaLocal }> {
 	const origem = await obterContaMesa(params.idcontaOrigem);
 	if (!origem || origem.status !== "aberta") {
@@ -3884,6 +4049,17 @@ export async function transferirItens(params: {
 			`UPDATE conta_mesa SET status = 'fechada', fechadoem = $1 WHERE id = $2`,
 			[new Date().toISOString(), origem.id],
 		);
+		await registrarVistoria({
+			acao: "fechamento",
+			idconta: origem.id,
+			numeroMesa: origem.numero_mesa,
+			nomecliente: origem.nomecliente,
+			usuario: params.ator?.usuario,
+			origem: params.ator?.origem,
+			valortotal: 0,
+			descricao: "Conta encerrada",
+			detalhe: `Itens transferidos para a comanda ${params.numeroDestino}`,
+		});
 		return {
 			origem: null,
 			destino: (await obterContaMesa(destino.id)) as ContaMesaLocal,
@@ -3899,6 +4075,7 @@ export async function transferirItens(params: {
 export async function juntarContas(
 	idOrigem: string,
 	idDestino: string,
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	if (idOrigem === idDestino) {
 		throw new Error("Escolha duas contas diferentes");
@@ -3936,6 +4113,18 @@ export async function juntarContas(
 		await recalcularContaPersistida(idDestino, client);
 	});
 
+	await registrarVistoria({
+		acao: "fechamento",
+		idconta: origem.id,
+		numeroMesa: origem.numero_mesa,
+		nomecliente: origem.nomecliente,
+		usuario: ator?.usuario,
+		origem: ator?.origem,
+		valortotal: origem.valortotal,
+		descricao: "Conta encerrada",
+		detalhe: `Juntada na comanda ${destino.numero_mesa}`,
+	});
+
 	const atualizada = await obterContaMesa(idDestino);
 	if (!atualizada) {
 		throw new Error("Falha ao juntar as contas");
@@ -3947,6 +4136,7 @@ export async function juntarContas(
 export async function juntarVariasContas(
 	idsOrigem: string[],
 	idDestino: string,
+	ator?: AtorVistoria | null,
 ): Promise<ContaMesaLocal> {
 	const origensIds = [
 		...new Set(idsOrigem.map((id) => id.trim()).filter(Boolean)),
@@ -3995,6 +4185,20 @@ export async function juntarVariasContas(
 		}
 		await recalcularContaPersistida(idDestino, client);
 	});
+
+	for (const origem of origens) {
+		await registrarVistoria({
+			acao: "fechamento",
+			idconta: origem.id,
+			numeroMesa: origem.numero_mesa,
+			nomecliente: origem.nomecliente,
+			usuario: ator?.usuario,
+			origem: ator?.origem,
+			valortotal: origem.valortotal,
+			descricao: "Conta encerrada",
+			detalhe: `Juntada na comanda ${destino.numero_mesa}`,
+		});
+	}
 
 	const atualizada = await obterContaMesa(idDestino);
 	if (!atualizada) {

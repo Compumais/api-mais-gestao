@@ -22,6 +22,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.pos_mais_gestao.PosApplication;
@@ -158,6 +159,26 @@ public class PedidoActivity extends AppCompatActivity {
         montarChips();
         recarregarProdutos();
         atualizarSacolaUi();
+        sincronizarConfigPedido();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        sincronizarConfigPedido();
+    }
+
+    /** Atualiza do PDV o flag de pedir mesa/localização ao enviar. */
+    private void sincronizarConfigPedido() {
+        if (prefs == null || api == null || !prefs.isModoPdvLocal()) {
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                api.sincronizarConfigPdv();
+            } catch (ApiException ignored) {
+            }
+        });
     }
 
     private void aplicarModo() {
@@ -510,34 +531,50 @@ public class PedidoActivity extends AppCompatActivity {
         if (idConta == null || sacola.isEmpty()) {
             return;
         }
-        PrefsStore prefs = ((PosApplication) getApplication()).getPrefsStore();
-        if (prefs.isComandaPedirMesaLocal()) {
-            dialogMesaLocalAntesEnvio();
-            return;
-        }
-        executarEnvioPedido(null, null);
+        // Garante flag atualizado do PDV antes de decidir se pede mesa/local.
+        btnSend.setEnabled(false);
+        executor.execute(() -> {
+            try {
+                api.sincronizarConfigPdv();
+            } catch (ApiException ignored) {
+            }
+            runOnUiThread(() -> {
+                btnSend.setEnabled(true);
+                if (prefs.isComandaPedirMesaLocal()) {
+                    dialogMesaLocalAntesEnvio();
+                } else {
+                    executarEnvioPedido(null, null);
+                }
+            });
+        });
     }
 
     private void dialogMesaLocalAntesEnvio() {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_mesa_local_pedido, null);
         TextInputEditText inputMesa = view.findViewById(R.id.inputMesaFisica);
         TextInputEditText inputLocal = view.findViewById(R.id.inputLocalizacaoPedido);
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.mesa_local_titulo)
                 .setView(view)
                 .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.enviar_pedido, (d, w) -> {
-                    String mesa = inputMesa.getText() != null
-                            ? inputMesa.getText().toString().trim()
-                            : "";
-                    String local = inputLocal.getText() != null
-                            ? inputLocal.getText().toString().trim()
-                            : "";
-                    executarEnvioPedido(
-                            mesa.isEmpty() ? null : mesa,
-                            local.isEmpty() ? null : local);
-                })
-                .show();
+                .setPositiveButton(R.string.enviar_pedido, null)
+                .create();
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                String mesa = inputMesa.getText() != null
+                        ? inputMesa.getText().toString().trim()
+                        : "";
+                String local = inputLocal.getText() != null
+                        ? inputLocal.getText().toString().trim()
+                        : "";
+                dialog.dismiss();
+                executarEnvioPedido(
+                        mesa.isEmpty() ? null : mesa,
+                        local.isEmpty() ? null : local);
+            });
+            inputMesa.requestFocus();
+        });
+        dialog.show();
     }
 
     private void executarEnvioPedido(String mesaFisica, String localizacao) {
