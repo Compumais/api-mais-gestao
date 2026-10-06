@@ -368,7 +368,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	const ide = resolverIdeEmissaoNfe({
 		ufEmitente: empresaFiscal.uf,
 		ufDestinatario: destinatario?.estado,
-		ufLocalEntrega: localEntrega?.uf,
+		ufLocalEntrega: localEntrega?.uf ?? enderecoEntrega?.uf,
 		paisDestinatario: destinatario?.pais,
 		indPres,
 		finNFe,

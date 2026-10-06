@@ -506,6 +506,7 @@ export default function NovaEmissaoNfePage() {
 		form.watch("localEntrega.codigoMunicipio") ?? "";
 	const informarEnderecoEntregaManual =
 		form.watch("informarEnderecoEntregaManual") ?? false;
+	const indPres = form.watch("indPres");
 	const enderecoEntregaUf = form.watch("enderecoEntrega.uf") ?? "";
 	const enderecoEntregaMunicipioCodigo =
 		form.watch("enderecoEntrega.codigoMunicipio") ?? "";
@@ -715,10 +716,11 @@ export default function NovaEmissaoNfePage() {
 			resolverIdDestNfePreview({
 				ufEmitente: empresaFiscal?.uf,
 				ufDestinatario: entidadeSelecionada?.idestado,
-				ufLocalEntrega: exigeLocalEntregaInterestadual
-					? localEntregaUf
-					: undefined,
+				ufLocalEntrega:
+					(exigeLocalEntregaInterestadual ? localEntregaUf : undefined) ||
+					(informarEnderecoEntregaManual ? enderecoEntregaUf : undefined),
 				paisDestinatario: entidadeSelecionada?.pais,
+				indPres,
 			}),
 		[
 			empresaFiscal?.uf,
@@ -726,6 +728,9 @@ export default function NovaEmissaoNfePage() {
 			entidadeSelecionada?.pais,
 			exigeLocalEntregaInterestadual,
 			localEntregaUf,
+			informarEnderecoEntregaManual,
+			enderecoEntregaUf,
+			indPres,
 		],
 	);
 
@@ -2468,8 +2473,8 @@ export default function NovaEmissaoNfePage() {
 									/>
 									<p className="text-xs text-muted-foreground mt-1">
 										Indica como a venda ocorreu (balcão, internet, telefone
-										etc.). É diferente da localização fiscal (idDest), calculada
-										pela UF do emitente e do destinatário.
+										etc.). Na operação presencial no estabelecimento, a venda é
+										interna mesmo que o cliente seja de outra UF.
 									</p>
 								</Field>
 
@@ -2484,8 +2489,10 @@ export default function NovaEmissaoNfePage() {
 											{idDestPreview.label}
 										</div>
 										<p className="text-xs text-muted-foreground mt-1">
-											Calculado automaticamente pela UF do local de entrega
-											quando informado; caso contrário, pela UF do destinatário.
+											Na venda presencial (indPres 1), a operação ocorre na UF
+											do emitente, salvo entrega informada em outra UF. Nos
+											demais casos, usa a UF do local de entrega ou do
+											destinatário.
 										</p>
 									</Field>
 								)}

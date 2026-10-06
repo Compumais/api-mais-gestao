@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	destinatarioEhExterior,
+	omitirEnderecoEntregaCadastralPresencial,
 	resolverIdDestNfe,
 	resolverIdeEmissaoNfe,
 	resolverIndPresNfe,
@@ -30,6 +31,42 @@ describe("resolverIdDestNfe", () => {
 				paisDestinatario: "Brasil",
 			}),
 		).toBe(2);
+	});
+
+	it("venda presencial no estabelecimento para cliente de outra UF é operação interna", () => {
+		expect(
+			resolverIdDestNfe({
+				ufEmitente: "MG",
+				ufDestinatario: "SP",
+				paisDestinatario: "Brasil",
+				indPres: 1,
+			}),
+		).toBe(1);
+	});
+
+	it("venda presencial com entrega explícita em outra UF permanece interestadual", () => {
+		expect(
+			resolverIdDestNfe({
+				ufEmitente: "MG",
+				ufDestinatario: "MG",
+				ufLocalEntrega: "SP",
+				paisDestinatario: "Brasil",
+				indPres: 1,
+			}),
+		).toBe(2);
+	});
+
+	it("mantém idDest interestadual para os demais indPres com cliente de outra UF", () => {
+		for (const indPres of [0, 2, 3, 4, 5, 9]) {
+			expect(
+				resolverIdDestNfe({
+					ufEmitente: "MG",
+					ufDestinatario: "SP",
+					paisDestinatario: "Brasil",
+					indPres,
+				}),
+			).toBe(2);
+		}
 	});
 
 	it("prioriza a UF do local de entrega sobre a UF cadastral do destinatário", () => {
@@ -96,8 +133,45 @@ describe("resolverIndPresNfe", () => {
 	});
 });
 
+describe("omitirEnderecoEntregaCadastralPresencial", () => {
+	it("omite o endereço cadastral de outra UF na venda presencial", () => {
+		expect(
+			omitirEnderecoEntregaCadastralPresencial({
+				indPres: 1,
+				ufEmitente: "MG",
+				ufEndereco: "SP",
+			}),
+		).toBe(true);
+	});
+
+	it("mantém endereço informado manualmente ou da mesma UF", () => {
+		expect(
+			omitirEnderecoEntregaCadastralPresencial({
+				indPres: 1,
+				informarManual: true,
+				ufEmitente: "MG",
+				ufEndereco: "SP",
+			}),
+		).toBe(false);
+		expect(
+			omitirEnderecoEntregaCadastralPresencial({
+				indPres: 1,
+				ufEmitente: "MG",
+				ufEndereco: "MG",
+			}),
+		).toBe(false);
+		expect(
+			omitirEnderecoEntregaCadastralPresencial({
+				indPres: 2,
+				ufEmitente: "MG",
+				ufEndereco: "SP",
+			}),
+		).toBe(false);
+	});
+});
+
 describe("resolverIdeEmissaoNfe", () => {
-	it("monta ide completo com indFinal fixo em 1", () => {
+	it("CFOP interno com indPres 1 e cliente de outra UF usa operação interna", () => {
 		expect(
 			resolverIdeEmissaoNfe({
 				ufEmitente: "MG",
@@ -106,8 +180,38 @@ describe("resolverIdeEmissaoNfe", () => {
 				finNFe: 1,
 			}),
 		).toEqual({
-			idDest: 2,
+			idDest: 1,
 			indPres: 1,
+			indFinal: 1,
+		});
+	});
+
+	it("indPres diferente de 1 com cliente de outra UF permanece interestadual", () => {
+		expect(
+			resolverIdeEmissaoNfe({
+				ufEmitente: "MG",
+				ufDestinatario: "SP",
+				indPres: 2,
+				finNFe: 1,
+			}),
+		).toEqual({
+			idDest: 2,
+			indPres: 2,
+			indFinal: 1,
+		});
+	});
+
+	it("nota complementar não aplica a exceção da venda presencial", () => {
+		expect(
+			resolverIdeEmissaoNfe({
+				ufEmitente: "MG",
+				ufDestinatario: "SP",
+				indPres: 1,
+				finNFe: 2,
+			}),
+		).toEqual({
+			idDest: 2,
+			indPres: 0,
 			indFinal: 1,
 		});
 	});

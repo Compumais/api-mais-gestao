@@ -1,3 +1,4 @@
+// Descarta caches ao assumir a página. A troca de controle recarrega o app.
 self.addEventListener("install", () => {
 	self.skipWaiting();
 });

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Sans, Roboto_Slab } from "next/font/google";
+import { AtualizarVersao } from "@/components/atualizar-versao";
 import { PwaRoot } from "@/components/pwa-root";
 import {
 	PWA_APP_NAME,
@@ -60,6 +61,7 @@ export default function RootLayout({
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
 				<PwaRoot>
+					<AtualizarVersao />
 					<Providers>{children}</Providers>
 				</PwaRoot>
 			</body>

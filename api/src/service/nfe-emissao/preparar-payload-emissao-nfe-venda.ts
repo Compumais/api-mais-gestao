@@ -65,7 +65,10 @@ import {
 import { resolverCobrancaEmissaoNfe } from "@/util/resolver-cobranca-emissao-nfe.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
-import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
+import {
+	omitirEnderecoEntregaCadastralPresencial,
+	resolverIdeEmissaoNfe,
+} from "@/util/resolver-ide-emissao-nfe.js";
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 import { validarLocalEntregaCfopInterestadual } from "@/util/validar-local-entrega-cfop-interestadual.js";
@@ -749,18 +752,35 @@ export async function prepararPayloadEmissaoNfeVenda(
 			destinatario,
 		}));
 
+	const indPresInformado =
+		indPres ??
+		emissaoSalvaReemissao?.indPres ??
+		nfeConfiguracao.ultimoindpres;
+	const ufEntregaExplicita =
+		localEntregaNormalizado?.uf ??
+		(informarEnderecoEntregaManual
+			? enderecoEntregaResolvido?.uf
+			: undefined);
+
 	const ideEmissao = resolverIdeEmissaoNfe({
 		ufEmitente: empresaFiscal.uf,
 		ufDestinatario: destinatario?.estado,
-		ufLocalEntrega:
-			localEntregaNormalizado?.uf ?? enderecoEntregaResolvido?.uf,
+		ufLocalEntrega: ufEntregaExplicita,
 		paisDestinatario: destinatario?.pais,
-		indPres:
-			indPres ??
-			emissaoSalvaReemissao?.indPres ??
-			nfeConfiguracao.ultimoindpres,
+		indPres: indPresInformado,
 		finNFe,
 	});
+
+	const enderecoEntregaParaEmissao =
+		enderecoEntregaResolvido &&
+		!omitirEnderecoEntregaCadastralPresencial({
+			indPres: ideEmissao.indPres,
+			informarManual: informarEnderecoEntregaManual,
+			ufEmitente: empresaFiscal.uf,
+			ufEndereco: enderecoEntregaResolvido.uf,
+		})
+			? enderecoEntregaResolvido
+			: undefined;
 
 	const { relatorio: relatorioFiscal, idAuditoria } =
 		await avaliarEmissaoFiscalService({
@@ -839,7 +859,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		localEntrega: localEntregaNormalizado,
 		enderecoEntrega: localEntregaNormalizado
 			? undefined
-			: enderecoEntregaResolvido,
+			: enderecoEntregaParaEmissao,
 		natOp: natOpResolvida,
 		informacoesAdicionais: infoAdic,
 		finNFe,

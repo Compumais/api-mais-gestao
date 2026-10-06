@@ -35,23 +35,32 @@ function isPublicPath(pathname: string) {
 	return false;
 }
 
+function semCache(resposta: NextResponse) {
+	resposta.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+	return resposta;
+}
+
 export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 	const isPublicRoute = isPublicPath(pathname);
 	const isAuthRoute = AUTH_ROUTES.has(pathname);
 	const isAuthenticated = hasSessionCookie(request);
 
+	if (pathname === "/versao") {
+		return semCache(NextResponse.next());
+	}
+
 	if (!isAuthenticated && !isPublicRoute) {
 		const loginUrl = new URL("/entrar", request.url);
 		loginUrl.searchParams.set("redirect", pathname);
-		return NextResponse.redirect(loginUrl);
+		return semCache(NextResponse.redirect(loginUrl));
 	}
 
 	if (isAuthenticated && isAuthRoute) {
-		return NextResponse.redirect(new URL("/dashboard", request.url));
+		return semCache(NextResponse.redirect(new URL("/dashboard", request.url)));
 	}
 
-	return NextResponse.next();
+	return semCache(NextResponse.next());
 }
 
 export const config = {

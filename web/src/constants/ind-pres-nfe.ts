@@ -15,7 +15,7 @@ export const IND_PRES_NFE_LABELS: Record<IndPresNfe, string> = {
 };
 
 export const ID_DEST_NFE_LABELS: Record<number, string> = {
-	1: "Operação interna (mesmo estado)",
+	1: "Operação interna",
 	2: "Operação interestadual",
 	3: "Operação com exterior",
 };
@@ -34,19 +34,21 @@ export function resolverIdDestNfePreview(params: {
 	ufDestinatario?: string | null;
 	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
+	indPres?: number | null;
 }): { idDest: number; label: string } | null {
 	const ufEmitente = params.ufEmitente?.trim().toUpperCase() ?? "";
-	const ufDestinatario =
-		(params.ufLocalEntrega || params.ufDestinatario)?.trim().toUpperCase() ??
-		"";
+	const ufEntrega = params.ufLocalEntrega?.trim().toUpperCase() ?? "";
+	const ufDestinatario = params.ufDestinatario?.trim().toUpperCase() ?? "";
 	const pais = params.paisDestinatario?.trim().toLowerCase() ?? "";
+	const ufReferencia = ufEntrega || ufDestinatario;
 
-	if (!ufDestinatario && !pais) {
+	if (!ufReferencia && !pais) {
 		return null;
 	}
 
 	if (
 		ufDestinatario === "EX" ||
+		ufEntrega === "EX" ||
 		(pais && !["br", "brasil", "1058"].includes(pais))
 	) {
 		return {
@@ -55,7 +57,17 @@ export function resolverIdDestNfePreview(params: {
 		};
 	}
 
-	if (!ufDestinatario || !ufEmitente || ufEmitente === ufDestinatario) {
+	if (params.indPres === 1) {
+		if (ufEntrega && ufEmitente && ufEntrega !== ufEmitente) {
+			return {
+				idDest: 2,
+				label: ID_DEST_NFE_LABELS[2] ?? "Operação interestadual",
+			};
+		}
+		return { idDest: 1, label: ID_DEST_NFE_LABELS[1] ?? "Operação interna" };
+	}
+
+	if (!ufReferencia || !ufEmitente || ufEmitente === ufReferencia) {
 		return { idDest: 1, label: ID_DEST_NFE_LABELS[1] ?? "Operação interna" };
 	}
 

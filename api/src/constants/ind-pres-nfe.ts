@@ -21,7 +21,7 @@ export const ID_DEST_NFE = {
 } as const;
 
 export const ID_DEST_NFE_LABELS: Record<number, string> = {
-	[ID_DEST_NFE.INTERNA]: "Operação interna (mesmo estado)",
+	[ID_DEST_NFE.INTERNA]: "Operação interna",
 	[ID_DEST_NFE.INTERESTADUAL]: "Operação interestadual",
 	[ID_DEST_NFE.EXTERIOR]: "Operação com exterior",
 };
