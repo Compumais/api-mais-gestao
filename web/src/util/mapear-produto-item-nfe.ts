@@ -191,11 +191,23 @@ export function escolherItensFormularioEmissao(
 ): ItemNfe[] {
 	let melhor: ItemNfe[] = [];
 	for (const lista of listas) {
-		if ((lista?.length ?? 0) > melhor.length) {
-			melhor = lista ?? [];
+		if (!Array.isArray(lista)) continue;
+		if (lista.length > melhor.length) {
+			melhor = lista;
 		}
 	}
 	return melhor;
+}
+
+/** Remove o id interno do useFieldArray antes de validar/enviar a NF-e. */
+export function itensVisiveisParaEmissao(
+	...listas: Array<ItemNfe[] | null | undefined>
+): ItemNfe[] {
+	return escolherItensFormularioEmissao(...listas).map((item) => {
+		if (!item || typeof item !== "object" || !("id" in item)) return item;
+		const { id: _id, ...resto } = item as ItemNfe & { id?: string };
+		return resto;
+	});
 }
 
 export function mapearItemNotaReemissaoParaForm(

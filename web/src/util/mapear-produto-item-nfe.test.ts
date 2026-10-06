@@ -4,6 +4,7 @@ import {
 	ehCsosn,
 	escolherItensFormularioEmissao,
 	itemPrecisaAliquotaIcmsParaSt,
+	itensVisiveisParaEmissao,
 	mapearItemNotaReemissaoParaForm,
 	sugerirIcmsStPeloMva,
 } from "./mapear-produto-item-nfe";
@@ -132,6 +133,46 @@ describe("escolherItensFormularioEmissao", () => {
 
 		expect(escolherItensFormularioEmissao([], [item], undefined)).toEqual([
 			item,
+		]);
+	});
+
+	it("ignora valores que não são lista", () => {
+		const item: ItemNfe = {
+			descricao: "Produto",
+			ncm: "22084000",
+			cfop: "5102",
+			unidade: "UN",
+			quantidade: 1,
+			valorUnitario: 10,
+		};
+
+		expect(
+			escolherItensFormularioEmissao("5102" as unknown as ItemNfe[], [item]),
+		).toEqual([item]);
+	});
+});
+
+describe("itensVisiveisParaEmissao", () => {
+	it("remove o id interno do campo de lista", () => {
+		const item = {
+			id: "rhf-interno",
+			descricao: "Produto",
+			ncm: "22084000",
+			cfop: "5102",
+			unidade: "UN",
+			quantidade: 1,
+			valorUnitario: 10,
+		} as ItemNfe & { id: string };
+
+		expect(itensVisiveisParaEmissao([item])).toEqual([
+			{
+				descricao: "Produto",
+				ncm: "22084000",
+				cfop: "5102",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 10,
+			},
 		]);
 	});
 });

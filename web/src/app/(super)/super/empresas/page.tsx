@@ -1,8 +1,10 @@
 "use client";
 
 import { IconLayoutGrid, IconList } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -21,6 +23,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { marcarAcessoBaseAtivo } from "@/lib/acesso-base";
+import { setSessionToken } from "@/lib/auth-token";
+import { acessoBaseService } from "@/services/acesso-base.service";
 import { type AdminEmpresa, adminService } from "@/services/admin.service";
 import { DialogEntitlementProprietario } from "../components/dialog-entitlement-proprietario";
 
@@ -38,10 +44,36 @@ function rotuloProprietario(empresa: AdminEmpresa) {
 }
 
 export default function SuperEmpresasPage() {
+	const router = useRouter();
+	const queryClient = useQueryClient();
+	const { selecionarEmpresa } = useEmpresa();
 	const [modo, setModo] = useState<ModoVisualizacao>("cards");
 	const [busca, setBusca] = useState("");
 	const [empresaEntitlement, setEmpresaEntitlement] =
 		useState<AdminEmpresa | null>(null);
+	const [empresaAcessandoId, setEmpresaAcessandoId] = useState<string | null>(
+		null,
+	);
+
+	const { mutate: acessarBase } = useMutation({
+		mutationFn: (empresa: AdminEmpresa) => acessoBaseService.acessar(empresa.id),
+		onMutate: (empresa) => {
+			setEmpresaAcessandoId(empresa.id);
+		},
+		onSuccess: (resposta) => {
+			setSessionToken(resposta.token);
+			marcarAcessoBaseAtivo();
+			selecionarEmpresa(resposta.empresa);
+			queryClient.clear();
+			router.push("/dashboard");
+		},
+		onError: (erro: Error) => {
+			toast.error("Não foi possível acessar a base", {
+				description: erro.message,
+			});
+			setEmpresaAcessandoId(null);
+		},
+	});
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["admin-empresas"],
@@ -126,14 +158,25 @@ export default function SuperEmpresasPage() {
 								</TableCell>
 								<TableCell>{rotuloPlano(empresa)}</TableCell>
 								<TableCell className="text-right">
-									<Button
-										size="sm"
-										variant="outline"
-										disabled={!empresa.idproprietario}
-										onClick={() => setEmpresaEntitlement(empresa)}
-									>
-										Plano e módulos
-									</Button>
+									<div className="flex justify-end gap-2">
+										<Button
+											size="sm"
+											disabled={empresaAcessandoId === empresa.id}
+											onClick={() => acessarBase(empresa)}
+										>
+											{empresaAcessandoId === empresa.id
+												? "Acessando..."
+												: "Acessar base"}
+										</Button>
+										<Button
+											size="sm"
+											variant="outline"
+											disabled={!empresa.idproprietario}
+											onClick={() => setEmpresaEntitlement(empresa)}
+										>
+											Plano e módulos
+										</Button>
+									</div>
 								</TableCell>
 							</TableRow>
 						))}
@@ -159,7 +202,17 @@ export default function SuperEmpresasPage() {
 									<p>{rotuloPlano(empresa)}</p>
 								</div>
 							</CardContent>
-							<CardFooter>
+							<CardFooter className="flex flex-col gap-2">
+								<Button
+									size="sm"
+									className="w-full"
+									disabled={empresaAcessandoId === empresa.id}
+									onClick={() => acessarBase(empresa)}
+								>
+									{empresaAcessandoId === empresa.id
+										? "Acessando..."
+										: "Acessar base"}
+								</Button>
 								<Button
 									size="sm"
 									variant="outline"
