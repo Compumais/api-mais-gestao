@@ -14,7 +14,8 @@ App Windows + Android para lançar consumo em **kg** em comandas via PDV local (
 ### Operação (touch + leitor)
 1. Tela simples: *“Passe a comanda no leitor”* (sem digitar). O leitor HID (teclado) é lido direto das teclas, terminado em `Enter`; a tela mostra o código lido e o número da comanda aberto
 2. Grade de atalhos em **cards com imagem** → toque no produto
-3. Coloca na balança → lê peso → mostra **kg + total (R$)**
+   - **Outros produtos** lista todo o catálogo do PDV (como a lista de produtos do POS: imagem, nome, código e preço, com busca por nome/código/EAN)
+3. Produto em KG: coloca na balança → lê peso → mostra **kg + total (R$)**. Produto em outra unidade (ex.: UN): pede a **quantidade** em vez de pesar
 4. **Confirmar** → `POST /pos/contas/{id}/itens` → volta para a próxima comanda
 
 ## Pré-requisitos

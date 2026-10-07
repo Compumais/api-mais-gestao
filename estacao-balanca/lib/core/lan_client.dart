@@ -229,6 +229,15 @@ class LanClient {
         .toList();
   }
 
+  /// Todo o catálogo do PDV (qualquer unidade), em ordem alfabética.
+  Future<List<ProdutoLan>> listarProdutosTodos() async {
+    final todos = await listarProdutosCatalogo();
+    todos.sort(
+      (a, b) => a.descricao.toLowerCase().compareTo(b.descricao.toLowerCase()),
+    );
+    return todos;
+  }
+
   Future<List<ProdutoLan>> listarProdutosKg() async {
     final todos = await listarProdutosCatalogo();
     final kg = todos.where((p) => p.vendidoPorKg).toList()

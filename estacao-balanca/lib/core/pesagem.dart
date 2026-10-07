@@ -13,6 +13,7 @@ class SessaoPesagem {
     required this.precoUnitario,
     required this.total,
     required this.quando,
+    this.unidade = 'kg',
   });
 
   final String idConta;
@@ -20,7 +21,14 @@ class SessaoPesagem {
   final String idItem;
   final String idProduto;
   final String produtoDescricao;
+
+  /// Quantidade lançada. É o peso em kg quando [porPeso]; senão, a quantidade
+  /// na [unidade] do produto (o nome do campo vem do fluxo original de peso).
   final double pesoKg;
+
+  /// Sigla da unidade (`kg`, `un`, ...). Histórico antigo não tem: assume `kg`.
+  final String unidade;
+  bool get porPeso => unidade.trim().toLowerCase() == 'kg';
   final double precoUnitario;
   final double total;
   final DateTime quando;
@@ -32,6 +40,7 @@ class SessaoPesagem {
         'idProduto': idProduto,
         'produto': produtoDescricao,
         'peso': pesoKg,
+        'unidade': unidade,
         'preco': precoUnitario,
         'total': total,
         'quando': quando.toIso8601String(),
@@ -45,6 +54,9 @@ class SessaoPesagem {
       idProduto: '${json['idProduto'] ?? ''}',
       produtoDescricao: '${json['produto'] ?? ''}',
       pesoKg: (json['peso'] as num?)?.toDouble() ?? 0,
+      unidade: (json['unidade']?.toString().trim().isNotEmpty ?? false)
+          ? json['unidade'].toString().trim()
+          : 'kg',
       precoUnitario: (json['preco'] as num?)?.toDouble() ?? 0,
       total: (json['total'] as num?)?.toDouble() ?? 0,
       quando: DateTime.tryParse('${json['quando'] ?? ''}') ?? DateTime.now(),
@@ -81,6 +93,19 @@ bool lancamentoConfirmado(ContaLancamento conta, SessaoPesagem sessao) {
   return conta.idsItens.contains(sessao.idItem);
 }
 
+/// `1.250 kg` para peso (3 casas); `3 un` / `1,5 cx` para as demais unidades.
+String formatarQuantidade(double quantidade, String unidade) {
+  final un = unidade.trim().isEmpty ? 'un' : unidade.trim();
+  if (un.toLowerCase() == 'kg') {
+    return '${quantidade.toStringAsFixed(3)} kg';
+  }
+  var texto = quantidade.toStringAsFixed(3);
+  if (texto.contains('.')) {
+    texto = texto.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+  }
+  return '${texto.replaceAll('.', ',')} $un';
+}
+
 String formatarDataHoraPesagem(DateTime quando) {
   String dois(int n) => n.toString().padLeft(2, '0');
   return '${dois(quando.day)}/${dois(quando.month)}/${quando.year} '
@@ -92,11 +117,14 @@ String montarCupomPesagem(SessaoPesagem sessao) {
   final separador = '=' * larguraCupomPesagem;
   final linhas = <String>[
     separador,
-    _centralizar('PESAGEM'),
+    _centralizar(sessao.porPeso ? 'PESAGEM' : 'LANCAMENTO'),
     separador,
     ..._campo('Comanda', '${sessao.numero}'),
     ..._campo('Produto', sessao.produtoDescricao),
-    ..._campo('Peso', '${sessao.pesoKg.toStringAsFixed(3)} kg'),
+    ..._campo(
+      sessao.porPeso ? 'Peso' : 'Qtd',
+      formatarQuantidade(sessao.pesoKg, sessao.unidade),
+    ),
     ..._campo('Total', 'R\$ ${sessao.total.toStringAsFixed(2)}'),
     ..._campo('Data', formatarDataHoraPesagem(sessao.quando)),
     separador,
