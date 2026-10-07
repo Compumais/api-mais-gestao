@@ -98,7 +98,7 @@ export function avaliarEmissaoFiscal(
 			expected: "2",
 			actual: "1",
 			message:
-				"Operação interna (idDest=1) inválida com destinatário contribuinte do ICMS de outra UF (rejeição SEFAZ 521). Selecione idDest=2 e CFOP interestadual 6xxx (ex.: 6102).",
+				"Operação interna (idDest=1) inválida com destinatário contribuinte do ICMS de outra UF (rejeição SEFAZ 521). Compra presencial a consumidor final: marque o destinatário como não contribuinte (indIEDest=9), use idDest=1 e CFOP 5xxx (ex.: 5102). Venda a contribuinte ICMS de outra UF: use idDest=2 e CFOP 6xxx (ex.: 6102).",
 			tipoInconsistencia: "ERRO_DE_PARAMETRIZACAO_FISCAL",
 		});
 	}

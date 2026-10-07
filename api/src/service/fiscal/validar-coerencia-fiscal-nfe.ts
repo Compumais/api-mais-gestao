@@ -84,7 +84,7 @@ export function validarCoerenciaFiscalNfe(params: {
 				actual: cfop,
 				message:
 					params.idDest === 2
-						? `Item ${posicao}: CFOP ${cfop} incompatível com operação interestadual. Destinatário de outra UF (contribuinte do ICMS) exige CFOP 6xxx (ex.: 6102), não ${cfop}.`
+						? `Item ${posicao}: CFOP ${cfop} incompatível com operação interestadual. Contribuinte ICMS de outra UF exige CFOP 6xxx (ex.: 6102). Para CFOP 5xxx presencial (ex.: 5102), o destinatário precisa ser não contribuinte (indIEDest=9) com idDest=1.`
 						: params.idDest === 3
 							? `Item ${posicao}: CFOP ${cfop} incompatível com operação exterior`
 							: `Item ${posicao}: CFOP ${cfop} incompatível com operação interna`,

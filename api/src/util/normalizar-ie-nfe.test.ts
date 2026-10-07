@@ -28,6 +28,45 @@ describe("normalizar-ie-nfe", () => {
 		).toBe(2);
 	});
 
+	it("CPF com IE residual sem indiedest explícito é não contribuinte", () => {
+		expect(
+			resolverIndIeDestNfe({
+				cnpjcpf: "12345678901",
+				inscricaoestadual: "123456789",
+				indiedest: null,
+			}),
+		).toBe(9);
+	});
+
+	it("CNPJ com IE sem indiedest é contribuinte", () => {
+		expect(
+			resolverIndIeDestNfe({
+				cnpjcpf: "12345678000199",
+				inscricaoestadual: "123456789",
+			}),
+		).toBe(1);
+	});
+
+	it("indiedest=1 explícito prevalece mesmo em CPF", () => {
+		expect(
+			resolverIndIeDestNfe({
+				cnpjcpf: "12345678901",
+				inscricaoestadual: "123456789",
+				indiedest: 1,
+			}),
+		).toBe(1);
+	});
+
+	it("indiedest=9 prevalece e IE não é enviada", () => {
+		expect(
+			resolverIndIeDestNfe({
+				cnpjcpf: "12345678000199",
+				inscricaoestadual: "123456789",
+				indiedest: 9,
+			}),
+		).toBe(9);
+	});
+
 	it("normaliza IE do emitente com máscara", () => {
 		expect(montarIeEmitenteNfe("062.307.904/0081")).toBe("0623079040081");
 	});

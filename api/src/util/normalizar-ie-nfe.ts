@@ -15,6 +15,7 @@ export function resolverIndIeDestNfe(params: {
 	const ieTexto = inscricaoestadual?.trim().toUpperCase() ?? "";
 	const ieIsento = ieTexto === "ISENTO" || ieTexto === "ISENTA";
 	const ieDigitos = ieTexto.replace(/\D/g, "");
+	const doc = cnpjcpf?.replace(/\D/g, "") ?? "";
 
 	if (indiedest === 2 || ieIsento) {
 		return 2;
@@ -24,13 +25,17 @@ export function resolverIndIeDestNfe(params: {
 		return 9;
 	}
 
-	if (indiedest === 1 || ieDigitos.length > 0) {
+	if (indiedest === 1) {
 		return 1;
 	}
 
-	const doc = cnpjcpf?.replace(/\D/g, "") ?? "";
+	// CPF: consumidor final — não forçar contribuinte por IE residual no cadastro.
 	if (doc.length === 11) {
 		return 9;
+	}
+
+	if (ieDigitos.length > 0) {
+		return 1;
 	}
 
 	return 9;
