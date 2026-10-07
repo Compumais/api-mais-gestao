@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:estacao_balanca/core/comanda_codigo.dart';
 import 'package:estacao_balanca/core/impressora_estacao.dart';
 import 'package:estacao_balanca/core/lan_client.dart';
+import 'package:estacao_balanca/core/leitor_comanda.dart';
 import 'package:estacao_balanca/core/models.dart';
 import 'package:estacao_balanca/core/pesagem.dart';
 import 'package:estacao_balanca/core/prefs.dart';
@@ -27,8 +28,7 @@ class EstacaoPage extends StatefulWidget {
 
 class _EstacaoPageState extends State<EstacaoPage> {
   static const _uuid = Uuid();
-  final _scanCtrl = TextEditingController();
-  final _scanFocus = FocusNode();
+  final _leitor = LeitorComandaBuffer();
   late final BalancaFacade _balanca;
   final ImpressoraEstacao _impressora = ImpressoraEstacao();
 
@@ -49,8 +49,10 @@ class _EstacaoPageState extends State<EstacaoPage> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _balanca = BalancaFacade(prefs: widget.prefs, client: widget.client);
     _atalhos = widget.prefs.lerAtalhosCache();
+    // O leitor HID é lido direto das teclas (ordenadas, sem perda). Não usamos
+    // mais um TextField invisível: o canal de texto perdia dígitos em rajadas.
+    HardwareKeyboard.instance.addHandler(_onTeclaLeitor);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focarScanner();
       if (!widget.prefs.temAtalhos) {
         _avisarSemAtalhos();
       }
@@ -59,8 +61,7 @@ class _EstacaoPageState extends State<EstacaoPage> {
 
   @override
   void dispose() {
-    _scanCtrl.dispose();
-    _scanFocus.dispose();
+    HardwareKeyboard.instance.removeHandler(_onTeclaLeitor);
     _balanca.desconectar();
     super.dispose();
   }
@@ -68,24 +69,51 @@ class _EstacaoPageState extends State<EstacaoPage> {
   bool get _aguardandoComanda =>
       _passo == _Passo.comanda && _sessao == null;
 
-  void _sincronizarLeitor() {
-    if (leituraComandaPermitida(
+  /// Há um campo de texto com foco (ex.: busca em "Outros produtos")?
+  bool get _campoDeTextoComFoco {
+    final foco = FocusManager.instance.primaryFocus?.context;
+    if (foco == null) return false;
+    return foco.widget is EditableText ||
+        foco.findAncestorWidgetOfExactType<EditableText>() != null;
+  }
+
+  /// Só lê comanda com esta tela ativa (sem outra rota/diálogo por cima), na
+  /// etapa certa e sem digitação em outro campo.
+  bool get _leitorAtivo {
+    if (!mounted) return false;
+    if (ModalRoute.of(context)?.isCurrent == false) return false;
+    if (_campoDeTextoComFoco) return false;
+    return leituraComandaPermitida(
       aguardandoComanda: _aguardandoComanda,
       ocupado: _busy,
-    )) {
-      _scanFocus.requestFocus();
-      return;
+    );
+  }
+
+  bool _onTeclaLeitor(KeyEvent event) {
+    if (event is KeyUpEvent) return false;
+    if (!_leitorAtivo) {
+      _leitor.limpar();
+      return false;
     }
-    _scanCtrl.clear();
-    _scanFocus.unfocus();
+    final agora = DateTime.now();
+    final digito = digitoDaTecla(
+      character: event.character,
+      tecla: event.logicalKey,
+    );
+    if (digito != null) {
+      _leitor.adicionarDigito(digito, agora);
+      return false;
+    }
+    if (event is KeyDownEvent && teclaEhEnter(event.logicalKey)) {
+      final codigo = _leitor.finalizar(agora);
+      if (codigo != null) {
+        _onScanComanda(codigo);
+      }
+    }
+    return false;
   }
 
-  void _focarScanner() => _sincronizarLeitor();
-
-  void _ignorarLeituraForaDaComanda() {
-    _scanCtrl.clear();
-    _scanFocus.unfocus();
-  }
+  void _sincronizarLeitor() => _leitor.limpar();
 
   Future<void> _avisarSemAtalhos() async {
     if (!mounted) return;
@@ -120,7 +148,6 @@ class _EstacaoPageState extends State<EstacaoPage> {
       aguardandoComanda: _aguardandoComanda,
       ocupado: _busy,
     )) {
-      _ignorarLeituraForaDaComanda();
       return;
     }
     final digits = normalizarCodigoComanda(
@@ -128,15 +155,17 @@ class _EstacaoPageState extends State<EstacaoPage> {
       ignorarDigitoVerificador: widget.prefs.ignorarDigitoVerificador,
     );
     final numero = int.tryParse(digits);
-    _scanCtrl.clear();
-    if (numero == null || numero <= 0 || _busy) {
-      _focarScanner();
+    if (numero == null || numero <= 0) {
+      setState(() {
+        _erro = 'Leitura inválida ($raw). Passe a comanda novamente.';
+        _status = null;
+      });
       return;
     }
     setState(() {
       _busy = true;
       _erro = null;
-      _status = 'Abrindo comanda $numero…';
+      _status = 'Código lido: $raw — abrindo comanda $numero…';
     });
     try {
       final conta = await widget.client.resolverComanda(numero);
@@ -148,8 +177,9 @@ class _EstacaoPageState extends State<EstacaoPage> {
       });
       _sincronizarLeitor();
     } catch (e) {
+      if (!mounted) return;
       setState(() => _erro = e.toString());
-      _focarScanner();
+      _sincronizarLeitor();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -406,33 +436,10 @@ class _EstacaoPageState extends State<EstacaoPage> {
       ),
       body: Stack(
         children: [
-          Positioned(
-            left: -1000,
-            top: 0,
-            child: SizedBox(
-              width: 1,
-              height: 1,
-              child: TextField(
-                controller: _scanCtrl,
-                focusNode: _scanFocus,
-                autofocus: true,
-                onChanged: (_) {
-                  if (!leituraComandaPermitida(
-                    aguardandoComanda: _aguardandoComanda,
-                    ocupado: _busy,
-                  )) {
-                    _ignorarLeituraForaDaComanda();
-                  }
-                },
-                onSubmitted: _onScanComanda,
-              ),
-            ),
-          ),
           GestureDetector(
             behavior: HitTestBehavior.translucent,
             onTap: () {
               SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-              _sincronizarLeitor();
             },
             child: SafeArea(
               child: AnimatedSwitcher(

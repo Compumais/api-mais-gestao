@@ -12,7 +12,7 @@ App Windows + Android para lançar consumo em **kg** em comandas via PDV local (
 5. **Balança:** Windows usa porta COM (`flutter_libserialport`); Android usa **USB OTG** + conversor USB-Serial (`usb_serial`), como o POS
 
 ### Operação (touch + leitor)
-1. Tela simples: *“Passe a comanda no leitor”* (sem digitar)
+1. Tela simples: *“Passe a comanda no leitor”* (sem digitar). O leitor HID (teclado) é lido direto das teclas, terminado em `Enter`; a tela mostra o código lido e o número da comanda aberto
 2. Grade de atalhos em **cards com imagem** → toque no produto
 3. Coloca na balança → lê peso → mostra **kg + total (R$)**
 4. **Confirmar** → `POST /pos/contas/{id}/itens` → volta para a próxima comanda
