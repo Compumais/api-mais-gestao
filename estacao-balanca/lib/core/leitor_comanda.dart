@@ -52,7 +52,8 @@ class LeitorComandaBuffer {
   }
 }
 
-const _digitosTeclado = <LogicalKeyboardKey, String>{
+// `final`, não `const`: LogicalKeyboardKey não tem igualdade primitiva.
+final _digitosTeclado = <LogicalKeyboardKey, String>{
   LogicalKeyboardKey.digit0: '0',
   LogicalKeyboardKey.digit1: '1',
   LogicalKeyboardKey.digit2: '2',
