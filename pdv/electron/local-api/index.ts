@@ -173,6 +173,7 @@ import {
 } from "../delivery/alertas";
 import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda";
 import { sessaoPdvProntaParaPos } from "../lan-api/sessao-pos";
+import { usaApiKeyDevice } from "../sync/auth-nuvem";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
@@ -473,6 +474,7 @@ async function emitirNfceOnlineDaVenda(
 	idnotafiscal?: string;
 	cStat?: string;
 	erro?: string;
+	situacao?: string;
 	indisponivel?: boolean;
 	naoFiscal?: boolean;
 	xml?: string;
@@ -959,7 +961,18 @@ export const localApi = {
 
 	async logout() {
 		await lembrarEmpresaDaSessao();
-		await limparSessao();
+		if (await usaApiKeyDevice()) {
+			// Terminal vinculado por API key: sai só o operador. A empresa continua
+			// ativa para o serviço (LAN, sync, fiscal) seguir sem ninguém logado.
+			await salvarSessao({
+				token: null,
+				userid: null,
+				username: null,
+				roles: null,
+			});
+		} else {
+			await limparSessao();
+		}
 		return { ok: true };
 	},
 

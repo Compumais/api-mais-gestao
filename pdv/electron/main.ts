@@ -1,16 +1,18 @@
 import { join } from "node:path";
 import { app, BrowserWindow, ipcMain, shell } from "electron";
-import { closeDb, initDb } from "./db/database";
+import { closeDb, getConfig, initDb } from "./db/database";
 import { iniciarTecnibra, pararTecnibra } from "./integracao/tecnibra/servico";
 import {
 	iniciarWhatsapp,
 	pararWhatsapp,
 } from "./integracao/whatsapp/servico";
 import {
+	delegarLanAoServicoExterno,
 	encerrarLanServer,
 	restartLanServer,
 	startLanServer,
 } from "./lan-api/server";
+import { servicoLanRespondendo, valorArgumento } from "./lan-api/servico-externo";
 import { localApi } from "./local-api";
 import {
 	iniciarBackupAgendado,
@@ -33,6 +35,21 @@ registrarEsquemaImagemLocal();
 const LAN_SERVICE_MODE =
 	process.env.PDV_LAN_SERVICE === "1" ||
 	process.argv.includes("--lan-service");
+
+if (LAN_SERVICE_MODE) {
+	// Tarefa agendada roda como SYSTEM (sem perfil de usuário). Aponta para os
+	// mesmos dados do app do caixa (XML da NFC-e, certificados, imagens), que o
+	// instalador informa em --pdv-user-data. O cache do Chromium fica separado
+	// para não disputar lock com o app do caixa.
+	const dadosUsuario =
+		valorArgumento(process.argv, "pdv-user-data") ??
+		(process.env.PDV_USER_DATA?.trim() || null);
+	if (dadosUsuario) {
+		app.setPath("userData", dadosUsuario);
+		app.setPath("sessionData", join(dadosUsuario, "service-session"));
+	}
+	app.disableHardwareAcceleration();
+}
 
 function erroFechamentoWsBaileys(err: unknown): boolean {
 	const msg = err instanceof Error ? err.message : String(err ?? "");
@@ -116,6 +133,25 @@ function registerIpc(): void {
 	);
 }
 
+/**
+ * Serviço iniciado no boot do Windows: o PostgreSQL local pode subir depois.
+ * Em vez de desistir na primeira falha, tenta de novo até conectar.
+ */
+async function initDbComRetry(intervaloMs = 5000): Promise<void> {
+	for (;;) {
+		try {
+			await initDb();
+			return;
+		} catch (err) {
+			console.error(
+				"[pdv] Aguardando PostgreSQL local:",
+				err instanceof Error ? err.message : String(err),
+			);
+			await new Promise((resolve) => setTimeout(resolve, intervaloMs));
+		}
+	}
+}
+
 app.whenReady().then(async () => {
 	registrarProtocoloImagemLocal();
 	if (!LAN_SERVICE_MODE) {
@@ -127,12 +163,23 @@ app.whenReady().then(async () => {
 	syncTimer = iniciarSyncPeriodico(20000);
 	void startLanServer();
 	try {
-		await initDb();
+		if (LAN_SERVICE_MODE) {
+			await initDbComRetry();
+		} else {
+			await initDb();
+		}
 		void processarOutbox();
 		void reconciliarNfce().catch(() => undefined);
 		pararSyncNfce = iniciarReconciliacaoNfcePeriodica(60_000, 5_000).parar;
 		pararPollerCardapio = iniciarPollerCardapioDelivery();
-		await restartLanServer();
+		const portaLan = Math.max(1, Number(await getConfig("lan_porta", "5050")) || 5050);
+		if (!LAN_SERVICE_MODE && (await servicoLanRespondendo(portaLan))) {
+			// O serviço (sem janela) já atende a LAN neste PC: não disputa a porta.
+			await delegarLanAoServicoExterno(portaLan);
+			console.log(`[pdv] API LAN já atendida pelo serviço do PDV (:${portaLan})`);
+		} else {
+			await restartLanServer();
+		}
 		if (!LAN_SERVICE_MODE) {
 			await iniciarTecnibra().catch((err) => {
 				console.error(

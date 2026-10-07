@@ -74,10 +74,12 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "postgres"; Description: "Instalar PostgreSQL 17 local (porta {#PostgresPort}, banco {#PostgresDatabase})"; GroupDescription: "Banco de dados"; Flags: checkedonce
+Name: "servico"; Description: "Manter API LAN e sincronização ativas em segundo plano (inicia com o Windows, sem abrir o caixa)"; GroupDescription: "Serviço do PDV"
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "scripts\instalar-postgres.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
+Source: "scripts\registrar-servico-pdv.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
 #ifdef PostgresBundled
 Source: "{#PostgresVendorFile}"; DestDir: "{tmp}"; DestName: "postgresql-windows-x64.exe"; Flags: deleteafterinstall
 #endif
@@ -108,6 +110,9 @@ Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""try {{ Stop-Service -Name '{#PostgresService}' -Force -ErrorAction SilentlyContinue }} catch {{ }}"""; \
   Flags: runhidden waituntilterminated; RunOnceId: "StopPdvPostgres"
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\installer\registrar-servico-pdv.ps1"" -Acao Remover"; \
+  Flags: runhidden waituntilterminated; RunOnceId: "RemovePdvServico"
 
 [Code]
 var
@@ -298,6 +303,27 @@ begin
         'O PDV precisa do banco em 127.0.0.1:{#PostgresPort}.' + #13#10 +
         'Veja o log em %ProgramData%\PDVMaisGestao\logs\instalar-postgres.log',
         mbError, MB_OK);
+    end;
+  end;
+
+  if CurStep = ssPostInstall then
+  begin
+    // Serviço em segundo plano (tarefa agendada SYSTEM no boot). Os dados de usuário
+    // apontam para a pasta do app do caixa (XML NFC-e, certificados, imagens).
+    if WizardIsTaskSelected('servico') then
+      Params := ExpandConstant(
+        '-NoProfile -ExecutionPolicy Bypass -File "{app}\installer\registrar-servico-pdv.ps1" -Acao Registrar -ExePath "{app}\{#MyAppExeName}" -UserData "{userappdata}\pdv-mais-gestao"')
+    else
+      Params := ExpandConstant(
+        '-NoProfile -ExecutionPolicy Bypass -File "{app}\installer\registrar-servico-pdv.ps1" -Acao Remover');
+    if (not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+      Params, '', SW_HIDE, ewWaitUntilTerminated, ResultCode)) or (ResultCode <> 0) then
+    begin
+      if WizardIsTaskSelected('servico') then
+        MsgBox('Nao foi possivel registrar o PDV como servico em segundo plano (codigo ' + IntToStr(ResultCode) + ').' + #13#10 +
+          'O PDV continua funcionando ao abrir o aplicativo.' + #13#10 +
+          'Veja o log em %ProgramData%\PDVMaisGestao\logs\registrar-servico-pdv.log',
+          mbInformation, MB_OK);
     end;
   end;
 end;
