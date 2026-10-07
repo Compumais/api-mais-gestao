@@ -14,6 +14,12 @@ abstract final class MgColors {
   static const card = Color(0xFFFFFFFF);
   static const danger = Color(0xFFE5010C);
   static const success = Color(0xFF16A34A);
+
+  /// Destaque exclusivo do número da comanda (nenhum outro elemento usa âmbar),
+  /// para o operador conferir a comanda certa antes de lançar.
+  static const destaque = Color(0xFFFFC107);
+  static const destaqueBorda = Color(0xFFB45309);
+  static const onDestaque = Color(0xFF111827);
   static const sidebar = Color(0xFF002148);
   static const sidebarAccent = Color(0xFF0F375D);
 }
