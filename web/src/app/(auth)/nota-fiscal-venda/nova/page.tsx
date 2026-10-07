@@ -112,6 +112,7 @@ import {
 	LABEL_TIPO_DEVOLUCAO,
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-util";
+import { inferirIndIeDestEntidade } from "@/util/destinatario-nfe-util";
 import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
 import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-form";
 import {
@@ -704,6 +705,18 @@ export default function NovaEmissaoNfePage() {
 		[entidades, idDestinatario],
 	);
 
+	const indIeDestEfetivo = useMemo(
+		() =>
+			entidadeSelecionada
+				? inferirIndIeDestEntidade({
+						cnpjcpf: entidadeSelecionada.cnpjcpf,
+						inscricaoestadual: entidadeSelecionada.inscricaoestadual,
+						indiedest: entidadeSelecionada.indiedest,
+					})
+				: null,
+		[entidadeSelecionada],
+	);
+
 	const cfopSelecionadoDestino = (
 		isDevolucaoVenda ? cfopsEntrada : cfopsSaida
 	)?.find((cfop) => cfop.codigo === cfopSaida);
@@ -716,28 +729,40 @@ export default function NovaEmissaoNfePage() {
 		destinatarioMesmaUf &&
 		cfopSaida.replace(/\D/g, "").startsWith("6") &&
 		cfopSelecionadoDestino?.interestadualdestmesmauf === 1;
+	const ufEntregaExplicitaForm =
+		(exigeLocalEntregaInterestadual ? localEntregaUf : undefined) ||
+		(informarEnderecoEntregaManual ? enderecoEntregaUf : undefined);
+	const destinatarioOutraUfSemEntregaExplicita =
+		!!empresaFiscal?.uf &&
+		!!entidadeSelecionada?.idestado &&
+		empresaFiscal.uf.toUpperCase() !==
+			entidadeSelecionada.idestado.toUpperCase() &&
+		!(
+			ufEntregaExplicitaForm &&
+			ufEntregaExplicitaForm.toUpperCase() !==
+				empresaFiscal.uf.toUpperCase()
+		);
+	const avisoPresencialContribuinteOutraUf =
+		indPres === 1 &&
+		destinatarioOutraUfSemEntregaExplicita &&
+		indIeDestEfetivo === 1;
 
 	const idDestSugerido = useMemo(
 		() =>
 			resolverIdDestNfePreview({
 				ufEmitente: empresaFiscal?.uf,
 				ufDestinatario: entidadeSelecionada?.idestado,
-				ufLocalEntrega:
-					(exigeLocalEntregaInterestadual ? localEntregaUf : undefined) ||
-					(informarEnderecoEntregaManual ? enderecoEntregaUf : undefined),
+				ufLocalEntrega: ufEntregaExplicitaForm,
 				paisDestinatario: entidadeSelecionada?.pais,
 				indPres,
-				indIEDest: entidadeSelecionada?.indiedest,
+				indIEDest: indIeDestEfetivo,
 			}),
 		[
 			empresaFiscal?.uf,
 			entidadeSelecionada?.idestado,
 			entidadeSelecionada?.pais,
-			entidadeSelecionada?.indiedest,
-			exigeLocalEntregaInterestadual,
-			localEntregaUf,
-			informarEnderecoEntregaManual,
-			enderecoEntregaUf,
+			indIeDestEfetivo,
+			ufEntregaExplicitaForm,
 			indPres,
 		],
 	);
@@ -756,7 +781,7 @@ export default function NovaEmissaoNfePage() {
 	const idDestAutoKey = [
 		empresaFiscal?.uf ?? "",
 		entidadeSelecionada?.idestado ?? "",
-		entidadeSelecionada?.indiedest ?? "",
+		indIeDestEfetivo ?? "",
 		entidadeSelecionada?.pais ?? "",
 		indPres ?? "",
 		exigeLocalEntregaInterestadual ? (localEntregaUf ?? "") : "",
@@ -2573,7 +2598,7 @@ export default function NovaEmissaoNfePage() {
 									{idDestIncompativelCfop && (
 										<p className="text-xs text-destructive mt-1">
 											{idDestForm === 2
-												? "CFOP 5xxx incompatível com operação interestadual. Para contribuinte de outro estado use CFOP 6xxx (ex.: 6102)."
+												? "CFOP 5xxx incompatível com operação interestadual. Contribuinte de outro estado: use CFOP 6xxx (ex.: 6102). Para CFOP 5102 presencial, o destinatário precisa ser não contribuinte (indIEDest=9) com idDest=1."
 												: idDestForm === 1
 													? "CFOP incompatível com operação interna. Ajuste o CFOP ou o idDest."
 													: "CFOP incompatível com o idDest selecionado."}
@@ -2984,11 +3009,34 @@ export default function NovaEmissaoNfePage() {
 							</Field>
 
 							{entidadeSelecionada && (
-								<div className="rounded-lg border bg-muted/40 px-4 py-3">
+								<div
+									className={
+										avisoPresencialContribuinteOutraUf
+											? "rounded-lg border border-amber-500/50 bg-amber-500/5 px-4 py-3"
+											: "rounded-lg border bg-muted/40 px-4 py-3"
+									}
+								>
 									<ResumoDestinatarioNfe
-										dados={entidadeSelecionada}
+										dados={{
+											...entidadeSelecionada,
+											indiedest:
+												indIeDestEfetivo ?? entidadeSelecionada.indiedest,
+										}}
 										variant="compact"
 									/>
+									{avisoPresencialContribuinteOutraUf && (
+										<p className="mt-3 text-xs text-amber-800 dark:text-amber-300">
+											Este destinatário está como contribuinte ICMS de outra UF.
+											Para CFOP 5102 na visita presencial, edite o cliente e
+											marque o indicador IE como{" "}
+											<span className="font-medium">
+												9 — Não contribuinte
+											</span>{" "}
+											(consumidor final). Se a compra for para a empresa
+											contribuinte, use idDest=2 e CFOP 6102 — a SEFAZ rejeita
+											5102+idDest=1 nesse caso (rejeição 521).
+										</p>
+									)}
 								</div>
 							)}
 						</FieldSet>

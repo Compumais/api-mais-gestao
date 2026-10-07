@@ -40,28 +40,34 @@ export function labelIndIeDest(indiedest?: number | null): string | null {
 	return null;
 }
 
-/** Infere indIEDest para exibição/cadastro quando o banco não tem valor gravado. */
+/**
+ * Infere indIEDest para exibição/cadastro/emissão quando o banco não tem valor
+ * gravado. Alinhado à API (`resolverIndIeDestNfe`): CPF sem indiedest=1 é
+ * não contribuinte (não força contribuinte por IE residual).
+ */
 export function inferirIndIeDestEntidade(params: {
 	cnpjcpf?: string | null;
 	inscricaoestadual?: string | null;
 	indiedest?: number | null;
 }): IndIeDestNfe | null {
-	if (
-		params.indiedest === 1 ||
-		params.indiedest === 2 ||
-		params.indiedest === 9
-	) {
-		return params.indiedest;
+	const ie = params.inscricaoestadual?.trim().toUpperCase() ?? "";
+	const ieIsento = ie === "ISENTO" || ie === "ISENTA";
+
+	if (params.indiedest === 2 || ieIsento) {
+		return 2;
+	}
+
+	if (params.indiedest === 9) {
+		return 9;
+	}
+
+	if (params.indiedest === 1) {
+		return 1;
 	}
 
 	const documento = params.cnpjcpf?.replace(/\D/g, "") ?? "";
 	if (documento.length === 11) {
 		return 9;
-	}
-
-	const ie = params.inscricaoestadual?.trim().toUpperCase() ?? "";
-	if (ie === "ISENTO" || ie === "ISENTA") {
-		return 2;
 	}
 
 	if (ie.replace(/\D/g, "").length > 0) {

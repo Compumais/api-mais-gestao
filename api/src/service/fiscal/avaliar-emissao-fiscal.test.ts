@@ -146,10 +146,56 @@ describe("avaliarEmissaoFiscal", () => {
 			regras: REGRAS_NACIONAIS,
 		});
 
+		const bloqueio521 = relatorio.validacoes.find(
+			(item) => item.code === "IDDEST_521",
+		);
+		expect(bloqueio521).toBeDefined();
+		expect(bloqueio521?.message).toContain("não contribuinte");
+		expect(bloqueio521?.message).toContain("5102");
+		expect(bloqueio521?.message).toContain("6102");
+		expect(relatorio.permitir_transmissao).toBe(false);
+	});
+
+	it("presencial consumidor final outra UF com 5102 e idDest=1 não bloqueia por 521", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "iddest-5102-presencial",
+			dataOperacao: "2026-08-19",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "SP",
+			idDest: 1,
+			indIEDest: 9,
+			consumidorFinal: true,
+			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
+			regras: REGRAS_NACIONAIS,
+		});
+
 		expect(
 			relatorio.validacoes.some((item) => item.code === "IDDEST_521"),
-		).toBe(true);
-		expect(relatorio.permitir_transmissao).toBe(false);
+		).toBe(false);
+		expect(
+			relatorio.validacoes.some((item) => item.code === "CFOP_IDDEST"),
+		).toBe(false);
+		expect(relatorio.permitir_transmissao).toBe(true);
+	});
+
+	it("presencial isento outra UF com 5102 e idDest=1 não bloqueia por 521", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "iddest-5102-isento",
+			dataOperacao: "2026-08-19",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "SP",
+			idDest: 1,
+			indIEDest: 2,
+			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
+			regras: REGRAS_NACIONAIS,
+		});
+
+		expect(
+			relatorio.validacoes.some((item) => item.code === "IDDEST_521"),
+		).toBe(false);
+		expect(relatorio.permitir_transmissao).toBe(true);
 	});
 
 	it("contribuinte outra UF com CFOP 5102 e idDest interestadual bloqueia pedindo 6xxx", () => {
@@ -171,6 +217,7 @@ describe("avaliarEmissaoFiscal", () => {
 		expect(cfopIdDest).toBeDefined();
 		expect(cfopIdDest?.message).toContain("CFOP 6xxx");
 		expect(cfopIdDest?.message).toContain("6102");
+		expect(cfopIdDest?.message).toContain("não contribuinte");
 		expect(relatorio.permitir_transmissao).toBe(false);
 	});
 
