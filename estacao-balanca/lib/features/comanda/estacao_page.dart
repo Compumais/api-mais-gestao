@@ -7,6 +7,7 @@ import 'package:estacao_balanca/core/lan_client.dart';
 import 'package:estacao_balanca/core/leitor_comanda.dart';
 import 'package:estacao_balanca/core/models.dart';
 import 'package:estacao_balanca/core/pesagem.dart';
+import 'package:estacao_balanca/core/produto_busca.dart';
 import 'package:estacao_balanca/core/prefs.dart';
 import 'package:estacao_balanca/features/balanca/balanca_facade.dart';
 import 'package:estacao_balanca/theme/mg_theme.dart';
@@ -185,7 +186,45 @@ class _EstacaoPageState extends State<EstacaoPage> {
     }
   }
 
+  /// Produto que não é vendido por kg não passa pela balança: pede a
+  /// quantidade (ex.: unidades) e segue para a confirmação.
+  Future<void> _selecionarPorQuantidade(ProdutoLan produto) async {
+    final quantidade = await _pedirQuantidade(produto);
+    if (!mounted || quantidade == null) return;
+    setState(() {
+      _produto = produto;
+      _passo = _Passo.peso;
+      _peso = quantidade;
+      _erro = null;
+      _status = null;
+      _lendoPeso = false;
+    });
+    _sincronizarLeitor();
+  }
+
+  Future<double?> _pedirQuantidade(ProdutoLan produto, {double? inicial}) {
+    return showDialog<double>(
+      context: context,
+      builder: (_) => _DialogQuantidade(produto: produto, inicial: inicial),
+    );
+  }
+
+  Future<void> _alterarQuantidade() async {
+    final produto = _produto;
+    if (produto == null) return;
+    final quantidade = await _pedirQuantidade(produto, inicial: _peso);
+    if (!mounted || quantidade == null) return;
+    setState(() {
+      _peso = quantidade;
+      _erro = null;
+    });
+  }
+
   Future<void> _selecionarProduto(ProdutoLan produto) async {
+    if (!produto.vendidoPorKg) {
+      await _selecionarPorQuantidade(produto);
+      return;
+    }
     setState(() {
       _produto = produto;
       _passo = _Passo.peso;
@@ -244,6 +283,7 @@ class _EstacaoPageState extends State<EstacaoPage> {
       idProduto: produto.id,
       produtoDescricao: produto.descricao,
       pesoKg: peso,
+      unidade: produto.siglaUnidade,
       precoUnitario: produto.preco,
       total: produto.preco * peso,
       quando: DateTime.now(),
@@ -473,6 +513,10 @@ class _EstacaoPageState extends State<EstacaoPage> {
                       tentarDeNovo: _sessao != null,
                       onVoltar: _sessao == null ? _voltar : null,
                       onReler: () async {
+                        if (!_produto!.vendidoPorKg) {
+                          await _alterarQuantidade();
+                          return;
+                        }
                         setState(() {
                           _lendoPeso = true;
                           _erro = null;
@@ -760,6 +804,8 @@ class _TelaProdutos extends StatelessWidget {
   }
 }
 
+/// Lista de todo o catálogo do PDV (qualquer unidade), como a de produtos do
+/// POS: imagem, nome, código e preço, com busca.
 class _DialogOutrosProdutos extends StatefulWidget {
   const _DialogOutrosProdutos({required this.client});
 
@@ -794,11 +840,11 @@ class _DialogOutrosProdutosState extends State<_DialogOutrosProdutos> {
       _erro = null;
     });
     try {
-      final kg = await widget.client.listarProdutosKg();
+      final todos = await widget.client.listarProdutosTodos();
       if (!mounted) return;
       setState(() {
-        _todos = kg;
-        _filtrados = kg;
+        _todos = todos;
+        _filtrados = filtrarProdutos(todos, _buscaCtrl.text);
         _carregando = false;
       });
     } catch (e) {
@@ -811,19 +857,7 @@ class _DialogOutrosProdutosState extends State<_DialogOutrosProdutos> {
   }
 
   void _filtrar(String q) {
-    final t = q.trim().toLowerCase();
-    setState(() {
-      if (t.isEmpty) {
-        _filtrados = _todos;
-        return;
-      }
-      _filtrados = _todos.where((p) {
-        final desc = p.descricao.toLowerCase();
-        final ean = (p.ean ?? '').toLowerCase();
-        final codigo = '${p.codigo ?? ''}';
-        return desc.contains(t) || ean.contains(t) || codigo.contains(t);
-      }).toList();
-    });
+    setState(() => _filtrados = filtrarProdutos(_todos, q));
   }
 
   @override
@@ -840,7 +874,7 @@ class _DialogOutrosProdutosState extends State<_DialogOutrosProdutos> {
               children: [
                 Expanded(
                   child: Text(
-                    'Outros produtos',
+                    'Produtos',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -859,7 +893,8 @@ class _DialogOutrosProdutosState extends State<_DialogOutrosProdutos> {
               controller: _buscaCtrl,
               autofocus: true,
               decoration: const InputDecoration(
-                labelText: 'Buscar por nome, EAN ou código',
+                labelText: 'Buscar produto',
+                hintText: 'Nome, código ou EAN',
                 prefixIcon: Icon(Icons.search),
               ),
               onChanged: _filtrar,
@@ -894,49 +929,187 @@ class _DialogOutrosProdutosState extends State<_DialogOutrosProdutos> {
             const Expanded(
               child: Center(
                 child: Text(
-                  'Nenhum produto KG encontrado',
+                  'Nenhum produto encontrado',
                   style: TextStyle(fontSize: 18),
                 ),
               ),
             )
           else
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
                 itemCount: _filtrados.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final p = _filtrados[index];
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    leading: SizedBox(
-                      width: 56,
-                      height: 56,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: ProdutoImagem(client: widget.client, produto: p),
-                      ),
-                    ),
-                    title: Text(
-                      p.descricao,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    subtitle: Text(
-                      'R\$ ${p.preco.toStringAsFixed(2)}/kg'
-                      '${p.codigo != null ? ' · cód. ${p.codigo}' : ''}',
-                    ),
-                    onTap: () => Navigator.pop(context, p),
-                  );
-                },
+                itemBuilder: (context, index) => _ItemProdutoLista(
+                  produto: _filtrados[index],
+                  client: widget.client,
+                  onTap: () => Navigator.pop(context, _filtrados[index]),
+                ),
               ),
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Linha de produto no padrão do POS (`item_produto_preco`).
+class _ItemProdutoLista extends StatelessWidget {
+  const _ItemProdutoLista({
+    required this.produto,
+    required this.client,
+    required this.onTap,
+  });
+
+  final ProdutoLan produto;
+  final LanClient client;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: MgColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: MgColors.border),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: ProdutoImagem(client: client, produto: produto),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        produto.descricao,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                      if (produto.codigo != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Cód. ${produto.codigo}',
+                          style: const TextStyle(
+                            color: MgColors.mutedForeground,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  formatarPrecoProduto(produto),
+                  style: const TextStyle(
+                    color: MgColors.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pede a quantidade de um produto que não é vendido por peso.
+class _DialogQuantidade extends StatefulWidget {
+  const _DialogQuantidade({required this.produto, this.inicial});
+
+  final ProdutoLan produto;
+  final double? inicial;
+
+  @override
+  State<_DialogQuantidade> createState() => _DialogQuantidadeState();
+}
+
+class _DialogQuantidadeState extends State<_DialogQuantidade> {
+  late final TextEditingController _ctrl;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    final ini = widget.inicial;
+    final texto = ini == null
+        ? '1'
+        : formatarQuantidade(ini, widget.produto.siglaUnidade)
+            .split(' ')
+            .first;
+    _ctrl = TextEditingController(text: texto);
+    _ctrl.selection = TextSelection(baseOffset: 0, extentOffset: texto.length);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _ok() {
+    final q = lerQuantidade(_ctrl.text);
+    if (q == null) {
+      setState(() => _erro = 'Informe uma quantidade maior que zero');
+      return;
+    }
+    Navigator.pop(context, q);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.produto;
+    return AlertDialog(
+      title: Text(p.descricao, maxLines: 2, overflow: TextOverflow.ellipsis),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${formatarPrecoProduto(p)} · unidade: ${p.siglaUnidade}',
+            style: const TextStyle(color: MgColors.mutedForeground),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _ctrl,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Quantidade (${p.siglaUnidade})',
+              errorText: _erro,
+            ),
+            onSubmitted: (_) => _ok(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(onPressed: _ok, child: const Text('Continuar')),
+      ],
     );
   }
 }
@@ -1036,7 +1209,9 @@ class _TelaPeso extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: busy || lendo || tentarDeNovo ? null : onReler,
-                    child: const Text('Reler peso'),
+                    child: Text(
+                      produto.vendidoPorKg ? 'Reler peso' : 'Alterar quantidade',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1087,7 +1262,7 @@ class _TelaPeso extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'R\$ ${produto.preco.toStringAsFixed(2)} / kg',
+          'R\$ ${produto.preco.toStringAsFixed(2)} / ${produto.siglaUnidade}',
           style: const TextStyle(
             color: MgColors.mutedForeground,
             fontWeight: FontWeight.w700,
@@ -1132,7 +1307,7 @@ class _TelaPeso extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'R\$ ${produto.preco.toStringAsFixed(2)} / kg',
+                'R\$ ${produto.preco.toStringAsFixed(2)} / ${produto.siglaUnidade}',
                 style: TextStyle(
                   color: MgColors.mutedForeground,
                   fontWeight: FontWeight.w700,
@@ -1195,7 +1370,9 @@ class _TelaPeso extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              peso != null ? '${peso!.toStringAsFixed(3)} kg' : '— — —',
+              peso != null
+                  ? formatarQuantidade(peso!, produto.siglaUnidade)
+                  : '— — —',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -1.5,

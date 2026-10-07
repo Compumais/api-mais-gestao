@@ -89,7 +89,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
                             style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                           subtitle: Text(
-                            '${item.pesoKg.toStringAsFixed(3)} kg · '
+                            '${formatarQuantidade(item.pesoKg, item.unidade)} · '
                             'R\$ ${item.total.toStringAsFixed(2)} · '
                             '${formatarDataHoraPesagem(item.quando)}',
                           ),

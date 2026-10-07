@@ -43,6 +43,14 @@ class ProdutoLan {
         u.contains('KILO');
   }
 
+  /// Sigla para exibir ao lado da quantidade (`kg` para peso, senão a unidade
+  /// do cadastro, ou `un` quando vazia).
+  String get siglaUnidade {
+    if (vendidoPorKg) return 'kg';
+    final u = (unidademedida ?? '').trim();
+    return u.isEmpty ? 'un' : u.toLowerCase();
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'descricao': descricao,
