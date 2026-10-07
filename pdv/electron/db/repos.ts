@@ -1551,6 +1551,22 @@ export async function caixaAbertoOutroOperador(): Promise<{
 	);
 }
 
+/**
+ * Operador do turno mais recente deste terminal (aberto tem preferência).
+ * Serve de autor no sync quando ninguém está logado (PDV como serviço).
+ */
+export async function operadorUltimoTurnoCaixa(): Promise<string | null> {
+	const numeropdv = Number(await getConfig("numeropdv", "1"));
+	const row = await queryOne<{ idusuario: string }>(
+		`SELECT idusuario FROM caixa_turno
+		 WHERE numeropdv = $1 AND idusuario IS NOT NULL AND idusuario <> ''
+		 ORDER BY (status = 'aberto') DESC, abertoem DESC
+		 LIMIT 1`,
+		[numeropdv],
+	);
+	return row?.idusuario ?? null;
+}
+
 export async function abrirCaixa(valorabertura: number): Promise<{
 	id: string;
 	abertoem: string;

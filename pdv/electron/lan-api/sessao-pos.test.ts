@@ -23,6 +23,17 @@ describe("sessão do POS isolada do caixa", () => {
 		);
 	});
 
+	it("com API key do terminal, não exige operador logado no caixa", () => {
+		assert.equal(
+			sessaoPdvProntaParaPos({ token: null, idempresa: "emp-1" }, true),
+			true,
+		);
+		assert.equal(
+			sessaoPdvProntaParaPos({ token: null, idempresa: null }, true),
+			false,
+		);
+	});
+
 	it("recusa operador de outra empresa e aceita lista indefinida", () => {
 		assert.equal(
 			operadorCompativelComEmpresa([{ id: "emp-2" }], "emp-1"),

@@ -67,6 +67,7 @@ import {
 	obterNumeracaoNfce,
 	obterSessao,
 	obterVenda,
+	operadorUltimoTurnoCaixa,
 	reivindicarOutboxPendentes,
 	salvarAtalhos,
 	salvarSessao,
@@ -94,6 +95,7 @@ import {
 import { sincronizarImagensProdutos } from "./imagens-produtos";
 import { sincronizarImagensGruposGourmet } from "./imagens-grupos-gourmet";
 import { invalidarSessaoExpirada } from "./sessao-expirada";
+import { escolherAutorSync } from "./autor-sync";
 import { temAuthNuvem, usaApiKeyDevice } from "./auth-nuvem";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
@@ -705,8 +707,10 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 
 		await sincronizarFiscalPdv().catch(() => undefined);
 
-		// Push de vendas/outbox exige operador (userid) na sessão local.
-		if (!sessao.userid) {
+		// Push de vendas/outbox exige um autor válido. Com API key do terminal,
+		// não precisa de operador logado: usa o do último turno de caixa.
+		const userid = await resolverAutorSync(sessao.userid);
+		if (!userid) {
 			return montarResultado();
 		}
 
@@ -719,7 +723,7 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 					const confirmacao = await syncCriarVenda(
 						payload,
 						sessao.idempresa,
-						sessao.userid,
+						userid,
 					);
 					vendasConfirmadas += 1;
 					detalhes.push({
@@ -739,7 +743,7 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 				} else if (item.tipo === "abrir_caixa") {
 					await syncAbrirCaixa(payload);
 				} else if (item.tipo === "fechamento_caixa") {
-					await syncFecharCaixa(payload, sessao.idempresa, sessao.userid);
+					await syncFecharCaixa(payload, sessao.idempresa, userid);
 				} else if (item.tipo === "conta_mesa") {
 					// Espelhamento remoto best-effort; marcado concluído para não travar a fila
 				}
@@ -859,12 +863,25 @@ async function garantirCaixaRemoto(
 	return idremoto;
 }
 
+async function resolverAutorSync(
+	useridSessao: string | null,
+): Promise<string | null> {
+	const apiKeyDevice = await usaApiKeyDevice();
+	return escolherAutorSync({
+		useridSessao,
+		apiKeyDevice,
+		operadorUltimoTurno:
+			useridSessao || !apiKeyDevice ? null : await operadorUltimoTurnoCaixa(),
+	});
+}
+
 async function syncAbrirCaixa(payload: Record<string, unknown>): Promise<void> {
 	const sessao = await obterSessao();
-	if (!sessao.idempresa || !sessao.userid) {
+	const userid = await resolverAutorSync(sessao.userid);
+	if (!sessao.idempresa || !userid) {
 		throw new Error("Sessão inválida para abrir caixa remoto");
 	}
-	await garantirCaixaRemoto(payload, sessao.idempresa, sessao.userid);
+	await garantirCaixaRemoto(payload, sessao.idempresa, userid);
 }
 
 async function syncFecharCaixa(

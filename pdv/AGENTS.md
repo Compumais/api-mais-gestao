@@ -50,6 +50,8 @@ Não grave segredo em documentação nem no git: senha do banco, URL completa, C
 
 Se o Postgres local não conectar, a janela abre e o update ainda é tentado, mas venda e caixa não operam.
 
+Com `--lan-service` (tarefa agendada `SYSTEM` criada pelo instalador) o processo sobe sem janela: API LAN, outbox e NFC-e, sem operador logado. O app do caixa não abre a LAN se o serviço já responde em `/pos/health`. Detalhe em [docs/modulos/servico-lan.md](docs/modulos/servico-lan.md).
+
 ## Renderer
 
 Rotas em `src/App.tsx`: `/boot`, `/login`, `/abertura-caixa`, `/config`, `/` (venda), `/balcao`, `/vendas`, `/vendas/nao-sincronizadas`, e com módulo gourmet `/mesas/:numero`, `/delivery`, `/pedidos`.

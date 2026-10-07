@@ -67,7 +67,9 @@ PDV secundário: o timer chama `sincronizarSecundarioPeriodico` e o `processarOu
 
 ## Configuração crítica
 
-`api_url`, token em `sessao`, `numeropdv` (vai no corpo da venda). Sem os três o ciclo não envia.
+`api_url`, token em `sessao` (ou API key `pdv_…` do terminal), `numeropdv` (vai no corpo da venda). Sem esses o ciclo não envia.
+
+Autor do envio: operador da `sessao`; sem operador e com API key, o do turno de caixa mais recente (`escolherAutorSync`). Isso permite o PDV rodar como serviço sem ninguém logado. Ver [servico-lan.md](servico-lan.md).
 
 ## O que quebra na operação da loja se remover
 

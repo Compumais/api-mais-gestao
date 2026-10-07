@@ -1,10 +1,16 @@
 /** Regras puras: o login do POS não pode reescrever a sessão do caixa. */
 
-export function sessaoPdvProntaParaPos(sessao: {
-	token: string | null;
-	idempresa: string | null;
-}): boolean {
-	return Boolean(sessao.token && sessao.idempresa);
+export function sessaoPdvProntaParaPos(
+	sessao: {
+		token: string | null;
+		idempresa: string | null;
+	},
+	apiKeyDevice = false,
+): boolean {
+	if (!sessao.idempresa) return false;
+	// Terminal com API key já está vinculado à empresa: o POS não depende de
+	// operador logado no caixa (PDV rodando como serviço).
+	return Boolean(sessao.token) || apiKeyDevice;
 }
 
 /**

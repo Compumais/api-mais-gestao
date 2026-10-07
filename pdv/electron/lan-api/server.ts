@@ -28,6 +28,7 @@ import {
 	normalizarModoPdv,
 	parseNumeroPdv,
 } from "../pdv-secundario/regras";
+import { usaApiKeyDevice } from "../sync/auth-nuvem";
 import { garantirRegraFirewall } from "./firewall";
 import {
 	prepararCatalogoParaLan,
@@ -64,6 +65,8 @@ let portaAtual = 0;
 let ultimoErro: string | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let encerrando = false;
+/** Porta atendida por outro processo do PDV (serviço sem janela). 0 = nenhuma. */
+let portaServicoExterno = 0;
 
 export type StatusLan = {
 	habilitada: boolean;
@@ -75,17 +78,32 @@ export type StatusLan = {
 };
 
 export function obterPortaLan(): number {
-	return portaAtual;
+	return portaAtual || portaServicoExterno;
 }
 
 export function statusLanAtual(): StatusLan {
+	const proprio = server != null && portaAtual > 0;
+	const externo = !proprio && portaServicoExterno > 0;
 	return {
 		habilitada: true,
-		ouvindo: server != null && portaAtual > 0,
-		porta: portaAtual,
+		ouvindo: proprio || externo,
+		porta: proprio ? portaAtual : portaServicoExterno,
 		ips: listarIpsLan(),
-		erro: ultimoErro,
+		erro: externo ? null : ultimoErro,
+		...(externo
+			? { motivo: "API LAN atendida pelo serviço do PDV (sem janela)" }
+			: {}),
 	};
+}
+
+/**
+ * O serviço do PDV já escuta a porta: este processo (app do caixa) não abre
+ * a LAN, e o banco/outbox seguem compartilhados.
+ */
+export async function delegarLanAoServicoExterno(porta: number): Promise<void> {
+	portaServicoExterno = porta;
+	ultimoErro = null;
+	await stopLanServer();
 }
 
 async function lerConfigLan(): Promise<{
@@ -255,6 +273,7 @@ export async function encerrarLanServer(): Promise<void> {
 
 export async function restartLanServer(): Promise<StatusLan> {
 	encerrando = false;
+	portaServicoExterno = 0;
 	limparRetry();
 	await fecharServidor();
 	return startLanServer();
@@ -536,7 +555,10 @@ async function despachar(
 			persistirSessao: false,
 		});
 		const sessao = await obterSessao();
-		if (!sessaoPdvProntaParaPos(sessao) || !sessao.idempresa) {
+		if (
+			!sessaoPdvProntaParaPos(sessao, await usaApiKeyDevice()) ||
+			!sessao.idempresa
+		) {
 			return {
 				status: 409,
 				body: {
@@ -630,7 +652,7 @@ async function despachar(
 		const sessao = await obterSessao();
 		const decisao = empresaPosConfere(
 			idempresa,
-			sessao.token ? sessao.idempresa : null,
+			sessao.token || (await usaApiKeyDevice()) ? sessao.idempresa : null,
 		);
 		if (decisao === "pdv_sem_empresa") {
 			return {
