@@ -532,6 +532,7 @@ class _EstacaoPageState extends State<EstacaoPage> {
                       cupom: _sessao == null
                           ? ''
                           : montarCupomPesagem(_sessao!),
+                      numero: _sessao?.numero,
                       busy: _busy,
                       erro: _erro,
                       onReimprimir: _imprimirVia,
@@ -541,6 +542,59 @@ class _EstacaoPageState extends State<EstacaoPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Número da comanda grande e em âmbar: é a conferência final contra o erro de
+/// lançar o consumo na comanda errada.
+class _DestaqueComanda extends StatelessWidget {
+  const _DestaqueComanda({required this.numero, this.compacto = false});
+
+  final int numero;
+  final bool compacto;
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: compacto ? 16 : 24,
+          vertical: compacto ? 6 : 10,
+        ),
+        decoration: BoxDecoration(
+          color: MgColors.destaque,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: MgColors.destaqueBorda, width: 3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'COMANDA',
+              style: TextStyle(
+                color: MgColors.onDestaque,
+                fontSize: compacto ? 16 : 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+            SizedBox(width: compacto ? 12 : 18),
+            Text(
+              '$numero',
+              style: TextStyle(
+                color: MgColors.onDestaque,
+                fontSize: compacto ? 48 : 72,
+                fontWeight: FontWeight.w900,
+                height: 1.05,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -678,12 +732,28 @@ class _TelaProdutos extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  'Comanda ${conta.numero} — toque no produto',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: landscape ? 22 : null,
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: _DestaqueComanda(
+                        numero: conta.numero,
+                        compacto: landscape,
                       ),
+                    ),
+                    const SizedBox(width: 14),
+                    Flexible(
+                      child: Text(
+                        'toque no produto',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: MgColors.mutedForeground,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 12),
@@ -1161,12 +1231,12 @@ class _TelaPeso extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'Comanda ${conta.numero}',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: landscape ? 22 : null,
-                      ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _DestaqueComanda(
+                    numero: conta.numero,
+                    compacto: landscape || short,
+                  ),
                 ),
               ),
               SizedBox(
@@ -1436,10 +1506,12 @@ class _TelaComprovante extends StatelessWidget {
     required this.cupom,
     required this.busy,
     required this.onReimprimir,
+    this.numero,
     this.erro,
   });
 
   final String cupom;
+  final int? numero;
   final bool busy;
   final VoidCallback onReimprimir;
   final String? erro;
@@ -1451,11 +1523,23 @@ class _TelaComprovante extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Via da pesagem',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
+          Row(
+            children: [
+              if (numero != null) ...[
+                Flexible(child: _DestaqueComanda(numero: numero!, compacto: true)),
+                const SizedBox(width: 14),
+              ],
+              Flexible(
+                child: Text(
+                  'Via da pesagem',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Expanded(
