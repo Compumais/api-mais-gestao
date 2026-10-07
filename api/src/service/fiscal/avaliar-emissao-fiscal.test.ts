@@ -133,6 +133,66 @@ describe("avaliarEmissaoFiscal", () => {
 		expect(relatorio.permitir_transmissao).toBe(true);
 	});
 
+	it("idDest=1 com contribuinte de outra UF bloqueia (regra 521)", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "iddest-521",
+			dataOperacao: "2026-08-19",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "SP",
+			idDest: 1,
+			indIEDest: 1,
+			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
+			regras: REGRAS_NACIONAIS,
+		});
+
+		expect(
+			relatorio.validacoes.some((item) => item.code === "IDDEST_521"),
+		).toBe(true);
+		expect(relatorio.permitir_transmissao).toBe(false);
+	});
+
+	it("contribuinte outra UF com CFOP 5102 e idDest interestadual bloqueia pedindo 6xxx", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "cfop-521",
+			dataOperacao: "2026-08-19",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "SP",
+			idDest: 2,
+			indIEDest: 1,
+			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
+			regras: REGRAS_NACIONAIS,
+		});
+
+		const cfopIdDest = relatorio.validacoes.find(
+			(item) => item.code === "CFOP_IDDEST",
+		);
+		expect(cfopIdDest).toBeDefined();
+		expect(cfopIdDest?.message).toContain("CFOP 6xxx");
+		expect(cfopIdDest?.message).toContain("6102");
+		expect(relatorio.permitir_transmissao).toBe(false);
+	});
+
+	it("CFOP 6102 com idDest interestadual é aceito", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "cfop-6102",
+			dataOperacao: "2026-08-19",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "SP",
+			idDest: 2,
+			indIEDest: 1,
+			itens: [itemBase({ cfop: "6102", csosn: "102", cest: undefined })],
+			regras: REGRAS_NACIONAIS,
+		});
+
+		expect(
+			relatorio.validacoes.some((item) => item.code === "CFOP_IDDEST"),
+		).toBe(false);
+		expect(relatorio.permitir_transmissao).toBe(true);
+	});
+
 	it("CRT 1 com CST 00 é inconsistência", () => {
 		const relatorio = avaliarEmissaoFiscal({
 			operacaoId: "crt-cst",

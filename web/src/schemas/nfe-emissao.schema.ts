@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { isIndPresNfeValido } from "@/constants/ind-pres-nfe";
+import {
+	isIdDestNfeValido,
+	isIndPresNfeValido,
+} from "@/constants/ind-pres-nfe";
 import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
 
 const UUID_REGEX =
@@ -213,6 +216,11 @@ export const emissaoNfeFormSchema = z.object({
 		.int()
 		.refine((valor) => isIndPresNfeValido(valor), "indPres inválido")
 		.default(1),
+	idDest: z.coerce
+		.number()
+		.int()
+		.refine((valor) => isIdDestNfeValido(valor), "idDest inválido")
+		.optional(),
 	itens: z.array(itemNfeSchema).min(1, "Informe ao menos um item"),
 	totais: totaisNfeSchema.optional(),
 	totaisInformados: totaisInformadosNfeSchema,

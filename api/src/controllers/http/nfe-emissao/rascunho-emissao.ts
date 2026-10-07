@@ -52,6 +52,7 @@ export async function salvarRascunhoEmissaoNfe(
 			idserienfe: dados.idserienfe,
 			natOp: dados.natOp,
 			indPres: dados.indPres,
+			idDest: dados.idDest,
 			itens: dados.itens,
 			totais: dados.totais,
 			pagamento: dados.pagamento,

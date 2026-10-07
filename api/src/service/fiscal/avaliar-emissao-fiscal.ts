@@ -82,6 +82,27 @@ export function avaliarEmissaoFiscal(
 		}),
 	];
 
+	const ufEmitente = params.ufEmitente?.trim().toUpperCase() ?? "";
+	const ufDestinatario = params.ufDestinatario?.trim().toUpperCase() ?? "";
+	if (
+		operacao.idDest === 1 &&
+		operacao.contribuinteIcms &&
+		ufEmitente.length === 2 &&
+		ufDestinatario.length === 2 &&
+		ufEmitente !== ufDestinatario
+	) {
+		validacoes.push({
+			status: "INCONSISTENCIA",
+			code: "IDDEST_521",
+			field: "idDest",
+			expected: "2",
+			actual: "1",
+			message:
+				"Operação interna (idDest=1) inválida com destinatário contribuinte do ICMS de outra UF (rejeição SEFAZ 521). Selecione idDest=2 e CFOP interestadual 6xxx (ex.: 6102).",
+			tipoInconsistencia: "ERRO_DE_PARAMETRIZACAO_FISCAL",
+		});
+	}
+
 	const regrasEstruturais = resolverRegrasFiscais({
 		regras: params.regras,
 		contexto: {

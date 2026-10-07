@@ -20,6 +20,14 @@ export const ID_DEST_NFE = {
 	EXTERIOR: 3,
 } as const;
 
+export const ID_DEST_NFE_VALORES = [
+	ID_DEST_NFE.INTERNA,
+	ID_DEST_NFE.INTERESTADUAL,
+	ID_DEST_NFE.EXTERIOR,
+] as const;
+
+export type IdDestNfe = (typeof ID_DEST_NFE_VALORES)[number];
+
 export const ID_DEST_NFE_LABELS: Record<number, string> = {
 	[ID_DEST_NFE.INTERNA]: "Operação interna",
 	[ID_DEST_NFE.INTERESTADUAL]: "Operação interestadual",
@@ -28,4 +36,8 @@ export const ID_DEST_NFE_LABELS: Record<number, string> = {
 
 export function isIndPresNfeValido(valor: number): valor is IndPresNfe {
 	return (IND_PRES_NFE_VALORES as readonly number[]).includes(valor);
+}
+
+export function isIdDestNfeValido(valor: number): valor is IdDestNfe {
+	return (ID_DEST_NFE_VALORES as readonly number[]).includes(valor);
 }
