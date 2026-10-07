@@ -24,6 +24,7 @@ export async function previewDanfeNfe(
 			confirmarProducao: dados.confirmarProducao,
 			natOp: dados.natOp,
 			indPres: dados.indPres,
+			idDest: dados.idDest,
 			itens: dados.itens,
 			totais: dados.totais,
 			totaisInformados: dados.totaisInformados,

@@ -94,6 +94,7 @@ export type PrepararPayloadEmissaoNfeVendaParams = {
 	confirmarProducao?: boolean;
 	natOp?: string;
 	indPres?: number;
+	idDest?: number;
 	itens: ItemPayloadNfe[];
 	totais?: TotaisPayloadNfe;
 	totaisInformados?: TotaisInformadosEmissaoNfe;
@@ -417,6 +418,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		idserienfe,
 		natOp,
 		indPres,
+		idDest,
 		itens,
 		totais,
 		totaisInformados,
@@ -756,6 +758,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		indPres ??
 		emissaoSalvaReemissao?.indPres ??
 		nfeConfiguracao.ultimoindpres;
+	const idDestInformado = idDest ?? emissaoSalvaReemissao?.idDest;
 	const ufEntregaExplicita =
 		localEntregaNormalizado?.uf ??
 		(informarEnderecoEntregaManual
@@ -769,6 +772,8 @@ export async function prepararPayloadEmissaoNfeVenda(
 		paisDestinatario: destinatario?.pais,
 		indPres: indPresInformado,
 		finNFe,
+		indIEDest: destinatario?.indIEDest,
+		idDest: idDestInformado,
 	});
 
 	const enderecoEntregaParaEmissao =
@@ -868,6 +873,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 			? [documentoReferenciado]
 			: [],
 		indPres: ideEmissao.indPres,
+		idDest: ideEmissao.idDest,
 	});
 
 	return httpOk({

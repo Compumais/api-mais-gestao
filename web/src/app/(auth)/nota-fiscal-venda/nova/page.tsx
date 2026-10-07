@@ -57,8 +57,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	ID_DEST_NFE,
 	IND_PRES_NFE_PADRAO,
+	isIdDestNfeValido,
 	isIndPresNfeValido,
+	OPCOES_ID_DEST_NFE,
 	OPCOES_IND_PRES_NFE,
 	resolverIdDestNfePreview,
 } from "@/constants/ind-pres-nfe";
@@ -272,6 +275,7 @@ export default function NovaEmissaoNfePage() {
 	const pedidoAplicadoRef = useRef<string | null>(null);
 	const devolucaoAplicadaRef = useRef<string | null>(null);
 	const ultimaPreferenciaAplicadaRef = useRef(false);
+	const idDestAutoKeyAplicadoRef = useRef<string | null>(null);
 
 	const { data: entidadesLista } = useQuery({
 		queryKey: ["entidades-para-nfe", empresa?.id],
@@ -394,6 +398,7 @@ export default function NovaEmissaoNfePage() {
 			confirmarProducao: false,
 			natOp: "",
 			indPres: IND_PRES_NFE_PADRAO,
+			idDest: ID_DEST_NFE.INTERNA,
 			itens: [],
 			totais: { frete: 0, seguro: 0, desconto: 0, outrasDespesas: 0 },
 			informarEnderecoEntregaManual: false,
@@ -507,6 +512,7 @@ export default function NovaEmissaoNfePage() {
 	const informarEnderecoEntregaManual =
 		form.watch("informarEnderecoEntregaManual") ?? false;
 	const indPres = form.watch("indPres");
+	const idDestForm = form.watch("idDest");
 	const enderecoEntregaUf = form.watch("enderecoEntrega.uf") ?? "";
 	const enderecoEntregaMunicipioCodigo =
 		form.watch("enderecoEntrega.codigoMunicipio") ?? "";
@@ -711,7 +717,7 @@ export default function NovaEmissaoNfePage() {
 		cfopSaida.replace(/\D/g, "").startsWith("6") &&
 		cfopSelecionadoDestino?.interestadualdestmesmauf === 1;
 
-	const idDestPreview = useMemo(
+	const idDestSugerido = useMemo(
 		() =>
 			resolverIdDestNfePreview({
 				ufEmitente: empresaFiscal?.uf,
@@ -721,11 +727,13 @@ export default function NovaEmissaoNfePage() {
 					(informarEnderecoEntregaManual ? enderecoEntregaUf : undefined),
 				paisDestinatario: entidadeSelecionada?.pais,
 				indPres,
+				indIEDest: entidadeSelecionada?.indiedest,
 			}),
 		[
 			empresaFiscal?.uf,
 			entidadeSelecionada?.idestado,
 			entidadeSelecionada?.pais,
+			entidadeSelecionada?.indiedest,
 			exigeLocalEntregaInterestadual,
 			localEntregaUf,
 			informarEnderecoEntregaManual,
@@ -733,6 +741,35 @@ export default function NovaEmissaoNfePage() {
 			indPres,
 		],
 	);
+
+	const cfopPrincipalDigito = cfopSaida.replace(/\D/g, "").charAt(0);
+	const idDestIncompativelCfop =
+		idDestForm != null &&
+		cfopPrincipalDigito.length === 1 &&
+		((idDestForm === 1 &&
+			cfopPrincipalDigito === "6" &&
+			!exigeLocalEntregaInterestadual) ||
+			(idDestForm === 2 && cfopPrincipalDigito === "5") ||
+			(idDestForm === 3 && cfopPrincipalDigito !== "7") ||
+			(idDestForm !== 3 && cfopPrincipalDigito === "7"));
+
+	const idDestAutoKey = [
+		empresaFiscal?.uf ?? "",
+		entidadeSelecionada?.idestado ?? "",
+		entidadeSelecionada?.indiedest ?? "",
+		entidadeSelecionada?.pais ?? "",
+		indPres ?? "",
+		exigeLocalEntregaInterestadual ? (localEntregaUf ?? "") : "",
+		informarEnderecoEntregaManual ? (enderecoEntregaUf ?? "") : "",
+	].join("|");
+
+	useEffect(() => {
+		const sugerido = idDestSugerido?.idDest;
+		if (sugerido == null || !isIdDestNfeValido(sugerido)) return;
+		if (idDestAutoKeyAplicadoRef.current === idDestAutoKey) return;
+		idDestAutoKeyAplicadoRef.current = idDestAutoKey;
+		form.setValue("idDest", sugerido, { shouldValidate: true });
+	}, [idDestAutoKey, idDestSugerido?.idDest, form]);
 
 	const serieSelecionada = useMemo(
 		() =>
@@ -862,6 +899,11 @@ export default function NovaEmissaoNfePage() {
 				isIndPresNfeValido(contextoReemissao.indPres)
 					? contextoReemissao.indPres
 					: IND_PRES_NFE_PADRAO,
+			idDest:
+				contextoReemissao.idDest != null &&
+				isIdDestNfeValido(contextoReemissao.idDest)
+					? contextoReemissao.idDest
+					: undefined,
 			itens: itensForm,
 			totais: contextoReemissao.totais,
 			transporte: contextoReemissao.transporte,
@@ -1012,6 +1054,10 @@ export default function NovaEmissaoNfePage() {
 				isIndPresNfeValido(contextoClone.indPres)
 					? contextoClone.indPres
 					: IND_PRES_NFE_PADRAO,
+			idDest:
+				contextoClone.idDest != null && isIdDestNfeValido(contextoClone.idDest)
+					? contextoClone.idDest
+					: undefined,
 			itens: itensForm,
 			totais: contextoClone.totais,
 			transporte: contextoClone.transporte,
@@ -1121,6 +1167,10 @@ export default function NovaEmissaoNfePage() {
 				contexto.indPres != null && isIndPresNfeValido(contexto.indPres)
 					? contexto.indPres
 					: IND_PRES_NFE_PADRAO,
+			idDest:
+				contexto.idDest != null && isIdDestNfeValido(contexto.idDest)
+					? contexto.idDest
+					: undefined,
 			itens: itensForm,
 			totais: contexto.totais,
 			transporte: contexto.transporte,
@@ -2473,29 +2523,63 @@ export default function NovaEmissaoNfePage() {
 									/>
 									<p className="text-xs text-muted-foreground mt-1">
 										Indica como a venda ocorreu (balcão, internet, telefone
-										etc.). Na operação presencial no estabelecimento, a venda é
-										interna mesmo que o cliente seja de outra UF.
+										etc.). Presencial no estabelecimento com consumidor final
+										não contribuinte de outra UF pode ser operação interna;
+										contribuinte de outra UF exige operação interestadual
+										(CFOP 6xxx).
 									</p>
 								</Field>
 
-								{idDestPreview && (
-									<Field>
-										<FieldLabel>Localização fiscal (idDest)</FieldLabel>
-										<div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-											<span className="font-medium">
-												{idDestPreview.idDest}
-											</span>
-											{" — "}
-											{idDestPreview.label}
-										</div>
-										<p className="text-xs text-muted-foreground mt-1">
-											Na venda presencial (indPres 1), a operação ocorre na UF
-											do emitente, salvo entrega informada em outra UF. Nos
-											demais casos, usa a UF do local de entrega ou do
-											destinatário.
+								<Field>
+									<FieldLabel>Destino da operação (idDest)</FieldLabel>
+									<Controller
+										control={form.control}
+										name="idDest"
+										render={({ field }) => (
+											<Select
+												value={String(
+													field.value ??
+														idDestSugerido?.idDest ??
+														ID_DEST_NFE.INTERNA,
+												)}
+												onValueChange={(valor) => field.onChange(Number(valor))}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Selecionar destino" />
+												</SelectTrigger>
+												<SelectContent>
+													{OPCOES_ID_DEST_NFE.map((opcao) => (
+														<SelectItem key={opcao.value} value={opcao.value}>
+															{opcao.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										)}
+									/>
+									<p className="text-xs text-muted-foreground mt-1">
+										Preenchido automaticamente conforme UF, contribuinte ICMS,
+										presença e entrega. Você pode alterar manualmente; a API
+										valida a coerência com o CFOP.
+									</p>
+									{idDestSugerido &&
+										idDestForm != null &&
+										idDestForm !== idDestSugerido.idDest && (
+											<p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+												Sugestão automática: {idDestSugerido.idDest} —{" "}
+												{idDestSugerido.label}
+											</p>
+										)}
+									{idDestIncompativelCfop && (
+										<p className="text-xs text-destructive mt-1">
+											{idDestForm === 2
+												? "CFOP 5xxx incompatível com operação interestadual. Para contribuinte de outro estado use CFOP 6xxx (ex.: 6102)."
+												: idDestForm === 1
+													? "CFOP incompatível com operação interna. Ajuste o CFOP ou o idDest."
+													: "CFOP incompatível com o idDest selecionado."}
 										</p>
-									</Field>
-								)}
+									)}
+								</Field>
 							</div>
 
 							{exigeLocalEntregaInterestadual && (

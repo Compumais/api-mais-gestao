@@ -52,6 +52,7 @@ export type SalvarRascunhoEmissaoNfeVendaParametros = {
 	idserienfe?: string;
 	natOp?: string;
 	indPres?: number;
+	idDest?: number;
 	itens: ItemPayloadNfe[];
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
@@ -308,6 +309,8 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 				: undefined),
 		paisDestinatario: destinatario?.pais,
 		indPres: params.indPres,
+		indIEDest: destinatario?.indIEDest,
+		idDest: params.idDest,
 	}).idDest;
 
 	let idnotafiscal = params.idnotafiscal ?? uuidv4();

@@ -82,13 +82,12 @@ export function validarCoerenciaFiscalNfe(params: {
 				field: `itens[${indice}].cfop`,
 				expected: `${digitoEsperado}xxx`,
 				actual: cfop,
-				message: `Item ${posicao}: CFOP ${cfop} incompatível com operação ${
+				message:
 					params.idDest === 2
-						? "interestadual"
+						? `Item ${posicao}: CFOP ${cfop} incompatível com operação interestadual. Destinatário de outra UF (contribuinte do ICMS) exige CFOP 6xxx (ex.: 6102), não ${cfop}.`
 						: params.idDest === 3
-							? "exterior"
-							: "interna"
-				}`,
+							? `Item ${posicao}: CFOP ${cfop} incompatível com operação exterior`
+							: `Item ${posicao}: CFOP ${cfop} incompatível com operação interna`,
 				tipoInconsistencia: "ERRO_DE_PARAMETRIZACAO_FISCAL",
 			});
 		}

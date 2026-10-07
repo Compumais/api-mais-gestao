@@ -331,6 +331,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	tpNF,
 	documentosReferenciados,
 	indPres,
+	idDest,
 }: {
 	empresa: NonNullable<Awaited<ReturnType<typeof buscarEmpresaPorId>>>;
 	empresaFiscal: NonNullable<
@@ -358,6 +359,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	tpNF?: number;
 	documentosReferenciados?: DocumentoReferenciadoPayloadNfe[];
 	indPres?: number;
+	idDest?: number;
 }) {
 	const configJson = montarConfigJsonSpedNfe({
 		empresa,
@@ -372,6 +374,8 @@ export async function montarPayloadGatewayEmissaoItens({
 		paisDestinatario: destinatario?.pais,
 		indPres,
 		finNFe,
+		indIEDest: destinatario?.indIEDest,
+		idDest,
 	});
 
 	const [nomeMunicipioEmitente, nomeMunicipioDestinatario] = await Promise.all([

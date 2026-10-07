@@ -26,6 +26,7 @@ type NotaReemissao = {
 type DadosEmissaoSalvos = {
 	natOp?: string;
 	indPres?: number;
+	idDest?: number;
 	formaPagamento?: string;
 	idserienfe?: string;
 	gerarFinanceiro?: boolean;
@@ -64,6 +65,7 @@ function extrairEmissaoSalva(
 export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 	natOp?: string;
 	indPres?: number;
+	idDest?: number;
 	formaPagamento: string;
 	idserienfe?: string;
 	idtipodocumento?: string;
@@ -118,6 +120,7 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 	return {
 		natOp: emissao?.natOp,
 		indPres: emissao?.indPres,
+		idDest: emissao?.idDest,
 		formaPagamento: emissao?.formaPagamento ?? "01",
 		idserienfe: uuidValido(notaFiscal.idserie)
 			? notaFiscal.idserie

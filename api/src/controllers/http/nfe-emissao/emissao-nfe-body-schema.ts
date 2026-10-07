@@ -1,5 +1,8 @@
 import z from "zod";
-import { isIndPresNfeValido } from "@/constants/ind-pres-nfe.js";
+import {
+	isIdDestNfeValido,
+	isIndPresNfeValido,
+} from "@/constants/ind-pres-nfe.js";
 import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe.js";
 
 const UUID_REGEX =
@@ -104,6 +107,12 @@ const indPresNfeSchema = z
 	.refine((valor) => isIndPresNfeValido(valor), "indPres inválido")
 	.optional();
 
+const idDestNfeSchema = z
+	.number()
+	.int()
+	.refine((valor) => isIdDestNfeValido(valor), "idDest inválido")
+	.optional();
+
 const totaisInformadosSchema = z
 	.object({
 		vProd: z.number().optional(),
@@ -199,6 +208,7 @@ export const emitirNfeCamposSchema = z.object({
 	confirmarProducao: z.boolean().default(false),
 	natOp: z.string().max(60).optional(),
 	indPres: indPresNfeSchema,
+	idDest: idDestNfeSchema,
 	itens: z.array(itemNfeSchema).min(1),
 	totais: z
 		.object({
