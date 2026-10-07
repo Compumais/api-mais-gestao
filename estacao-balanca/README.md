@@ -18,6 +18,9 @@ App Windows + Android para lançar consumo em **kg** em comandas via PDV local (
 3. Produto em KG: coloca na balança → lê peso → mostra **kg + total (R$)**. Produto em outra unidade (ex.: UN): pede a **quantidade** em vez de pesar
 4. **Confirmar** → `POST /pos/contas/{id}/itens` → volta para a próxima comanda
 
+### Histórico
+Lista os últimos 200 lançamentos gravados no aparelho, com reimpressão. Filtros: **período** (Todos, Hoje, Ontem, 7 dias ou intervalo de datas), **comanda** (número exato) e **produto** (trecho do nome, sem acento). Mostra a quantidade de lançamentos e o total em R$ do que está filtrado.
+
 ## Pré-requisitos
 
 - Flutter 3.5+
