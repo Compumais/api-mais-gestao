@@ -2548,10 +2548,10 @@ export default function NovaEmissaoNfePage() {
 									/>
 									<p className="text-xs text-muted-foreground mt-1">
 										Indica como a venda ocorreu (balcão, internet, telefone
-										etc.). Presencial no estabelecimento com consumidor final
-										não contribuinte de outra UF pode ser operação interna;
-										contribuinte de outra UF exige operação interestadual
-										(CFOP 6xxx).
+										etc.). Presencial no estabelecimento (retirada no local),
+										sem entrega em outra UF: operação interna com CFOP 5xxx.
+										Internet, telefone ou entrega em outra UF: interestadual com
+										CFOP 6xxx.
 									</p>
 								</Field>
 
@@ -2583,9 +2583,9 @@ export default function NovaEmissaoNfePage() {
 										)}
 									/>
 									<p className="text-xs text-muted-foreground mt-1">
-										Preenchido automaticamente conforme UF, contribuinte ICMS,
-										presença e entrega. Você pode alterar manualmente; a API
-										valida a coerência com o CFOP.
+										Preenchido automaticamente conforme presença, entrega e UF.
+										Você pode alterar manualmente; a API valida a coerência com
+										o CFOP.
 									</p>
 									{idDestSugerido &&
 										idDestForm != null &&
@@ -2598,9 +2598,9 @@ export default function NovaEmissaoNfePage() {
 									{idDestIncompativelCfop && (
 										<p className="text-xs text-destructive mt-1">
 											{idDestForm === 2
-												? "CFOP 5xxx incompatível com operação interestadual. Contribuinte de outro estado: use CFOP 6xxx (ex.: 6102). Para CFOP 5102 presencial, o destinatário precisa ser não contribuinte (indIEDest=9) com idDest=1."
+												? "CFOP 5xxx incompatível com operação interestadual. Use CFOP 6xxx (ex.: 6102). Retirada presencial: idDest=1 com CFOP 5xxx (ex.: 5102)."
 												: idDestForm === 1
-													? "CFOP incompatível com operação interna. Ajuste o CFOP ou o idDest."
+													? "CFOP incompatível com operação interna. Use CFOP 5xxx (ex.: 5102) ou ajuste o idDest."
 													: "CFOP incompatível com o idDest selecionado."}
 										</p>
 									)}
@@ -3026,15 +3026,13 @@ export default function NovaEmissaoNfePage() {
 									/>
 									{avisoPresencialContribuinteOutraUf && (
 										<p className="mt-3 text-xs text-amber-800 dark:text-amber-300">
-											Este destinatário está como contribuinte ICMS de outra UF.
-											Para CFOP 5102 na visita presencial, edite o cliente e
-											marque o indicador IE como{" "}
-											<span className="font-medium">
-												9 — Não contribuinte
-											</span>{" "}
-											(consumidor final). Se a compra for para a empresa
-											contribuinte, use idDest=2 e CFOP 6102 — a SEFAZ rejeita
-											5102+idDest=1 nesse caso (rejeição 521).
+											Cliente contribuinte de outra UF em compra presencial
+											(retirada no local): use{" "}
+											<span className="font-medium">idDest=1</span> e CFOP{" "}
+											<span className="font-medium">5xxx</span> (ex.: 5102),
+											sem informar entrega em outra UF. Se houver entrega ou a
+											venda for não presencial, use idDest=2 e CFOP 6xxx
+											(ex.: 6102).
 										</p>
 									)}
 								</div>

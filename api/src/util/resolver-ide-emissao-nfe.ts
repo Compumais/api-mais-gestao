@@ -34,7 +34,7 @@ const IND_PRES_PRESENCIAL_ESTABELECIMENTO = 1;
 
 /**
  * Contribuinte do ICMS (indIEDest=1). Isento (2) e não contribuinte (9)
- * não disparam a rejeição 521 por UF divergente em operação interna.
+ * não são contribuinte para fins de classificação fiscal.
  */
 export function destinatarioContribuinteIcms(params: {
 	indIEDest?: number | null;
@@ -44,16 +44,45 @@ export function destinatarioContribuinteIcms(params: {
 	return params.indIEDest === 1;
 }
 
+/** Entrega explícita em UF diferente da do emitente. */
+export function temEntregaExplicitaOutraUf(params: {
+	ufEmitente?: string | null;
+	ufLocalEntrega?: string | null;
+}): boolean {
+	const ufEmitente = normalizarUf(params.ufEmitente);
+	const ufEntrega = normalizarUf(params.ufLocalEntrega);
+	return (
+		ufEmitente.length === 2 &&
+		ufEntrega.length === 2 &&
+		ufEmitente !== ufEntrega
+	);
+}
+
+/**
+ * Pickup presencial no estabelecimento (indPres=1) sem entrega em outra UF.
+ * A mercadoria é retirada na UF do emitente — idDest=1, CFOP 5xxx.
+ */
+export function ehPickupPresencialEstabelecimento(params: {
+	indPres?: number | null;
+	ufEmitente?: string | null;
+	ufLocalEntrega?: string | null;
+}): boolean {
+	if (params.indPres !== IND_PRES_PRESENCIAL_ESTABELECIMENTO) return false;
+	return !temEntregaExplicitaOutraUf({
+		ufEmitente: params.ufEmitente,
+		ufLocalEntrega: params.ufLocalEntrega,
+	});
+}
+
 export function resolverIdDestNfe(params: {
 	ufEmitente?: string | null;
 	ufDestinatario?: string | null;
 	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
 	/**
-	 * Quando 1 e o destinatário não é contribuinte do ICMS, a operação ocorre
-	 * na UF do emitente mesmo com cadastro em outra UF (compra presencial /
-	 * retirada no local). Contribuinte de outra UF exige idDest=2 (regra 521).
-	 * Entrega explícita em outra UF continua interestadual.
+	 * indPres=1 sem entrega em outra UF: operação interna (retirada no local),
+	 * mesmo com destinatário contribuinte cadastrado em outra UF (NF-e autorizada
+	 * posto/pickup). Entrega explícita em outra UF continua interestadual.
 	 */
 	indPres?: number | null;
 	/** 1 = contribuinte ICMS; 2 = isento; 9 = não contribuinte. */
@@ -72,24 +101,12 @@ export function resolverIdDestNfe(params: {
 	const ufEmitente = normalizarUf(params.ufEmitente);
 	const ufEntrega = normalizarUf(params.ufLocalEntrega);
 	const ufDestinatario = normalizarUf(params.ufDestinatario);
-	const contribuinte = destinatarioContribuinteIcms({
-		indIEDest: params.indIEDest,
-		contribuinteIcms: params.contribuinteIcms,
-	});
 
 	if (params.indPres === IND_PRES_PRESENCIAL_ESTABELECIMENTO) {
-		if (ufEntrega && ufEmitente && ufEntrega !== ufEmitente) {
+		if (temEntregaExplicitaOutraUf({ ufEmitente, ufLocalEntrega: ufEntrega })) {
 			return ID_DEST_NFE.INTERESTADUAL;
 		}
-		// Regra 521: idDest=1 exige mesma UF quando o destinatário é contribuinte.
-		if (
-			contribuinte &&
-			ufEmitente &&
-			ufDestinatario &&
-			ufEmitente !== ufDestinatario
-		) {
-			return ID_DEST_NFE.INTERESTADUAL;
-		}
+		// Pickup: UF cadastral do destinatário não define o destino da operação.
 		return ID_DEST_NFE.INTERNA;
 	}
 

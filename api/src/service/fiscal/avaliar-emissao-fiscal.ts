@@ -13,6 +13,7 @@ import {
 import { validarCoerenciaFiscalNfe } from "@/service/fiscal/validar-coerencia-fiscal-nfe.js";
 import { validarTotaisNfe } from "@/service/fiscal/validar-totais-nfe.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { ehPickupPresencialEstabelecimento } from "@/util/resolver-ide-emissao-nfe.js";
 
 export type AvaliarEmissaoFiscalParams = {
 	operacaoId: string;
@@ -20,7 +21,11 @@ export type AvaliarEmissaoFiscalParams = {
 	crt: number;
 	ufEmitente?: string | null;
 	ufDestinatario?: string | null;
+	/** UF de entrega explícita (feira/endereço informado). */
+	ufLocalEntrega?: string | null;
 	idDest?: number | null;
+	/** Presença do comprador (indPres). Pickup presencial = 1. */
+	indPres?: number | null;
 	finNFe?: number | null;
 	consumidorFinal?: boolean;
 	contribuinteIcms?: boolean;
@@ -84,9 +89,18 @@ export function avaliarEmissaoFiscal(
 
 	const ufEmitente = params.ufEmitente?.trim().toUpperCase() ?? "";
 	const ufDestinatario = params.ufDestinatario?.trim().toUpperCase() ?? "";
+	const pickupPresencial = ehPickupPresencialEstabelecimento({
+		indPres: params.indPres,
+		ufEmitente: params.ufEmitente,
+		ufLocalEntrega: params.ufLocalEntrega,
+	});
+	// Pickup presencial (retirada no local): idDest=1 + CFOP 5xxx é válido mesmo
+	// com contribuinte de outra UF (NF-e autorizada — posto/visita). Fora disso,
+	// idDest=1 com contribuinte de outra UF costuma gerar rejeição 521.
 	if (
 		operacao.idDest === 1 &&
 		operacao.contribuinteIcms &&
+		!pickupPresencial &&
 		ufEmitente.length === 2 &&
 		ufDestinatario.length === 2 &&
 		ufEmitente !== ufDestinatario
@@ -98,7 +112,7 @@ export function avaliarEmissaoFiscal(
 			expected: "2",
 			actual: "1",
 			message:
-				"Operação interna (idDest=1) inválida com destinatário contribuinte do ICMS de outra UF (rejeição SEFAZ 521). Compra presencial a consumidor final: marque o destinatário como não contribuinte (indIEDest=9), use idDest=1 e CFOP 5xxx (ex.: 5102). Venda a contribuinte ICMS de outra UF: use idDest=2 e CFOP 6xxx (ex.: 6102).",
+				"Operação interna (idDest=1) inválida com destinatário contribuinte do ICMS de outra UF fora do pickup presencial (rejeição SEFAZ 521). Use idDest=2 e CFOP interestadual 6xxx (ex.: 6102), ou indPres=1 sem entrega em outra UF com CFOP 5xxx (retirada no estabelecimento).",
 			tipoInconsistencia: "ERRO_DE_PARAMETRIZACAO_FISCAL",
 		});
 	}

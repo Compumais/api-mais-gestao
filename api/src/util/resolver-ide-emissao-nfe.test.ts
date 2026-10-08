@@ -45,19 +45,19 @@ describe("resolverIdDestNfe", () => {
 		).toBe(1);
 	});
 
-	it("venda presencial com contribuinte de outra UF é interestadual (regra 521)", () => {
+	it("pickup presencial com contribuinte de outra UF é operação interna (posto 84247)", () => {
 		expect(
 			resolverIdDestNfe({
-				ufEmitente: "MG",
-				ufDestinatario: "SP",
+				ufEmitente: "SP",
+				ufDestinatario: "MG",
 				paisDestinatario: "Brasil",
 				indPres: 1,
 				indIEDest: 1,
 			}),
-		).toBe(2);
+		).toBe(1);
 	});
 
-	it("venda presencial CFOP 5102 com contribuinte outra UF não força idDest=1", () => {
+	it("venda presencial CFOP 5102 com contribuinte outra UF sugere idDest=1", () => {
 		expect(
 			resolverIdDestNfe({
 				ufEmitente: "MG",
@@ -66,7 +66,7 @@ describe("resolverIdDestNfe", () => {
 				indPres: 1,
 				indIEDest: 1,
 			}),
-		).not.toBe(1);
+		).toBe(1);
 	});
 
 	it("venda presencial com isento de outra UF permanece interna", () => {
@@ -236,7 +236,7 @@ describe("resolverIdeEmissaoNfe", () => {
 		});
 	});
 
-	it("presencial + contribuinte outra UF usa interestadual (evita 521)", () => {
+	it("presencial + contribuinte outra UF usa operação interna (pickup)", () => {
 		expect(
 			resolverIdeEmissaoNfe({
 				ufEmitente: "MG",
@@ -244,6 +244,23 @@ describe("resolverIdeEmissaoNfe", () => {
 				indPres: 1,
 				finNFe: 1,
 				indIEDest: 1,
+			}),
+		).toEqual({
+			idDest: 1,
+			indPres: 1,
+			indFinal: 1,
+		});
+	});
+
+	it("respeita override idDest=2 mesmo no pickup presencial", () => {
+		expect(
+			resolverIdeEmissaoNfe({
+				ufEmitente: "MG",
+				ufDestinatario: "SP",
+				indPres: 1,
+				finNFe: 1,
+				indIEDest: 1,
+				idDest: 2,
 			}),
 		).toEqual({
 			idDest: 2,

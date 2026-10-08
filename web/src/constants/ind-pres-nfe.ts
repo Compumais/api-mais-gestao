@@ -58,7 +58,7 @@ export function resolverIdDestNfePreview(params: {
 	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
 	indPres?: number | null;
-	/** 1 = contribuinte ICMS; 2 = isento; 9 = não contribuinte. */
+	/** Mantido por compatibilidade; o pickup presencial não depende de indIEDest. */
 	indIEDest?: number | null;
 }): { idDest: number; label: string } | null {
 	const ufEmitente = params.ufEmitente?.trim().toUpperCase() ?? "";
@@ -66,7 +66,6 @@ export function resolverIdDestNfePreview(params: {
 	const ufDestinatario = params.ufDestinatario?.trim().toUpperCase() ?? "";
 	const pais = params.paisDestinatario?.trim().toLowerCase() ?? "";
 	const ufReferencia = ufEntrega || ufDestinatario;
-	const contribuinteIcms = params.indIEDest === 1;
 
 	if (!ufReferencia && !pais) {
 		return null;
@@ -83,20 +82,10 @@ export function resolverIdDestNfePreview(params: {
 		};
 	}
 
+	// Pickup presencial: retirada no estabelecimento → operação interna (CFOP 5xxx),
+	// mesmo com destinatário contribuinte cadastrado em outra UF.
 	if (params.indPres === 1) {
 		if (ufEntrega && ufEmitente && ufEntrega !== ufEmitente) {
-			return {
-				idDest: 2,
-				label: ID_DEST_NFE_LABELS[2] ?? "Operação interestadual",
-			};
-		}
-		// Regra 521: não marcar interna com contribuinte de outra UF.
-		if (
-			contribuinteIcms &&
-			ufEmitente &&
-			ufDestinatario &&
-			ufEmitente !== ufDestinatario
-		) {
 			return {
 				idDest: 2,
 				label: ID_DEST_NFE_LABELS[2] ?? "Operação interestadual",

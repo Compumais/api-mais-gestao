@@ -133,14 +133,15 @@ describe("avaliarEmissaoFiscal", () => {
 		expect(relatorio.permitir_transmissao).toBe(true);
 	});
 
-	it("idDest=1 com contribuinte de outra UF bloqueia (regra 521)", () => {
+	it("idDest=1 + contribuinte outra UF sem pickup presencial bloqueia (521)", () => {
 		const relatorio = avaliarEmissaoFiscal({
-			operacaoId: "iddest-521",
+			operacaoId: "iddest-521-internet",
 			dataOperacao: "2026-08-19",
 			crt: 1,
 			ufEmitente: "MG",
 			ufDestinatario: "SP",
 			idDest: 1,
+			indPres: 2,
 			indIEDest: 1,
 			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
 			regras: REGRAS_NACIONAIS,
@@ -150,10 +151,32 @@ describe("avaliarEmissaoFiscal", () => {
 			(item) => item.code === "IDDEST_521",
 		);
 		expect(bloqueio521).toBeDefined();
-		expect(bloqueio521?.message).toContain("não contribuinte");
-		expect(bloqueio521?.message).toContain("5102");
 		expect(bloqueio521?.message).toContain("6102");
+		expect(bloqueio521?.message).toContain("pickup");
 		expect(relatorio.permitir_transmissao).toBe(false);
+	});
+
+	it("posto 84247: pickup presencial + contribuinte outra UF + 5102 não bloqueia 521", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "posto-84247",
+			dataOperacao: "2026-09-05",
+			crt: 1,
+			ufEmitente: "SP",
+			ufDestinatario: "MG",
+			idDest: 1,
+			indPres: 1,
+			indIEDest: 1,
+			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
+			regras: REGRAS_NACIONAIS,
+		});
+
+		expect(
+			relatorio.validacoes.some((item) => item.code === "IDDEST_521"),
+		).toBe(false);
+		expect(
+			relatorio.validacoes.some((item) => item.code === "CFOP_IDDEST"),
+		).toBe(false);
+		expect(relatorio.permitir_transmissao).toBe(true);
 	});
 
 	it("presencial consumidor final outra UF com 5102 e idDest=1 não bloqueia por 521", () => {
@@ -164,6 +187,7 @@ describe("avaliarEmissaoFiscal", () => {
 			ufEmitente: "MG",
 			ufDestinatario: "SP",
 			idDest: 1,
+			indPres: 1,
 			indIEDest: 9,
 			consumidorFinal: true,
 			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
@@ -187,6 +211,7 @@ describe("avaliarEmissaoFiscal", () => {
 			ufEmitente: "MG",
 			ufDestinatario: "SP",
 			idDest: 1,
+			indPres: 1,
 			indIEDest: 2,
 			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
 			regras: REGRAS_NACIONAIS,
@@ -198,6 +223,27 @@ describe("avaliarEmissaoFiscal", () => {
 		expect(relatorio.permitir_transmissao).toBe(true);
 	});
 
+	it("presencial com entrega outra UF + idDest=1 + contribuinte bloqueia 521", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "iddest-521-entrega",
+			dataOperacao: "2026-08-19",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "SP",
+			ufLocalEntrega: "SP",
+			idDest: 1,
+			indPres: 1,
+			indIEDest: 1,
+			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
+			regras: REGRAS_NACIONAIS,
+		});
+
+		expect(
+			relatorio.validacoes.some((item) => item.code === "IDDEST_521"),
+		).toBe(true);
+		expect(relatorio.permitir_transmissao).toBe(false);
+	});
+
 	it("contribuinte outra UF com CFOP 5102 e idDest interestadual bloqueia pedindo 6xxx", () => {
 		const relatorio = avaliarEmissaoFiscal({
 			operacaoId: "cfop-521",
@@ -206,6 +252,7 @@ describe("avaliarEmissaoFiscal", () => {
 			ufEmitente: "MG",
 			ufDestinatario: "SP",
 			idDest: 2,
+			indPres: 2,
 			indIEDest: 1,
 			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
 			regras: REGRAS_NACIONAIS,
@@ -217,7 +264,26 @@ describe("avaliarEmissaoFiscal", () => {
 		expect(cfopIdDest).toBeDefined();
 		expect(cfopIdDest?.message).toContain("CFOP 6xxx");
 		expect(cfopIdDest?.message).toContain("6102");
-		expect(cfopIdDest?.message).toContain("não contribuinte");
+		expect(relatorio.permitir_transmissao).toBe(false);
+	});
+
+	it("override idDest=2 com CFOP 5102 bloqueia por CFOP_IDDEST", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "override-iddest-2",
+			dataOperacao: "2026-08-19",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "SP",
+			idDest: 2,
+			indPres: 1,
+			indIEDest: 1,
+			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
+			regras: REGRAS_NACIONAIS,
+		});
+
+		expect(
+			relatorio.validacoes.some((item) => item.code === "CFOP_IDDEST"),
+		).toBe(true);
 		expect(relatorio.permitir_transmissao).toBe(false);
 	});
 
