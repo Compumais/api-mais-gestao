@@ -17,18 +17,18 @@ describe("resolverIdDestNfePreview", () => {
 		});
 	});
 
-	it("presencial + contribuinte outra UF sugere idDest=2", () => {
+	it("presencial + contribuinte outra UF sugere idDest=1 (pickup posto)", () => {
 		expect(
 			resolverIdDestNfePreview({
-				ufEmitente: "MG",
-				ufDestinatario: "SP",
+				ufEmitente: "SP",
+				ufDestinatario: "MG",
 				paisDestinatario: "Brasil",
 				indPres: 1,
 				indIEDest: 1,
 			}),
 		).toEqual({
-			idDest: 2,
-			label: "Operação interestadual",
+			idDest: 1,
+			label: "Operação interna",
 		});
 	});
 
@@ -44,6 +44,49 @@ describe("resolverIdDestNfePreview", () => {
 		).toEqual({
 			idDest: 1,
 			label: "Operação interna",
+		});
+	});
+
+	it("presencial com entrega explícita em outra UF sugere idDest=2", () => {
+		expect(
+			resolverIdDestNfePreview({
+				ufEmitente: "MG",
+				ufDestinatario: "MG",
+				ufLocalEntrega: "SP",
+				paisDestinatario: "Brasil",
+				indPres: 1,
+			}),
+		).toEqual({
+			idDest: 2,
+			label: "Operação interestadual",
+		});
+	});
+
+	it("internet + outra UF sugere idDest=2", () => {
+		expect(
+			resolverIdDestNfePreview({
+				ufEmitente: "MG",
+				ufDestinatario: "SP",
+				paisDestinatario: "Brasil",
+				indPres: 2,
+				indIEDest: 1,
+			}),
+		).toEqual({
+			idDest: 2,
+			label: "Operação interestadual",
+		});
+	});
+
+	it("exterior sugere idDest=3", () => {
+		expect(
+			resolverIdDestNfePreview({
+				ufEmitente: "MG",
+				ufDestinatario: "EX",
+				indPres: 1,
+			}),
+		).toEqual({
+			idDest: 3,
+			label: "Operação com exterior",
 		});
 	});
 });
