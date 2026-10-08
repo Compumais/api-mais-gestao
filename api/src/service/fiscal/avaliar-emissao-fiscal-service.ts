@@ -29,6 +29,7 @@ export type AvaliarEmissaoFiscalServiceParams = {
 	ufLocalEntrega?: string | null;
 	idDest?: number | null;
 	indPres?: number | null;
+	modFrete?: number | null;
 	finNFe?: number | null;
 	consumidorFinal?: boolean;
 	contribuinteIcms?: boolean;

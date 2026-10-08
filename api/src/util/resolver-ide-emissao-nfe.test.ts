@@ -45,28 +45,45 @@ describe("resolverIdDestNfe", () => {
 		).toBe(1);
 	});
 
-	it("pickup presencial com contribuinte de outra UF é operação interna (posto 84247)", () => {
+	it("retirada presencial sem frete com contribuinte de outra UF é operação interna", () => {
 		expect(
 			resolverIdDestNfe({
 				ufEmitente: "SP",
 				ufDestinatario: "MG",
 				paisDestinatario: "Brasil",
 				indPres: 1,
+				modFrete: 9,
 				indIEDest: 1,
 			}),
 		).toBe(1);
 	});
 
-	it("venda presencial CFOP 5102 com contribuinte outra UF sugere idDest=1", () => {
+	it("presencial com frete do emitente e contribuinte outra UF sugere idDest=2", () => {
 		expect(
 			resolverIdDestNfe({
 				ufEmitente: "MG",
 				ufDestinatario: "SP",
 				paisDestinatario: "Brasil",
 				indPres: 1,
+				modFrete: 0,
+				valorFrete: 1400,
 				indIEDest: 1,
 			}),
-		).toBe(1);
+		).toBe(2);
+	});
+
+	it("presencial com modFrete 9 e valor de frete maior que zero sugere idDest=2", () => {
+		expect(
+			resolverIdDestNfe({
+				ufEmitente: "MG",
+				ufDestinatario: "SP",
+				paisDestinatario: "Brasil",
+				indPres: 1,
+				modFrete: 9,
+				valorFrete: 1400,
+				indIEDest: 1,
+			}),
+		).toBe(2);
 	});
 
 	it("venda presencial com isento de outra UF permanece interna", () => {
@@ -236,17 +253,36 @@ describe("resolverIdeEmissaoNfe", () => {
 		});
 	});
 
-	it("presencial + contribuinte outra UF usa operação interna (pickup)", () => {
+	it("presencial + modFrete 9 + contribuinte outra UF usa operação interna", () => {
 		expect(
 			resolverIdeEmissaoNfe({
 				ufEmitente: "MG",
 				ufDestinatario: "SP",
 				indPres: 1,
+				modFrete: 9,
 				finNFe: 1,
 				indIEDest: 1,
 			}),
 		).toEqual({
 			idDest: 1,
+			indPres: 1,
+			indFinal: 1,
+		});
+	});
+
+	it("presencial com frete + contribuinte outra UF usa operação interestadual", () => {
+		expect(
+			resolverIdeEmissaoNfe({
+				ufEmitente: "MG",
+				ufDestinatario: "SP",
+				indPres: 1,
+				modFrete: 0,
+				valorFrete: 1400,
+				finNFe: 1,
+				indIEDest: 1,
+			}),
+		).toEqual({
+			idDest: 2,
 			indPres: 1,
 			indFinal: 1,
 		});

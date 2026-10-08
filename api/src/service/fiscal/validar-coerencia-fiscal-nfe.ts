@@ -84,7 +84,7 @@ export function validarCoerenciaFiscalNfe(params: {
 				actual: cfop,
 				message:
 					params.idDest === 2
-						? `Item ${posicao}: CFOP ${cfop} incompatível com operação interestadual. Use CFOP 6xxx (ex.: 6102). Retirada presencial no estabelecimento: idDest=1 com CFOP 5xxx (ex.: 5102).`
+						? `Item ${posicao}: CFOP ${cfop} incompatível com operação interestadual. Use CFOP 6xxx (ex.: 6102). Retirada no local só com indPres=1, modFrete=9 (sem frete) e CFOP 5xxx (ex.: 5102).`
 						: params.idDest === 3
 							? `Item ${posicao}: CFOP ${cfop} incompatível com operação exterior`
 							: `Item ${posicao}: CFOP ${cfop} incompatível com operação interna. Use CFOP 5xxx (ex.: 5102) ou, se for remessa interestadual com destino especial (ex.: 6914), confira a natureza.`,

@@ -152,19 +152,20 @@ describe("avaliarEmissaoFiscal", () => {
 		);
 		expect(bloqueio521).toBeDefined();
 		expect(bloqueio521?.message).toContain("6102");
-		expect(bloqueio521?.message).toContain("pickup");
+		expect(bloqueio521?.message).toContain("modFrete=9");
 		expect(relatorio.permitir_transmissao).toBe(false);
 	});
 
-	it("posto 84247: pickup presencial + contribuinte outra UF + 5102 não bloqueia 521", () => {
+	it("retirada presencial sem frete + contribuinte outra UF + 5102 não bloqueia 521", () => {
 		const relatorio = avaliarEmissaoFiscal({
-			operacaoId: "posto-84247",
+			operacaoId: "retirada-sem-frete",
 			dataOperacao: "2026-09-05",
 			crt: 1,
 			ufEmitente: "SP",
 			ufDestinatario: "MG",
 			idDest: 1,
 			indPres: 1,
+			modFrete: 9,
 			indIEDest: 1,
 			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
 			regras: REGRAS_NACIONAIS,
@@ -221,6 +222,30 @@ describe("avaliarEmissaoFiscal", () => {
 			relatorio.validacoes.some((item) => item.code === "IDDEST_521"),
 		).toBe(false);
 		expect(relatorio.permitir_transmissao).toBe(true);
+	});
+
+	it("nota 12408: presencial + frete emitente + contribuinte outra UF + 5102 bloqueia 521", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "nfe-12408",
+			dataOperacao: "2026-10-08",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "SP",
+			idDest: 1,
+			indPres: 1,
+			modFrete: 0,
+			indIEDest: 1,
+			itens: [itemBase({ cfop: "5102", csosn: "102", cest: undefined })],
+			totais: { frete: 1400 },
+			regras: REGRAS_NACIONAIS,
+		});
+
+		const bloqueio521 = relatorio.validacoes.find(
+			(item) => item.code === "IDDEST_521",
+		);
+		expect(bloqueio521).toBeDefined();
+		expect(bloqueio521?.message).toContain("6102");
+		expect(relatorio.permitir_transmissao).toBe(false);
 	});
 
 	it("presencial com entrega outra UF + idDest=1 + contribuinte bloqueia 521", () => {
