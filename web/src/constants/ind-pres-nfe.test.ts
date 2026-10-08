@@ -17,18 +17,36 @@ describe("resolverIdDestNfePreview", () => {
 		});
 	});
 
-	it("presencial + contribuinte outra UF sugere idDest=1 (pickup posto)", () => {
+	it("presencial + modFrete 9 + contribuinte outra UF sugere idDest=1", () => {
 		expect(
 			resolverIdDestNfePreview({
 				ufEmitente: "SP",
 				ufDestinatario: "MG",
 				paisDestinatario: "Brasil",
 				indPres: 1,
+				modFrete: 9,
 				indIEDest: 1,
 			}),
 		).toEqual({
 			idDest: 1,
 			label: "Operação interna",
+		});
+	});
+
+	it("presencial + frete emitente + contribuinte outra UF sugere idDest=2", () => {
+		expect(
+			resolverIdDestNfePreview({
+				ufEmitente: "MG",
+				ufDestinatario: "SP",
+				paisDestinatario: "Brasil",
+				indPres: 1,
+				modFrete: 0,
+				valorFrete: 1400,
+				indIEDest: 1,
+			}),
+		).toEqual({
+			idDest: 2,
+			label: "Operação interestadual",
 		});
 	});
 

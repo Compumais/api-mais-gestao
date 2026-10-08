@@ -309,6 +309,8 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 				: undefined),
 		paisDestinatario: destinatario?.pais,
 		indPres: params.indPres,
+		modFrete: params.transporte?.modFrete,
+		valorFrete: params.totais?.frete,
 		indIEDest: destinatario?.indIEDest,
 		idDest: params.idDest,
 	}).idDest;

@@ -514,6 +514,7 @@ export default function NovaEmissaoNfePage() {
 		form.watch("informarEnderecoEntregaManual") ?? false;
 	const indPres = form.watch("indPres");
 	const idDestForm = form.watch("idDest");
+	const modFreteForm = form.watch("transporte.modFrete");
 	const enderecoEntregaUf = form.watch("enderecoEntrega.uf") ?? "";
 	const enderecoEntregaMunicipioCodigo =
 		form.watch("enderecoEntrega.codigoMunicipio") ?? "";
@@ -742,10 +743,17 @@ export default function NovaEmissaoNfePage() {
 			ufEntregaExplicitaForm.toUpperCase() !==
 				empresaFiscal.uf.toUpperCase()
 		);
+	const valorFreteForm = Number(freteWatch ?? 0);
+	const modFreteEfetivo =
+		valorFreteForm > 0 && (modFreteForm == null || modFreteForm === 9)
+			? 0
+			: (modFreteForm ?? 9);
 	const avisoPresencialContribuinteOutraUf =
 		indPres === 1 &&
 		destinatarioOutraUfSemEntregaExplicita &&
 		indIeDestEfetivo === 1;
+	const retiradaPresencialSemFrete =
+		avisoPresencialContribuinteOutraUf && modFreteEfetivo === 9;
 
 	const idDestSugerido = useMemo(
 		() =>
@@ -755,6 +763,8 @@ export default function NovaEmissaoNfePage() {
 				ufLocalEntrega: ufEntregaExplicitaForm,
 				paisDestinatario: entidadeSelecionada?.pais,
 				indPres,
+				modFrete: modFreteEfetivo,
+				valorFrete: valorFreteForm,
 				indIEDest: indIeDestEfetivo,
 			}),
 		[
@@ -764,6 +774,8 @@ export default function NovaEmissaoNfePage() {
 			indIeDestEfetivo,
 			ufEntregaExplicitaForm,
 			indPres,
+			modFreteEfetivo,
+			valorFreteForm,
 		],
 	);
 
@@ -784,6 +796,8 @@ export default function NovaEmissaoNfePage() {
 		indIeDestEfetivo ?? "",
 		entidadeSelecionada?.pais ?? "",
 		indPres ?? "",
+		modFreteEfetivo,
+		valorFreteForm,
 		exigeLocalEntregaInterestadual ? (localEntregaUf ?? "") : "",
 		informarEnderecoEntregaManual ? (enderecoEntregaUf ?? "") : "",
 	].join("|");
@@ -2548,10 +2562,9 @@ export default function NovaEmissaoNfePage() {
 									/>
 									<p className="text-xs text-muted-foreground mt-1">
 										Indica como a venda ocorreu (balcão, internet, telefone
-										etc.). Presencial no estabelecimento (retirada no local),
-										sem entrega em outra UF: operação interna com CFOP 5xxx.
-										Internet, telefone ou entrega em outra UF: interestadual com
-										CFOP 6xxx.
+										etc.). Contribuinte de outra UF só fica em operação interna
+										com presencial (indPres=1) e frete 9 — sem transporte. Com
+										frete ou venda não presencial, use idDest=2 e CFOP 6xxx.
 									</p>
 								</Field>
 
@@ -2598,7 +2611,7 @@ export default function NovaEmissaoNfePage() {
 									{idDestIncompativelCfop && (
 										<p className="text-xs text-destructive mt-1">
 											{idDestForm === 2
-												? "CFOP 5xxx incompatível com operação interestadual. Use CFOP 6xxx (ex.: 6102). Retirada presencial: idDest=1 com CFOP 5xxx (ex.: 5102)."
+												? "CFOP 5xxx incompatível com operação interestadual. Use CFOP 6xxx (ex.: 6102). Retirada no local só com indPres=1, frete 9 (sem transporte) e CFOP 5xxx."
 												: idDestForm === 1
 													? "CFOP incompatível com operação interna. Use CFOP 5xxx (ex.: 5102) ou ajuste o idDest."
 													: "CFOP incompatível com o idDest selecionado."}
@@ -3026,13 +3039,24 @@ export default function NovaEmissaoNfePage() {
 									/>
 									{avisoPresencialContribuinteOutraUf && (
 										<p className="mt-3 text-xs text-amber-800 dark:text-amber-300">
-											Cliente contribuinte de outra UF em compra presencial
-											(retirada no local): use{" "}
-											<span className="font-medium">idDest=1</span> e CFOP{" "}
-											<span className="font-medium">5xxx</span> (ex.: 5102),
-											sem informar entrega em outra UF. Se houver entrega ou a
-											venda for não presencial, use idDest=2 e CFOP 6xxx
-											(ex.: 6102).
+											{retiradaPresencialSemFrete ? (
+												<>
+													Cliente contribuinte de outra UF em retirada no
+													local (indPres=1 e frete 9, sem transporte): use{" "}
+													<span className="font-medium">idDest=1</span> e
+													CFOP <span className="font-medium">5xxx</span>{" "}
+													(ex.: 5102).
+												</>
+											) : (
+												<>
+													Cliente contribuinte de outra UF com frete: a
+													SEFAZ rejeita operação interna (521). Use{" "}
+													<span className="font-medium">idDest=2</span> e
+													CFOP <span className="font-medium">6xxx</span>{" "}
+													(ex.: 6102). Retirada no local só vale com
+													indPres=1 e modalidade de frete 9.
+												</>
+											)}
 										</p>
 									)}
 								</div>

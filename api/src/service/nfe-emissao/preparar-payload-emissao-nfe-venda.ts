@@ -772,6 +772,8 @@ export async function prepararPayloadEmissaoNfeVenda(
 		paisDestinatario: destinatario?.pais,
 		indPres: indPresInformado,
 		finNFe,
+		modFrete: transporteAjustado?.modFrete,
+		valorFrete: freteComercial,
 		indIEDest: destinatario?.indIEDest,
 		idDest: idDestInformado,
 	});
@@ -799,6 +801,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 			ufLocalEntrega: localEntregaNormalizado?.uf,
 			idDest: ideEmissao.idDest,
 			indPres: ideEmissao.indPres,
+			modFrete: transporteAjustado?.modFrete,
 			finNFe,
 			consumidorFinal: true,
 			indIEDest: destinatario?.indIEDest,

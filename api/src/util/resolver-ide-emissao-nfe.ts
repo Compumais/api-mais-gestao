@@ -59,19 +59,39 @@ export function temEntregaExplicitaOutraUf(params: {
 }
 
 /**
- * Pickup presencial no estabelecimento (indPres=1) sem entrega em outra UF.
- * A mercadoria é retirada na UF do emitente — idDest=1, CFOP 5xxx.
+ * Sem ocorrência de transporte: modFrete=9 e valor de frete zerado.
+ * Frete informado (mesmo com modFrete 9) deixa de ser retirada.
  */
-export function ehPickupPresencialEstabelecimento(params: {
+export function operacaoSemFrete(params: {
+	modFrete?: number | null;
+	valorFrete?: number | null;
+}): boolean {
+	if ((params.valorFrete ?? 0) > 0) return false;
+	// Omitido segue o padrão da NF-e e da tela: 9 — sem ocorrência de transporte.
+	return (params.modFrete ?? 9) === 9;
+}
+
+/**
+ * Retirada no estabelecimento que a SEFAZ aceita como operação interna
+ * mesmo com contribuinte de outra UF: indPres=1, modFrete=9 e sem entrega fora.
+ */
+export function ehRetiradaPresencialSemFrete(params: {
 	indPres?: number | null;
+	modFrete?: number | null;
+	valorFrete?: number | null;
 	ufEmitente?: string | null;
 	ufLocalEntrega?: string | null;
 }): boolean {
 	if (params.indPres !== IND_PRES_PRESENCIAL_ESTABELECIMENTO) return false;
-	return !temEntregaExplicitaOutraUf({
-		ufEmitente: params.ufEmitente,
-		ufLocalEntrega: params.ufLocalEntrega,
-	});
+	if (
+		temEntregaExplicitaOutraUf({
+			ufEmitente: params.ufEmitente,
+			ufLocalEntrega: params.ufLocalEntrega,
+		})
+	) {
+		return false;
+	}
+	return operacaoSemFrete(params);
 }
 
 export function resolverIdDestNfe(params: {
@@ -80,11 +100,13 @@ export function resolverIdDestNfe(params: {
 	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
 	/**
-	 * indPres=1 sem entrega em outra UF: operação interna (retirada no local),
-	 * mesmo com destinatário contribuinte cadastrado em outra UF (NF-e autorizada
-	 * posto/pickup). Entrega explícita em outra UF continua interestadual.
+	 * Contribuinte de outra UF só fica em operação interna com indPres=1 e
+	 * modFrete=9 (sem frete). Qualquer frete torna a operação interestadual.
 	 */
 	indPres?: number | null;
+	/** 9 = sem ocorrência de transporte. Outros valores implicam frete. */
+	modFrete?: number | null;
+	valorFrete?: number | null;
 	/** 1 = contribuinte ICMS; 2 = isento; 9 = não contribuinte. */
 	indIEDest?: number | null;
 	contribuinteIcms?: boolean | null;
@@ -102,15 +124,36 @@ export function resolverIdDestNfe(params: {
 	const ufEntrega = normalizarUf(params.ufLocalEntrega);
 	const ufDestinatario = normalizarUf(params.ufDestinatario);
 
-	if (params.indPres === IND_PRES_PRESENCIAL_ESTABELECIMENTO) {
-		if (temEntregaExplicitaOutraUf({ ufEmitente, ufLocalEntrega: ufEntrega })) {
-			return ID_DEST_NFE.INTERESTADUAL;
-		}
-		// Pickup: UF cadastral do destinatário não define o destino da operação.
-		return ID_DEST_NFE.INTERNA;
+	if (temEntregaExplicitaOutraUf({ ufEmitente, ufLocalEntrega: ufEntrega })) {
+		return ID_DEST_NFE.INTERESTADUAL;
 	}
 
 	const ufOperacao = ufEntrega || ufDestinatario;
+	const ufDiferente =
+		ufEmitente.length === 2 &&
+		ufOperacao.length === 2 &&
+		ufEmitente !== ufOperacao;
+	const contribuinte = destinatarioContribuinteIcms(params);
+
+	if (ufDiferente && contribuinte) {
+		return ehRetiradaPresencialSemFrete({
+			indPres: params.indPres,
+			modFrete: params.modFrete,
+			valorFrete: params.valorFrete,
+			ufEmitente,
+			ufLocalEntrega: ufEntrega,
+		})
+			? ID_DEST_NFE.INTERNA
+			: ID_DEST_NFE.INTERESTADUAL;
+	}
+
+	if (
+		params.indPres === IND_PRES_PRESENCIAL_ESTABELECIMENTO &&
+		!temEntregaExplicitaOutraUf({ ufEmitente, ufLocalEntrega: ufEntrega })
+	) {
+		return ID_DEST_NFE.INTERNA;
+	}
+
 
 	if (!ufOperacao) {
 		return ID_DEST_NFE.INTERNA;
@@ -171,6 +214,8 @@ export function resolverIdeEmissaoNfe(params: {
 	paisDestinatario?: string | null;
 	indPres?: number | null;
 	finNFe?: number | null;
+	modFrete?: number | null;
+	valorFrete?: number | null;
 	indIEDest?: number | null;
 	contribuinteIcms?: boolean | null;
 	/** Quando informado e válido, prevalece sobre o cálculo automático. */
@@ -187,6 +232,8 @@ export function resolverIdeEmissaoNfe(params: {
 		ufLocalEntrega: params.ufLocalEntrega,
 		paisDestinatario: params.paisDestinatario,
 		indPres,
+		modFrete: params.modFrete,
+		valorFrete: params.valorFrete,
 		indIEDest: params.indIEDest,
 		contribuinteIcms: params.contribuinteIcms,
 	});

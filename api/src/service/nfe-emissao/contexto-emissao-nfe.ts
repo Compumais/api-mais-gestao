@@ -374,6 +374,8 @@ export async function montarPayloadGatewayEmissaoItens({
 		paisDestinatario: destinatario?.pais,
 		indPres,
 		finNFe,
+		modFrete: transporte?.modFrete,
+		valorFrete: totais?.frete,
 		indIEDest: destinatario?.indIEDest,
 		idDest,
 	});

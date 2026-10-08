@@ -52,13 +52,23 @@ export const OPCOES_ID_DEST_NFE = ID_DEST_NFE_VALORES.map((valor) => ({
 	label: `${valor} — ${ID_DEST_NFE_LABELS[valor]}`,
 }));
 
+function labelIdDest(idDest: number): { idDest: number; label: string } {
+	return {
+		idDest,
+		label: ID_DEST_NFE_LABELS[idDest] ?? "Operação interna",
+	};
+}
+
 export function resolverIdDestNfePreview(params: {
 	ufEmitente?: string | null;
 	ufDestinatario?: string | null;
 	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
 	indPres?: number | null;
-	/** Mantido por compatibilidade; o pickup presencial não depende de indIEDest. */
+	/** 9 = sem ocorrência de transporte. Frete > 0 anula a exceção. */
+	modFrete?: number | null;
+	valorFrete?: number | null;
+	/** 1 = contribuinte. A exceção de outra UF exige indPres=1 e modFrete=9. */
 	indIEDest?: number | null;
 }): { idDest: number; label: string } | null {
 	const ufEmitente = params.ufEmitente?.trim().toUpperCase() ?? "";
@@ -76,30 +86,36 @@ export function resolverIdDestNfePreview(params: {
 		ufEntrega === "EX" ||
 		(pais && !["br", "brasil", "1058"].includes(pais))
 	) {
-		return {
-			idDest: 3,
-			label: ID_DEST_NFE_LABELS[3] ?? "Operação com exterior",
-		};
+		return labelIdDest(3);
 	}
 
-	// Pickup presencial: retirada no estabelecimento → operação interna (CFOP 5xxx),
-	// mesmo com destinatário contribuinte cadastrado em outra UF.
+	const entregaOutraUf =
+		ufEntrega.length === 2 &&
+		ufEmitente.length === 2 &&
+		ufEntrega !== ufEmitente;
+	if (entregaOutraUf) {
+		return labelIdDest(2);
+	}
+
+	const ufDiferente =
+		ufEmitente.length === 2 &&
+		ufReferencia.length === 2 &&
+		ufEmitente !== ufReferencia;
+	const semFrete =
+		(params.valorFrete ?? 0) <= 0 && (params.modFrete ?? 9) === 9;
+	const retiradaPresencialSemFrete = params.indPres === 1 && semFrete;
+
+	if (ufDiferente && params.indIEDest === 1) {
+		return labelIdDest(retiradaPresencialSemFrete ? 1 : 2);
+	}
+
 	if (params.indPres === 1) {
-		if (ufEntrega && ufEmitente && ufEntrega !== ufEmitente) {
-			return {
-				idDest: 2,
-				label: ID_DEST_NFE_LABELS[2] ?? "Operação interestadual",
-			};
-		}
-		return { idDest: 1, label: ID_DEST_NFE_LABELS[1] ?? "Operação interna" };
+		return labelIdDest(1);
 	}
 
 	if (!ufReferencia || !ufEmitente || ufEmitente === ufReferencia) {
-		return { idDest: 1, label: ID_DEST_NFE_LABELS[1] ?? "Operação interna" };
+		return labelIdDest(1);
 	}
 
-	return {
-		idDest: 2,
-		label: ID_DEST_NFE_LABELS[2] ?? "Operação interestadual",
-	};
+	return labelIdDest(2);
 }
