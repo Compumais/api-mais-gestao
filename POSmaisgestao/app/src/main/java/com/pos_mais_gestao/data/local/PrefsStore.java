@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.domain.balanca.BalancaConfig;
+import com.pos_mais_gestao.util.EtiquetaBalanca;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.security.GeneralSecurityException;
@@ -52,6 +53,12 @@ public class PrefsStore {
     private static final String KEY_BALANCA_STOP_BITS = "balanca_stop_bits";
     private static final String KEY_BALANCA_PARITY = "balanca_parity";
     private static final String KEY_BALANCA_LOG_HEX = "balanca_log_hex";
+    private static final String KEY_ETIQUETA_HABILITADA = "etiqueta_balanca_habilitada";
+    private static final String KEY_ETIQUETA_PREFIXO = "etiqueta_balanca_prefixo";
+    private static final String KEY_ETIQUETA_DIGITOS = "etiqueta_balanca_digitos_codigo";
+    private static final String KEY_ETIQUETA_CONTEUDO = "etiqueta_balanca_conteudo";
+    private static final String KEY_ETIQUETA_CENTAVOS = "etiqueta_balanca_centavos";
+    private static final String KEY_ETIQUETA_INDICADOR = "etiqueta_balanca_indicador_uso";
     public static final String MODO_CLOUD = "cloud";
     public static final String MODO_PDV_LOCAL = "pdv_local";
     public static final String MODELO_MESA = "mesa";
@@ -137,7 +144,29 @@ public class PrefsStore {
     }
 
     public boolean isModeloComanda() {
-        return isModoPdvLocal() && MODELO_COMANDA.equals(getModeloAtendimento());
+        return MODELO_COMANDA.equals(getModeloAtendimento());
+    }
+
+    public EtiquetaBalanca.Config getEtiquetaBalanca() {
+        return new EtiquetaBalanca.Config(
+                prefs.getBoolean(KEY_ETIQUETA_HABILITADA, false),
+                prefs.getString(KEY_ETIQUETA_PREFIXO, "2"),
+                prefs.getInt(KEY_ETIQUETA_DIGITOS, 4),
+                "peso".equals(prefs.getString(KEY_ETIQUETA_CONTEUDO, "preco")),
+                prefs.getBoolean(KEY_ETIQUETA_CENTAVOS, true),
+                prefs.getBoolean(KEY_ETIQUETA_INDICADOR, false));
+    }
+
+    public void setEtiquetaBalanca(EtiquetaBalanca.Config config) {
+        EtiquetaBalanca.Config atual = config == null ? EtiquetaBalanca.Config.desligada() : config;
+        prefs.edit()
+                .putBoolean(KEY_ETIQUETA_HABILITADA, atual.habilitada)
+                .putString(KEY_ETIQUETA_PREFIXO, atual.prefixo)
+                .putInt(KEY_ETIQUETA_DIGITOS, atual.digitosCodigo)
+                .putString(KEY_ETIQUETA_CONTEUDO, atual.conteudoPeso ? "peso" : "preco")
+                .putBoolean(KEY_ETIQUETA_CENTAVOS, atual.centavos)
+                .putBoolean(KEY_ETIQUETA_INDICADOR, atual.indicadorUso)
+                .apply();
     }
 
     public boolean isModalAbrirMesaHabilitado() {

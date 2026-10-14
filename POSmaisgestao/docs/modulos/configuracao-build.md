@@ -27,7 +27,7 @@ Chaves de prefs (nomes, sem valores secretos):
 | `KEY_PIX_QR_HABILITADO`, `KEY_CHAVE_PIX`, `KEY_NOME_PIX`, `KEY_CIDADE_PIX` | QR PIX estático |
 | `KEY_IMPRESSORA_*` | Destino ESC/POS |
 | `KEY_BALANCA_*` | USB serial da balança |
-| `KEY_MODELO_ATENDIMENTO` | `mesa` ou `comanda` (comanda só vale com `pdv_local`) |
+| `KEY_MODELO_ATENDIMENTO` | `mesa` ou `comanda` (no cloud vem de `GET/PUT /configuracao-pdv`; no local, do status do PDV) |
 | `KEY_MODAL_ABRIR_MESA` | Se pede nome ao abrir mesa |
 
 Trocar o rádio de cloud para local (ou a URL) deve ir junto com novo login: `ConfigActivity` trata mudança de conexão como troca de destino. `ApiClient.exigirModoCloud` bloqueia rotas da API web quando o modo é local.

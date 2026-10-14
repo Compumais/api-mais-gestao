@@ -7,6 +7,7 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -37,6 +38,7 @@ import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.ui.OfflineBanner;
 import com.pos_mais_gestao.ui.mesas.MesasActivity;
+import com.pos_mais_gestao.util.CampoCodigoOculto;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.PizzaMeioAMeio;
 import com.pos_mais_gestao.util.ProdutoImagemHelper;
@@ -97,6 +99,10 @@ public class PedidoActivity extends AppCompatActivity {
         prefs = app.getPrefsStore();
         api = app.getApiClient();
         catalog = api.catalogo();
+        EditText inputCodigoOculto = findViewById(R.id.inputCodigoOculto);
+        if (inputCodigoOculto != null) {
+            CampoCodigoOculto.ligar(inputCodigoOculto, null, this::incluirPorCodigo);
+        }
         browseOnly = getIntent().getBooleanExtra(EXTRA_BROWSE_ONLY, false);
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
         numero = getIntent().getIntExtra(EXTRA_NUMERO, 0);
@@ -253,6 +259,32 @@ public class PedidoActivity extends AppCompatActivity {
                 return;
             }
         }
+    }
+
+    private void incluirPorCodigo(String codigo) {
+        executor.execute(() -> {
+            try {
+                ApiClient.ResultadoLeitura leitura = api.resolverCodigoBarras(codigo);
+                runOnUiThread(() -> {
+                    if (leitura == null || leitura.produto == null) {
+                        Toast.makeText(this, R.string.produto_nao_encontrado_scan, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (browseOnly) {
+                        Toast.makeText(this, prefs.isModeloComanda()
+                                ? R.string.abra_comanda_para_pedir
+                                : R.string.abra_mesa_para_pedir, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    BigDecimal quantidade = leitura.quantidade != null ? leitura.quantidade : BigDecimal.ONE;
+                    sacola.add(new SacolaLinha(leitura.produto, quantidade, null));
+                    atualizarSacolaUi();
+                    Toast.makeText(this, R.string.produto_adicionado, Toast.LENGTH_SHORT).show();
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
     }
 
     private void adicionarProduto(Produto produto) {

@@ -7,7 +7,7 @@ Guarda sessão, configuração, catálogo do PDV local e uma fila de vendas/atal
 ## Classes e pacotes de entrada
 
 - `app/src/main/java/com/pos_mais_gestao/data/local/PrefsStore.java` — `pos_mais_gestao` + sessão `pos_mais_gestao_session`.
-- `app/src/main/java/com/pos_mais_gestao/data/local/CatalogDb.java` — SQLite `pos_catalogo.db`, versão 4.
+- `app/src/main/java/com/pos_mais_gestao/data/local/CatalogDb.java` — SQLite `pos_catalogo.db`, versão 5.
 - `app/src/main/java/com/pos_mais_gestao/data/local/CatalogRepository.java`
 - `app/src/main/java/com/pos_mais_gestao/data/sync/CatalogImageSync.java`, `CatalogImageCache.java`
 - `app/src/main/java/com/pos_mais_gestao/data/local/OutboxDb.java` — SQLite `pos_outbox.db`, versão 1.

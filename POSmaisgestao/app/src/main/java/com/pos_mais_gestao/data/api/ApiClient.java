@@ -17,6 +17,7 @@ import com.pos_mais_gestao.domain.PagamentosResumo;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.domain.ResumoTurnoCaixa;
 import com.pos_mais_gestao.ui.pedido.SacolaLinha;
+import com.pos_mais_gestao.util.EtiquetaBalanca;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.PagamentosMisto;
 import java.io.IOException;
@@ -268,6 +269,9 @@ public class ApiClient {
                 JsonObject obj = element.getAsJsonObject();
                 String id = texto(obj, "id");
                 String descricao = texto(obj, "descricao");
+                if (descricao == null || descricao.isEmpty()) {
+                    descricao = texto(obj, "nome");
+                }
                 if (id == null || descricao == null) {
                     continue;
                 }
@@ -301,6 +305,121 @@ public class ApiClient {
             }
         }
         return new PaginaProdutos(produtos, total, pagina, lim);
+    }
+
+    public static final class ResultadoLeitura {
+        public final Produto produto;
+        public final BigDecimal quantidade;
+        public final boolean etiqueta;
+
+        public ResultadoLeitura(Produto produto, BigDecimal quantidade, boolean etiqueta) {
+            this.produto = produto;
+            this.quantidade = quantidade;
+            this.etiqueta = etiqueta;
+        }
+    }
+
+    public ResultadoLeitura resolverCodigoBarras(String codigo) throws ApiException {
+        String limpo = codigo == null ? "" : codigo.trim();
+        if (limpo.isEmpty()) {
+            return null;
+        }
+        EtiquetaBalanca.Config config = prefsStore.getEtiquetaBalanca();
+        EtiquetaBalanca.Parseada parse = EtiquetaBalanca.parsear(limpo, config);
+        if (parse != null) {
+            Produto produto = buscarProdutoExato(null, parse.codigo);
+            if (produto == null) {
+                return null;
+            }
+            EtiquetaBalanca.Lancamento lancamento = EtiquetaBalanca.montar(produto, parse, config);
+            return new ResultadoLeitura(
+                    produto.comPreco(lancamento.precoUnitario),
+                    lancamento.quantidade,
+                    true);
+        }
+        Produto produto = buscarProdutoExato(limpo, null);
+        if (produto == null && limpo.matches("\\d+") && limpo.length() <= 9) {
+            try {
+                produto = buscarProdutoExato(null, Integer.parseInt(limpo));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        if (produto == null) {
+            List<Produto> encontrados = buscarProdutos(limpo);
+            if (encontrados.size() == 1) {
+                produto = encontrados.get(0);
+            }
+        }
+        if (produto == null) {
+            return null;
+        }
+        return new ResultadoLeitura(produto, null, false);
+    }
+
+    private Produto buscarProdutoExato(String ean, Integer codigo) throws ApiException {
+        if (isLocal()) {
+            if (ean != null && !ean.isEmpty()) {
+                Produto porEan = catalog.buscarPorEan(ean);
+                if (porEan != null) {
+                    return porEan;
+                }
+            }
+            if (codigo != null) {
+                return catalog.buscarPorCodigo(codigo);
+            }
+            return null;
+        }
+        String empresaId = prefsStore.getEmpresaId();
+        if (empresaId == null) {
+            throw new ApiException("Empresa não selecionada");
+        }
+        StringBuilder path = new StringBuilder("/produtos?idempresa=")
+                .append(empresaId)
+                .append("&inativo=0&page=1&limit=20");
+        if (ean != null && !ean.isEmpty()) {
+            path.append("&ean=").append(encode(ean));
+        } else if (codigo != null) {
+            path.append("&codigo=").append(codigo);
+        } else {
+            return null;
+        }
+        JsonObject response = getJson(path.toString());
+        JsonArray data = response.getAsJsonArray("data");
+        if (data == null) {
+            return null;
+        }
+        for (JsonElement element : data) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+            JsonObject obj = element.getAsJsonObject();
+            Integer codigoItem = inteiro(obj, "codigo");
+            String eanItem = texto(obj, "ean");
+            boolean eanOk = ean != null && ean.equals(eanItem);
+            boolean codigoOk = codigo != null && codigo.equals(codigoItem);
+            if (!eanOk && !codigoOk) {
+                continue;
+            }
+            String id = texto(obj, "id");
+            String descricao = texto(obj, "descricao");
+            if (descricao == null || descricao.isEmpty()) {
+                descricao = texto(obj, "nome");
+            }
+            if (id == null || descricao == null) {
+                continue;
+            }
+            return new Produto(
+                    id,
+                    descricao,
+                    decimal(obj, "preco"),
+                    texto(obj, "unidademedida"),
+                    texto(obj, "idunidademedida"),
+                    codigoItem,
+                    texto(obj, "imagem"),
+                    texto(obj, "caminhoimagem"),
+                    flag(obj, "espizza"));
+        }
+        return null;
     }
 
     public List<Produto> listarPizzas(String excetoId) throws ApiException {
@@ -2134,6 +2253,9 @@ public class ApiClient {
                 item.idproduto = texto(obj, "idproduto");
                 item.nome = texto(obj, "descricao");
                 if (item.nome == null || item.nome.isEmpty()) {
+                    item.nome = texto(obj, "nomeproduto");
+                }
+                if (item.nome == null || item.nome.isEmpty()) {
                     item.nome = "Item";
                 }
                 item.quantidade = textoOuNumero(obj, "quantidade");
@@ -2169,7 +2291,10 @@ public class ApiClient {
             item.quantidade = textoOuNumero(obj, "quantidade");
             item.precounitario = textoOuNumero(obj, "precounitario");
             item.precototal = textoOuNumero(obj, "precototal");
-            item.nome = resolverNomeProduto(item.idproduto);
+            item.nome = primeiroTexto(obj, "descricao", "nomeproduto", "nome");
+            if (item.nome == null || item.nome.isEmpty()) {
+                item.nome = resolverNomeProduto(item.idproduto);
+            }
             itens.add(item);
         }
         return itens;
@@ -2196,7 +2321,7 @@ public class ApiClient {
             VendaItemDetalheDto item = new VendaItemDetalheDto();
             item.id = texto(obj, "id");
             item.idproduto = texto(obj, "idproduto");
-            item.nome = texto(obj, "nomeproduto");
+            item.nome = primeiroTexto(obj, "nomeproduto", "descricao", "nome");
             if (item.nome == null || item.nome.isEmpty()) {
                 item.nome = "Item";
             }
@@ -2243,6 +2368,9 @@ public class ApiClient {
                 produto = response.getAsJsonObject("data");
             }
             String descricao = texto(produto, "descricao");
+            if (descricao == null || descricao.isEmpty()) {
+                descricao = texto(produto, "nome");
+            }
             if (descricao != null && !descricao.isEmpty()) {
                 return descricao;
             }
@@ -2399,6 +2527,71 @@ public class ApiClient {
         if (status.has("modalAbrirMesaHabilitado") && !status.get("modalAbrirMesaHabilitado").isJsonNull()) {
             prefsStore.setModalAbrirMesaHabilitado(booleanFlexivel(status.get("modalAbrirMesaHabilitado")));
         }
+        aplicarEtiqueta(status);
+    }
+
+    public void sincronizarConfiguracaoEmpresa() throws ApiException {
+        if (isLocal()) {
+            sincronizarConfigPdv();
+            return;
+        }
+        String empresaId = prefsStore.getEmpresaId();
+        if (empresaId == null) {
+            return;
+        }
+        JsonObject config = getJson("/configuracao-pdv?idempresa=" + empresaId);
+        aplicarConfigOperacao(config);
+    }
+
+    public void salvarConfiguracaoEmpresa() throws ApiException {
+        if (isLocal()) {
+            return;
+        }
+        String empresaId = prefsStore.getEmpresaId();
+        if (empresaId == null) {
+            throw new ApiException("Empresa não selecionada");
+        }
+        EtiquetaBalanca.Config etiqueta = prefsStore.getEtiquetaBalanca();
+        JsonObject body = new JsonObject();
+        body.addProperty("idempresa", empresaId);
+        body.addProperty("modeloAtendimento", prefsStore.getModeloAtendimento());
+        body.addProperty("etiqueta_balanca_habilitada", etiqueta.habilitada ? "1" : "0");
+        body.addProperty("etiqueta_balanca_prefixo", etiqueta.prefixo);
+        body.addProperty("etiqueta_balanca_digitos_codigo", String.valueOf(etiqueta.digitosCodigo));
+        body.addProperty("etiqueta_balanca_conteudo", etiqueta.conteudoPeso ? "peso" : "preco");
+        body.addProperty("etiqueta_balanca_centavos", etiqueta.centavos ? "1" : "0");
+        body.addProperty("etiqueta_balanca_indicador_uso", etiqueta.indicadorUso ? "1" : "0");
+        JsonObject resposta = putJson("/configuracao-pdv", body.toString());
+        aplicarConfigOperacao(resposta);
+    }
+
+    private void aplicarConfigOperacao(JsonObject config) {
+        if (config == null) {
+            return;
+        }
+        String modelo = texto(config, "modeloAtendimento");
+        if (PrefsStore.MODELO_MESA.equals(modelo) || PrefsStore.MODELO_COMANDA.equals(modelo)) {
+            prefsStore.setModeloAtendimento(modelo);
+        }
+        aplicarEtiqueta(config);
+    }
+
+    private void aplicarEtiqueta(JsonObject config) {
+        if (config == null || !config.has("etiqueta_balanca_habilitada")) {
+            return;
+        }
+        int digitos = 4;
+        try {
+            digitos = Integer.parseInt(texto(config, "etiqueta_balanca_digitos_codigo"));
+        } catch (Exception ignored) {
+        }
+        prefsStore.setEtiquetaBalanca(new EtiquetaBalanca.Config(
+                "1".equals(texto(config, "etiqueta_balanca_habilitada")),
+                texto(config, "etiqueta_balanca_prefixo"),
+                digitos,
+                "peso".equals(texto(config, "etiqueta_balanca_conteudo")),
+                !"0".equals(texto(config, "etiqueta_balanca_centavos")),
+                "1".equals(texto(config, "etiqueta_balanca_indicador_uso"))));
     }
 
     private static boolean booleanFlexivel(JsonElement element) {
@@ -2634,6 +2827,7 @@ public class ApiClient {
         if (token != null && !token.isEmpty()) {
             builder.header("Authorization", "Bearer " + token);
         }
+        aplicarEmpresa(builder);
         execute(builder.build());
     }
 
@@ -2654,6 +2848,7 @@ public class ApiClient {
         if (token != null && !token.isEmpty()) {
             builder.header("Authorization", "Bearer " + token);
         }
+        aplicarEmpresa(builder);
         return execute(builder.build());
     }
 
@@ -2670,6 +2865,7 @@ public class ApiClient {
                 builder.header("Authorization", "Bearer " + token);
             }
         }
+        aplicarEmpresa(builder);
         return execute(builder.build());
     }
 
@@ -2684,6 +2880,7 @@ public class ApiClient {
         if (token != null && !token.isEmpty()) {
             builder.header("Authorization", "Bearer " + token);
         }
+        aplicarEmpresa(builder);
         return execute(builder.build());
     }
 
@@ -2759,6 +2956,23 @@ public class ApiClient {
                 return BigDecimal.ZERO;
             }
         }
+    }
+
+    private void aplicarEmpresa(Request.Builder builder) {
+        String empresaId = prefsStore.getEmpresaId();
+        if (empresaId != null && !empresaId.isEmpty()) {
+            builder.header("x-empresa-id", empresaId);
+        }
+    }
+
+    private static String primeiroTexto(JsonObject obj, String... chaves) {
+        for (String chave : chaves) {
+            String valor = texto(obj, chave);
+            if (valor != null && !valor.trim().isEmpty()) {
+                return valor.trim();
+            }
+        }
+        return null;
     }
 
     private static String encode(String value) {

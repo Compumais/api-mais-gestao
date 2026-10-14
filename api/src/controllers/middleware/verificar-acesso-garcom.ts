@@ -19,6 +19,7 @@ const ROTAS_GARCOM: RotaGarcom[] = [
 	{ padrao: /^\/vendas-pdv-gourmet(\/[^/]+)?$/ },
 	{ padrao: /^\/vendas-pdv-item(\/[^/]+)?$/ },
 	{ padrao: /^\/fechamentos-caixa(\/[^/]+)?$/ },
+	{ padrao: /^\/configuracao-pdv$/ },
 	{ metodo: "GET", padrao: /^\/usuarios(\/[^/]+)?$/ },
 ];
 

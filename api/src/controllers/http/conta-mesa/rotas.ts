@@ -12,7 +12,7 @@ import { listarContasMesa } from "./listar.js";
 
 export async function contasMesaRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
-	app.addHook("onRequest", requireModulo(MODULOS_SAAS.GOURMET));
+	app.addHook("preHandler", requireModulo(MODULOS_SAAS.GOURMET));
 
 	app.post("/contas-mesa", {
 		schema: schema.criarContaMesaSchema,

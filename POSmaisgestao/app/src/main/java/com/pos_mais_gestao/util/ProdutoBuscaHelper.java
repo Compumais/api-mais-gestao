@@ -49,7 +49,7 @@ public class ProdutoBuscaHelper {
         String termo = texto == null ? "" : texto.trim();
         buscaPendente = () -> {
             if (termo.isEmpty()) {
-                mostrarAtalhos();
+                carregarCatalogo();
             } else {
                 buscar(termo, false);
             }
@@ -57,7 +57,15 @@ public class ProdutoBuscaHelper {
         handler.postDelayed(buscaPendente, 350);
     }
 
+    private boolean catalogoAberto;
+
+    public void carregarCatalogo() {
+        catalogoAberto = true;
+        buscar("", false);
+    }
+
     public void mostrarAtalhos() {
+        catalogoAberto = false;
         termoAtual = "";
         paginaAtual = 1;
         temMais = false;
@@ -67,7 +75,10 @@ public class ProdutoBuscaHelper {
     }
 
     public void carregarMais() {
-        if (!temMais || buscando || termoAtual.isEmpty()) {
+        if (!temMais || buscando) {
+            return;
+        }
+        if (!catalogoAberto && termoAtual.isEmpty()) {
             return;
         }
         buscar(termoAtual, true);

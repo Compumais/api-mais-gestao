@@ -337,4 +337,18 @@
     <string name="balanca_log_desativado">Log hexadecimal desativado.</string>
     <string name="balanca_dispositivo_item">%1$s\n%2$s</string>
     <string name="balanca_estado_detalhe">%1$s — %2$s</string>
+    <string name="catalogo">Catálogo</string>
+    <string name="modelo_atendimento">Atendimento</string>
+    <string name="modo_mesas">Mesas</string>
+    <string name="modo_comandas">Comandas</string>
+    <string name="etiqueta_balanca_titulo">Etiqueta de balança</string>
+    <string name="etiqueta_balanca_habilitada">Ler etiqueta de peso/preço</string>
+    <string name="etiqueta_balanca_prefixo">Prefixo</string>
+    <string name="etiqueta_balanca_digitos">Dígitos do código (4, 5 ou 6)</string>
+    <string name="etiqueta_balanca_conteudo">Conteúdo da etiqueta</string>
+    <string name="etiqueta_conteudo_preco">Preço</string>
+    <string name="etiqueta_conteudo_peso">Peso</string>
+    <string name="etiqueta_balanca_centavos">Preço com centavos</string>
+    <string name="etiqueta_balanca_indicador">Indicador de uso (1 dígito)</string>
+    <string name="produto_adicionado">Produto adicionado</string>
 </resources>

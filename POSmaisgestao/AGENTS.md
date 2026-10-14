@@ -38,7 +38,7 @@ Cartão inteiro vai para `valorcartaocredito`. `valorcartaodebito` e `valorcarta
 - `ApiClient` e `LocalPdvApi` (paths, `Authorization: Bearer`, `vendalocal = 2`, DAV `extra1 = "POS"`).
 - `PrefsStore`: prefs `pos_mais_gestao` e sessão `pos_mais_gestao_session` (`EncryptedSharedPreferences`). Fallback para prefs comuns se o Keystore falhar.
 - Exclusão de backup de `pos_mais_gestao_session.xml` em `res/xml/backup_rules.xml` e `res/xml/data_extraction_rules.xml`.
-- SQLite `pos_outbox.db` (`OutboxDb`) e `pos_catalogo.db` (`CatalogDb`), inclusive `onUpgrade` do catálogo (versão 4).
+- SQLite `pos_outbox.db` (`OutboxDb`) e `pos_catalogo.db` (`CatalogDb`), inclusive `onUpgrade` do catálogo (versão 5, coluna `codigo` do PLU).
 - Dependências: OkHttp, Gson, `androidx.security:security-crypto`, ZXing (`zxing-android-embedded`), `usb-serial-for-android` (JitPack em `settings.gradle.kts`).
 - `gradle.properties`: `android.overridePathCheck=true` (o caminho do repo tem acento).
 - `applicationId` `com.pos_mais_gestao`, `minSdk` 24, `namespace` igual ao pacote Java.
