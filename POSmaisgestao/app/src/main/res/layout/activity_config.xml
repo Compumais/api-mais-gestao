@@ -146,6 +146,125 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/modelo_atendimento"
+            android:textColor="@color/muted_foreground" />
+
+        <RadioGroup
+            android:id="@+id/radioGrupoModelo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioModeloMesa"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/modo_mesas"
+                android:textColor="@color/foreground" />
+
+            <RadioButton
+                android:id="@+id/radioModeloComanda"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/modo_comandas"
+                android:textColor="@color/foreground" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/etiqueta_balanca_titulo"
+            android:textColor="@color/foreground"
+            android:textStyle="bold" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchEtiquetaBalanca"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/etiqueta_balanca_habilitada"
+            android:textColor="@color/foreground" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/etiqueta_balanca_prefixo">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputEtiquetaPrefixo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLength="1"
+                android:minHeight="48dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/etiqueta_balanca_digitos">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputEtiquetaDigitos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLength="1"
+                android:minHeight="48dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/etiqueta_balanca_conteudo"
+            android:textColor="@color/muted_foreground" />
+
+        <RadioGroup
+            android:id="@+id/radioGrupoEtiquetaConteudo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioEtiquetaPreco"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/etiqueta_conteudo_preco"
+                android:textColor="@color/foreground" />
+
+            <RadioButton
+                android:id="@+id/radioEtiquetaPeso"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/etiqueta_conteudo_peso"
+                android:textColor="@color/foreground" />
+        </RadioGroup>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchEtiquetaCentavos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/etiqueta_balanca_centavos"
+            android:textColor="@color/foreground" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchEtiquetaIndicador"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="@string/etiqueta_balanca_indicador"
+            android:textColor="@color/foreground" />
+
+        <TextView
             android:id="@+id/txtConfigOrigemPdv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

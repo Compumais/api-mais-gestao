@@ -73,7 +73,8 @@ public class CatalogRepository {
                                 "/pos/imagens/produtos/",
                                 texto(obj, "caminhoimagem"),
                                 texto(obj, "imagemremota")),
-                        flag(obj, "espizza")));
+                        flag(obj, "espizza"),
+                        inteiroJson(obj, "codigo")));
             }
         }
 
@@ -109,6 +110,10 @@ public class CatalogRepository {
 
     public Produto buscarPorEan(String ean) {
         return db.buscarPorEan(ean);
+    }
+
+    public Produto buscarPorCodigo(int codigo) {
+        return db.buscarPorCodigo(codigo);
     }
 
     public List<Produto> listarAtalhos() {
@@ -217,6 +222,21 @@ public class CatalogRepository {
                 return "1".equals(obj.get(key).getAsString()) || "true".equalsIgnoreCase(obj.get(key).getAsString());
             } catch (Exception ignored) {
                 return false;
+            }
+        }
+    }
+
+    private static Integer inteiroJson(JsonObject obj, String key) {
+        if (obj == null || !obj.has(key) || obj.get(key).isJsonNull()) {
+            return null;
+        }
+        try {
+            return obj.get(key).getAsInt();
+        } catch (Exception e) {
+            try {
+                return Integer.parseInt(obj.get(key).getAsString());
+            } catch (Exception ignored) {
+                return null;
             }
         }
     }

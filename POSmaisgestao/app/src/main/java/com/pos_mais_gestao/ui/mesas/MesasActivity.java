@@ -174,6 +174,11 @@ public class MesasActivity extends AppCompatActivity {
                         api.buscarCaixaAberto();
                     } catch (ApiException ignored) {
                     }
+                } else {
+                    try {
+                        api.sincronizarConfiguracaoEmpresa();
+                    } catch (ApiException ignored) {
+                    }
                 }
                 List<ContaMesaDto> gradeDto = api.listarMesasGrade();
                 List<MesaGradeItem> grade = new ArrayList<>();
@@ -197,7 +202,7 @@ public class MesasActivity extends AppCompatActivity {
                     syncing = false;
                     online = false;
                     OfflineBanner.bind(this, false, e.getMessage());
-                    if (showError) {
+                    if (showError || (e.getMessage() != null && e.getMessage().toLowerCase(Locale.ROOT).contains("módulo"))) {
                         Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });

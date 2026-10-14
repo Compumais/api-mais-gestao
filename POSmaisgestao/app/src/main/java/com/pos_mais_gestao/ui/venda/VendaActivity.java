@@ -7,6 +7,7 @@ import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
@@ -33,6 +34,7 @@ import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.config.ConfigActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
 import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
+import com.pos_mais_gestao.util.CampoCodigoOculto;
 import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
@@ -55,6 +57,7 @@ public class VendaActivity extends AppCompatActivity {
     private TextView lblSecao;
     private TextView txtVazio;
     private TextInputEditText inputBusca;
+    private CampoCodigoOculto capturaCodigo;
     private MaterialButton btnPagar;
     private MaterialButton btnCarregarMais;
     private TextView txtStatusBalanca;
@@ -104,6 +107,8 @@ public class VendaActivity extends AppCompatActivity {
         btnCarregarMais = findViewById(R.id.btnCarregarMais);
         txtStatusBalanca = findViewById(R.id.txtStatusBalanca);
         inputBusca = findViewById(R.id.inputBusca);
+        EditText inputCodigoOculto = findViewById(R.id.inputCodigoOculto);
+        capturaCodigo = CampoCodigoOculto.ligar(inputCodigoOculto, inputBusca, this::aoCodigoEscaneado);
         MaterialButton btnEscanear = findViewById(R.id.btnEscanear);
         btnEscanear.setOnClickListener(v -> scanHelper.iniciar());
 
@@ -153,9 +158,13 @@ public class VendaActivity extends AppCompatActivity {
 
             @Override
             public void onResultados(List<Produto> produtos, boolean temMais, boolean append) {
-                mostrandoBusca = true;
-                lblSecao.setText(R.string.resultados);
-                listaProdutos.setLayoutManager(new LinearLayoutManager(VendaActivity.this));
+                boolean digitando = inputBusca.getText() != null
+                        && !inputBusca.getText().toString().trim().isEmpty();
+                mostrandoBusca = digitando;
+                lblSecao.setText(digitando ? R.string.resultados : R.string.catalogo);
+                listaProdutos.setLayoutManager(digitando
+                        ? new LinearLayoutManager(VendaActivity.this)
+                        : new GridLayoutManager(VendaActivity.this, 2));
                 produtoAdapter.setItens(produtos);
                 btnCarregarMais.setVisibility(temMais ? View.VISIBLE : View.GONE);
                 txtVazio.setText(R.string.nenhum_produto);
@@ -187,8 +196,11 @@ public class VendaActivity extends AppCompatActivity {
         super.onResume();
         SoftInputHelper.hideOnStart(this);
         atualizarCarrinho();
-        if (!mostrandoBusca) {
-            buscaHelper.mostrarAtalhos();
+        if (inputBusca.getText() == null || inputBusca.getText().toString().trim().isEmpty()) {
+            buscaHelper.carregarCatalogo();
+        }
+        if (capturaCodigo != null) {
+            capturaCodigo.focar();
         }
     }
 
@@ -208,33 +220,34 @@ public class VendaActivity extends AppCompatActivity {
     }
 
     private void aoCodigoEscaneado(String codigo) {
-        SoftInputHelper.hideKeyboard(this);
-        inputBusca.setText(codigo);
-        SoftInputHelper.hideKeyboard(this);
         executor.execute(() -> {
             try {
-                List<Produto> produtos = api.buscarProdutos(codigo);
-                runOnUiThread(() -> {
-                    if (produtos == null || produtos.isEmpty()) {
-                        Toast.makeText(this, R.string.produto_nao_encontrado_scan, Toast.LENGTH_LONG).show();
-                        buscaHelper.onTextoAlterado(codigo);
-                        return;
-                    }
-                    Produto escolhido = produtos.get(0);
-                    if (produtos.size() == 1) {
-                        adicionarProduto(escolhido);
-                        Toast.makeText(this, R.string.produto_adicionado_scan, Toast.LENGTH_SHORT).show();
-                        inputBusca.setText("");
-                        SoftInputHelper.hideKeyboard(this);
-                        buscaHelper.mostrarAtalhos();
-                    } else {
-                        buscaHelper.onTextoAlterado(codigo);
-                    }
-                });
+                ApiClient.ResultadoLeitura leitura = api.resolverCodigoBarras(codigo);
+                runOnUiThread(() -> aplicarLeitura(leitura));
             } catch (ApiException e) {
                 runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
+    }
+
+    private void aplicarLeitura(ApiClient.ResultadoLeitura leitura) {
+        if (leitura == null || leitura.produto == null) {
+            Toast.makeText(this, R.string.produto_nao_encontrado_scan, Toast.LENGTH_LONG).show();
+            if (capturaCodigo != null) {
+                capturaCodigo.focar();
+            }
+            return;
+        }
+        if (leitura.etiqueta && leitura.quantidade != null) {
+            Carrinho.getInstance().adicionar(leitura.produto, leitura.quantidade);
+            atualizarCarrinho();
+        } else {
+            adicionarProduto(leitura.produto);
+        }
+        Toast.makeText(this, R.string.produto_adicionado, Toast.LENGTH_SHORT).show();
+        if (capturaCodigo != null) {
+            capturaCodigo.focar();
+        }
     }
 
     private void adicionarProduto(Produto produto) {

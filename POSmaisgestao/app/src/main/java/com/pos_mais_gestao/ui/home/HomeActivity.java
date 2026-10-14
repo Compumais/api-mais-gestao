@@ -124,13 +124,17 @@ public class HomeActivity extends AppCompatActivity {
                 if (!prefs.isModoPdvLocal()) {
                     outboxSync.processarPendentes();
                 }
+                api.sincronizarConfiguracaoEmpresa();
                 List<Produto> remotos = api.listarAtalhosRemotos();
                 if (!remotos.isEmpty() || prefs.getAtalhos().isEmpty()) {
                     prefs.setAtalhos(remotos);
                 }
             } catch (Exception ignored) {
             }
-            runOnUiThread(this::atualizarSyncUi);
+            runOnUiThread(() -> {
+                atualizarSyncUi();
+                aplicarModoLocalHome();
+            });
         });
     }
 

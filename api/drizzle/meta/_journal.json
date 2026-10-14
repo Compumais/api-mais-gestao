@@ -771,6 +771,13 @@
       "when": 1790300000000,
       "tag": "0107_terminal_pdv_apikey",
       "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1790400000000,
+      "tag": "0108_configuracao_pdv",
+      "breakpoints": true
     }
   ]
 }

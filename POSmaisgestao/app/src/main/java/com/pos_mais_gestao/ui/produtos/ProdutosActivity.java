@@ -114,7 +114,7 @@ public class ProdutosActivity extends AppCompatActivity {
             buscaHelper.carregarMais();
         });
 
-        buscaHelper.mostrarAtalhos();
+        buscaHelper.carregarCatalogo();
     }
 
     private void dialogEditarPreco(Produto produto) {

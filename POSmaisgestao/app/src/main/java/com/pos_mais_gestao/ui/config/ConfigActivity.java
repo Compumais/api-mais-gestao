@@ -32,6 +32,7 @@ import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
 import com.pos_mais_gestao.util.CodigoScanHelper;
+import com.pos_mais_gestao.util.EtiquetaBalanca;
 import com.pos_mais_gestao.util.PosConnectionQrParser;
 import com.pos_mais_gestao.util.SoftInputHelper;
 import com.pos_mais_gestao.util.ThemeHelper;
@@ -56,6 +57,13 @@ public class ConfigActivity extends AppCompatActivity {
     private TextInputEditText inputMesas;
     private TextInputLayout layoutMesas;
     private TextView txtConfigOrigemPdv;
+    private RadioGroup radioGrupoModelo;
+    private SwitchMaterial switchEtiquetaBalanca;
+    private TextInputEditText inputEtiquetaPrefixo;
+    private TextInputEditText inputEtiquetaDigitos;
+    private RadioGroup radioGrupoEtiquetaConteudo;
+    private SwitchMaterial switchEtiquetaCentavos;
+    private SwitchMaterial switchEtiquetaIndicador;
     private SwitchMaterial switchEmitirNfce;
     private SwitchMaterial switchFichasEvento;
     private SwitchMaterial switchPixQr;
@@ -111,6 +119,13 @@ public class ConfigActivity extends AppCompatActivity {
         inputMesas = findViewById(R.id.inputQuantidadeMesas);
         layoutMesas = findViewById(R.id.layoutQuantidadeMesas);
         txtConfigOrigemPdv = findViewById(R.id.txtConfigOrigemPdv);
+        radioGrupoModelo = findViewById(R.id.radioGrupoModelo);
+        switchEtiquetaBalanca = findViewById(R.id.switchEtiquetaBalanca);
+        inputEtiquetaPrefixo = findViewById(R.id.inputEtiquetaPrefixo);
+        inputEtiquetaDigitos = findViewById(R.id.inputEtiquetaDigitos);
+        radioGrupoEtiquetaConteudo = findViewById(R.id.radioGrupoEtiquetaConteudo);
+        switchEtiquetaCentavos = findViewById(R.id.switchEtiquetaCentavos);
+        switchEtiquetaIndicador = findViewById(R.id.switchEtiquetaIndicador);
         switchEmitirNfce = findViewById(R.id.switchEmitirNfcePos);
         switchFichasEvento = findViewById(R.id.switchFichasEvento);
         switchPixQr = findViewById(R.id.switchPixQr);
@@ -156,6 +171,7 @@ public class ConfigActivity extends AppCompatActivity {
         inputChavePix.setText(prefs.getChavePix());
         inputNomePix.setText(prefs.getNomePix());
         inputCidadePix.setText(prefs.getCidadePix());
+        preencherOperacao();
         selecionarRadioTema(ThemeHelper.normalizar(prefs.getTema()));
         impressoraIdSelecionada = prefs.getImpressoraId() != null ? prefs.getImpressoraId() : "";
         impressoraNomeSelecionada = prefs.getImpressoraNome();
@@ -332,6 +348,12 @@ public class ConfigActivity extends AppCompatActivity {
         prefs.setImprimirFichasEvento(switchFichasEvento.isChecked());
         prefs.setPixQrHabilitado(switchPixQr.isChecked());
         prefs.setModalAbrirMesaHabilitado(switchPedirNomeCliente.isChecked());
+        if (!local && radioGrupoModelo != null) {
+            prefs.setModeloAtendimento(radioGrupoModelo.getCheckedRadioButtonId() == R.id.radioModeloComanda
+                    ? PrefsStore.MODELO_COMANDA
+                    : PrefsStore.MODELO_MESA);
+        }
+        prefs.setEtiquetaBalanca(lerEtiqueta());
         prefs.setChavePix(chavePix);
         prefs.setNomePix(inputNomePix.getText() == null ? "" : inputNomePix.getText().toString());
         prefs.setCidadePix(inputCidadePix.getText() == null ? "" : inputCidadePix.getText().toString());
@@ -339,6 +361,21 @@ public class ConfigActivity extends AppCompatActivity {
         String tema = lerTemaSelecionado();
         prefs.setTema(tema);
         ThemeHelper.aplicar(tema);
+        if (!local && !precisaLogin && prefs.isLoggedIn()) {
+            executor.execute(() -> {
+                try {
+                    api.salvarConfiguracaoEmpresa();
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Configurações salvas", Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
+                } catch (ApiException e) {
+                    runOnUiThread(() ->
+                            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+                }
+            });
+            return;
+        }
         Toast.makeText(this, "Configurações salvas", Toast.LENGTH_SHORT).show();
         if (precisaLogin) {
             abrirLogin();
@@ -382,11 +419,75 @@ public class ConfigActivity extends AppCompatActivity {
         ocultarCard(txtImpressoraSelecionada, cupom);
         inputPdv.setEnabled(!local);
         inputMesas.setEnabled(!local);
+        if (radioGrupoModelo != null) {
+            for (int i = 0; i < radioGrupoModelo.getChildCount(); i++) {
+                radioGrupoModelo.getChildAt(i).setEnabled(!local);
+            }
+        }
         txtConfigOrigemPdv.setVisibility(local ? View.VISIBLE : View.GONE);
         atualizarCamposOrigemPdv();
         if (local) {
             sincronizarCamposDoPdv();
+        } else if (prefs.isLoggedIn()) {
+            executor.execute(() -> {
+                try {
+                    api.sincronizarConfiguracaoEmpresa();
+                    runOnUiThread(this::preencherOperacao);
+                } catch (Exception ignored) {
+                }
+            });
         }
+    }
+
+    private void preencherOperacao() {
+        if (radioGrupoModelo != null) {
+            radioGrupoModelo.check(prefs.isModeloComanda() ? R.id.radioModeloComanda : R.id.radioModeloMesa);
+        }
+        EtiquetaBalanca.Config etiqueta = prefs.getEtiquetaBalanca();
+        if (switchEtiquetaBalanca != null) {
+            switchEtiquetaBalanca.setChecked(etiqueta.habilitada);
+        }
+        if (inputEtiquetaPrefixo != null) {
+            inputEtiquetaPrefixo.setText(etiqueta.prefixo);
+        }
+        if (inputEtiquetaDigitos != null) {
+            inputEtiquetaDigitos.setText(String.valueOf(etiqueta.digitosCodigo));
+        }
+        if (radioGrupoEtiquetaConteudo != null) {
+            radioGrupoEtiquetaConteudo.check(etiqueta.conteudoPeso
+                    ? R.id.radioEtiquetaPeso
+                    : R.id.radioEtiquetaPreco);
+        }
+        if (switchEtiquetaCentavos != null) {
+            switchEtiquetaCentavos.setChecked(etiqueta.centavos);
+        }
+        if (switchEtiquetaIndicador != null) {
+            switchEtiquetaIndicador.setChecked(etiqueta.indicadorUso);
+        }
+        boolean comanda = prefs.isModeloComanda();
+        if (layoutMesas != null) {
+            layoutMesas.setHint(getString(comanda ? R.string.quantidade_comandas : R.string.quantidade_mesas));
+        }
+    }
+
+    private EtiquetaBalanca.Config lerEtiqueta() {
+        int digitos = 4;
+        try {
+            digitos = Integer.parseInt(inputEtiquetaDigitos.getText() == null
+                    ? "4"
+                    : inputEtiquetaDigitos.getText().toString().trim());
+        } catch (Exception ignored) {
+        }
+        String prefixo = inputEtiquetaPrefixo.getText() == null
+                ? "2"
+                : inputEtiquetaPrefixo.getText().toString().trim();
+        return new EtiquetaBalanca.Config(
+                switchEtiquetaBalanca.isChecked(),
+                prefixo,
+                digitos,
+                radioGrupoEtiquetaConteudo.getCheckedRadioButtonId() == R.id.radioEtiquetaPeso,
+                switchEtiquetaCentavos.isChecked(),
+                switchEtiquetaIndicador.isChecked());
     }
 
     private void sincronizarCamposDoPdv() {
@@ -403,6 +504,9 @@ public class ConfigActivity extends AppCompatActivity {
         inputPdv.setText(String.valueOf(prefs.getNumeroPdv()));
         inputMesas.setText(String.valueOf(prefs.getQuantidadeMesas()));
         boolean comanda = prefs.isModeloComanda();
+        if (radioGrupoModelo != null) {
+            radioGrupoModelo.check(comanda ? R.id.radioModeloComanda : R.id.radioModeloMesa);
+        }
         if (layoutMesas != null) {
             layoutMesas.setHint(getString(comanda ? R.string.quantidade_comandas : R.string.quantidade_mesas));
         }

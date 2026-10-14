@@ -44,6 +44,7 @@ export * from "./tables/codigo-reduzido-conta-contabil.js";
 export * from "./tables/condicao-pagamento.js";
 export * from "./tables/configuracao-email-smtp.js";
 export * from "./tables/configuracao-ordem-servico.js";
+export * from "./tables/configuracao-pdv.js";
 export * from "./tables/configuracoes.js";
 export * from "./tables/configuracoes-usuario.js";
 export * from "./tables/conta-contabil.js";

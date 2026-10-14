@@ -32,7 +32,9 @@ public class Carrinho {
             return;
         }
         for (ItemCarrinho item : itens) {
-            if (!item.isMeioAMeio() && item.getProduto().getId().equals(produto.getId())) {
+            if (!item.isMeioAMeio()
+                    && item.getProduto().getId().equals(produto.getId())
+                    && item.getPrecoUnitario().compareTo(produto.getPreco()) == 0) {
                 item.setQuantidade(item.getQuantidade().add(quantidade));
                 return;
             }

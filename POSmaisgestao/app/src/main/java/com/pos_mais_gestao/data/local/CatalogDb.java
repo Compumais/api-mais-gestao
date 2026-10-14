@@ -12,9 +12,9 @@ import java.util.List;
 
 public class CatalogDb extends SQLiteOpenHelper {
     private static final String DB = "pos_catalogo.db";
-    private static final int VERSION = 4;
+    private static final int VERSION = 5;
     private static final String COLUNAS_PRODUTO =
-            "id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem, espizza";
+            "id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem, espizza, codigo";
 
     public CatalogDb(Context context) {
         super(context, DB, null, VERSION);
@@ -44,7 +44,8 @@ public class CatalogDb extends SQLiteOpenHelper {
                         + "idgrupogourmet TEXT,"
                         + "imagem TEXT,"
                         + "caminhoimagem TEXT,"
-                        + "espizza INTEGER NOT NULL DEFAULT 0)");
+                        + "espizza INTEGER NOT NULL DEFAULT 0,"
+                        + "codigo INTEGER)");
         db.execSQL(
                 "CREATE TABLE catalogo_atalho ("
                         + "ordem INTEGER PRIMARY KEY NOT NULL,"
@@ -79,6 +80,9 @@ public class CatalogDb extends SQLiteOpenHelper {
         if (oldVersion < 4) {
             db.execSQL("ALTER TABLE catalogo_grupo_gourmet ADD COLUMN imagem TEXT");
             db.execSQL("ALTER TABLE catalogo_grupo_gourmet ADD COLUMN caminhoimagem TEXT");
+        }
+        if (oldVersion < 5) {
+            db.execSQL("ALTER TABLE catalogo_produto ADD COLUMN codigo INTEGER");
         }
     }
 
@@ -122,6 +126,9 @@ public class CatalogDb extends SQLiteOpenHelper {
                 values.put("imagem", p.imagem);
                 values.put("caminhoimagem", p.caminhoimagem);
                 values.put("espizza", p.espizza ? 1 : 0);
+                if (p.codigo != null) {
+                    values.put("codigo", p.codigo);
+                }
                 db.insert("catalogo_produto", null, values);
             }
             int ordem = 1;
@@ -177,6 +184,21 @@ public class CatalogDb extends SQLiteOpenHelper {
                 "SELECT " + COLUNAS_PRODUTO
                         + " FROM catalogo_produto WHERE ean = ? OR id = ? LIMIT 1",
                 new String[] {codigo, codigo})) {
+            if (c.moveToFirst()) {
+                return produtoDeCursor(c);
+            }
+        }
+        return null;
+    }
+
+    public Produto buscarPorCodigo(int codigo) {
+        if (codigo < 1) {
+            return null;
+        }
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT " + COLUNAS_PRODUTO
+                        + " FROM catalogo_produto WHERE codigo = ? LIMIT 1",
+                new String[] {String.valueOf(codigo)})) {
             if (c.moveToFirst()) {
                 return produtoDeCursor(c);
             }
@@ -334,7 +356,10 @@ public class CatalogDb extends SQLiteOpenHelper {
     private Produto produtoDeCursor(Cursor c) {
         String ean = c.getString(5);
         Integer codigo = null;
-        if (ean != null) {
+        if (c.getColumnCount() > 9 && !c.isNull(9)) {
+            codigo = c.getInt(9);
+        }
+        if (codigo == null && ean != null) {
             try {
                 codigo = Integer.parseInt(ean);
             } catch (Exception ignored) {
@@ -387,6 +412,7 @@ public class CatalogDb extends SQLiteOpenHelper {
         public final String imagem;
         public final String caminhoimagem;
         public final boolean espizza;
+        public final Integer codigo;
 
         public ProdutoRow(
                 String id,
@@ -400,6 +426,22 @@ public class CatalogDb extends SQLiteOpenHelper {
                 String imagem,
                 String caminhoimagem,
                 boolean espizza) {
+            this(id, descricao, preco, unidademedida, idunidademedida, ean, idgrupo, idgrupogourmet, imagem, caminhoimagem, espizza, null);
+        }
+
+        public ProdutoRow(
+                String id,
+                String descricao,
+                String preco,
+                String unidademedida,
+                String idunidademedida,
+                String ean,
+                String idgrupo,
+                String idgrupogourmet,
+                String imagem,
+                String caminhoimagem,
+                boolean espizza,
+                Integer codigo) {
             this.id = id;
             this.descricao = descricao;
             this.preco = preco;
@@ -411,6 +453,7 @@ public class CatalogDb extends SQLiteOpenHelper {
             this.imagem = imagem;
             this.caminhoimagem = caminhoimagem;
             this.espizza = espizza;
+            this.codigo = codigo;
         }
     }
 }
