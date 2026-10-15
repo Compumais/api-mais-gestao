@@ -9,7 +9,6 @@ import {
 	IconPlus,
 	IconAlertCircle,
 	IconCheck,
-	IconLinkExternal,
 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -213,7 +212,7 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 						disabled={selectedIds.length === 0}
 						onClick={abrirVinculoMassa}
 					>
-						<IconLinkExternal className="mr-1 size-4" />
+						<IconLink className="mr-1 size-4" />
 						Vincular selecionados ({selectedIds.length})
 					</Button>
 					<Button
