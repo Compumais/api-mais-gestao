@@ -1,5 +1,6 @@
 import { and, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
-import type { NovoLocalEstoque } from "@/model/local-estoque-model";
+import { v4 as uuidv4 } from "uuid";
+import type { LocalEstoque, NovoLocalEstoque } from "@/model/local-estoque-model";
 import { localestoque } from "@/repositories/schema.js";
 import { db } from "./connection";
 
@@ -35,6 +36,35 @@ export async function buscarPrimeiroLocalEstoqueEmpresa(idempresa: string) {
 		.limit(1);
 
 	return registro;
+}
+
+export async function garantirLocalEstoqueEmpresa(
+	idempresa: string,
+): Promise<{ local: LocalEstoque; criado: boolean } | undefined> {
+	const ativo = await buscarPrimeiroLocalEstoqueEmpresa(idempresa);
+	if (ativo) return { local: ativo, criado: false };
+
+	const [qualquer] = await db
+		.select()
+		.from(localestoque)
+		.where(eq(localestoque.idempresa, idempresa))
+		.orderBy(desc(localestoque.descricao))
+		.limit(1);
+
+	if (qualquer) return { local: qualquer, criado: false };
+
+	const criado = await criarLocalEstoque({
+		id: uuidv4(),
+		idempresa,
+		codigo: "1",
+		descricao: "Estoque",
+		inativo: 0,
+		posse: "0",
+		tipo: 1,
+	});
+
+	if (!criado) return undefined;
+	return { local: criado, criado: true };
 }
 
 export async function atualizarLocalEstoque(

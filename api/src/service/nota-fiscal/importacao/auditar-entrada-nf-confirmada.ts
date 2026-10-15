@@ -11,6 +11,7 @@ import {
 	type DadosProdutoNF,
 } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import { parseNFeXml } from "@/util/nfe-xml-parser.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 
 export type ClassificacaoEstoqueEntrada =
@@ -65,6 +66,7 @@ export type ItemAuditoriaEntrada = {
 	idcestProduto: string | null;
 	idcfopentradaProduto: string | null;
 	eanProduto: string | null;
+	eantributavelProduto?: string | null;
 	quantidadepadrao: number | null;
 };
 
@@ -281,9 +283,11 @@ export function interpretarCadastroEntrada(
 ): InterpretacaoCadastroEntrada {
 	const dados = lerDadosImportacao(item.dadosimportacao);
 	const eanNota = somenteDigitos(dados.eanXml);
+	const codigoBarrasProduto = somenteDigitos(item.eanProduto);
+	const codigoBarrasTributavel = somenteDigitos(item.eantributavelProduto);
 	const ean: SituacaoEanRevalidacao = !eanNota
 		? "nota_sem_ean"
-		: eanNota === somenteDigitos(item.eanProduto)
+		: eanNota === codigoBarrasProduto && eanNota === codigoBarrasTributavel
 			? "atualizado"
 			: "divergente";
 
@@ -349,6 +353,38 @@ export function interpretarCadastroEntrada(
 	return { ean, cest, tributacaoEntrada, camposTributacaoDivergentes: campos };
 }
 
+export function completarCodigoBarrasDosItens<
+	T extends { contador?: number | null; dadosimportacao: unknown },
+>(itens: T[], xml: string | null | undefined): T[] {
+	if (!xml?.trim()) return itens;
+
+	let codigos: string[] = [];
+	try {
+		codigos = parseNFeXml(xml).itens.map((itemXml) => itemXml.ean ?? "");
+	} catch {
+		return itens;
+	}
+
+	return itens.map((item) => {
+		const dadosAtuais =
+			item.dadosimportacao && typeof item.dadosimportacao === "object"
+				? (item.dadosimportacao as Record<string, unknown>)
+				: {};
+		if (somenteDigitos(lerTexto(dadosAtuais.eanXml))) return item;
+
+		const codigo = codigos[(item.contador ?? 0) - 1] ?? "";
+		if (!codigo) return item;
+
+		return {
+			...item,
+			dadosimportacao: {
+				...dadosAtuais,
+				eanXml: codigo,
+			},
+		};
+	});
+}
+
 function omitirIndefinidos<T extends Record<string, unknown>>(dados: T): Partial<T> {
 	return Object.fromEntries(
 		Object.entries(dados).filter(([, valor]) => valor !== undefined),
@@ -378,8 +414,8 @@ export function montarPatchCadastroRevalidacao(
 	const campos: string[] = [];
 
 	if (cadastro.ean === "divergente" && dados.eanXml) {
-		entrada.ean = dados.eanXml;
-		campos.push("EAN");
+		entrada.ean = somenteDigitos(dados.eanXml);
+		campos.push("Código de barras");
 	}
 
 	if (cadastro.cest === "divergente" && dados.idcest) {
@@ -704,11 +740,14 @@ export async function revalidarProdutosNotaConfirmadaService(params: {
 		return httpNaoEncontrado("Nota de compra confirmada não encontrada");
 	}
 
-	const itens = await listarItensCompraConfirmadaAuditoria({
-		idempresa: params.idempresa,
-		idnotafiscal: params.idnotafiscal,
-		limit: 500,
-	});
+	const itens = completarCodigoBarrasDosItens(
+		await listarItensCompraConfirmadaAuditoria({
+			idempresa: params.idempresa,
+			idnotafiscal: params.idnotafiscal,
+			limit: 500,
+		}),
+		nota.arquivoxmlnotaoriginal,
+	);
 	const movimentos = await listarMovimentosPorNotas([params.idnotafiscal]);
 
 	return httpOk(

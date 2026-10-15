@@ -19,6 +19,7 @@ export async function buscarNotaCompraConfirmada(idempresa: string, id: string) 
 			tipoorigem: notafiscal.tipoorigem,
 			entradasaida: notafiscal.entradasaida,
 			idlocalestoque: notafiscal.idlocalestoque,
+			arquivoxmlnotaoriginal: notafiscal.arquivoxmlnotaoriginal,
 		})
 		.from(notafiscal)
 		.where(
@@ -77,6 +78,7 @@ export async function listarItensCompraConfirmadaAuditoria(params: {
 			cestProduto: produtos.cest,
 			idcfopentradaProduto: produtos.idcfopentrada,
 			eanProduto: produtos.ean,
+			eantributavelProduto: produtos.eantributavel,
 			situacaotributariasnentradaProduto: produtos.situacaotributariasnentrada,
 			cstpisentradaProduto: produtos.cstpisentrada,
 			cstcofinsentradaProduto: produtos.cstcofinsentrada,

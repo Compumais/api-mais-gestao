@@ -11,7 +11,7 @@ import type { NovoProduto } from "@/model/produto-model.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { buscarPrimeiroLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
+import { garantirLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
 import {
 	buscarNotaFiscalPorChaveNfe,
 	buscarNotaFiscalRascunhoPorId,
@@ -364,7 +364,8 @@ export async function finalizarRascunhoImportacaoNfService({
 
 	const empresa = await buscarEmpresaPorId(idempresa);
 	const configRegime = obterConfigRegimeImportacaoNf(empresa?.regimetributario);
-	const localEstoque = await buscarPrimeiroLocalEstoqueEmpresa(idempresa);
+	const localResolvido = await garantirLocalEstoqueEmpresa(idempresa);
+	const localEstoque = localResolvido?.local;
 	const finalizadoEm = new Date().toISOString();
 
 	const rateioMap = calcularRateioItensImportacaoNf(
@@ -724,6 +725,11 @@ export async function finalizarRascunhoImportacaoNfService({
 	}
 
 	const avisos: string[] = [];
+	if (localResolvido?.criado) {
+		avisos.push(
+			"A empresa não tinha local de estoque. Foi criado o local padrão Estoque para registrar a entrada.",
+		);
+	}
 
 	if (gerarCustos) {
 		const itensCustos = itensComDados

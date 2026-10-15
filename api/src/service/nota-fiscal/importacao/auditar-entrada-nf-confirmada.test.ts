@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
 	classificarEstoqueItem,
+	completarCodigoBarrasDosItens,
 	interpretarCadastroEntrada,
 	interpretarQuantidadeEntrada,
+	montarPatchCadastroRevalidacao,
 	montarRevalidacaoProdutosNota,
 	montarRelatorioAuditoriaEntrada,
 	type ItemAuditoriaEntrada,
@@ -29,6 +31,7 @@ function item(
 		idcestProduto: "cest-1",
 		idcfopentradaProduto: "cfop-1",
 		eanProduto: "7891234567895",
+		eantributavelProduto: "7891234567895",
 		quantidadepadrao: 3,
 		...overrides,
 	};
@@ -183,6 +186,15 @@ describe("revalidação de produtos da nota confirmada", () => {
 		);
 		expect(eanDivergente.ean).toBe("divergente");
 
+		const tributavelVazio = item({ eantributavelProduto: null });
+		expect(interpretarCadastroEntrada(tributavelVazio).ean).toBe("divergente");
+		const patchBarras = montarPatchCadastroRevalidacao(tributavelVazio);
+		expect(patchBarras.patch).toMatchObject({
+			ean: "7891234567895",
+			eantributavel: "7891234567895",
+		});
+		expect(patchBarras.campos).toContain("Código de barras");
+
 		const semCest = interpretarCadastroEntrada(
 			item({
 				dadosimportacao: { eanXml: "7891234567895" },
@@ -226,5 +238,27 @@ describe("revalidação de produtos da nota confirmada", () => {
 		expect(relatorio.resumo.semMovimento).toBe(1);
 		expect(relatorio.resumo.eanDivergente).toBe(1);
 		expect(relatorio.aviso).toMatch(/CST de saída/);
+	});
+
+	it("preenche o código de barras do XML quando o item da nota não guardou o EAN", () => {
+		const xml = `<NFe><infNFe><det nItem="1"><prod><cEAN>SEM GTIN</cEAN><cEANTrib>7891234567895</cEANTrib><xProd>Carvao</xProd></prod></det></infNFe></NFe>`;
+		const [completo] = completarCodigoBarrasDosItens(
+			[
+				item({
+					contador: 1,
+					eanProduto: null,
+					eantributavelProduto: null,
+					dadosimportacao: { idcest: "cest-1" },
+				}),
+			],
+			xml,
+		);
+
+		expect(completo?.dadosimportacao).toMatchObject({ eanXml: "7891234567895" });
+		const patch = montarPatchCadastroRevalidacao(completo as ItemAuditoriaEntrada);
+		expect(patch.patch).toMatchObject({
+			ean: "7891234567895",
+			eantributavel: "7891234567895",
+		});
 	});
 });

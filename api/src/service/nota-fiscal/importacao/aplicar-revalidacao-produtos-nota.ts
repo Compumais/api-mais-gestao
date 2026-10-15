@@ -5,11 +5,12 @@ import {
 	listarMovimentosPorNotas,
 } from "@/repositories/auditoria-entrada-nf-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { buscarPrimeiroLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
+import { garantirLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
 import { atualizarProduto } from "@/repositories/produtos-repositories.js";
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 import {
+	completarCodigoBarrasDosItens,
 	decidirLancamentoEstoqueRevalidacao,
 	interpretarQuantidadeEntrada,
 	montarPatchCadastroRevalidacao,
@@ -85,19 +86,26 @@ export async function aplicarRevalidacaoProdutosNotaService(params: {
 		return httpNaoEncontrado("Nota de compra confirmada não encontrada");
 	}
 
-	const linhas = await listarItensCompraConfirmadaAuditoria({
-		idempresa: params.idempresa,
-		idnotafiscal: params.idnotafiscal,
-		limit: 500,
-	});
+	const linhas = completarCodigoBarrasDosItens(
+		await listarItensCompraConfirmadaAuditoria({
+			idempresa: params.idempresa,
+			idnotafiscal: params.idnotafiscal,
+			limit: 500,
+		}),
+		nota.arquivoxmlnotaoriginal,
+	);
 	const movimentos = await listarMovimentosPorNotas([params.idnotafiscal]);
 	const daNota = movimentos.filter(
 		(movimento) => movimento.idoriginal === params.idnotafiscal,
 	);
 
-	const localInformado = nota.idlocalestoque
-		? { id: nota.idlocalestoque }
-		: await buscarPrimeiroLocalEstoqueEmpresa(params.idempresa);
+	const localGarantido = nota.idlocalestoque
+		? { id: nota.idlocalestoque, criado: false }
+		: await garantirLocalEstoqueEmpresa(params.idempresa).then((resolvido) =>
+				resolvido
+					? { id: resolvido.local.id, criado: resolvido.criado }
+					: undefined,
+			);
 
 	const planejados: Array<{
 		item: ItemAuditoriaEntrada;
@@ -157,11 +165,16 @@ export async function aplicarRevalidacaoProdutosNotaService(params: {
 	}
 
 	const avisos: string[] = [];
+	if (localGarantido?.criado) {
+		avisos.push(
+			"A empresa não tinha local de estoque. Foi criado o local padrão Estoque para registrar a entrada.",
+		);
+	}
 	if (planejados.length > 0) {
 		const resultadoEstoque = await registrarMovimentosEstoqueNf({
 			idempresa: params.idempresa,
 			idnotafiscal: params.idnotafiscal,
-			idlocalestoque: localInformado?.id,
+			idlocalestoque: localGarantido?.id,
 			dataMovimento: dataMovimentoNota(nota.entradasaida),
 			sentido: "entrada",
 			idusuario: params.idusuario,

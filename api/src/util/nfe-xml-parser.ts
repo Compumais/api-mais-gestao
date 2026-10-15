@@ -466,11 +466,12 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 		const ipiItem = extrairIpiItem(imposto);
 		const ipiDevolItem = extrairIpiDevolItem(det);
 
-		const eanBruto = paraStr(prod.cEAN);
-		const ean =
-			eanBruto && eanBruto !== "SEM GTIN"
-				? normalizarCodigoBarras(eanBruto) ?? undefined
-				: undefined;
+		const codigoBarras = (valor: unknown) => {
+			const bruto = paraStr(valor);
+			if (!bruto || bruto.toUpperCase() === "SEM GTIN") return undefined;
+			return normalizarCodigoBarras(bruto) ?? undefined;
+		};
+		const ean = codigoBarras(prod.cEAN) ?? codigoBarras(prod.cEANTrib);
 
 		const codigoStr = paraStr(prod.cProd);
 		const codigoNum = codigoStr ? toNumber(codigoStr) : undefined;

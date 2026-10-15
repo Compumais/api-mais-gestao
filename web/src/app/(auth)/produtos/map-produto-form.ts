@@ -4,6 +4,14 @@ import { formatarCstProduto } from "@/util/cst-produto-util";
 
 type ProdutoDetalhe = Awaited<ReturnType<typeof produtosService.buscar>>;
 
+function codigoBarrasParaFormulario(valor: unknown): number | null {
+	if (valor == null || valor === "") return null;
+	const digitos = String(valor).replace(/\D/g, "");
+	if (!digitos) return null;
+	const numero = Number(digitos);
+	return Number.isSafeInteger(numero) ? numero : null;
+}
+
 export function mapProdutoToForm(
 	data: ProdutoDetalhe,
 ): Partial<ProdutoFormData> {
@@ -13,7 +21,7 @@ export function mapProdutoToForm(
 
 	return {
 		codigo: data.codigo ?? undefined,
-		ean: data.ean,
+		ean: codigoBarrasParaFormulario(data.ean),
 		referencia: data.referencia,
 		nome: data.nome,
 		idunidademedida: data.idunidademedida ?? "",
