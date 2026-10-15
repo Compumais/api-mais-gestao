@@ -32,8 +32,10 @@ import {
 	CampoFormaPagamentoCompra,
 	CampoPlanoContasDespesa,
 } from "../../components/campos-financeiros-nf-compra";
+import { DialogRevalidarProdutos } from "../../components/dialog-revalidar-produtos";
 
 const STATUS_CANCELADA = 2;
+const STATUS_CONFIRMADA = 1;
 
 export default function EditarNotaFiscalCompraPage() {
 	const params = useParams<{ id: string }>();
@@ -209,22 +211,35 @@ export default function EditarNotaFiscalCompraPage() {
 		);
 	}
 
+	const notaConfirmadaCompra =
+		data.notaFiscal.status === STATUS_CONFIRMADA &&
+		data.notaFiscal.tipoorigem === 0;
+
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex items-center gap-3 px-4">
+				<div className="flex flex-wrap items-center gap-3 px-4">
 					<Button variant="ghost" size="icon" asChild>
 						<Link href="/nota-fiscal-compra" aria-label="Voltar">
 							<IconArrowLeft className="size-5" />
 						</Link>
 					</Button>
-					<div>
+					<div className="min-w-0 flex-1">
 						<h1 className="text-2xl font-bold">Editar NF de compra</h1>
 						<p className="text-sm text-muted-foreground">
 							Ajustes reintegram estoque e financeiro quando a nota já estava
 							confirmada.
 						</p>
 					</div>
+					{notaConfirmadaCompra ? (
+						<DialogRevalidarProdutos
+							idNota={id}
+							idempresa={empresa.id}
+							numero={
+								data.notaFiscal.numero ?? data.notaFiscal.numeronotafiscal
+							}
+						/>
+					) : null}
 				</div>
 
 				<form

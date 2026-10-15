@@ -38,6 +38,85 @@ export interface NotaFiscal {
 	} | null;
 }
 
+export type SituacaoQuantidadeRevalidacao =
+	| "quantidade_inserida"
+	| "quantidade_divergente"
+	| "sem_movimento"
+	| "movimento_nota_sem_item";
+
+export type SituacaoEanRevalidacao = "atualizado" | "divergente" | "nota_sem_ean";
+export type SituacaoCestRevalidacao = "atualizado" | "divergente" | "nota_sem_cest";
+export type SituacaoTributacaoEntradaRevalidacao =
+	| "atualizada"
+	| "divergente"
+	| "nota_sem_dados";
+
+export interface RevalidacaoProdutosNota {
+	somenteLeitura: true;
+	idnotafiscal: string;
+	numero: string | null;
+	chavenfe: string | null;
+	aviso: string;
+	resumo: {
+		itensComProduto: number;
+		quantidadeOk: number;
+		semMovimento: number;
+		quantidadeDivergente: number;
+		movimentoAmbiguo: number;
+		eanDivergente: number;
+		cestDivergente: number;
+		tributacaoDivergente: number;
+	};
+	itens: Array<{
+		iditem: string;
+		contador: number | null;
+		descricao: string;
+		idproduto: string;
+		nomeProduto: string | null;
+		quantidade: {
+			situacao: SituacaoQuantidadeRevalidacao;
+			quantidadeEsperada: number | null;
+			quantidadeMovimento: number | null;
+		};
+		ean: SituacaoEanRevalidacao;
+		cest: SituacaoCestRevalidacao;
+		tributacaoEntrada: SituacaoTributacaoEntradaRevalidacao;
+		camposTributacaoDivergentes: string[];
+	}>;
+}
+
+export type ResultadoEstoqueRevalidacao = "lancado" | "ja_inserido" | "nao_corrigido";
+
+export interface AplicacaoRevalidacaoProdutosNota {
+	somenteLeitura: false;
+	idnotafiscal: string;
+	numero: string | null;
+	chavenfe: string | null;
+	aviso: string;
+	resumo: {
+		itensComProduto: number;
+		cadastrosAtualizados: number;
+		cadastrosJaOk: number;
+		estoquesLancados: number;
+		estoquesJaInseridos: number;
+		estoquesNaoCorrigidos: number;
+	};
+	itens: Array<{
+		iditem: string;
+		contador: number | null;
+		descricao: string;
+		idproduto: string;
+		nomeProduto: string | null;
+		cadastro: "atualizado" | "ja_ok";
+		camposAtualizados: string[];
+		estoque: ResultadoEstoqueRevalidacao;
+		motivoEstoque: string;
+		quantidadeEsperada: number | null;
+		quantidadeMovimento: number | null;
+	}>;
+	avisos: string[];
+}
+
 export interface NotaFiscalItem {
 	id: string;
 	idnotafiscal: string;
@@ -478,6 +557,28 @@ export const notaFiscalService = {
 		await api.delete(`/notas-fiscais/rascunhos/${id}`, {
 			params: { idempresa },
 		});
+	},
+
+	async revalidarProdutos(
+		id: string,
+		idempresa: string,
+	): Promise<RevalidacaoProdutosNota> {
+		const { data } = await api.get<RevalidacaoProdutosNota>(
+			`/notas-fiscais/${id}/revalidar-produtos`,
+			{ params: { idempresa } },
+		);
+		return data;
+	},
+
+	async aplicarRevalidacaoProdutos(
+		id: string,
+		idempresa: string,
+	): Promise<AplicacaoRevalidacaoProdutosNota> {
+		const { data } = await api.post<AplicacaoRevalidacaoProdutosNota>(
+			`/notas-fiscais/${id}/revalidar-produtos`,
+			{ idempresa, escopo: "nota" },
+		);
+		return data;
 	},
 
 	async buscarProduto(params: {
