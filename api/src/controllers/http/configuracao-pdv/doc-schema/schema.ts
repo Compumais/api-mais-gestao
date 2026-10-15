@@ -58,7 +58,7 @@ export const buscarConfiguracaoPdvSchema: FastifySchema = {
 		required: ["idempresa"],
 	},
 	response: {
-		200: { type: "object", additionalProperties: true, ...corpoConfiguracao },
+		200: { additionalProperties: true, ...corpoConfiguracao },
 		...respostasPadrao,
 	},
 };
