@@ -94,8 +94,11 @@ describe("aplicar revalidação de produtos da nota confirmada", () => {
 			idlocalestoque: "local-1",
 		} as never);
 		vi.mocked(
-			localEstoqueRepositories.buscarPrimeiroLocalEstoqueEmpresa,
-		).mockResolvedValue({ id: "local-1" } as never);
+			localEstoqueRepositories.garantirLocalEstoqueEmpresa,
+		).mockResolvedValue({
+			local: { id: "local-1" },
+			criado: false,
+		} as never);
 		vi.mocked(produtosRepositories.atualizarProduto).mockResolvedValue({} as never);
 		vi.mocked(movimentosEstoqueNf.registrarMovimentosEstoqueNf).mockResolvedValue({
 			movimentosCriados: 1,
@@ -233,6 +236,36 @@ describe("aplicar revalidação de produtos da nota confirmada", () => {
 			}),
 		);
 		expect(resultado.body?.itens[0]?.estoque).toBe("lancado");
+	});
+
+	it("cria o local padrão e lança estoque quando a nota e a empresa não têm local", async () => {
+		vi.mocked(auditoriaRepositories.buscarNotaCompraConfirmada).mockResolvedValue({
+			id: "nf-1",
+			numero: "10",
+			numeronotafiscal: "10",
+			chavenfe: "chave",
+			status: 1,
+			tipoorigem: 0,
+			entradasaida: "2026-01-10",
+			idlocalestoque: null,
+		} as never);
+		vi.mocked(
+			localEstoqueRepositories.garantirLocalEstoqueEmpresa,
+		).mockResolvedValue({
+			local: { id: "local-novo" },
+			criado: true,
+		} as never);
+		vi.mocked(
+			auditoriaRepositories.listarItensCompraConfirmadaAuditoria,
+		).mockResolvedValue([item()] as never);
+
+		const resultado = await aplicarRevalidacaoProdutosNotaService(parametros);
+
+		expect(movimentosEstoqueNf.registrarMovimentosEstoqueNf).toHaveBeenCalledWith(
+			expect.objectContaining({ idlocalestoque: "local-novo" }),
+		);
+		expect(resultado.body?.itens[0]?.estoque).toBe("lancado");
+		expect(resultado.body?.avisos.join(" ")).toMatch(/local padrão Estoque/i);
 	});
 
 	it("não cria segundo movimento quando a quantidade já foi inserida", async () => {

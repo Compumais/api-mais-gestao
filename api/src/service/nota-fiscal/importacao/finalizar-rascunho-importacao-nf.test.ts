@@ -82,7 +82,7 @@ describe("finalizarRascunhoImportacaoNfService", () => {
 			undefined,
 		);
 		vi.mocked(
-			localEstoqueRepositories.buscarPrimeiroLocalEstoqueEmpresa,
+			localEstoqueRepositories.garantirLocalEstoqueEmpresa,
 		).mockResolvedValue(undefined);
 		vi.mocked(
 			parametrizacaoService.aplicarParametrizacaoTributosProduto,
@@ -130,8 +130,11 @@ describe("finalizarRascunhoImportacaoNfService", () => {
 
 	function prepararFinalizacao() {
 		vi.mocked(
-			localEstoqueRepositories.buscarPrimeiroLocalEstoqueEmpresa,
-		).mockResolvedValue({ id: "local-1" } as never);
+			localEstoqueRepositories.garantirLocalEstoqueEmpresa,
+		).mockResolvedValue({
+			local: { id: "local-1" },
+			criado: false,
+		} as never);
 		vi.mocked(
 			notaFiscalRepositories.finalizarRascunhoNotaFiscal,
 		).mockResolvedValue({
