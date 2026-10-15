@@ -154,7 +154,7 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 	const [itemModal, setItemModal] = useState<NotaFiscalItemImportacao | null>(null);
 	const [itemComposicao, setItemComposicao] = useState<NotaFiscalItemImportacao | null>(null);
 	const [dialogMassaAberto, setDialogMassaAberto] = useState(false);
-	
+
 	const itensPendentes = listarItensPendentesCadastro(itens);
 
 	const { mutate: atualizarItem, isPending } = useMutation({
@@ -377,7 +377,7 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 				<LocalizarProdutoDialog
 					idempresa={idempresa}
 					idRascunho={idRascunho}
-					item={itemLocalizar}
+					item={itemLocalizar ?? undefined}
 					selectedIds={selectedIds}
 					aberto={!!itemLocalizar || isBulkLinking}
 					onAbertoChange={(aberto) => {
