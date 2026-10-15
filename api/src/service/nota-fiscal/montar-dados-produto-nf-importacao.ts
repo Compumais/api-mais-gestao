@@ -12,12 +12,11 @@ export function parseQuantidadePadraoImportacao(
 	return Number.isNaN(qtd) || qtd < 0 ? 0 : qtd;
 }
 
-function parseNumeric(valor: any): number {
-	if (typeof valor === "number") return valor;
-	if (typeof valor !== "string") return 0;
-	const sanitizado = valor.replace(",", ".");
-	const numero = Number.parseFloat(sanitizado);
-	return Number.isNaN(numero) ? 0 : numero;
+function parseNumeric(valor: any): string {
+	if (valor === null || valor === undefined) return "0";
+	const stringValor = String(valor).replace(",", ".");
+	const numero = Number.parseFloat(stringValor);
+	return Number.isNaN(numero) ? "0" : stringValor;
 }
 
 type MontarDadosProdutoNfImportacaoOpcoes = {
