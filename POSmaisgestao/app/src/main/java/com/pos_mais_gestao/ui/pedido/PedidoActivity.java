@@ -44,6 +44,7 @@ import com.pos_mais_gestao.util.PizzaMeioAMeio;
 import com.pos_mais_gestao.util.ProdutoImagemHelper;
 import com.pos_mais_gestao.util.ProdutoQuantidade;
 import com.pos_mais_gestao.util.QuantidadeProdutoDialog;
+import com.pos_mais_gestao.util.TelefoneBrasil;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,7 @@ public class PedidoActivity extends AppCompatActivity {
     public static final String EXTRA_ID_CONTA = "id_conta";
     public static final String EXTRA_NUMERO = "numero";
     public static final String EXTRA_NOME = "nome";
+    public static final String EXTRA_TELEFONE = "telefone";
     public static final String EXTRA_BROWSE_ONLY = "browse_only";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -67,6 +69,7 @@ public class PedidoActivity extends AppCompatActivity {
     private String idConta;
     private int numero;
     private String nomeCliente;
+    private String telefoneCliente;
     private String grupoAtivo;
     private String busca = "";
     private ProdutoAdapter produtoAdapter;
@@ -107,6 +110,7 @@ public class PedidoActivity extends AppCompatActivity {
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
         numero = getIntent().getIntExtra(EXTRA_NUMERO, 0);
         nomeCliente = getIntent().getStringExtra(EXTRA_NOME);
+        telefoneCliente = getIntent().getStringExtra(EXTRA_TELEFONE);
 
         toolbar = findViewById(R.id.toolbarPedido);
         setSupportActionBar(toolbar);
@@ -204,8 +208,17 @@ public class PedidoActivity extends AppCompatActivity {
 
     private void atualizarHeader() {
         String rotulo = getString(prefs.isModeloComanda() ? R.string.comanda_n : R.string.mesa_n, numero);
-        String nome = nomeCliente == null || nomeCliente.trim().isEmpty() ? "Cliente" : nomeCliente.trim();
-        toolbar.setTitle(rotulo + " · " + nome);
+        String nome = TelefoneBrasil.nomeInformado(nomeCliente);
+        String telefone = telefoneCliente == null || telefoneCliente.trim().isEmpty()
+                ? ""
+                : TelefoneBrasil.formatar(telefoneCliente);
+        if (nome.isEmpty() && telefone.isEmpty()) {
+            toolbar.setTitle(rotulo);
+            toolbar.setSubtitle(getString(R.string.nome_cliente_nao_informado));
+            return;
+        }
+        toolbar.setTitle(nome.isEmpty() ? rotulo : rotulo + " · " + nome);
+        toolbar.setSubtitle(telefone.isEmpty() ? null : telefone);
     }
 
     private void montarChips() {
@@ -451,36 +464,54 @@ public class PedidoActivity extends AppCompatActivity {
         }
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_trocar_nome, null);
         TextInputEditText input = dialogView.findViewById(R.id.inputName);
-        String current = nomeCliente == null || nomeCliente.isEmpty() ? "Cliente" : nomeCliente;
+        TextInputEditText inputTelefone = dialogView.findViewById(R.id.inputTelefone);
+        TelefoneBrasil.aplicarMascara(inputTelefone);
+        String current = TelefoneBrasil.nomeInformado(nomeCliente);
         input.setText(current);
         if (input.getText() != null) {
             input.setSelection(input.getText().length());
         }
-        new AlertDialog.Builder(this)
+        inputTelefone.setText(telefoneCliente == null ? "" : TelefoneBrasil.formatar(telefoneCliente));
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.trocar_nome)
                 .setView(dialogView)
                 .setNegativeButton(R.string.cancelar, null)
-                .setPositiveButton(R.string.salvar, (d, w) -> {
-                    String name = input.getText() == null ? "" : input.getText().toString().trim();
-                    if (name.isEmpty()) {
-                        Toast.makeText(this, R.string.informe_nome_cliente, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    executor.execute(() -> {
-                        try {
-                            api.atualizarNomeClienteMesa(idConta, name);
-                            runOnUiThread(() -> {
-                                nomeCliente = name;
-                                atualizarHeader();
-                                Toast.makeText(this, R.string.nome_atualizado, Toast.LENGTH_SHORT).show();
-                            });
-                        } catch (ApiException e) {
-                            runOnUiThread(() ->
-                                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
-                        }
+                .setPositiveButton(R.string.salvar, null)
+                .create();
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String name = TelefoneBrasil.nomeInformado(
+                    input.getText() == null ? "" : input.getText().toString());
+            String telefone = TelefoneBrasil.formatar(
+                    inputTelefone.getText() == null ? "" : inputTelefone.getText().toString());
+            if (name.isEmpty()) {
+                Toast.makeText(this, R.string.informe_nome_cliente, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (telefone.isEmpty()) {
+                Toast.makeText(this, R.string.informe_telefone_cliente, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!TelefoneBrasil.valido(telefone)) {
+                Toast.makeText(this, R.string.telefone_cliente_invalido, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            dialog.dismiss();
+            executor.execute(() -> {
+                try {
+                    api.atualizarNomeClienteMesa(idConta, name, telefone);
+                    runOnUiThread(() -> {
+                        nomeCliente = name;
+                        telefoneCliente = telefone;
+                        atualizarHeader();
+                        Toast.makeText(this, R.string.nome_atualizado, Toast.LENGTH_SHORT).show();
                     });
-                })
-                .show();
+                } catch (ApiException e) {
+                    runOnUiThread(() ->
+                            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+                }
+            });
+        }));
+        dialog.show();
     }
 
     private void mostrarConta() {

@@ -30,6 +30,24 @@
             android:textColor="@color/foreground" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="@string/telefone_cliente"
+        app:boxStrokeColor="@color/primary"
+        app:hintTextColor="@color/muted_foreground">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/inputTelefoneClienteMesa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone"
+            android:maxLength="15"
+            android:minHeight="56dp"
+            android:textColor="@color/foreground" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <TextView
         android:id="@+id/txtAjudaNomeCliente"
         android:layout_width="match_parent"
