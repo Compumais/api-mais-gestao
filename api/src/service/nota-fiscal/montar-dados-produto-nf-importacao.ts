@@ -8,8 +8,16 @@ import { sugerirTipoprodutoPorCodigoCfop } from "@/util/tipo-produto.js";
 export function parseQuantidadePadraoImportacao(
 	quantidadeEstoque: string | undefined,
 ): number {
-	const qtd = Math.round(Number.parseFloat(quantidadeEstoque ?? "0"));
+	const qtd = Math.round(Number.parseFloat(quantidadeEstoque?.replace(",", ".") ?? "0"));
 	return Number.isNaN(qtd) || qtd < 0 ? 0 : qtd;
+}
+
+function parseNumeric(valor: any): number {
+	if (typeof valor === "number") return valor;
+	if (typeof valor !== "string") return 0;
+	const sanitizado = valor.replace(",", ".");
+	const numero = Number.parseFloat(sanitizado);
+	return Number.isNaN(numero) ? 0 : numero;
 }
 
 type MontarDadosProdutoNfImportacaoOpcoes = {
@@ -66,10 +74,10 @@ export function montarDadosProdutoNfImportacao(
 		idfornecedor: opcoes.idfornecedor,
 		idgrupo: dados.idgrupo,
 		tipoproduto: dados.tipoproduto,
-		custoaquisicao: dados.custoContabilCalculado ?? dados.precounitarioEstoque,
+		custoaquisicao: parseNumeric(dados.custoContabilCalculado ?? dados.precounitarioEstoque),
 		quantidadepadrao: parseQuantidadePadraoImportacao(dados.quantidadeEstoque),
-		preco: dados.precoVenda,
-		fatorconversao: dados.fatorConversao,
+		preco: parseNumeric(dados.precoVenda),
+		fatorconversao: parseNumeric(dados.fatorConversao),
 		origem: trib.origem,
 		situacaotributariaentrada:
 			truncarTexto(situacaoEntrada, 3) ?? undefined,
