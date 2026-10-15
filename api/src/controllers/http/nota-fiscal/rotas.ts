@@ -2,7 +2,11 @@ import type { FastifyInstance } from "fastify";
 
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { aplicarGrupoPadraoRascunhoImportacao } from "./aplicar-grupo-padrao-rascunho.js";
-import { auditarEntradaNf } from "./auditar-entrada.js";
+import {
+	aplicarRevalidacaoProdutosNota,
+	auditarEntradaNf,
+	revalidarProdutosNota,
+} from "./auditar-entrada.js";
 import { atualizarNotaFiscal } from "./atualizar.js";
 import { atualizarNotaFiscalCompra } from "./atualizar-compra.js";
 import {
@@ -109,6 +113,16 @@ export async function notasFiscaisRotas(app: FastifyInstance) {
 	app.get("/notas-fiscais/auditoria-entrada", {
 		schema: schema.auditarEntradaNfSchema,
 		handler: auditarEntradaNf,
+	});
+
+	app.get("/notas-fiscais/:id/revalidar-produtos", {
+		schema: schema.revalidarProdutosNotaSchema,
+		handler: revalidarProdutosNota,
+	});
+
+	app.post("/notas-fiscais/:id/revalidar-produtos", {
+		schema: schema.aplicarRevalidacaoProdutosNotaSchema,
+		handler: aplicarRevalidacaoProdutosNota,
 	});
 
 	app.get("/notas-fiscais/:id", {

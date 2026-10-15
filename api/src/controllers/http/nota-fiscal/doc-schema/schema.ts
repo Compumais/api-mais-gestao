@@ -714,6 +714,49 @@ export const auditarEntradaNfSchema: FastifySchema = {
 	},
 };
 
+export const aplicarRevalidacaoProdutosNotaSchema: FastifySchema = {
+	tags: ["nota-fiscal"],
+	summary: "Atualizar cadastro e estoque faltante dos produtos de uma compra confirmada",
+	security: [{ bearerAuth: [] }],
+	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	body: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string" },
+			escopo: { type: "string", enum: ["nota"] },
+		},
+		required: ["idempresa", "escopo"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		404: respostaErro,
+		500: respostaErro,
+	},
+};
+
+export const revalidarProdutosNotaSchema: FastifySchema = {
+	tags: ["nota-fiscal"],
+	summary: "Revalidar produtos de uma compra confirmada (somente leitura)",
+	security: [{ bearerAuth: [] }],
+	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	querystring: {
+		type: "object",
+		properties: { idempresa: { type: "string" } },
+		required: ["idempresa"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		404: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const excluirRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Excluir rascunho de importação",
