@@ -2,19 +2,25 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="primary">#4271F0</color>
-    <color name="primary_dark">#0B42DA</color>
-    <color name="primary_foreground">#FFFFFF</color>
-    <color name="foreground">#111827</color>
+    <!-- Tokens alinhados ao tema claro do PDV (pdv/src/globals.css :root). -->
+    <color name="primary">#006CF1</color>
+    <color name="primary_dark">#193CB8</color>
+    <color name="primary_foreground">#EFF6FF</color>
+    <color name="foreground">#0C0C09</color>
     <color name="background">#FFFFFF</color>
-    <color name="surface">#F3F4F6</color>
-    <color name="muted_foreground">#374151</color>
-    <color name="accent">#D0D9F1</color>
-    <color name="border">#9CA3AF</color>
+    <color name="surface">#EBEBE7</color>
+    <color name="muted_foreground">#4E4E3F</color>
+    <color name="accent">#EBEBE7</color>
+    <color name="border">#B8B8AF</color>
     <color name="card">#FFFFFF</color>
-    <color name="danger">#E5010C</color>
-    <color name="dinheiro">#16A34A</color>
+    <color name="danger">#E7000B</color>
+    <color name="dinheiro">#009540</color>
+    <!-- Status ociosa: mesmas classes do PDV (amber-300 / amber-950 / amber-600 a 50%). -->
+    <color name="mesa_ociosa">#FCD34D</color>
+    <color name="mesa_ociosa_foreground">#451A03</color>
+    <color name="mesa_ociosa_stroke">#80D97706</color>
+    <!-- Sem token equivalente no PDV; mantidos como cores de meio de pagamento. -->
     <color name="pix">#0284C7</color>
     <color name="cartao">#7C3AED</color>
-    <color name="ic_launcher_background">#4271F0</color>
+    <color name="ic_launcher_background">#006CF1</color>
 </resources>

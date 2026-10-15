@@ -1,13 +1,9 @@
-import {
-	Circle,
-	Clock3,
-	LayoutGrid,
-	Plus,
-	Search,
-	UtensilsCrossed,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { LayoutGrid, Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import aguardandoUrl from "@/assets/icones-mesa/ic_relogio.png";
+import consumindoUrl from "@/assets/icones-mesa/ic_talheres.png";
+import disponivelUrl from "@/assets/icones-mesa/ic_mesa.png";
 import type { LeituraComandaNormalizada } from "@/lib/comanda-scanner";
 import { marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
@@ -49,10 +45,47 @@ type DialogoAbertura =
 
 type FiltroMesa = "todos" | StatusAtividadeMesa;
 
+type IconeProps = { className?: string };
+
+function IconeMesaAsset({
+	src,
+	className,
+}: {
+	src: string;
+	className?: string;
+}) {
+	return (
+		<span
+			aria-hidden
+			className={cn("inline-block shrink-0 bg-current", className)}
+			style={{
+				maskImage: `url("${src}")`,
+				WebkitMaskImage: `url("${src}")`,
+				maskRepeat: "no-repeat",
+				WebkitMaskRepeat: "no-repeat",
+				maskPosition: "center",
+				WebkitMaskPosition: "center",
+				maskSize: "contain",
+				WebkitMaskSize: "contain",
+			}}
+		/>
+	);
+}
+
+const IconeDisponivel: ComponentType<IconeProps> = (props) => (
+	<IconeMesaAsset src={disponivelUrl} {...props} />
+);
+const IconeAguardando: ComponentType<IconeProps> = (props) => (
+	<IconeMesaAsset src={aguardandoUrl} {...props} />
+);
+const IconeConsumindo: ComponentType<IconeProps> = (props) => (
+	<IconeMesaAsset src={consumindoUrl} {...props} />
+);
+
 function iconeStatus(status: StatusAtividadeMesa) {
-	if (status === "consumindo") return UtensilsCrossed;
-	if (status === "ociosa") return Clock3;
-	return Circle;
+	if (status === "consumindo") return IconeConsumindo;
+	if (status === "ociosa") return IconeAguardando;
+	return IconeDisponivel;
 }
 
 function rotuloStatus(status: StatusAtividadeMesa) {
@@ -395,9 +428,9 @@ export function HomePage() {
 						{(
 							[
 								["todos", "Todas", LayoutGrid, mesas.length],
-								["livre", "Livres", Circle, livres],
-								["consumindo", "Consumindo", UtensilsCrossed, consumindo],
-								["ociosa", "Ociosas", Clock3, ociosas],
+								["livre", "Livres", IconeDisponivel, livres],
+								["consumindo", "Consumindo", IconeConsumindo, consumindo],
+								["ociosa", "Ociosas", IconeAguardando, ociosas],
 							] as const
 						).map(([valor, label, Icon, quantidade]) => (
 							<Button

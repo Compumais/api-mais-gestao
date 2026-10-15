@@ -90,8 +90,11 @@ export function BarraFinalizarImportacao({
 				gerarCustos: formData.gerarCustos,
 				gerarFinanceiro: formData.gerarFinanceiro,
 			}),
-		onSuccess: () => {
+		onSuccess: (resultado) => {
 			toast.success("Nota fiscal confirmada com sucesso");
+			for (const aviso of resultado.avisos ?? []) {
+				toast.warning(aviso);
+			}
 			queryClient.invalidateQueries({ queryKey: ["notas-fiscais-compra"] });
 			queryClient.invalidateQueries({ queryKey: ["rascunhos-importacao-nf"] });
 			router.push("/nota-fiscal-compra");

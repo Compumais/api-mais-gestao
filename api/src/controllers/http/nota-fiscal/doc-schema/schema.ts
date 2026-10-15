@@ -693,6 +693,27 @@ export const finalizarRascunhoImportacaoSchema: FastifySchema = {
 	},
 };
 
+export const auditarEntradaNfSchema: FastifySchema = {
+	tags: ["nota-fiscal"],
+	summary: "Auditar estoque e cadastro fiscal de compras já confirmadas (somente leitura)",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string" },
+			limit: { type: "number" },
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const excluirRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Excluir rascunho de importação",

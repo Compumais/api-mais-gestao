@@ -5,18 +5,34 @@ import type { ConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.
 import { normalizarCodigoBarras, truncarTexto } from "@/util/texto-util.js";
 import { sugerirTipoprodutoPorCodigoCfop } from "@/util/tipo-produto.js";
 
+/**
+ * `produtos.quantidadepadrao` é integer e não é o saldo.
+ * O saldo operacional/fiscal fica em `saldoestoque`, alimentado por `movimentoestoque`.
+ * Este arredondamento existe só porque a coluna não aceita fração — não usar na entrada da NF.
+ */
 export function parseQuantidadePadraoImportacao(
 	quantidadeEstoque: string | undefined,
 ): number {
-	const qtd = Math.round(Number.parseFloat(quantidadeEstoque?.replace(",", ".") ?? "0"));
+	const qtd = Math.round(
+		Number.parseFloat(quantidadeEstoque?.replace(",", ".") ?? "0"),
+	);
 	return Number.isNaN(qtd) || qtd < 0 ? 0 : qtd;
 }
 
-function parseNumeric(valor: any): string {
-	if (valor === null || valor === undefined) return "0";
-	const stringValor = String(valor).replace(",", ".");
-	const numero = Number.parseFloat(stringValor);
-	return Number.isNaN(numero) ? "0" : stringValor;
+/** Quantidade do movimento de estoque (numeric 15,6). Preserva fração. */
+export function parseQuantidadeEstoqueImportacao(
+	quantidadeEstoque: string | undefined,
+): string {
+	const texto = quantidadeEstoque?.trim().replace(",", ".") ?? "";
+	const qtd = Number.parseFloat(texto);
+	if (!texto || Number.isNaN(qtd) || qtd <= 0) return "0.000000";
+	return qtd.toFixed(6);
+}
+
+function parseNumeric(valor: unknown): string {
+	if (valor === null || valor === undefined || valor === "") return "0.00";
+	const numero = Number.parseFloat(String(valor).replace(",", "."));
+	return Number.isNaN(numero) ? "0.00" : numero.toFixed(2);
 }
 
 type MontarDadosProdutoNfImportacaoOpcoes = {
@@ -73,8 +89,11 @@ export function montarDadosProdutoNfImportacao(
 		idfornecedor: opcoes.idfornecedor,
 		idgrupo: dados.idgrupo,
 		tipoproduto: dados.tipoproduto,
-		custoaquisicao: parseNumeric(dados.custoContabilCalculado ?? dados.precounitarioEstoque),
-		quantidadepadrao: parseQuantidadePadraoImportacao(dados.quantidadeEstoque),
+		unidademedida:
+			truncarTexto(dados.unidadeEstoque ?? dados.unidadeXml, 6) ?? undefined,
+		custoaquisicao: parseNumeric(
+			dados.custoContabilCalculado ?? dados.precounitarioEstoque,
+		),
 		preco: parseNumeric(dados.precoVenda),
 		fatorconversao: parseNumeric(dados.fatorConversao),
 		origem: trib.origem,

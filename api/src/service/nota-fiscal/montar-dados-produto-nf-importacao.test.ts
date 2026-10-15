@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
-import { montarDadosProdutoNfImportacao } from "./montar-dados-produto-nf-importacao.js";
+import {
+	montarDadosProdutoNfImportacao,
+	parseQuantidadeEstoqueImportacao,
+	parseQuantidadePadraoImportacao,
+} from "./montar-dados-produto-nf-importacao.js";
 
 function dadosItem(
 	overrides?: Partial<DadosImportacaoItem>,
@@ -36,5 +40,16 @@ describe("montarDadosProdutoNfImportacao", () => {
 		);
 
 		expect(dados.codigoproduto).toBe(15);
+	});
+
+	it("não grava a quantidade da nota em quantidadepadrao", () => {
+		const dados = montarDadosProdutoNfImportacao(
+			dadosItem({ quantidadeEstoque: "2,5" }),
+			"empresa-1",
+		);
+
+		expect(dados.quantidadepadrao).toBeUndefined();
+		expect(parseQuantidadeEstoqueImportacao("2,5")).toBe("2.500000");
+		expect(parseQuantidadePadraoImportacao("2,5")).toBe(3);
 	});
 });

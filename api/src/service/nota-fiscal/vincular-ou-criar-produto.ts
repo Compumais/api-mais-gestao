@@ -7,6 +7,7 @@ import {
 	criarProduto,
 } from "@/repositories/produtos-repositories.js";
 import { buscarProximoCodigoProduto } from "@/repositories/proximo-codigo-repositories.js";
+import { buscarProdutoFornecedorPorCodigo } from "@/repositories/produto-fornecedor-repositories.js";
 import {
 	inteiroValidoParaPostgres,
 	normalizarCodigoBarras,
@@ -30,7 +31,9 @@ export type DadosProdutoNF = {
 	idcest?: string | undefined;
 	idfornecedor?: string | undefined;
 	idgrupo?: string | undefined;
+	unidademedida?: string | undefined;
 	custoaquisicao?: string | undefined;
+	/** Coluna integer. Não recebe a quantidade da NF — o saldo vem do movimento. */
 	quantidadepadrao?: number | undefined;
 	preco?: string | undefined;
 	fatorconversao?: string | undefined;
@@ -72,6 +75,22 @@ export async function buscarProdutoParaNf(
 
 		if (produto && produto.idempresa === dados.idempresa) {
 			return produto;
+		}
+	}
+
+	// Inteligência de De-Para: Busca vínculo prévio com o fornecedor
+	if (dados.codigoproduto !== undefined && dados.idfornecedor) {
+		const vinculo = await buscarProdutoFornecedorPorCodigo(
+			dados.idempresa,
+			dados.idfornecedor,
+			String(dados.codigoproduto),
+		);
+
+		if (vinculo?.idproduto) {
+			const produtoVinculado = await buscarProdutoPorId(vinculo.idproduto);
+			if (produtoVinculado && produtoVinculado.idempresa === dados.idempresa) {
+				return produtoVinculado;
+			}
 		}
 	}
 
@@ -137,6 +156,7 @@ export async function criarProdutoParaNf(
 			idncm: dados.idncm ?? null,
 			ncm: dados.ncm ?? null,
 			idunidademedida: dados.idunidademedida ?? null,
+			unidademedida: truncarTexto(dados.unidademedida, 6) ?? null,
 			idcfopentrada: dados.idcfopentrada ?? null,
 			idcfopsaida: dados.idcfopsaida ?? null,
 			idcfopsaidanfce: dados.idcfopsaidanfce ?? dados.idcfopsaida ?? null,
@@ -146,7 +166,7 @@ export async function criarProdutoParaNf(
 			idfornecedor: dados.idfornecedor ?? null,
 			idgrupo: dados.idgrupo ?? null,
 			custoaquisicao: dados.custoaquisicao ?? null,
-			quantidadepadrao: dados.quantidadepadrao ?? null,
+			quantidadepadrao: null,
 			preco: precoVendaInformado(dados.preco) ? dados.preco : null,
 			fatorconversao: dados.fatorconversao ?? "1",
 			origem: dados.origem ?? null,
@@ -166,7 +186,16 @@ export async function criarProdutoParaNf(
 			tipo: "P",
 			inativo: 0,
 			datacadastro: new Date().toISOString(),
-		}).catch(() => null)) ?? null
+		}).catch((erro: unknown) => {
+			console.error(
+				JSON.stringify({
+					evento: "cadastro_produto_nf_falhou",
+					idempresa: dados.idempresa,
+					mensagem: erro instanceof Error ? erro.message : "erro desconhecido",
+				}),
+			);
+			return null;
+		})) ?? null
 	);
 }
 
@@ -179,7 +208,6 @@ export function montarAtualizacaoProdutoNf(
 		...(precoVendaInformado(dados.preco) ? { preco: dados.preco } : {}),
 		fatorconversao: dados.fatorconversao,
 		custoaquisicao: dados.custoaquisicao,
-		quantidadepadrao: dados.quantidadepadrao,
 		idcfopentrada: dados.idcfopentrada ?? undefined,
 		idcfopsaida: dados.idcfopsaida ?? undefined,
 		idcfopsaidanfce: dados.idcfopsaidanfce ?? dados.idcfopsaida ?? undefined,
@@ -187,6 +215,7 @@ export function montarAtualizacaoProdutoNf(
 		cfopvendaecf: dados.cfopvendaecf ?? undefined,
 		idcest: dados.idcest ?? undefined,
 		idunidademedida: dados.idunidademedida ?? undefined,
+		unidademedida: truncarTexto(dados.unidademedida, 6) ?? undefined,
 		idgrupo: dados.idgrupo ?? undefined,
 		ean: ean ?? undefined,
 		eantributavel: ean ?? undefined,

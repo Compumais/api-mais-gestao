@@ -42,7 +42,7 @@ describe("registrarMovimentosEstoqueNf", () => {
 			expect.objectContaining({
 				sentido: "entrada",
 				tipoestoque: TIPO_ESTOQUE.AMBOS,
-				quantidade: "4",
+				quantidade: "4.000000",
 			}),
 		);
 	});
@@ -69,7 +69,7 @@ describe("registrarMovimentosEstoqueNf", () => {
 			expect.objectContaining({
 				sentido: "saida",
 				tipoestoque: TIPO_ESTOQUE.AMBOS,
-				quantidade: "2",
+				quantidade: "2.000000",
 			}),
 		);
 	});
@@ -123,6 +123,92 @@ describe("registrarMovimentosEstoqueNf", () => {
 			expect.objectContaining({
 				tipoestoque: TIPO_ESTOQUE.AMBOS,
 				custoaquisicao: "15.50",
+			}),
+		);
+	});
+
+	it("preserva quantidade fracionária com vírgula", async () => {
+		await registrarMovimentosEstoqueNf({
+			idempresa: "emp-1",
+			idnotafiscal: "nf-1",
+			idlocalestoque: "local-1",
+			dataMovimento: "2026-06-24",
+			sentido: "entrada",
+			itens: [
+				{
+					iditem: "item-1",
+					idproduto: "prod-1",
+					quantidade: "1,5",
+					custoUnitario: "10",
+				},
+			],
+		});
+
+		expect(registrarMovimento.registrarMovimentoEstoque).toHaveBeenCalledWith(
+			expect.objectContaining({ quantidade: "1.500000" }),
+		);
+	});
+
+	it("avisa quando não há local de estoque e não grava movimento", async () => {
+		const resultado = await registrarMovimentosEstoqueNf({
+			idempresa: "emp-1",
+			idnotafiscal: "nf-1",
+			dataMovimento: "2026-06-24",
+			sentido: "entrada",
+			itens: [
+				{
+					iditem: "item-1",
+					idproduto: "prod-1",
+					quantidade: "4",
+					custoUnitario: "10",
+				},
+			],
+		});
+
+		expect(resultado.movimentosCriados).toBe(0);
+		expect(resultado.avisos[0]).toMatch(/local de estoque/i);
+		expect(registrarMovimento.registrarMovimentoEstoque).not.toHaveBeenCalled();
+	});
+
+	it("não duplica item que já tem movimento e lança só o que falta", async () => {
+		vi.mocked(
+			movimentoEstoqueRepository.listarMovimentosEstoquePorDocumento,
+		).mockResolvedValue([
+			{
+				iditemoriginal: "item-1",
+				cancelado: 0,
+				quantidadeentrada: "4.000000",
+			},
+		] as never);
+
+		const resultado = await registrarMovimentosEstoqueNf({
+			idempresa: "emp-1",
+			idnotafiscal: "nf-1",
+			idlocalestoque: "local-1",
+			dataMovimento: "2026-06-24",
+			sentido: "entrada",
+			itens: [
+				{
+					iditem: "item-1",
+					idproduto: "prod-1",
+					quantidade: "4",
+					custoUnitario: "10",
+				},
+				{
+					iditem: "item-2",
+					idproduto: "prod-2",
+					quantidade: "1.25",
+					custoUnitario: "8",
+				},
+			],
+		});
+
+		expect(resultado.movimentosCriados).toBe(1);
+		expect(registrarMovimento.registrarMovimentoEstoque).toHaveBeenCalledTimes(1);
+		expect(registrarMovimento.registrarMovimentoEstoque).toHaveBeenCalledWith(
+			expect.objectContaining({
+				iditemoriginal: "item-2",
+				quantidade: "1.250000",
 			}),
 		);
 	});

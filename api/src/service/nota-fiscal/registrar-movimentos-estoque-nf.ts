@@ -28,6 +28,12 @@ export type ResultadoMovimentosEstoqueNf = {
 	avisos: string[];
 };
 
+function normalizarQuantidadeMovimento(valor: string): string {
+	const qtd = Number.parseFloat(valor.trim().replace(",", "."));
+	if (!Number.isFinite(qtd) || qtd <= 0) return "0.000000";
+	return qtd.toFixed(6);
+}
+
 async function resolverCustoUnitarioProduto(idproduto: string): Promise<string> {
 	const produto = await buscarProdutoPorId(idproduto);
 	if (!produto) return "0";
@@ -52,27 +58,50 @@ export async function registrarMovimentosEstoqueNf({
 }: RegistrarMovimentosEstoqueNfParametros): Promise<ResultadoMovimentosEstoqueNf> {
 	const avisos: string[] = [];
 
-	if (!idlocalestoque || itens.length === 0) {
+	if (itens.length === 0) {
 		return { movimentosCriados: 0, avisos };
+	}
+
+	if (!idlocalestoque) {
+		return {
+			movimentosCriados: 0,
+			avisos: [
+				"Entrada de estoque não registrada: a empresa não tem local de estoque ativo.",
+			],
+		};
 	}
 
 	const existentes = await listarMovimentosEstoquePorDocumento(idnotafiscal);
 	const ativos = existentes.filter((movimento) => movimento.cancelado !== 1);
-	if (ativos.length > 0) {
+	const itensComMovimento = new Set(
+		ativos
+			.map((movimento) => movimento.iditemoriginal)
+			.filter((id): id is string => Boolean(id)),
+	);
+	const movimentoNotaSemItem = ativos.some((movimento) => !movimento.iditemoriginal);
+	if (movimentoNotaSemItem) {
 		return { movimentosCriados: 0, avisos };
 	}
 
-	const datahora = new Date().toISOString();
+	const datahora = new Date().toISOString().replace("T", " ").replace("Z", "");
 	let movimentosCriados = 0;
 
 	for (const item of itens) {
+		if (itensComMovimento.has(item.iditem)) {
+			continue;
+		}
+
 		if (!item.idproduto) {
 			avisos.push(`Item ${item.iditem}: sem produto vinculado, estoque ignorado`);
 			continue;
 		}
 
-		const qtd = Number.parseFloat(item.quantidade);
-		if (Number.isNaN(qtd) || qtd <= 0) continue;
+		const quantidade = normalizarQuantidadeMovimento(item.quantidade);
+		const qtd = Number.parseFloat(quantidade);
+		if (qtd <= 0) {
+			avisos.push(`Item ${item.iditem}: quantidade de estoque inválida`);
+			continue;
+		}
 
 		let custoUnitario = Number.parseFloat(item.custoUnitario) || 0;
 		if (custoUnitario <= 0) {
@@ -81,13 +110,14 @@ export async function registrarMovimentosEstoqueNf({
 		}
 
 		const custoTotal = (qtd * custoUnitario).toFixed(2);
+		const quantidadeMovimento = quantidade;
 
 		try {
 			if (sentido === "saida" && idusuario) {
 				const producao = await garantirProducaoNaVendaService({
 					idempresa,
 					idproduto: item.idproduto,
-					quantidade: item.quantidade,
+					quantidade: quantidadeMovimento,
 					idoriginal: idnotafiscal,
 					tipoestoque: TIPO_ESTOQUE.AMBOS,
 					idusuario,
@@ -104,7 +134,7 @@ export async function registrarMovimentosEstoqueNf({
 			const movimento = await registrarMovimentoEstoque({
 				idempresa,
 				idproduto: item.idproduto,
-				quantidade: item.quantidade,
+				quantidade: quantidadeMovimento,
 				sentido,
 				tipoestoque: TIPO_ESTOQUE.AMBOS,
 				tipodocumento: TIPO_DOCUMENTO_ESTOQUE.NOTA_FISCAL,
@@ -124,9 +154,21 @@ export async function registrarMovimentosEstoqueNf({
 			});
 
 			if (movimento) movimentosCriados++;
+			if (!movimento) {
+				avisos.push(`Item ${item.iditem}: movimento de estoque não foi gravado`);
+			}
 		} catch (erro) {
-			console.error("Erro ao registrar movimento de estoque NF:", erro);
-			avisos.push(`Falha ao registrar estoque do item ${item.iditem}`);
+			const mensagem = erro instanceof Error ? erro.message : "erro desconhecido";
+			console.error(
+				JSON.stringify({
+					evento: "movimento_estoque_nf_falhou",
+					idnotafiscal,
+					iditem: item.iditem,
+					idproduto: item.idproduto,
+					mensagem,
+				}),
+			);
+			avisos.push(`Falha ao registrar estoque do item ${item.iditem}: ${mensagem}`);
 		}
 	}
 
