@@ -7,6 +7,7 @@ public class ContaMesaDto {
     public String valortotal;
     public Integer numeropessoas;
     public String observacao;
+    public String telefone;
     public String idcliente;
     public String valordinheiro;
     public String valorcartao;

@@ -34,6 +34,7 @@ import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
 import com.pos_mais_gestao.ui.venda.ProdutoAdapter;
 import com.pos_mais_gestao.util.CampoCodigoOculto;
+import com.pos_mais_gestao.util.TelefoneBrasil;
 import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.PizzaMeioAMeio;
@@ -51,6 +52,7 @@ public class ContaMesaActivity extends AppCompatActivity {
     public static final String EXTRA_NUMERO_MESA = "numero_mesa";
     public static final String EXTRA_ID_CLIENTE = "id_cliente";
     public static final String EXTRA_NOME_CLIENTE = "nome_cliente";
+    public static final String EXTRA_TELEFONE_CLIENTE = "telefone_cliente";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private PrefsStore prefs;
@@ -58,6 +60,7 @@ public class ContaMesaActivity extends AppCompatActivity {
     private String idConta;
     private String idCliente;
     private String nomeCliente;
+    private String telefoneCliente;
     private int numeroMesa;
     private MaterialToolbar toolbar;
     private ProdutoAdapter produtoAdapter;
@@ -97,6 +100,7 @@ public class ContaMesaActivity extends AppCompatActivity {
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
         idCliente = getIntent().getStringExtra(EXTRA_ID_CLIENTE);
         nomeCliente = getIntent().getStringExtra(EXTRA_NOME_CLIENTE);
+        telefoneCliente = getIntent().getStringExtra(EXTRA_TELEFONE_CLIENTE);
         numeroMesa = getIntent().getIntExtra(EXTRA_NUMERO_MESA, 0);
         if (idConta == null) {
             finish();
@@ -371,10 +375,20 @@ public class ContaMesaActivity extends AppCompatActivity {
 
     private void atualizarTituloMesa() {
         toolbar.setTitle(getString(prefs.isModeloComanda() ? R.string.comanda_n : R.string.mesa_n, numeroMesa));
-        if (nomeCliente != null && !nomeCliente.trim().isEmpty()) {
-            toolbar.setSubtitle(nomeCliente.trim());
-        } else {
+        String nome = TelefoneBrasil.nomeInformado(nomeCliente);
+        String telefone = telefoneCliente == null || telefoneCliente.trim().isEmpty()
+                ? ""
+                : TelefoneBrasil.formatar(telefoneCliente);
+        if (nome.isEmpty() && telefone.isEmpty()) {
             toolbar.setSubtitle(getString(R.string.nome_cliente_nao_informado));
+            return;
+        }
+        if (!nome.isEmpty() && !telefone.isEmpty()) {
+            toolbar.setSubtitle(nome + " · " + telefone);
+        } else if (!nome.isEmpty()) {
+            toolbar.setSubtitle(nome);
+        } else {
+            toolbar.setSubtitle(telefone);
         }
     }
 
@@ -382,6 +396,8 @@ public class ContaMesaActivity extends AppCompatActivity {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_nome_cliente_mesa, null);
         TextView txtMesa = view.findViewById(R.id.txtMesaDialog);
         TextInputEditText inputNome = view.findViewById(R.id.inputNomeClienteMesa);
+        TextInputEditText inputTelefone = view.findViewById(R.id.inputTelefoneClienteMesa);
+        TelefoneBrasil.aplicarMascara(inputTelefone);
         txtMesa.setText(getString(prefs.isModeloComanda() ? R.string.comanda_n : R.string.mesa_n, numeroMesa));
         TextView txtAjuda = view.findViewById(R.id.txtAjudaNomeCliente);
         if (txtAjuda != null) {
@@ -389,31 +405,47 @@ public class ContaMesaActivity extends AppCompatActivity {
                     ? R.string.nome_cliente_comanda_ajuda
                     : R.string.nome_cliente_mesa_ajuda);
         }
-        if (nomeCliente != null) {
-            inputNome.setText(nomeCliente);
-        }
+        inputNome.setText(TelefoneBrasil.nomeInformado(nomeCliente));
+        inputTelefone.setText(telefoneCliente == null ? "" : TelefoneBrasil.formatar(telefoneCliente));
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.nome_cliente_mesa)
                 .setView(view)
-                .setPositiveButton(R.string.salvar, (d, w) -> {
-                    String nome = inputNome.getText() == null
-                            ? ""
-                            : inputNome.getText().toString().trim();
-                    salvarNomeCliente(nome);
-                })
+                .setPositiveButton(R.string.salvar, null)
                 .setNegativeButton(R.string.cancelar, null)
-                .show();
+                .create();
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String nome = TelefoneBrasil.nomeInformado(
+                    inputNome.getText() == null ? "" : inputNome.getText().toString());
+            String telefone = TelefoneBrasil.formatar(
+                    inputTelefone.getText() == null ? "" : inputTelefone.getText().toString());
+            if (nome.isEmpty()) {
+                Toast.makeText(this, R.string.informe_nome_cliente, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (telefone.isEmpty()) {
+                Toast.makeText(this, R.string.informe_telefone_cliente, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!TelefoneBrasil.valido(telefone)) {
+                Toast.makeText(this, R.string.telefone_cliente_invalido, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            dialog.dismiss();
+            salvarNomeCliente(nome, telefone);
+        }));
+        dialog.show();
     }
 
-    private void salvarNomeCliente(String nome) {
+    private void salvarNomeCliente(String nome, String telefone) {
         progress.setVisibility(View.VISIBLE);
         executor.execute(() -> {
             try {
-                api.atualizarNomeClienteMesa(idConta, nome);
+                api.atualizarNomeClienteMesa(idConta, nome, telefone);
                 runOnUiThread(() -> {
                     progress.setVisibility(View.GONE);
                     nomeCliente = nome;
+                    telefoneCliente = telefone;
                     atualizarTituloMesa();
                     Toast.makeText(this, R.string.nome_cliente_atualizado, Toast.LENGTH_SHORT).show();
                 });

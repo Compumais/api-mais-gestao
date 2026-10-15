@@ -2708,6 +2708,7 @@ export async function listarMesas(): Promise<
 		status: string;
 		idconta: string | null;
 		nomecliente: string | null;
+		telefone: string | null;
 		valortotal: number;
 		abertoem: string | null;
 		ultimoLancamento: string | null;
@@ -2724,12 +2725,14 @@ export async function listarMesas(): Promise<
 		status: string;
 		idconta: string | null;
 		nomecliente: string | null;
+		telefone: string | null;
 		valortotal: number;
 		abertoem: string | null;
 		ultimo_lancamento: string | null;
 		qtd_itens: number;
 	}>(
 		`SELECT m.numero, m.status, m.idconta, m.nomecliente,
+			c.telefone as telefone,
 			COALESCE(c.valortotal, 0) as valortotal,
 			c.abertoem as abertoem,
 			(
@@ -2836,11 +2839,13 @@ export async function obterContaPorNumero(
 export async function abrirContaMesa(
 	numero: number,
 	nomecliente?: string,
+	telefone?: string | null,
 ): Promise<ContaMesaLocal> {
 	const sessao = await obterSessao();
 	if (!sessao.idempresa) {
 		throw new Error("Empresa não selecionada");
 	}
+	const telefoneLimpo = telefone?.trim() || null;
 	const id = await withTransaction(async (client) => {
 		const mesa = await queryOne<{ status: string; idconta: string | null }>(
 			"SELECT status, idconta FROM mesa WHERE numero = $1 FOR UPDATE",
@@ -2869,11 +2874,18 @@ export async function abrirContaMesa(
 		const agora = new Date().toISOString();
 		await execute(
 			`INSERT INTO conta_mesa (
-				id, numero_mesa, idempresa, status, nomecliente, abertoem, valortotal,
+				id, numero_mesa, idempresa, status, nomecliente, telefone, abertoem, valortotal,
 				numeropessoas, valordesconto, valortaxaservico, valorcouvert, taxa_ativa,
 				modalidade, valorentrega, sync_status
-			) VALUES ($1, $2, $3, 'aberta', $4, $5, 0, 1, 0, 0, 0, 0, 'mesa', 0, 'pendente')`,
-			[novoId, numero, sessao.idempresa, nomecliente ?? null, agora],
+			) VALUES ($1, $2, $3, 'aberta', $4, $5, $6, 0, 1, 0, 0, 0, 0, 'mesa', 0, 'pendente')`,
+			[
+				novoId,
+				numero,
+				sessao.idempresa,
+				nomecliente ?? null,
+				telefoneLimpo,
+				agora,
+			],
 			client,
 		);
 		await execute(
@@ -2888,6 +2900,7 @@ export async function abrirContaMesa(
 				idlocal: novoId,
 				numero,
 				nomecliente: nomecliente ?? null,
+				telefone: telefoneLimpo,
 			},
 			client,
 		);
@@ -3130,15 +3143,23 @@ export async function adicionarItemNaMesa(
 export async function atualizarNomeClienteConta(
 	idconta: string,
 	nomecliente: string,
+	telefone?: string | null,
 ): Promise<ContaMesaLocal> {
 	const conta = await obterContaMesa(idconta);
 	if (!conta || conta.status !== "aberta") {
 		throw new Error("Conta inválida");
 	}
-	const nome = nomecliente.trim() || "Cliente";
+	const nome = nomecliente.trim();
+	if (!nome || nome.toLowerCase() === "cliente") {
+		throw new Error("Informe o nome do cliente");
+	}
+	const telefoneLimpo =
+		telefone === undefined ? conta.telefone : telefone?.trim() || null;
 	await execute(
-		"UPDATE conta_mesa SET nomecliente = $1, sync_status = 'pendente' WHERE id = $2",
-		[nome, idconta],
+		`UPDATE conta_mesa
+		 SET nomecliente = $1, telefone = $2, sync_status = 'pendente'
+		 WHERE id = $3`,
+		[nome, telefoneLimpo, idconta],
 	);
 	await execute("UPDATE mesa SET nomecliente = $1 WHERE idconta = $2", [
 		nome,
@@ -3146,7 +3167,7 @@ export async function atualizarNomeClienteConta(
 	]);
 	const atualizada = await obterContaMesa(idconta);
 	if (!atualizada) {
-		throw new Error("Falha ao atualizar nome");
+		throw new Error("Falha ao atualizar identificação");
 	}
 	return atualizada;
 }

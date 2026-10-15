@@ -73,7 +73,19 @@ public class MesaAdapter extends RecyclerView.Adapter<MesaAdapter.VH> {
                 aplicarOciosa(holder, stroke);
             }
             String nome = mesa.conta != null ? mesa.conta.observacao : null;
-            holder.txtCliente.setText(nome == null || nome.trim().isEmpty() ? "Ocupada" : nome.trim());
+            String telefone = mesa.conta != null ? mesa.conta.telefone : null;
+            String rotulo;
+            if (nome != null && !nome.trim().isEmpty() && !"Cliente".equalsIgnoreCase(nome.trim())) {
+                rotulo = nome.trim();
+                if (telefone != null && !telefone.trim().isEmpty()) {
+                    rotulo = rotulo + "\n" + telefone.trim();
+                }
+            } else if (telefone != null && !telefone.trim().isEmpty()) {
+                rotulo = telefone.trim();
+            } else {
+                rotulo = "Ocupada";
+            }
+            holder.txtCliente.setText(rotulo);
             holder.txtCliente.setVisibility(View.VISIBLE);
             holder.txtTotal.setText(MoneyFormat.format(total));
             holder.txtTotal.setVisibility(View.VISIBLE);

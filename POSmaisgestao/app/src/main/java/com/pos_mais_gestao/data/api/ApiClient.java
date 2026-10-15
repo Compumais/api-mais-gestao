@@ -1790,6 +1790,7 @@ public class ApiClient {
                         mesa.status = 1;
                         mesa.valortotal = textoOuNumero(obj, "valortotal");
                         mesa.observacao = texto(obj, "nomecliente");
+                        mesa.telefone = texto(obj, "telefone");
                     }
                 }
                 mesas.add(mesa);
@@ -1851,6 +1852,7 @@ public class ApiClient {
                 mesa.status = 1;
                 mesa.valortotal = textoOuNumero(obj, "valortotal");
                 mesa.observacao = texto(obj, "nomecliente");
+                mesa.telefone = texto(obj, "telefone");
                 mesas.add(mesa);
             }
             return mesas;
@@ -1968,12 +1970,17 @@ public class ApiClient {
     }
 
     public ContaMesaDto abrirMesa(int numeroMesa) throws ApiException {
-        return abrirMesa(numeroMesa, null);
+        return abrirMesa(numeroMesa, null, null);
     }
 
     public ContaMesaDto abrirMesa(int numeroMesa, String nomeCliente) throws ApiException {
+        return abrirMesa(numeroMesa, nomeCliente, null);
+    }
+
+    public ContaMesaDto abrirMesa(int numeroMesa, String nomeCliente, String telefone)
+            throws ApiException {
         if (isLocal()) {
-            ContaMesaDto mesa = mapearContaLocal(localPdv.abrirMesa(numeroMesa, nomeCliente));
+            ContaMesaDto mesa = mapearContaLocal(localPdv.abrirMesa(numeroMesa, nomeCliente, telefone));
             if (mesa == null || mesa.id == null) {
                 throw new ApiException("Não foi possível abrir a " + rotuloConta());
             }
@@ -1993,6 +2000,9 @@ public class ApiClient {
         if (nomeCliente != null && !nomeCliente.trim().isEmpty()) {
             body.addProperty("observacao", nomeCliente.trim());
         }
+        if (telefone != null && !telefone.trim().isEmpty()) {
+            body.addProperty("telefone", telefone.trim());
+        }
         JsonObject response = postJson("/contas-mesa", body.toString(), true);
         ContaMesaDto mesa = gson.fromJson(response, ContaMesaDto.class);
         if (mesa == null || mesa.id == null) {
@@ -2002,10 +2012,16 @@ public class ApiClient {
     }
 
     public ContaMesaDto atualizarNomeClienteMesa(String idConta, String nomeCliente) throws ApiException {
+        return atualizarNomeClienteMesa(idConta, nomeCliente, null);
+    }
+
+    public ContaMesaDto atualizarNomeClienteMesa(String idConta, String nomeCliente, String telefone)
+            throws ApiException {
         if (isLocal()) {
-            ContaMesaDto mesa = mapearContaLocal(localPdv.atualizarNomeConta(idConta, nomeCliente));
+            ContaMesaDto mesa = mapearContaLocal(
+                    localPdv.atualizarNomeConta(idConta, nomeCliente, telefone));
             if (mesa == null || mesa.id == null) {
-                throw new ApiException("Não foi possível atualizar o nome");
+                throw new ApiException("Não foi possível atualizar a identificação");
             }
             return mesa;
         }
@@ -2014,6 +2030,9 @@ public class ApiClient {
         }
         JsonObject body = new JsonObject();
         body.addProperty("observacao", nomeCliente == null ? "" : nomeCliente.trim());
+        if (telefone != null) {
+            body.addProperty("telefone", telefone.trim());
+        }
         JsonObject response = putJson("/contas-mesa/" + idConta, body.toString());
         JsonObject obj = response;
         if (response.has("data") && response.get("data").isJsonObject()) {
@@ -2024,6 +2043,7 @@ public class ApiClient {
             mesa = new ContaMesaDto();
             mesa.id = idConta;
             mesa.observacao = nomeCliente == null ? "" : nomeCliente.trim();
+            mesa.telefone = telefone == null ? "" : telefone.trim();
         }
         return mesa;
     }
@@ -2720,6 +2740,7 @@ public class ApiClient {
         mesa.status = "aberta".equals(status) || "ocupada".equals(status) ? 1 : 2;
         mesa.valortotal = textoOuNumero(obj, "valortotal");
         mesa.observacao = texto(obj, "nomecliente");
+        mesa.telefone = texto(obj, "telefone");
         return mesa;
     }
 

@@ -88,9 +88,16 @@ public class LocalPdvApi {
     }
 
     public JsonObject abrirMesa(int numero, String nomeCliente) throws ApiException {
+        return abrirMesa(numero, nomeCliente, null);
+    }
+
+    public JsonObject abrirMesa(int numero, String nomeCliente, String telefone) throws ApiException {
         JsonObject body = new JsonObject();
         if (nomeCliente != null && !nomeCliente.trim().isEmpty()) {
             body.addProperty("nomecliente", nomeCliente.trim());
+        }
+        if (telefone != null && !telefone.trim().isEmpty()) {
+            body.addProperty("telefone", telefone.trim());
         }
         return post("/pos/mesas/" + numero + "/abrir", body.toString(), true);
     }
@@ -134,8 +141,16 @@ public class LocalPdvApi {
     }
 
     public JsonObject atualizarNomeConta(String idConta, String nomeCliente) throws ApiException {
+        return atualizarNomeConta(idConta, nomeCliente, null);
+    }
+
+    public JsonObject atualizarNomeConta(String idConta, String nomeCliente, String telefone)
+            throws ApiException {
         JsonObject body = new JsonObject();
         body.addProperty("nomecliente", nomeCliente == null ? "" : nomeCliente);
+        if (telefone != null) {
+            body.addProperty("telefone", telefone);
+        }
         return put("/pos/contas/" + idConta + "/nome", body.toString());
     }
 

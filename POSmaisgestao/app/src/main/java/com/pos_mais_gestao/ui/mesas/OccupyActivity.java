@@ -16,6 +16,7 @@ import com.pos_mais_gestao.data.api.ContaMesaDto;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.ui.OfflineBanner;
 import com.pos_mais_gestao.ui.pedido.PedidoActivity;
+import com.pos_mais_gestao.util.TelefoneBrasil;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -28,6 +29,7 @@ public class OccupyActivity extends AppCompatActivity {
     private ApiClient api;
     private int numero;
     private TextInputEditText inputName;
+    private TextInputEditText inputTelefone;
     private MaterialButton btnOccupy;
 
     @Override
@@ -49,27 +51,45 @@ public class OccupyActivity extends AppCompatActivity {
         toolbar.setTitle(titulo);
         txtMesa.setText(titulo);
         inputName = findViewById(R.id.inputName);
-        inputName.setText("Cliente");
+        inputTelefone = findViewById(R.id.inputTelefone);
+        inputName.setText("");
+        inputTelefone.setText("");
+        TelefoneBrasil.aplicarMascara(inputTelefone);
         btnOccupy = findViewById(R.id.btnOccupy);
         btnOccupy.setOnClickListener(v -> ocupar());
         OfflineBanner.bind(this, true, null);
     }
 
     private void ocupar() {
-        String nome = inputName.getText() == null ? "" : inputName.getText().toString().trim();
+        String nome = TelefoneBrasil.nomeInformado(
+                inputName.getText() == null ? "" : inputName.getText().toString());
+        String telefone = TelefoneBrasil.formatar(
+                inputTelefone.getText() == null ? "" : inputTelefone.getText().toString());
         if (nome.isEmpty()) {
-            nome = "Cliente";
+            Toast.makeText(this, R.string.informe_nome_cliente, Toast.LENGTH_SHORT).show();
+            inputName.requestFocus();
+            return;
+        }
+        if (telefone.isEmpty()) {
+            Toast.makeText(this, R.string.informe_telefone_cliente, Toast.LENGTH_SHORT).show();
+            inputTelefone.requestFocus();
+            return;
+        }
+        if (!TelefoneBrasil.valido(telefone)) {
+            Toast.makeText(this, R.string.telefone_cliente_invalido, Toast.LENGTH_SHORT).show();
+            inputTelefone.requestFocus();
+            return;
         }
         btnOccupy.setEnabled(false);
-        String finalNome = nome;
         executor.execute(() -> {
             try {
-                ContaMesaDto conta = api.abrirMesa(numero, finalNome);
+                ContaMesaDto conta = api.abrirMesa(numero, nome, telefone);
                 runOnUiThread(() -> {
                     Intent intent = new Intent(this, PedidoActivity.class);
                     intent.putExtra(PedidoActivity.EXTRA_ID_CONTA, conta.id);
                     intent.putExtra(PedidoActivity.EXTRA_NUMERO, numero);
-                    intent.putExtra(PedidoActivity.EXTRA_NOME, finalNome);
+                    intent.putExtra(PedidoActivity.EXTRA_NOME, nome);
+                    intent.putExtra(PedidoActivity.EXTRA_TELEFONE, telefone);
                     startActivity(intent);
                     finish();
                 });
