@@ -95,6 +95,7 @@ export function HomePage() {
 	const [novaNumero, setNovaNumero] = useState("");
 	const [dialogo, setDialogo] = useState<DialogoAbertura>(null);
 	const [nomeCliente, setNomeCliente] = useState("");
+	const [telefoneCliente, setTelefoneCliente] = useState("");
 	const [numeroDialogo, setNumeroDialogo] = useState("");
 	const [modalAbrirMesaHabilitado, setModalAbrirMesaHabilitado] =
 		useState(true);
@@ -103,6 +104,7 @@ export function HomePage() {
 	useEscapeFechaModal(dialogo !== null, () => {
 		setDialogo(null);
 		setNomeCliente("");
+		setTelefoneCliente("");
 		setNumeroDialogo("");
 	});
 
@@ -192,12 +194,16 @@ export function HomePage() {
 	const podeAbrirNumero =
 		Number.isInteger(numeroInformado) && numeroInformado >= 1;
 
-	function irParaConta(numero: number, nome?: string | null) {
+	function irParaConta(numero: number, nome?: string | null, telefone?: string | null) {
 		setDialogo(null);
 		setNomeCliente("");
+		setTelefoneCliente("");
 		setNovaNumero("");
 		navigate(`/mesas/${numero}`, {
-			state: { nomecliente: nome?.trim() ? nome.trim() : null },
+			state: { 
+				nomecliente: nome?.trim() ? nome.trim() : null,
+				telefone: telefone?.trim() ? telefone.trim() : null 
+			},
 		});
 	}
 
@@ -533,18 +539,34 @@ export function HomePage() {
 							Abrir {rotulo.singular.toLowerCase()} {dialogo.numero}
 						</h2>
 						<p className="text-sm text-muted-foreground">
-							Informe o nome do cliente (opcional) para identificação.
+							Informe o nome e telefone do cliente para identificação (obrigatório).
 						</p>
-						<Input
-							placeholder="Nome do cliente"
-							value={nomeCliente}
-							onChange={(e) => setNomeCliente(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									irParaConta(dialogo.numero, nomeCliente);
-								}
-							}}
-						/>
+						<div className="space-y-3">
+							<Input
+								placeholder="Nome do cliente"
+								value={nomeCliente}
+								onChange={(e) => setNomeCliente(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										if (nomeCliente.trim() && telefoneCliente.trim()) {
+											irParaConta(dialogo.numero, nomeCliente, telefoneCliente);
+										}
+									}
+								}}
+							/>
+							<Input
+								placeholder="Telefone (ex: 11999999999)"
+								value={telefoneCliente}
+								onChange={(e) => setTelefoneCliente(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										if (nomeCliente.trim() && telefoneCliente.trim()) {
+											irParaConta(dialogo.numero, nomeCliente, telefoneCliente);
+										}
+									}
+								}}
+							/>
+						</div>
 						<div className="flex gap-2">
 							<Button
 								variant="outline"
@@ -552,13 +574,15 @@ export function HomePage() {
 								onClick={() => {
 									setDialogo(null);
 									setNomeCliente("");
+									setTelefoneCliente("");
 								}}
 							>
 								Cancelar
 							</Button>
 							<Button
 								className="flex-1"
-								onClick={() => irParaConta(dialogo.numero, nomeCliente)}
+								disabled={!nomeCliente.trim() || !telefoneCliente.trim()}
+								onClick={() => irParaConta(dialogo.numero, nomeCliente, telefoneCliente)}
 							>
 								Continuar
 							</Button>
