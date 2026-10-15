@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
 import type { NovoLocalEstoque } from "@/model/local-estoque-model";
 import { localestoque } from "@/repositories/schema.js";
 import { db } from "./connection";
@@ -26,7 +26,10 @@ export async function buscarPrimeiroLocalEstoqueEmpresa(idempresa: string) {
 		.select()
 		.from(localestoque)
 		.where(
-			and(eq(localestoque.idempresa, idempresa), eq(localestoque.inativo, 0)),
+			and(
+				eq(localestoque.idempresa, idempresa),
+				or(eq(localestoque.inativo, 0), isNull(localestoque.inativo)),
+			),
 		)
 		.orderBy(desc(localestoque.descricao))
 		.limit(1);

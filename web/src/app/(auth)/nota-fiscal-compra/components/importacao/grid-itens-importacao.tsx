@@ -55,13 +55,17 @@ type GridItensImportacaoProps = {
 
 function statusCor(item: NotaFiscalItemImportacao): string {
 	const dados = item.dadosimportacao;
-	if (!dados) return "bg-red-50 dark:bg-red-950/20";
-	if (dados.statusVinculo === "pendente") return "bg-red-50 dark:bg-red-950/20";
+	if (!dados || dados.statusVinculo === "pendente") {
+		return "bg-red-50 dark:bg-red-950/20";
+	}
 	const pendencias = listarPendenciasCamposImportacao([item]);
-	if (pendencias.length > 0) return "bg-yellow-50 dark:bg-yellow-950/20";
-	if (dados.statusVinculo === "vinculado") return "bg-green-50 dark:bg-green-950/20";
-	if (dados.statusVinculo === "novo") return "bg-yellow-50 dark:bg-yellow-950/20";
-	return "";
+	if (pendencias.length > 0) {
+		return "bg-yellow-50 dark:bg-yellow-950/20";
+	}
+	if (dados.statusVinculo === "vinculado" || dados.statusVinculo === "novo") {
+		return "bg-green-50 dark:bg-green-950/20";
+	}
+	return "bg-red-50 dark:bg-red-950/20";
 }
 
 function statusBadge(item: NotaFiscalItemImportacao) {
@@ -160,6 +164,7 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 	const queryClient = useQueryClient();
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
 	const [itemLocalizar, setItemLocalizar] = useState<NotaFiscalItemImportacao | null>(null);
+	const [modoVinculo, setModoVinculo] = useState<"unitario" | "massa">("unitario");
 	const [isBulkLinking, setIsBulkLinking] = useState(false);
 	const [itemModal, setItemModal] = useState<NotaFiscalItemImportacao | null>(null);
 	const [itemComposicao, setItemComposicao] = useState<NotaFiscalItemImportacao | null>(null);
@@ -181,9 +186,16 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 	const selecionarTodosPendentes = () => setSelectedIds(itensPendentes.map((i) => i.id));
 	const desmarcarTodos = () => setSelectedIds([]);
 
+	const abrirLocalizarUnitario = (item: NotaFiscalItemImportacao) => {
+		setModoVinculo("unitario");
+		setItemLocalizar(item);
+		setIsBulkLinking(false);
+	};
+
 	const abrirVinculoMassa = () => {
-		setIsBulkLinking(true);
+		setModoVinculo("massa");
 		setItemLocalizar(null);
+		setIsBulkLinking(true);
 	};
 
 	const marcarCadastro = (item: NotaFiscalItemImportacao) => {
@@ -343,7 +355,7 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 													</DropdownMenuItem>
 													{pendente ? (
 														<>
-															<DropdownMenuItem onClick={() => setItemLocalizar(item)}>
+															<DropdownMenuItem onClick={() => abrirLocalizarUnitario(item)}>
 																<IconLink className="mr-2 size-4" />
 																Localizar produto
 															</DropdownMenuItem>
@@ -358,7 +370,7 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 															</DropdownMenuItem>
 														</>
 													) : (
-														<DropdownMenuItem onClick={() => setItemLocalizar(item)}>
+														<DropdownMenuItem onClick={() => abrirLocalizarUnitario(item)}>
 															<IconLink className="mr-2 size-4" />
 															Trocar vínculo
 														</DropdownMenuItem>
@@ -387,8 +399,13 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 				<LocalizarProdutoDialog
 					idempresa={idempresa}
 					idRascunho={idRascunho}
-					item={itemLocalizar ?? undefined}
-					selectedIds={selectedIds}
+					modo={modoVinculo}
+					item={
+						modoVinculo === "unitario"
+							? (itemLocalizar ?? undefined)
+							: itens.find((item) => item.id === selectedIds[0])
+					}
+					selectedIds={modoVinculo === "massa" ? selectedIds : []}
 					aberto={!!itemLocalizar || isBulkLinking}
 					onAbertoChange={(aberto) => {
 						if (!aberto) {

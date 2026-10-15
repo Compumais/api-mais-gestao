@@ -21,6 +21,7 @@ import {
 type LocalizarProdutoDialogProps = {
 	idempresa: string;
 	idRascunho: string;
+	modo: "unitario" | "massa";
 	item?: NotaFiscalItemImportacao;
 	selectedIds?: string[];
 	aberto: boolean;
@@ -30,16 +31,17 @@ type LocalizarProdutoDialogProps = {
 export function LocalizarProdutoDialog({
 	idempresa,
 	idRascunho,
+	modo,
 	item,
 	selectedIds,
 	aberto,
 	onAbertoChange,
 }: LocalizarProdutoDialogProps) {
 	const queryClient = useQueryClient();
-	
-	// Use the provided item or the first ID from selectedIds to get context for search
-	const contextItem = item; 
-	const eanXml = contextItem?.dadosimportacao?.eanXml ?? "";
+	const eanXml = item?.dadosimportacao?.eanXml ?? "";
+	const idsParaVincular =
+		modo === "massa" ? (selectedIds ?? []) : item ? [item.id] : [];
+	const isBulk = modo === "massa" && idsParaVincular.length > 0;
 	
 	const [busca, setBusca] = useState("");
 	const [resultado, setResultado] = useState<BuscarProdutoNfResponse | null>(
@@ -62,7 +64,7 @@ export function LocalizarProdutoDialog({
 			return;
 		}
 
-		setBusca(contextItem?.dadosimportacao?.descricaoFornecedor ?? contextItem?.descricao ?? "");
+		setBusca(item?.dadosimportacao?.descricaoFornecedor ?? item?.descricao ?? "");
 
 		if (!eanXml) return;
 
@@ -80,14 +82,10 @@ export function LocalizarProdutoDialog({
 		return () => {
 			cancelado = true;
 		};
-	}, [aberto, eanXml, idempresa, contextItem]);
+	}, [aberto, eanXml, idempresa, item]);
 
 	const { mutate: vincular, isPending: vinculando } = useMutation({
 		mutationFn: async (idproduto: string) => {
-			const idsParaVincular = selectedIds && selectedIds.length > 0 
-				? selectedIds 
-				: item ? [item.id] : [];
-
 			if (idsParaVincular.length === 0) {
 				throw new Error("Nenhum item selecionado para vínculo.");
 			}
@@ -104,8 +102,8 @@ export function LocalizarProdutoDialog({
 		},
 		onSuccess: () => {
 			toast.success(
-				selectedIds && selectedIds.length > 1 
-					? `Produtos vinculados com sucesso (${selectedIds.length} itens)` 
+				isBulk
+					? `Produtos vinculados com sucesso (${idsParaVincular.length} itens)`
 					: "Produto vinculado com sucesso",
 			);
 			queryClient.invalidateQueries({
@@ -134,7 +132,6 @@ export function LocalizarProdutoDialog({
 	};
 
 	const produtos = resultado?.produtos ?? [];
-	const isBulk = !!selectedIds && selectedIds.length > 1;
 
 	return (
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
@@ -145,10 +142,10 @@ export function LocalizarProdutoDialog({
 					</DialogTitle>
 				</DialogHeader>
 				
-				{contextItem && (
+				{item && (
 					<>
 						<p className="text-sm text-muted-foreground">
-							{contextItem.dadosimportacao?.descricaoFornecedor ?? contextItem.descricao}
+							{item.dadosimportacao?.descricaoFornecedor ?? item.descricao}
 						</p>
 						{eanXml ? (
 							<p className="text-sm">
@@ -160,7 +157,7 @@ export function LocalizarProdutoDialog({
 
 				{isBulk && (
 					<p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-						Atenção: O produto selecionado será vinculado a {selectedIds?.length} itens.
+						Atenção: O produto selecionado será vinculado a {idsParaVincular.length} itens. A busca usa a descrição e o EAN do primeiro item selecionado.
 					</p>
 				)}
 
@@ -214,7 +211,7 @@ export function LocalizarProdutoDialog({
 										onClick={() => vincular(produto.id)}
 										disabled={vinculando}
 									>
-										{vinculando ? "Vinculando..." : isBulk ? `Vincular aos ${selectedIds?.length} itens` : "Vincular"}
+										{vinculando ? "Vinculando..." : isBulk ? `Vincular aos ${idsParaVincular.length} itens` : "Vincular"}
 									</Button>
 								</div>
 							);

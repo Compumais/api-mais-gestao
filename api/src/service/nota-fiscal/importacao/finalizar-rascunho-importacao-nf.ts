@@ -7,6 +7,7 @@ import type {
 } from "@/model/nota-fiscal-importacao-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
+import type { NovoProduto } from "@/model/produto-model.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
@@ -31,7 +32,7 @@ import { gerarContasPagarNfService } from "@/service/nota-fiscal/gerar-contas-pa
 import { resolverCfopSaidaDeEntrada } from "@/service/nota-fiscal/importacao/resolver-referencias-importacao.js";
 import {
 	montarDadosProdutoNfImportacao,
-	parseQuantidadePadraoImportacao,
+	parseQuantidadeEstoqueImportacao,
 	resolverTipoprodutoPorCfopEntrada,
 } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
@@ -39,6 +40,7 @@ import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-n
 import { vincularOuCriarFornecedorNf } from "@/service/nota-fiscal/vincular-ou-criar-fornecedor-nf.js";
 import {
 	criarProdutoParaNf,
+	type DadosProdutoNF,
 	montarAtualizacaoProdutoNf,
 } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import { aplicarParametrizacaoTributosProduto } from "@/service/parametrizacao-tributos/aplicar-parametrizacao-tributos-produto.js";
@@ -70,6 +72,7 @@ import { obterConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.
 import {
 	mesclarSugestaoTributacaoSaidaProduto,
 	sugerirTributacaoSaidaProdutoNf,
+	type SugestaoTributacaoSaidaProduto,
 } from "@/util/sugerir-tributacao-saida-produto-nf.js";
 import { numeroOpcionalOuNulo, truncarTexto } from "@/util/texto-util.js";
 
@@ -84,7 +87,102 @@ type FinalizarRascunhoImportacaoNfParametros = {
 type FinalizarRascunhoImportacaoNfResposta = {
 	notaFiscal: NotaFiscal;
 	itens: NotaFiscalItem[];
+	avisos: string[];
 };
+
+function omitirIndefinidos<T extends Record<string, unknown>>(dados: T): Partial<T> {
+	return Object.fromEntries(
+		Object.entries(dados).filter(([, valor]) => valor !== undefined),
+	) as Partial<T>;
+}
+
+function montarPatchProdutoVinculadoNf(params: {
+	dadosProduto: DadosProdutoNF;
+	produtoAtual: {
+		idcfopsaida?: string | null;
+		idcfopsaidanfce?: string | null;
+		cfopvendaecf?: number | null;
+		situacaotributaria?: string | null;
+		situacaotributariasn?: string | null;
+		tributacaoespecial?: string | null;
+		tributacaosn?: string | null;
+		cstpis?: string | null;
+		cstcofins?: string | null;
+		idtaxauf?: string | null;
+		cstipientrada?: string | null;
+		cstipisaida?: string | null;
+		idenquadramentoipisaida?: string | null;
+	};
+	sugestaoSaida: SugestaoTributacaoSaidaProduto;
+	tipoprodutoResolvido?: string | undefined;
+	dataCompra: string;
+}): Partial<NovoProduto> {
+	const entrada = montarAtualizacaoProdutoNf({
+		...params.dadosProduto,
+		idcfopsaida: undefined,
+		idcfopsaidanfce: undefined,
+		cfopvendaecf: undefined,
+		situacaotributaria: undefined,
+		situacaotributariasn: undefined,
+		tributacaoespecial: undefined,
+		tributacaosn: undefined,
+		cstpis: undefined,
+		cstcofins: undefined,
+		cstipisaida: undefined,
+		tipoproduto: params.tipoprodutoResolvido,
+	});
+
+	const {
+		idcfopsaida: _idcfopsaida,
+		idcfopsaidanfce: _idcfopsaidanfce,
+		cfopvendaecf: _cfopvendaecf,
+		situacaotributaria: _situacaotributaria,
+		situacaotributariasn: _situacaotributariasn,
+		tributacaoespecial: _tributacaoespecial,
+		tributacaosn: _tributacaosn,
+		cstpis: _cstpis,
+		cstcofins: _cstcofins,
+		cstipisaida: _cstipisaida,
+		idtaxauf: _idtaxauf,
+		idenquadramentoipisaida: _idenquadramento,
+		quantidadepadrao: _quantidadepadrao,
+		...restoEntrada
+	} = entrada;
+
+	const saida = mesclarSugestaoTributacaoSaidaProduto(
+		params.produtoAtual,
+		params.sugestaoSaida,
+	);
+
+	const cfopSaida: Partial<NovoProduto> = {};
+	if (!params.produtoAtual.idcfopsaida && params.dadosProduto.idcfopsaida) {
+		cfopSaida.idcfopsaida = params.dadosProduto.idcfopsaida;
+	}
+	const idcfopsaidanfce =
+		params.dadosProduto.idcfopsaidanfce ?? params.dadosProduto.idcfopsaida;
+	if (!params.produtoAtual.idcfopsaidanfce && idcfopsaidanfce) {
+		cfopSaida.idcfopsaidanfce = idcfopsaidanfce;
+	}
+	if (
+		params.produtoAtual.cfopvendaecf == null &&
+		params.sugestaoSaida.cfopvendaecf != null
+	) {
+		cfopSaida.cfopvendaecf = params.sugestaoSaida.cfopvendaecf;
+	}
+
+	const custo = Number.parseFloat(params.dadosProduto.custoaquisicao ?? "");
+	const precoultimacompra = Number.isFinite(custo)
+		? custo.toFixed(2)
+		: undefined;
+
+	return omitirIndefinidos({
+		...restoEntrada,
+		...cfopSaida,
+		...saida,
+		precoultimacompra,
+		dataultimacompra: params.dataCompra,
+	});
+}
 
 function itemResolvido(dados: DadosImportacaoItem): boolean {
 	if (dados.statusVinculo === "vinculado") {
@@ -356,28 +454,22 @@ export async function finalizarRascunhoImportacaoNfService({
 					? await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada)
 					: undefined);
 
-			const quantidadeImportada = parseQuantidadePadraoImportacao(
-				dados.quantidadeEstoque,
-			);
+			if (!produtoAtual) {
+				return httpBadRequest(
+					`Item ${item.contador ?? "?"}: produto vinculado não encontrado`,
+				);
+			}
 
-			await atualizarProduto(dados.idproduto, {
-				...montarAtualizacaoProdutoNf({
-					...dadosProduto,
-					...sugestaoSaida,
-					idcfopsaidanfce:
-						sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
-					cfopvendaecf: sugestaoSaida.cfopvendaecf,
-					...(tipoprodutoResolvido
-						? { tipoproduto: tipoprodutoResolvido }
-						: {}),
+			await atualizarProduto(
+				dados.idproduto,
+				montarPatchProdutoVinculadoNf({
+					dadosProduto,
+					produtoAtual,
+					sugestaoSaida,
+					tipoprodutoResolvido,
+					dataCompra: finalizadoEm.slice(0, 10),
 				}),
-				quantidadepadrao:
-					(produtoAtual?.quantidadepadrao ?? 0) + quantidadeImportada,
-				...sugestaoSaida, // Force update of fiscal suggestions
-				...(produtoAtual
-					? mesclarSugestaoTributacaoSaidaProduto(produtoAtual, sugestaoSaida)
-					: sugestaoSaida),
-			});
+			);
 
 			produtosResolvidos.set(item.id, dados.idproduto);
 
@@ -631,6 +723,8 @@ export async function finalizarRascunhoImportacaoNfService({
 		lotesPorItem.set(item.id, persistidos);
 	}
 
+	const avisos: string[] = [];
+
 	if (gerarCustos) {
 		const itensCustos = itensComDados
 			.filter((item) => produtosResolvidos.has(item.id))
@@ -650,15 +744,25 @@ export async function finalizarRascunhoImportacaoNfService({
 				itens: itensCustos,
 			});
 		} catch (erro) {
-			console.error("Erro ao registrar custos da NF:", erro);
+			const mensagem = erro instanceof Error ? erro.message : "erro desconhecido";
+			console.error(
+				JSON.stringify({
+					evento: "custo_nf_entrada_falhou",
+					idnotafiscal: idRascunho,
+					idempresa,
+					mensagem,
+				}),
+			);
+			avisos.push(`Falha ao registrar custos da nota: ${mensagem}`);
 		}
 	}
 
 	try {
-		await registrarMovimentosEstoqueNf({
+		const idlocalestoque = localEstoque?.id ?? nota.idlocalestoque ?? undefined;
+		const resultadoEstoque = await registrarMovimentosEstoqueNf({
 			idempresa,
 			idnotafiscal: idRascunho,
-			idlocalestoque: localEstoque?.id ?? nota.idlocalestoque ?? undefined,
+			idlocalestoque,
 			dataMovimento: dataEntrada,
 			sentido: "entrada",
 			itens: itensComDados
@@ -672,11 +776,11 @@ export async function finalizarRascunhoImportacaoNfService({
 
 					if (persistidos && persistidos.length > 0) {
 						return persistidos
-							.filter((lote) => Number.parseFloat(lote.quantidade) > 0)
+							.filter((lote) => Number.parseFloat(lote.quantidade.replace(",", ".")) > 0)
 							.map((lote) => ({
 								iditem: item.id,
 								idproduto,
-								quantidade: lote.quantidade,
+								quantidade: parseQuantidadeEstoqueImportacao(lote.quantidade),
 								custoUnitario,
 								lote: lote.numero,
 								idlote: lote.idlote,
@@ -687,14 +791,35 @@ export async function finalizarRascunhoImportacaoNfService({
 						{
 							iditem: item.id,
 							idproduto,
-							quantidade: dados.quantidadeEstoque,
+							quantidade: parseQuantidadeEstoqueImportacao(dados.quantidadeEstoque),
 							custoUnitario,
 						},
 					];
 				}),
 		});
+		avisos.push(...resultadoEstoque.avisos);
+		if (resultadoEstoque.avisos.length > 0) {
+			console.error(
+				JSON.stringify({
+					evento: "estoque_nf_entrada_parcial",
+					idnotafiscal: idRascunho,
+					idempresa,
+					movimentosCriados: resultadoEstoque.movimentosCriados,
+					avisos: resultadoEstoque.avisos,
+				}),
+			);
+		}
 	} catch (erro) {
-		console.error("Erro ao registrar movimentos de estoque da NF:", erro);
+		const mensagem = erro instanceof Error ? erro.message : "erro desconhecido";
+		console.error(
+			JSON.stringify({
+				evento: "estoque_nf_entrada_falhou",
+				idnotafiscal: idRascunho,
+				idempresa,
+				mensagem,
+			}),
+		);
+		avisos.push(`Falha ao registrar movimentos de estoque: ${mensagem}`);
 	}
 
 	if (
@@ -719,7 +844,16 @@ export async function finalizarRascunhoImportacaoNfService({
 				razaosocial: nota.razaosocial ?? undefined,
 			});
 		} catch (erro) {
-			console.error("Erro ao gerar contas a pagar da NF:", erro);
+			const mensagem = erro instanceof Error ? erro.message : "erro desconhecido";
+			console.error(
+				JSON.stringify({
+					evento: "financeiro_nf_entrada_falhou",
+					idnotafiscal: idRascunho,
+					idempresa,
+					mensagem,
+				}),
+			);
+			avisos.push(`Falha ao gerar contas a pagar: ${mensagem}`);
 		}
 	}
 
@@ -744,6 +878,7 @@ export async function finalizarRascunhoImportacaoNfService({
 	return httpOk<FinalizarRascunhoImportacaoNfResposta>({
 		notaFiscal: resultado.notaFiscal,
 		itens: resultado.itens,
+		avisos,
 	});
 }
 

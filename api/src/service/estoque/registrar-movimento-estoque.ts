@@ -186,7 +186,12 @@ export async function registrarMovimentoEstoque({
 	if (qtd <= 0) return null;
 
 	const produto = await buscarProdutoPorId(idproduto);
-	if (produto?.controlalote === 1 && !idlote && !permitirSemLote) {
+	if (!produto?.codigo) {
+		throw new Error(
+			"Produto sem código interno. O saldo de estoque não foi atualizado.",
+		);
+	}
+	if (produto.controlalote === 1 && !idlote && !permitirSemLote) {
 		throw new Error(
 			`Produto ${produto.nome} controla lote. Informe o lote do movimento.`,
 		);

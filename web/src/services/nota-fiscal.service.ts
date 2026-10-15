@@ -464,11 +464,10 @@ export const notaFiscalService = {
 			gerarCustos?: boolean;
 			gerarFinanceiro?: boolean;
 		},
-	): Promise<CriarNotaFiscalResponse> {
-		const { data } = await api.post<CriarNotaFiscalResponse>(
-			`/notas-fiscais/rascunhos/${id}/finalizar`,
-			payload,
-		);
+	): Promise<CriarNotaFiscalResponse & { avisos?: string[] }> {
+		const { data } = await api.post<
+			CriarNotaFiscalResponse & { avisos?: string[] }
+		>(`/notas-fiscais/rascunhos/${id}/finalizar`, payload);
 		return data;
 	},
 

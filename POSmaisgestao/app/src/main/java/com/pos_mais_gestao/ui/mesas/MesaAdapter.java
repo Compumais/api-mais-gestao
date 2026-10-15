@@ -107,7 +107,7 @@ public class MesaAdapter extends RecyclerView.Adapter<MesaAdapter.VH> {
         holder.card.setStrokeWidth(stroke);
         holder.imgStatus.setImageResource(R.drawable.ic_mesa);
         tint(holder.imgStatus, cor(holder, R.color.muted_foreground));
-        holder.txtNumero.setTextColor(cor(holder, R.color.foreground));
+        holder.txtNumero.setTextColor(cor(holder, R.color.muted_foreground));
         holder.txtCliente.setVisibility(View.GONE);
         holder.txtTotal.setVisibility(View.GONE);
     }
@@ -124,9 +124,9 @@ public class MesaAdapter extends RecyclerView.Adapter<MesaAdapter.VH> {
     }
 
     private void aplicarOciosa(VH holder, int stroke) {
-        int texto = cor(holder, R.color.foreground);
-        holder.card.setCardBackgroundColor(cor(holder, R.color.accent));
-        holder.card.setStrokeColor(cor(holder, R.color.border));
+        int texto = cor(holder, R.color.mesa_ociosa_foreground);
+        holder.card.setCardBackgroundColor(cor(holder, R.color.mesa_ociosa));
+        holder.card.setStrokeColor(cor(holder, R.color.mesa_ociosa_stroke));
         holder.card.setStrokeWidth(stroke);
         holder.imgStatus.setImageResource(R.drawable.ic_relogio);
         tint(holder.imgStatus, texto);
