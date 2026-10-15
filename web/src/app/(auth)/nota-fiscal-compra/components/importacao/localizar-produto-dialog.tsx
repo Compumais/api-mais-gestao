@@ -21,7 +21,8 @@ import {
 type LocalizarProdutoDialogProps = {
 	idempresa: string;
 	idRascunho: string;
-	item: NotaFiscalItemImportacao;
+	item?: NotaFiscalItemImportacao;
+	selectedIds?: string[];
 	aberto: boolean;
 	onAbertoChange: (aberto: boolean) => void;
 };
@@ -30,11 +31,16 @@ export function LocalizarProdutoDialog({
 	idempresa,
 	idRascunho,
 	item,
+	selectedIds,
 	aberto,
 	onAbertoChange,
 }: LocalizarProdutoDialogProps) {
 	const queryClient = useQueryClient();
-	const eanXml = item.dadosimportacao?.eanXml ?? "";
+	
+	// Use the provided item or the first ID from selectedIds to get context for search
+	const contextItem = item; 
+	const eanXml = contextItem?.dadosimportacao?.eanXml ?? "";
+	
 	const [busca, setBusca] = useState("");
 	const [resultado, setResultado] = useState<BuscarProdutoNfResponse | null>(
 		null,
@@ -56,7 +62,7 @@ export function LocalizarProdutoDialog({
 			return;
 		}
 
-		setBusca(item.dadosimportacao?.descricaoFornecedor ?? item.descricao ?? "");
+		setBusca(contextItem?.dadosimportacao?.descricaoFornecedor ?? contextItem?.descricao ?? "");
 
 		if (!eanXml) return;
 
@@ -74,17 +80,34 @@ export function LocalizarProdutoDialog({
 		return () => {
 			cancelado = true;
 		};
-	}, [aberto, eanXml, idempresa, item]);
+	}, [aberto, eanXml, idempresa, contextItem]);
 
 	const { mutate: vincular, isPending: vinculando } = useMutation({
-		mutationFn: (idproduto: string) =>
-			notaFiscalService.atualizarItemRascunhoImportacao(idRascunho, item.id, {
-				idempresa,
-				statusVinculo: "vinculado",
-				idproduto,
-			}),
+		mutationFn: async (idproduto: string) => {
+			const idsParaVincular = selectedIds && selectedIds.length > 0 
+				? selectedIds 
+				: item ? [item.id] : [];
+
+			if (idsParaVincular.length === 0) {
+				throw new Error("Nenhum item selecionado para vínculo.");
+			}
+
+			await Promise.all(
+				idsParaVincular.map((idItem) =>
+					notaFiscalService.atualizarItemRascunhoImportacao(idRascunho, idItem, {
+						idempresa,
+						statusVinculo: "vinculado",
+						idproduto,
+					}),
+				),
+			);
+		},
 		onSuccess: () => {
-			toast.success("Produto vinculado");
+			toast.success(
+				selectedIds && selectedIds.length > 1 
+					? `Produtos vinculados com sucesso (${selectedIds.length} itens)` 
+					: "Produto vinculado com sucesso",
+			);
 			queryClient.invalidateQueries({
 				queryKey: ["rascunho-importacao-nf", idRascunho],
 			});
@@ -111,21 +134,36 @@ export function LocalizarProdutoDialog({
 	};
 
 	const produtos = resultado?.produtos ?? [];
+	const isBulk = !!selectedIds && selectedIds.length > 1;
 
 	return (
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Localizar produto</DialogTitle>
+					<DialogTitle>
+						{isBulk ? "Vincular produtos em massa" : "Localizar produto"}
+					</DialogTitle>
 				</DialogHeader>
-				<p className="text-sm text-muted-foreground">
-					{item.dadosimportacao?.descricaoFornecedor ?? item.descricao}
-				</p>
-				{eanXml ? (
-					<p className="text-sm">
-						EAN do XML: <span className="font-mono font-medium">{eanXml}</span>
+				
+				{contextItem && (
+					<>
+						<p className="text-sm text-muted-foreground">
+							{contextItem.dadosimportacao?.descricaoFornecedor ?? contextItem.descricao}
+						</p>
+						{eanXml ? (
+							<p className="text-sm">
+								EAN do XML: <span className="font-mono font-medium">{eanXml}</span>
+							</p>
+						) : null}
+					</>
+				)}
+
+				{isBulk && (
+					<p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+						Atenção: O produto selecionado será vinculado a {selectedIds?.length} itens.
 					</p>
-				) : null}
+				)}
+
 				<div className="flex gap-2">
 					<Input
 						value={busca}
@@ -176,7 +214,7 @@ export function LocalizarProdutoDialog({
 										onClick={() => vincular(produto.id)}
 										disabled={vinculando}
 									>
-										Vincular
+										{vinculando ? "Vinculando..." : isBulk ? `Vincular aos ${selectedIds?.length} itens` : "Vincular"}
 									</Button>
 								</div>
 							);
