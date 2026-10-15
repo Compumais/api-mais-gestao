@@ -373,6 +373,7 @@ export async function finalizarRascunhoImportacaoNfService({
 				}),
 				quantidadepadrao:
 					(produtoAtual?.quantidadepadrao ?? 0) + quantidadeImportada,
+				...sugestaoSaida, // Force update of fiscal suggestions
 				...(produtoAtual
 					? mesclarSugestaoTributacaoSaidaProduto(produtoAtual, sugestaoSaida)
 					: sugestaoSaida),

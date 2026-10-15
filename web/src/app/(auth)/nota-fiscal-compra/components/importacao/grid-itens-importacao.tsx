@@ -115,24 +115,34 @@ function exibirProdutoCadastro(dados: DadosImportacaoItem) {
 	if (dados.produtoEncontrado) {
 		return (
 			<div className="min-w-[140px] max-w-[220px]">
-				<p className="truncate text-sm font-medium">{dados.produtoEncontrado.nome}</p>
-				{dados.produtoEncontrado.codigo != null ? (
-					<p className="text-xs text-muted-foreground">Cód. {dados.produtoEncontrado.codigo}</p>
-				) : null}
+				<p className="truncate text-sm font-medium">
+					{dados.produtoEncontrado.nome}
+				</p>
+				<div className="flex gap-2 text-xs text-muted-foreground">
+					{dados.produtoEncontrado.codigo != null ? (
+						<span>Cód. {dados.produtoEncontrado.codigo}</span>
+					) : null}
+				</div>
 			</div>
 		);
 	}
 	if (dados.statusVinculo === "novo") {
 		return (
 			<div className="min-w-[140px] max-w-[220px]">
-				<p className="text-sm font-medium text-amber-700 dark:text-amber-400">Cadastrar na finalização</p>
+				<p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+					Cadastrar na finalização
+				</p>
 				{dados.codigoProduto != null ? (
-					<p className="text-xs text-muted-foreground">Cód. {dados.codigoProduto}</p>
+					<p className="text-xs text-muted-foreground">
+						Cód. {dados.codigoProduto}
+					</p>
 				) : null}
 			</div>
 		);
 	}
-	return <span className="text-sm italic text-muted-foreground">Não vinculado</span>;
+	return (
+		<span className="text-sm italic text-muted-foreground">Não vinculado</span>
+	);
 }
 
 const formatCurrency = (value: string | null | undefined) => {
