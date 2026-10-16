@@ -28,6 +28,7 @@ function normalizarModo(valor: string | undefined): ModoPdv {
 export function LoginPage() {
 	const navigate = useNavigate();
 	const [apiUrl, setApiUrl] = useState("");
+	const [apiKey, setApiKey] = useState("");
 	const [modo, setModo] = useState<ModoPdv>("principal");
 	const [principalHost, setPrincipalHost] = useState("");
 	const [principalPorta, setPrincipalPorta] = useState("5050");
@@ -39,6 +40,7 @@ export function LoginPage() {
 	const [okConexao, setOkConexao] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [testando, setTestando] = useState(false);
+	const [validandoKey, setValidandoKey] = useState(false);
 	const [empresas, setEmpresas] = useState<Empresa[]>([]);
 	const [username, setUsername] = useState("");
 	const [terminaisPdv, setTerminaisPdv] = useState<TerminalPdvOpcao[]>([]);
@@ -52,12 +54,13 @@ export function LoginPage() {
 		void (async () => {
 			const cfg = await pdvInvoke<Record<string, string>>("getConfig");
 			setApiUrl(cfg.api_url ?? "http://localhost:3333");
+			setApiKey(cfg.pdv_api_key ?? "");
 			const modoCfg = normalizarModo(cfg.pdv_modo);
 			setModo(modoCfg);
 			setPrincipalHost(cfg.pdv_principal_host ?? "");
 			setPrincipalPorta(cfg.pdv_principal_porta || "5050");
 			setNumeroPdv(cfg.numeropdv || "1");
-			if (modoCfg === "secundario") {
+			if (modoCfg === "secundario" || (cfg.pdv_api_key ?? "").startsWith("pdv_")) {
 				setMostrarConexao(true);
 			}
 			if (modoCfg !== "secundario") {
@@ -109,6 +112,7 @@ export function LoginPage() {
 			numeropdv: numeroPdv.trim() || "1",
 			pdv_principal_host: principalHost.trim(),
 			pdv_principal_porta: principalPorta.trim() || "5050",
+			pdv_api_key: apiKey.trim(),
 		};
 		const url = apiUrl.trim().replace(/\/$/, "");
 		if (url) {
@@ -121,6 +125,10 @@ export function LoginPage() {
 		const cfg = await pdvInvoke<Record<string, string>>("getConfig");
 		if (cfg.api_url) {
 			setApiUrl(cfg.api_url);
+		}
+		setApiKey(cfg.pdv_api_key ?? "");
+		if (cfg.numeropdv) {
+			setNumeroPdv(cfg.numeropdv);
 		}
 	}
 
@@ -227,6 +235,72 @@ export function LoginPage() {
 		}
 	}
 
+	async function onValidarApiKey(forcar = false) {
+		setErro("");
+		setOkConexao("");
+		if (!apiUrl.trim() && modo === "principal") {
+			setErro("Informe a URL da API antes de validar a key.");
+			return;
+		}
+		if (!apiKey.trim().startsWith("pdv_")) {
+			setErro("Cole a API key do terminal (começa com pdv_).");
+			return;
+		}
+		setValidandoKey(true);
+		try {
+			await salvarConexao();
+			const device = await pdvInvoke<{
+				idempresa: string;
+				numeropdv: number;
+				descricao: string | null;
+				usuarios?: number;
+				catalogoErro?: string | null;
+			}>("autenticarDevicePdv", forcar);
+			setNumeroPdv(String(device.numeropdv));
+			const qtd = device.usuarios ?? 0;
+			if (device.catalogoErro) {
+				setErro(
+					`API key válida (PDV ${device.numeropdv}), mas a sincronização falhou: ${device.catalogoErro}`,
+				);
+			} else if (qtd === 0) {
+				setErro(
+					`API key válida (PDV ${device.numeropdv}), porém nenhuma credencial veio da retaguarda. Verifique usuários ativos na empresa e tente de novo.`,
+				);
+			} else {
+				setOkConexao(
+					`API key válida — PDV ${device.numeropdv}${
+						device.descricao ? ` (${device.descricao})` : ""
+					}. ${qtd} usuário(s) sincronizado(s). Pode entrar com usuário/senha.`,
+				);
+			}
+		} catch (err) {
+			setErro(
+				err instanceof Error ? err.message : "Falha ao validar a API key",
+			);
+		} finally {
+			setValidandoKey(false);
+		}
+	}
+
+	async function onLimparApiKey() {
+		setErro("");
+		setOkConexao("");
+		setLoading(true);
+		try {
+			setApiKey("");
+			await pdvInvoke("saveConfig", { pdv_api_key: "" });
+			setOkConexao(
+				"API key removida. O login volta a autenticar pela nuvem (e-mail/senha da API).",
+			);
+		} catch (err) {
+			setErro(
+				err instanceof Error ? err.message : "Falha ao limpar a API key",
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
+
 	async function onLogin(e: React.FormEvent) {
 		e.preventDefault();
 		setErro("");
@@ -250,7 +324,15 @@ export function LoginPage() {
 				await selecionar(unica);
 			}
 		} catch (err) {
-			setErro(err instanceof Error ? err.message : "Falha no login");
+			const msg = err instanceof Error ? err.message : "Falha no login";
+			setErro(msg);
+			if (
+				msg.includes("API key") ||
+				msg.includes("credenciais") ||
+				msg.includes("Configurar conexão")
+			) {
+				setMostrarConexao(true);
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -299,6 +381,12 @@ export function LoginPage() {
 					</div>
 					<div>› PDV nº {numeroPdv || "1"}</div>
 					<div>› API configurada: {apiUrl || "não definida"}</div>
+					<div>
+						› Device:{" "}
+						{apiKey.startsWith("pdv_")
+							? "API key ativa (login local)"
+							: "sem API key (login na nuvem)"}
+					</div>
 					<div>› Operação offline-first com sincronização automática.</div>
 				</div>
 				<div className="text-xs opacity-70">v0.1.0</div>
@@ -315,7 +403,7 @@ export function LoginPage() {
 							Acesso ao sistema
 						</CardTitle>
 						<p className="text-sm text-muted-foreground">
-							Entre com sua conta Mais Gestão.
+							Informe a API key do terminal (se houver) e entre com sua conta.
 						</p>
 					</CardHeader>
 					<CardContent className="p-6">
@@ -485,7 +573,7 @@ export function LoginPage() {
 												type="button"
 												variant="outline"
 												size="sm"
-												disabled={loading}
+												disabled={loading || validandoKey}
 												onClick={() => void onSalvarConexao()}
 											>
 												Salvar conexão
@@ -498,6 +586,7 @@ export function LoginPage() {
 													disabled={
 														testando ||
 														loading ||
+														validandoKey ||
 														!terminaisBuscados ||
 														!numeroPdv.trim()
 													}
@@ -509,6 +598,53 @@ export function LoginPage() {
 										</div>
 									</div>
 								)}
+								<div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/40">
+									<Label htmlFor="pdv_api_key">API key do PDV</Label>
+									<Input
+										id="pdv_api_key"
+										type="password"
+										autoComplete="off"
+										placeholder="pdv_…"
+										value={apiKey}
+										onChange={(e) => setApiKey(e.target.value)}
+									/>
+									<p className="text-xs text-muted-foreground">
+										Gere na retaguarda (Configurações → Terminais PDV). Com a
+										key ativa, valide abaixo para sincronizar usuários e depois
+										entre com usuário/senha.
+									</p>
+									<div className="flex flex-wrap gap-2">
+										<Button
+											type="button"
+											variant="secondary"
+											size="sm"
+											disabled={validandoKey || loading || !apiKey.trim()}
+											onClick={() => void onValidarApiKey()}
+										>
+											{validandoKey ? "Sincronizando…" : "Validar API key"}
+										</Button>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											disabled={validandoKey || loading || !apiKey.trim()}
+											onClick={() => void onValidarApiKey(true)}
+										>
+											Forçar (outra instância)
+										</Button>
+										{apiKey.trim() ? (
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												disabled={loading || validandoKey}
+												onClick={() => void onLimparApiKey()}
+											>
+												Limpar key
+											</Button>
+										) : null}
+									</div>
+								</div>
 								<div className="space-y-2">
 									<Label htmlFor="email">E-mail ou usuário</Label>
 									<Input

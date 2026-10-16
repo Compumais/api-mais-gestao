@@ -214,6 +214,8 @@ describe("finalizarRascunhoImportacaoNfService", () => {
 				unidademedida: "UN",
 				situacaotributariasnentrada: "00",
 				cstpisentrada: "50",
+				custoaquisicao: "10.00",
+				precoultimacompra: "10.00",
 			}),
 		);
 		const patch = vi.mocked(produtosRepositories.atualizarProduto).mock
@@ -306,6 +308,8 @@ describe("finalizarRascunhoImportacaoNfService", () => {
 				ean: "7890000000001",
 				idunidademedida: "un-1",
 				quantidadepadrao: null,
+				custoaquisicao: "10.00",
+				precoultimacompra: "10.00",
 			}),
 		);
 		expect(produtosRepositories.atualizarProduto).not.toHaveBeenCalled();

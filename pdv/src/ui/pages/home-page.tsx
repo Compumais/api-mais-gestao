@@ -132,6 +132,8 @@ export function HomePage() {
 	const [numeroDialogo, setNumeroDialogo] = useState("");
 	const [modalAbrirMesaHabilitado, setModalAbrirMesaHabilitado] =
 		useState(true);
+	const [exigirNomeCliente, setExigirNomeCliente] = useState(true);
+	const [exigirTelefoneCliente, setExigirTelefoneCliente] = useState(true);
 	const inputNumeroRef = useRef<HTMLInputElement>(null);
 
 	useEscapeFechaModal(dialogo !== null, () => {
@@ -161,6 +163,8 @@ export function HomePage() {
 		const config = await pdvInvoke<Record<string, string>>("getConfig");
 		setApenasAbertas(config.filtro_apenas_abertas === "1");
 		setModalAbrirMesaHabilitado(config.modal_abrir_mesa_habilitado !== "0");
+		setExigirNomeCliente(config.abrir_mesa_exigir_nome !== "0");
+		setExigirTelefoneCliente(config.abrir_mesa_exigir_telefone !== "0");
 	}
 
 	async function alternarFiltroAbertas(marcado: boolean) {
@@ -227,6 +231,25 @@ export function HomePage() {
 	const podeAbrirNumero =
 		Number.isInteger(numeroInformado) && numeroInformado >= 1;
 
+	function podeContinuarAbertura() {
+		if (exigirNomeCliente && !nomeCliente.trim()) return false;
+		if (exigirTelefoneCliente && !telefoneCliente.trim()) return false;
+		return true;
+	}
+
+	function textoAjudaAbertura() {
+		if (exigirNomeCliente && exigirTelefoneCliente) {
+			return "Informe o nome e telefone do cliente para identificação (obrigatório).";
+		}
+		if (exigirNomeCliente) {
+			return "Informe o nome do cliente (obrigatório). O telefone é opcional.";
+		}
+		if (exigirTelefoneCliente) {
+			return "Informe o telefone do cliente (obrigatório). O nome é opcional.";
+		}
+		return "Informe o nome e telefone do cliente para identificação (opcional).";
+	}
+
 	function irParaConta(numero: number, nome?: string | null, telefone?: string | null) {
 		setDialogo(null);
 		setNomeCliente("");
@@ -266,6 +289,7 @@ export function HomePage() {
 			return;
 		}
 		setNomeCliente("");
+		setTelefoneCliente("");
 		setDialogo({ tipo: "nome", numero: mesa.numero });
 	}
 
@@ -471,7 +495,7 @@ export function HomePage() {
 					<AlertasOperacionaisPdv status={status} />
 					{msg && <p className="text-sm text-muted-foreground">{msg}</p>}
 
-					<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3 overflow-auto p-0.5">
+					<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-4 overflow-auto p-0.5 sm:grid-cols-[repeat(auto-fill,minmax(12rem,1fr))]">
 						{mesasVisiveis.map((mesa) => {
 							const Icon = iconeStatus(mesa.statusAtividade);
 							return (
@@ -480,21 +504,21 @@ export function HomePage() {
 									type="button"
 									onClick={() => solicitarAbertura(mesa)}
 									className={cn(
-										"group relative flex h-28 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl text-center ring-1 transition hover:-translate-y-0.5 hover:shadow-md hover:brightness-105",
+										"group relative flex min-h-36 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl px-2 py-3 text-center ring-1 transition hover:-translate-y-0.5 hover:shadow-md hover:brightness-105 sm:min-h-40",
 										classeMesa(mesa.statusAtividade),
 									)}
 								>
-									<Icon className="size-5 opacity-80" />
-									<span className="text-xl font-bold tabular-nums">
+									<Icon className="size-8 opacity-80 sm:size-9" />
+									<span className="text-3xl font-bold tabular-nums leading-none sm:text-4xl">
 										{String(mesa.numero).padStart(2, "0")}
 									</span>
-									<span className="text-[11px]">
+									<span className="max-w-full truncate px-1 text-xs sm:text-sm">
 										{mesa.status === "ocupada"
 											? mesa.nomecliente || rotuloStatus(mesa.statusAtividade)
 											: "Livre"}
 									</span>
 									{mesa.status === "ocupada" && (
-										<span className="text-xs font-semibold">
+										<span className="text-sm font-semibold sm:text-base">
 											{money(mesa.valortotal)}
 										</span>
 									)}
@@ -572,30 +596,34 @@ export function HomePage() {
 							Abrir {rotulo.singular.toLowerCase()} {dialogo.numero}
 						</h2>
 						<p className="text-sm text-muted-foreground">
-							Informe o nome e telefone do cliente para identificação (obrigatório).
+							{textoAjudaAbertura()}
 						</p>
 						<div className="space-y-3">
 							<Input
-								placeholder="Nome do cliente"
+								placeholder={
+									exigirNomeCliente
+										? "Nome do cliente *"
+										: "Nome do cliente"
+								}
 								value={nomeCliente}
 								onChange={(e) => setNomeCliente(e.target.value)}
 								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										if (nomeCliente.trim() && telefoneCliente.trim()) {
-											irParaConta(dialogo.numero, nomeCliente, telefoneCliente);
-										}
+									if (e.key === "Enter" && podeContinuarAbertura()) {
+										irParaConta(dialogo.numero, nomeCliente, telefoneCliente);
 									}
 								}}
 							/>
 							<Input
-								placeholder="Telefone (ex: 11999999999)"
+								placeholder={
+									exigirTelefoneCliente
+										? "Telefone (ex: 11999999999) *"
+										: "Telefone (ex: 11999999999)"
+								}
 								value={telefoneCliente}
 								onChange={(e) => setTelefoneCliente(e.target.value)}
 								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										if (nomeCliente.trim() && telefoneCliente.trim()) {
-											irParaConta(dialogo.numero, nomeCliente, telefoneCliente);
-										}
+									if (e.key === "Enter" && podeContinuarAbertura()) {
+										irParaConta(dialogo.numero, nomeCliente, telefoneCliente);
 									}
 								}}
 							/>
@@ -614,8 +642,10 @@ export function HomePage() {
 							</Button>
 							<Button
 								className="flex-1"
-								disabled={!nomeCliente.trim() || !telefoneCliente.trim()}
-								onClick={() => irParaConta(dialogo.numero, nomeCliente, telefoneCliente)}
+								disabled={!podeContinuarAbertura()}
+								onClick={() =>
+									irParaConta(dialogo.numero, nomeCliente, telefoneCliente)
+								}
 							>
 								Continuar
 							</Button>

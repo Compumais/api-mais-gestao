@@ -120,6 +120,13 @@ function formatarDataCurta(valor?: string): string {
 	return data.toLocaleString("pt-BR");
 }
 
+function formatarTamanhoArquivo(bytes: number): string {
+	if (!Number.isFinite(bytes) || bytes < 0) return "—";
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function dataLocalIso(data: Date): string {
 	const ano = data.getFullYear();
 	const mes = String(data.getMonth() + 1).padStart(2, "0");
@@ -163,6 +170,25 @@ type StatusBackup = {
 	ultimo: string;
 	ultimoArquivo: string;
 	ultimoErro: string;
+};
+
+type ArquivoBackup = {
+	nome: string;
+	caminho: string;
+	mtimeIso: string;
+	tamanho: number;
+};
+
+type ResultadoRestaurarBackup = {
+	arquivo: string;
+	manifesto: {
+		geradoem?: string;
+		motivo?: string;
+		idempresa?: string;
+		nomeempresa?: string;
+	};
+	tabelas: number;
+	config: number;
 };
 
 type StatusUpdatePdv = {
@@ -290,6 +316,9 @@ export function ConfigPage() {
 	} | null>(null);
 	const [portasBalanca, setPortasBalanca] = useState<string[]>([]);
 	const [statusBackup, setStatusBackup] = useState<StatusBackup | null>(null);
+	const [listaBackups, setListaBackups] = useState<ArquivoBackup[]>([]);
+	const [backupParaRestaurar, setBackupParaRestaurar] =
+		useState<ArquivoBackup | null>(null);
 	const [statusUpdate, setStatusUpdate] = useState<StatusUpdatePdv | null>(
 		null,
 	);
@@ -395,9 +424,21 @@ export function ConfigPage() {
 				setTerminaisPdv([]);
 			}
 			try {
-				setStatusBackup(await pdvInvoke<StatusBackup>("statusBackup"));
+				const st = await pdvInvoke<StatusBackup>("statusBackup");
+				setStatusBackup(st);
+				try {
+					setListaBackups(
+						await pdvInvoke<ArquivoBackup[]>(
+							"listarBackups",
+							cfgInicial.backup_pasta || undefined,
+						),
+					);
+				} catch {
+					setListaBackups([]);
+				}
 			} catch {
 				setStatusBackup(null);
+				setListaBackups([]);
 			}
 			try {
 				setStatusUpdate(await pdvInvoke<StatusUpdatePdv>("statusUpdatePdv"));
@@ -423,11 +464,24 @@ export function ConfigPage() {
 				idempresa: string;
 				numeropdv: number;
 				descricao: string | null;
+				usuarios?: number;
+				catalogoErro?: string | null;
 			}>("autenticarDevicePdv", forcar);
 			set("numeropdv", String(device.numeropdv));
-			setMsg(
-				`API key válida — PDV ${device.numeropdv}${device.descricao ? ` (${device.descricao})` : ""}. Credenciais sincronizadas.`,
-			);
+			const qtd = device.usuarios ?? 0;
+			if (device.catalogoErro) {
+				setMsg(
+					`API key válida — PDV ${device.numeropdv}${device.descricao ? ` (${device.descricao})` : ""}, mas o sync falhou: ${device.catalogoErro}`,
+				);
+			} else if (qtd === 0) {
+				setMsg(
+					`API key válida — PDV ${device.numeropdv}${device.descricao ? ` (${device.descricao})` : ""}. Nenhuma credencial veio da retaguarda.`,
+				);
+			} else {
+				setMsg(
+					`API key válida — PDV ${device.numeropdv}${device.descricao ? ` (${device.descricao})` : ""}. ${qtd} usuário(s) sincronizado(s).`,
+				);
+			}
 		} catch (err) {
 			setMsg(
 				err instanceof Error ? err.message : "Falha ao validar a API key",
@@ -463,11 +517,17 @@ export function ConfigPage() {
 				modelo_atendimento: config.modelo_atendimento ?? "mesa",
 				modal_abrir_mesa_habilitado:
 					config.modal_abrir_mesa_habilitado === "0" ? "0" : "1",
+				abrir_mesa_exigir_nome:
+					config.abrir_mesa_exigir_nome === "0" ? "0" : "1",
+				abrir_mesa_exigir_telefone:
+					config.abrir_mesa_exigir_telefone === "0" ? "0" : "1",
 				comanda_pedir_mesa_local:
 					config.comanda_pedir_mesa_local === "1" ? "1" : "0",
 				tempo_ociosidade_min: config.tempo_ociosidade_min ?? "15",
 				emitir_nfce: config.emitir_nfce ?? "1",
 				tema: config.tema ?? "light",
+				iniciar_fullscreen:
+					config.iniciar_fullscreen === "0" ? "0" : "1",
 				pix_chave: config.pix_chave ?? "",
 												taxa_servico_percentual: config.taxa_servico_percentual ?? "10",
 				couvert_valor: config.couvert_valor ?? "0",
@@ -888,6 +948,7 @@ export function ConfigPage() {
 					? `Backup gerado em ${result.ultimoArquivo}`
 					: "Backup concluído",
 			);
+			await carregarListaBackups();
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Falha ao gerar backup");
 			try {
@@ -895,6 +956,82 @@ export function ConfigPage() {
 			} catch {
 				// status opcional
 			}
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	async function carregarListaBackups() {
+		try {
+			setListaBackups(
+				await pdvInvoke<ArquivoBackup[]>(
+					"listarBackups",
+					config.backup_pasta || undefined,
+				),
+			);
+		} catch (err) {
+			setListaBackups([]);
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Não foi possível listar os backups",
+			);
+		}
+	}
+
+	async function escolherArquivoBackup() {
+		try {
+			const caminho = await pdvInvoke<string | null>("escolherArquivoBackup");
+			if (!caminho) return;
+			setBackupParaRestaurar({
+				nome: caminho.split(/[/\\]/).pop() || caminho,
+				caminho,
+				mtimeIso: "",
+				tamanho: 0,
+			});
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Não foi possível escolher o arquivo",
+			);
+		}
+	}
+
+	async function confirmarRestaurarBackup() {
+		if (!backupParaRestaurar) return;
+		setTestando("restore");
+		setMsg("");
+		try {
+			const resultado = await pdvInvoke<ResultadoRestaurarBackup>(
+				"restaurarBackup",
+				backupParaRestaurar.caminho,
+			);
+			setBackupParaRestaurar(null);
+			const empresa =
+				resultado.manifesto.nomeempresa ||
+				resultado.manifesto.idempresa ||
+				"";
+			setMsg(
+				empresa
+					? `Backup restaurado (${empresa}). Reinicie o PDV se o certificado ou a empresa mudarem.`
+					: "Backup restaurado. Reinicie o PDV se o certificado ou a empresa mudarem.",
+			);
+			try {
+				setConfig(await pdvInvoke<Config>("getConfig"));
+			} catch {
+				// config opcional
+			}
+			try {
+				setStatusBackup(await pdvInvoke<StatusBackup>("statusBackup"));
+			} catch {
+				// status opcional
+			}
+			await carregarListaBackups();
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Falha ao restaurar o backup",
+			);
 		} finally {
 			setTestando(null);
 		}
@@ -1266,6 +1403,60 @@ export function ConfigPage() {
 													abre a conta direto, sem pedir nome ou confirmação.
 												</p>
 											</div>
+											{(config.modal_abrir_mesa_habilitado ?? "1") !==
+											"0" ? (
+												<>
+													<div className="space-y-2">
+														<Label htmlFor="abrir_mesa_exigir_nome">
+															Exigir nome do cliente
+														</Label>
+														<Select
+															id="abrir_mesa_exigir_nome"
+															value={
+																config.abrir_mesa_exigir_nome === "0"
+																	? "0"
+																	: "1"
+															}
+															onChange={(e) =>
+																set(
+																	"abrir_mesa_exigir_nome",
+																	e.target.value,
+																)
+															}
+														>
+															<option value="1">Obrigatório</option>
+															<option value="0">Opcional</option>
+														</Select>
+													</div>
+													<div className="space-y-2">
+														<Label htmlFor="abrir_mesa_exigir_telefone">
+															Exigir telefone
+														</Label>
+														<Select
+															id="abrir_mesa_exigir_telefone"
+															value={
+																config.abrir_mesa_exigir_telefone === "0"
+																	? "0"
+																	: "1"
+															}
+															onChange={(e) =>
+																set(
+																	"abrir_mesa_exigir_telefone",
+																	e.target.value,
+																)
+															}
+														>
+															<option value="1">Obrigatório</option>
+															<option value="0">Opcional</option>
+														</Select>
+													</div>
+													<p className="sm:col-span-2 text-xs text-muted-foreground">
+														Controla se o nome e o telefone são obrigatórios
+														no modal de abertura da{" "}
+														{rotulo.singular.toLowerCase()}.
+													</p>
+												</>
+											) : null}
 											{(config.modelo_atendimento ?? "mesa") === "comanda" ? (
 												<div className="space-y-2 sm:col-span-2">
 													<Label htmlFor="comanda_pedir_mesa_local">
@@ -1323,6 +1514,27 @@ export function ConfigPage() {
 											<option value="light">Claro</option>
 											<option value="dark">Escuro</option>
 										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="iniciar_fullscreen">
+											Iniciar em tela cheia
+										</Label>
+										<Select
+											id="iniciar_fullscreen"
+											value={
+												config.iniciar_fullscreen === "0" ? "0" : "1"
+											}
+											onChange={(e) =>
+												set("iniciar_fullscreen", e.target.value)
+											}
+										>
+											<option value="1">Sim</option>
+											<option value="0">Não</option>
+										</Select>
+										<p className="text-xs text-muted-foreground">
+											Ao salvar, aplica na janela. Alt+Enter alterna e
+											grava a preferência (Esc continua para voltar/modais).
+										</p>
 									</div>
 									<div className="space-y-2 sm:col-span-2">
 										<Label htmlFor="pix_chave">Chave PIX</Label>
@@ -2558,6 +2770,114 @@ export function ConfigPage() {
 										) : null}
 									</CardContent>
 								</Card>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>Restaurar backup</CardTitle>
+									</CardHeader>
+									<CardContent className="space-y-4">
+										<p className="text-sm text-muted-foreground">
+											Substitui vendas, mesas, NFC-e, outbox, configurações,
+											XML e certificado pelos dados do arquivo. Os arquivos de
+											backup na pasta não são apagados. Faça um backup novo
+											antes se quiser preservar o estado atual.
+										</p>
+										<div className="flex flex-wrap gap-2">
+											<Button
+												type="button"
+												variant="outline"
+												disabled={testando === "restore"}
+												onClick={() => void carregarListaBackups()}
+											>
+												Atualizar lista
+											</Button>
+											<Button
+												type="button"
+												variant="outline"
+												disabled={testando === "restore"}
+												onClick={() => void escolherArquivoBackup()}
+											>
+												Escolher arquivo…
+											</Button>
+										</div>
+										{listaBackups.length === 0 ? (
+											<p className="text-sm text-muted-foreground">
+												Nenhum backup encontrado na pasta configurada.
+											</p>
+										) : (
+											<ul className="max-h-64 space-y-2 overflow-y-auto rounded-md border border-border p-2">
+												{listaBackups.map((item) => (
+													<li
+														key={item.caminho}
+														className="flex flex-col gap-2 rounded-md bg-muted/40 p-2 sm:flex-row sm:items-center sm:justify-between"
+													>
+														<div className="min-w-0 space-y-0.5">
+															<p className="truncate text-sm font-medium">
+																{item.nome}
+															</p>
+															<p className="text-xs text-muted-foreground">
+																{formatarDataCurta(item.mtimeIso)} ·{" "}
+																{formatarTamanhoArquivo(item.tamanho)}
+															</p>
+														</div>
+														<Button
+															type="button"
+															variant="destructive"
+															size="sm"
+															disabled={testando === "restore"}
+															onClick={() => setBackupParaRestaurar(item)}
+														>
+															Restaurar
+														</Button>
+													</li>
+												))}
+											</ul>
+										)}
+									</CardContent>
+								</Card>
+
+								{backupParaRestaurar ? (
+									<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
+										<div className="pdv-surface w-[28rem] max-w-[95vw] space-y-4 p-5">
+											<h2 className="text-lg font-semibold">
+												Confirmar restauração
+											</h2>
+											<p className="text-sm text-muted-foreground">
+												Os dados atuais do caixa serão sobrescritos pelo
+												arquivo abaixo. Esta ação não pode ser desfeita sem
+												outro backup.
+											</p>
+											<p className="break-all text-sm font-medium">
+												{backupParaRestaurar.nome}
+											</p>
+											<p className="break-all text-xs text-muted-foreground">
+												{backupParaRestaurar.caminho}
+											</p>
+											<div className="flex gap-2">
+												<Button
+													type="button"
+													variant="outline"
+													className="flex-1"
+													disabled={testando === "restore"}
+													onClick={() => setBackupParaRestaurar(null)}
+												>
+													Cancelar
+												</Button>
+												<Button
+													type="button"
+													variant="destructive"
+													className="flex-1"
+													disabled={testando === "restore"}
+													onClick={() => void confirmarRestaurarBackup()}
+												>
+													{testando === "restore"
+														? "Restaurando…"
+														: "Restaurar e sobrescrever"}
+												</Button>
+											</div>
+										</div>
+									</div>
+								) : null}
 							</>
 						)}
 

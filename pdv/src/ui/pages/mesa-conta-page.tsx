@@ -126,6 +126,7 @@ type ItemFila = {
 
 type LocationState = {
 	nomecliente?: string | null;
+	telefone?: string | null;
 };
 
 function classeLinhaItemSelecionavel(marcado: boolean) {
@@ -149,12 +150,17 @@ export function MesaContaPage() {
 	const modoEntrega = Boolean(idContaParam);
 	const numeroMesa = Number(numero);
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
-	const nomeDoState = (location.state as LocationState | null)?.nomecliente;
+	const stateAbertura = location.state as LocationState | null;
+	const nomeDoState = stateAbertura?.nomecliente;
+	const telefoneDoState = stateAbertura?.telefone;
 	const { teclas } = useTeclasFuncao();
 
 	const [conta, setConta] = useState<ContaMesa | null>(null);
 	const [nomeCliente, setNomeCliente] = useState<string | null>(
 		nomeDoState ?? null,
+	);
+	const [telefoneCliente, setTelefoneCliente] = useState<string | null>(
+		telefoneDoState?.trim() ? telefoneDoState.trim() : null,
 	);
 	const [grupos, setGrupos] = useState<GrupoLocal[]>([]);
 	const [grupoAtivo, setGrupoAtivo] = useState<GrupoLocal | null>(null);
@@ -319,6 +325,7 @@ export function MesaContaPage() {
 				}
 				setConta(existente);
 				setNomeCliente(existente.nomecliente);
+				setTelefoneCliente(existente.telefone ?? null);
 				setTaxaEntregaEdit(String(existente.valorentrega ?? 0));
 			} else {
 				const existente = await pdvInvoke<ContaMesa | null>(
@@ -328,9 +335,13 @@ export function MesaContaPage() {
 				if (existente) {
 					setConta(existente);
 					setNomeCliente(existente.nomecliente);
+					setTelefoneCliente(existente.telefone ?? null);
 				} else {
 					setConta(null);
 					setNomeCliente(nomeDoState ?? null);
+					setTelefoneCliente(
+						telefoneDoState?.trim() ? telefoneDoState.trim() : null,
+					);
 				}
 				setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
 			}
@@ -623,6 +634,7 @@ export function MesaContaPage() {
 						"abrirContaMesa",
 						numeroMesa,
 						nomeCliente ?? undefined,
+						telefoneCliente ?? undefined,
 					);
 					idconta = aberta.id;
 				}
@@ -639,6 +651,7 @@ export function MesaContaPage() {
 			if (atualizada) {
 				setConta(atualizada);
 				setNomeCliente(atualizada.nomecliente);
+				setTelefoneCliente(atualizada.telefone ?? null);
 			}
 			setFila([]);
 			setGrupoAtivo(null);
@@ -1099,7 +1112,10 @@ export function MesaContaPage() {
 		buscaProdutos.termo,
 		Boolean(grupoAtivo),
 	);
-	const identificacao = nomeCliente || "Sem identificação";
+	const telefoneExibido = conta?.telefone ?? telefoneCliente;
+	const identificacao = [nomeCliente, telefoneExibido]
+		.filter((parte) => Boolean(parte?.trim()))
+		.join(" · ") || "Sem identificação";
 	const tituloConta = modoEntrega
 		? `${conta?.modalidade === "retirada" ? "Retirada" : "Delivery"} #${conta?.senha_chamada ?? "—"}`
 		: tituloContaAtendimento(status?.modeloAtendimento, numeroMesa);
@@ -2414,7 +2430,7 @@ export function MesaContaPage() {
 				<ChatWhatsappPedido
 					aberto
 					idconta={conta.id}
-					telefone={conta.telefone ?? null}
+					telefone={conta.telefone ?? telefoneCliente}
 					nomecliente={conta.nomecliente ?? nomeCliente}
 					onFechar={() => {
 						setChatWhatsappAberto(false);

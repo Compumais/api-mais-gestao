@@ -240,6 +240,37 @@ describe("revalidação de produtos da nota confirmada", () => {
 		expect(relatorio.aviso).toMatch(/CST de saída/);
 	});
 
+	it("grava o preço de custo da nota quando o produto está sem custo", () => {
+		const semCusto = item({
+			custoaquisicaoProduto: null,
+			dadosimportacao: {
+				eanXml: "7891234567895",
+				idcest: "cest-1",
+				quantidadeXml: "2",
+				precounitarioXml: "20",
+				fatorConversao: "2",
+			},
+		});
+		const patch = montarPatchCadastroRevalidacao(semCusto);
+		expect(patch.patch).toMatchObject({
+			custoaquisicao: "10.00",
+			precoultimacompra: "10.00",
+		});
+		expect(patch.campos).toContain("Preço de custo");
+
+		const jaOk = montarPatchCadastroRevalidacao(
+			item({
+				custoaquisicaoProduto: "10.00",
+				dadosimportacao: {
+					eanXml: "7891234567895",
+					idcest: "cest-1",
+					precounitarioEstoque: "10.00",
+				},
+			}),
+		);
+		expect(jaOk.campos).not.toContain("Preço de custo");
+	});
+
 	it("preenche o código de barras do XML quando o item da nota não guardou o EAN", () => {
 		const xml = `<NFe><infNFe><det nItem="1"><prod><cEAN>SEM GTIN</cEAN><cEANTrib>7891234567895</cEANTrib><xProd>Carvao</xProd></prod></det></infNFe></NFe>`;
 		const [completo] = completarCodigoBarrasDosItens(

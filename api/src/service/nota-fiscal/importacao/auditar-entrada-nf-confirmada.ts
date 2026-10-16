@@ -11,6 +11,7 @@ import {
 	type DadosProdutoNF,
 } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
 import { parseNFeXml } from "@/util/nfe-xml-parser.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 
@@ -39,9 +40,13 @@ export type ItemAuditoriaEntrada = {
 	iditem: string;
 	idproduto: string;
 	quantidade: string | null;
+	precounitarioItem?: string | null;
+	custoaquisicaoItem?: string | null;
 	contador?: number | null;
 	descricao?: string | null;
 	nomeProduto?: string | null;
+	custoaquisicaoProduto?: string | null;
+	precoultimacompraProduto?: string | null;
 	cestItem?: string | null;
 	situacaotributariaItem?: string | null;
 	cstpisItem?: string | null;
@@ -174,6 +179,11 @@ function lerDadosImportacao(valor: unknown): {
 	idncm?: string;
 	idcfop?: string;
 	quantidadeEstoque?: string;
+	quantidadeXml?: string;
+	precounitarioEstoque?: string;
+	precounitarioXml?: string;
+	custoContabilCalculado?: string;
+	fatorConversao?: string;
 	situacaotributaria?: string;
 	cstpis?: string;
 	cstcofins?: string;
@@ -193,11 +203,53 @@ function lerDadosImportacao(valor: unknown): {
 		idncm: lerTexto(dados.idncm),
 		idcfop: lerTexto(dados.idcfop),
 		quantidadeEstoque: lerTexto(dados.quantidadeEstoque),
+		quantidadeXml: lerTexto(dados.quantidadeXml),
+		precounitarioEstoque: lerTexto(dados.precounitarioEstoque),
+		precounitarioXml: lerTexto(dados.precounitarioXml),
+		custoContabilCalculado: lerTexto(dados.custoContabilCalculado),
+		fatorConversao: lerTexto(dados.fatorConversao),
 		situacaotributaria: lerTexto(tributacao.situacaotributaria),
 		cstpis: lerTexto(tributacao.cstpis),
 		cstcofins: lerTexto(tributacao.cstcofins),
 		cstipi: lerTexto(tributacao.cstipi),
 	};
+}
+
+function parseMoedaPositiva(valor: string | null | undefined): string | null {
+	if (!valor?.trim()) return null;
+	const numero = Number.parseFloat(valor.replace(",", "."));
+	if (!Number.isFinite(numero) || numero <= 0) return null;
+	return numero.toFixed(2);
+}
+
+/** Custo unitário de estoque da nota (já com fator), para gravar em custoaquisicao. */
+export function resolverCustoUnitarioEntradaNota(
+	item: ItemAuditoriaEntrada,
+): string | null {
+	const dados = lerDadosImportacao(item.dadosimportacao);
+	const direto = parseMoedaPositiva(
+		dados.custoContabilCalculado ?? dados.precounitarioEstoque,
+	);
+	if (direto) return direto;
+
+	if (dados.quantidadeXml && dados.precounitarioXml) {
+		const convertido = recalcularDadosConversao(
+			dados.quantidadeXml,
+			dados.precounitarioXml,
+			dados.fatorConversao ?? "1",
+		);
+		const doFator = parseMoedaPositiva(convertido.precounitarioEstoque);
+		if (doFator) return doFator;
+	}
+
+	return (
+		parseMoedaPositiva(item.custoaquisicaoItem) ??
+		parseMoedaPositiva(item.precounitarioItem)
+	);
+}
+
+function custoProdutoAusenteOuZero(valor: string | null | undefined): boolean {
+	return parseMoedaPositiva(valor) == null;
 }
 
 export function movimentosAtivosEntrada(
@@ -402,6 +454,7 @@ const CAMPOS_CADASTRO_ENTRADA = new Set([
 	"cstpisentrada",
 	"cstcofinsentrada",
 	"cstipientrada",
+	"custoaquisicao",
 ]);
 
 export function montarPatchCadastroRevalidacao(
@@ -416,6 +469,16 @@ export function montarPatchCadastroRevalidacao(
 	if (cadastro.ean === "divergente" && dados.eanXml) {
 		entrada.ean = somenteDigitos(dados.eanXml);
 		campos.push("Código de barras");
+	}
+
+	const custoNota = resolverCustoUnitarioEntradaNota(item);
+	if (
+		custoNota &&
+		(custoProdutoAusenteOuZero(item.custoaquisicaoProduto) ||
+			custoNota !== parseMoedaPositiva(item.custoaquisicaoProduto))
+	) {
+		entrada.custoaquisicao = custoNota;
+		campos.push("Preço de custo");
 	}
 
 	if (cadastro.cest === "divergente" && dados.idcest) {
@@ -468,7 +531,6 @@ export function montarPatchCadastroRevalidacao(
 		cstipisaida: undefined,
 		quantidadepadrao: undefined,
 		preco: undefined,
-		custoaquisicao: undefined,
 		fatorconversao: undefined,
 	});
 
@@ -479,6 +541,11 @@ export function montarPatchCadastroRevalidacao(
 			}),
 		),
 	) as Partial<NovoProduto>;
+
+	if (custoNota && campos.includes("Preço de custo")) {
+		patch.custoaquisicao = custoNota;
+		patch.precoultimacompra = custoNota;
+	}
 
 	if (cadastro.cest === "divergente") {
 		const codigo = somenteDigitos(item.cestItem ?? dados.cestXml);

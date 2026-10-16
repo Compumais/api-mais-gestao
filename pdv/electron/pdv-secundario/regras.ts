@@ -4,6 +4,8 @@ export const CHAVES_CONFIG_NEGOCIO = [
 	"qtd_mesas",
 	"modelo_atendimento",
 	"modal_abrir_mesa_habilitado",
+	"abrir_mesa_exigir_nome",
+	"abrir_mesa_exigir_telefone",
 	"comanda_pedir_mesa_local",
 	"tempo_ociosidade_min",
 	"emitir_nfce",

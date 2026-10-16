@@ -103,11 +103,12 @@ export async function obterContaPorNumeroRemoto(numero: number) {
 export async function abrirContaMesaRemoto(
 	numero: number,
 	nomecliente?: string,
+	telefone?: string | null,
 ): Promise<ContaMesaLocal> {
-	return remoto(
-		`/pos/mesas/${numero}/abrir`,
-		jsonBody(nomecliente ? { nomecliente } : {}),
-	);
+	const payload: { nomecliente?: string; telefone?: string } = {};
+	if (nomecliente) payload.nomecliente = nomecliente;
+	if (telefone?.trim()) payload.telefone = telefone.trim();
+	return remoto(`/pos/mesas/${numero}/abrir`, jsonBody(payload));
 }
 
 export async function adicionarItemNaMesaRemoto(

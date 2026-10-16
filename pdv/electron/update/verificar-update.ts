@@ -141,13 +141,42 @@ async function baixarArquivo(
 	}
 }
 
+async function encerrarServicoLanAntesDoUpdate(): Promise<void> {
+	if (process.platform !== "win32") return;
+	// Só encerra o serviço em segundo plano; o processo do caixa atual sai via app.quit().
+	const eu = process.pid;
+	await new Promise<void>((resolve) => {
+		const ps = spawn(
+			"powershell.exe",
+			[
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				[
+					"Stop-ScheduledTask -TaskName 'PDV Mais Gestao - Servico' -ErrorAction SilentlyContinue",
+					`Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -like 'PDV Mais Gest*.exe' -and $_.ProcessId -ne ${eu} -and $_.CommandLine -like '*--lan-service*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`,
+				].join("; "),
+			],
+			{ windowsHide: true, stdio: "ignore" },
+		);
+		ps.once("error", () => resolve());
+		ps.once("close", () => resolve());
+	});
+}
+
 async function iniciarInstalador(setupPath: string): Promise<void> {
+	await encerrarServicoLanAntesDoUpdate();
 	await new Promise<void>((resolve, reject) => {
-		const child = spawn(setupPath, ["/SILENT", "/NORESTART"], {
-			detached: true,
-			stdio: "ignore",
-			windowsHide: true,
-		});
+		const child = spawn(
+			setupPath,
+			["/SILENT", "/NORESTART", "/FORCECLOSEAPPLICATIONS"],
+			{
+				detached: true,
+				stdio: "ignore",
+				windowsHide: true,
+			},
+		);
 		child.once("error", reject);
 		child.once("spawn", () => {
 			child.unref();

@@ -2,6 +2,12 @@ import { readdir, rm, stat } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { getConfig, setConfig } from "../db/database";
 import { criarBackupLocal, pastaBackupPadrao } from "./backup-local";
+import {
+	type ArquivoBackupInfo,
+	listarArquivosBackup,
+	type ResultadoRestaurarBackup,
+	restaurarBackupLocal,
+} from "./backup-restore";
 
 export type FrequenciaBackup = "manual" | "caixa" | "diario" | "hora";
 
@@ -187,6 +193,28 @@ export async function executarBackupPdv(params?: {
 		const detalhe = err instanceof Error ? err.message : String(err);
 		await setConfig("backup_ultimo_erro", detalhe).catch(() => undefined);
 		throw err;
+	} finally {
+		gerando = false;
+	}
+}
+
+export async function listarBackupsPdv(
+	pasta?: string,
+): Promise<ArquivoBackupInfo[]> {
+	const cfg = await lerConfigBackup();
+	const destino = await pastaBackupEfetiva(pasta || cfg.pasta);
+	return listarArquivosBackup(destino);
+}
+
+export async function restaurarBackupPdv(
+	arquivo: string,
+): Promise<ResultadoRestaurarBackup> {
+	if (gerando) {
+		throw new Error("Aguarde o backup ou restauração em andamento");
+	}
+	gerando = true;
+	try {
+		return await restaurarBackupLocal(arquivo);
 	} finally {
 		gerando = false;
 	}

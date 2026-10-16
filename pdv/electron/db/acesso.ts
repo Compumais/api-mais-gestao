@@ -49,6 +49,8 @@ export const CHAVES_CONFIG_GOURMET = [
 	"modelo_atendimento",
 	"qtd_mesas",
 	"modal_abrir_mesa_habilitado",
+	"abrir_mesa_exigir_nome",
+	"abrir_mesa_exigir_telefone",
 	"comanda_pedir_mesa_local",
 	"taxa_servico_percentual",
 	"couvert_valor",
