@@ -9,8 +9,8 @@ import {
 import { produtos } from "./produtos.js";
 import { registroproducao } from "./registro-producao.js";
 
-const numeric186 = numeric({ precision: 18, scale: 6, mode: "string" });
-const numeric2110 = numeric({ precision: 21, scale: 10, mode: "string" });
+const numeric186 = () => numeric({ precision: 18, scale: 6, mode: "string" });
+const numeric2110 = () => numeric({ precision: 21, scale: 10, mode: "string" });
 
 export const registroproducaoitem = pgTable(
 	"registroproducaoitem",
@@ -20,9 +20,9 @@ export const registroproducaoitem = pgTable(
 		idproduto: text().notNull(),
 		/** 0 = consumo, 1 = produção */
 		tipo: smallint().notNull(),
-		quantidade: numeric186.notNull(),
-		custounitario: numeric2110,
-		custototal: numeric2110,
+		quantidade: numeric186().notNull(),
+		custounitario: numeric2110(),
+		custototal: numeric2110(),
 	},
 	(table) => [
 		index("registroproducaoitem_registro_idx").using(
