@@ -1,9 +1,9 @@
 import { createWriteStream } from "node:fs";
-import { readdir, readFile, stat } from "node:fs/promises";
-import { join, relative, sep } from "node:path";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { dirname, join, relative, sep } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { createGzip } from "node:zlib";
+import { createGzip, gunzipSync } from "node:zlib";
 
 async function listarArquivos(raiz: string): Promise<string[]> {
 	const saida: string[] = [];
@@ -88,4 +88,82 @@ export async function compactarPastaTarGz(
 		createGzip({ level: 9 }),
 		createWriteStream(destino),
 	);
+}
+
+function lerNomeTar(header: Buffer): string {
+	const fim = header.subarray(0, 100).indexOf(0);
+	const bruto = header.subarray(0, fim >= 0 ? fim : 100).toString("utf8");
+	return bruto.replace(/\\/g, "/").replace(/^\/+/, "");
+}
+
+function lerTamanhoTar(header: Buffer): number {
+	const bruto = header
+		.subarray(124, 136)
+		.toString("latin1")
+		.replace(/\0/g, "")
+		.trim();
+	if (!bruto) return 0;
+	const n = Number.parseInt(bruto, 8);
+	if (!Number.isFinite(n) || n < 0) {
+		throw new Error("Cabeçalho tar inválido (tamanho)");
+	}
+	return n;
+}
+
+function caminhoSeguroNoDestino(destino: string, nome: string): string {
+	const partes = nome.split("/").filter((p) => p && p !== ".");
+	if (partes.some((p) => p === "..")) {
+		throw new Error(`Entrada inválida no backup: ${nome}`);
+	}
+	return join(destino, ...partes);
+}
+
+/** Extrai `.tar.gz` gerado por `compactarPastaTarGz` para a pasta destino. */
+export async function extrairPastaTarGz(
+	arquivo: string,
+	destino: string,
+): Promise<void> {
+	await mkdir(destino, { recursive: true });
+	const compactado = await readFile(arquivo);
+	let tar: Buffer;
+	try {
+		tar = gunzipSync(compactado);
+	} catch {
+		throw new Error("Arquivo de backup inválido ou corrompido (gzip)");
+	}
+
+	let offset = 0;
+	while (offset + 512 <= tar.length) {
+		const header = tar.subarray(offset, offset + 512);
+		offset += 512;
+		if (header.every((b) => b === 0)) {
+			break;
+		}
+
+		const nome = lerNomeTar(header);
+		const tamanho = lerTamanhoTar(header);
+		const tipo = String.fromCharCode(header[156] ?? 0);
+		const dados = tar.subarray(offset, offset + tamanho);
+		const pad = tamanho % 512 === 0 ? 0 : 512 - (tamanho % 512);
+		offset += tamanho + pad;
+
+		if (!nome) {
+			continue;
+		}
+
+		const ehDir = tipo === "5" || nome.endsWith("/");
+		const caminho = caminhoSeguroNoDestino(
+			destino,
+			ehDir ? nome.replace(/\/+$/, "") : nome,
+		);
+		if (ehDir) {
+			await mkdir(caminho, { recursive: true });
+			continue;
+		}
+		if (tipo !== "0" && tipo !== "\0") {
+			continue;
+		}
+		await mkdir(dirname(caminho), { recursive: true });
+		await writeFile(caminho, dados);
+	}
 }

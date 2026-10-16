@@ -53,6 +53,9 @@ function item(overrides?: Record<string, unknown>) {
 		cestProduto: 1111111,
 		idcfopentradaProduto: "cfop-velho",
 		eanProduto: "1111111111111",
+		custoaquisicaoProduto: null,
+		precoultimacompraProduto: null,
+		precounitarioItem: "10.00",
 		situacaotributariasnentradaProduto: "60",
 		cstpisentradaProduto: "01",
 		cstcofinsentradaProduto: "01",
@@ -135,6 +138,8 @@ describe("aplicar revalidação de produtos da nota confirmada", () => {
 			cstpisentrada: "50",
 			cstcofinsentrada: "50",
 			cstipientrada: "49",
+			custoaquisicao: "10.00",
+			precoultimacompra: "10.00",
 		});
 		expect(patch).not.toHaveProperty("quantidadepadrao");
 		expect(patch).not.toHaveProperty("situacaotributaria");

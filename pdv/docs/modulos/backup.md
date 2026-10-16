@@ -7,8 +7,8 @@ Cópia local (tabelas operacionais + XML de NFC-e + certificado) antes de trocar
 ## Onde vive
 
 - **Main:** `electron/sync/backup-local.ts`, `electron/sync/backup-agendado.ts`, `electron/sync/backup-nome.ts`, `electron/sync/tar-gz.ts`, troca de empresa em `electron/sync/troca-empresa.ts`. Pastas em `electron/fiscal/xml-local.ts`.
-- **Renderer:** ações `statusBackup`, `gerarBackup`, `escolherPastaBackup` na local-api, tela de config.
-- **SQL:** lê as tabelas listadas em `TABELAS_BACKUP_OPERACIONAL`. Não cria tabela de backup.
+- **Renderer:** ações `statusBackup`, `gerarBackup`, `listarBackups`, `escolherArquivoBackup`, `restaurarBackup`, `escolherPastaBackup` na local-api, tela de config.
+- **SQL:** lê as tabelas listadas em `TABELAS_BACKUP_OPERACIONAL`. Restore faz `TRUNCATE` + `INSERT` dessas tabelas, restaura `numeracao_nfce` e `config`, e substitui pastas `xml-nfce` / `certificados`. Não cria tabela de backup. Não apaga o `.tar.gz` nem o cluster Postgres.
 
 Arquivo: `{carimbo}_{slug}.tar.gz`. Pastas internas `tabelas/` e `xml-nfce`. Certificado entra na cópia (ver `criarBackupLocal`). Não commitar esses arquivos.
 
@@ -28,13 +28,14 @@ Não entram no `TRUNCATE`: `config` (só algumas chaves são reescritas), `sessa
 
 ## Dados locais que não podem ser apagados no schema
 
-O backup é um `SELECT` dessas tabelas. Renomear coluna sem atualizar o restore (**não há restore automático no código lido** — **não confirmado** função de restaurar o tar.gz para o Postgres) não recupera a loja sozinho. O arquivo deixa de bater com o schema.
+O backup é um `SELECT` dessas tabelas. Restore: `electron/sync/backup-restore.ts` (`restaurarBackupLocal` / `restaurarBackupPdv`). Renomear coluna sem atualizar o restore deixa o arquivo desalinhado do schema.
 
 Não remova `outbox` nem `nfce_local` da lista: o arquivo da empresa anterior ficaria sem fila e sem XML.
 
 ## Comportamento offline/outbox
 
-Backup inclui a outbox pendente. Restaurar por cima de um caixa que já sincronizou pode reenviar venda se alguém recolocar a fila como `pendente`. Não há código de restore fazendo isso hoje.
+Backup inclui a outbox pendente. Restaurar por cima de um caixa que já sincronizou pode reenviar venda se a fila voltar como `pendente`. A UI exige confirmação explícita antes de sobrescrever.
+
 
 Troca de empresa com vendas `pendente` arquiva a fila e limpa. A empresa nova começa sem esses cupons. A empresa antiga só volta se alguém recuperar o tar.gz por fora. Não dispare `arquivarSeTrocaEmpresa` no boot.
 

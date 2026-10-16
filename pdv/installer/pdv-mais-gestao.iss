@@ -260,9 +260,23 @@ begin
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
 begin
   Result := '';
   NeedsRestart := False;
+
+  { Encerra o caixa e o serviço LAN (--lan-service) para liberar DLLs do Electron
+    (ex.: d3dcompiler_47.dll — DeleteFile código 5). CloseApplications sozinho
+    não mata o processo SYSTEM da tarefa agendada. }
+  Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    '-NoProfile -ExecutionPolicy Bypass -Command "' +
+    'Stop-ScheduledTask -TaskName ''PDV Mais Gestao - Servico'' -ErrorAction SilentlyContinue; ' +
+    'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ' +
+    'Where-Object { $_.Name -like ''PDV Mais Gest*.exe'' } | ' +
+    'ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; ' +
+    'Start-Sleep -Seconds 2"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
 #ifndef PostgresBundled
   if PrecisaInstalarPostgres then

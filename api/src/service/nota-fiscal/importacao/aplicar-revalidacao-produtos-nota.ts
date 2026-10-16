@@ -14,6 +14,7 @@ import {
 	decidirLancamentoEstoqueRevalidacao,
 	interpretarQuantidadeEntrada,
 	montarPatchCadastroRevalidacao,
+	resolverCustoUnitarioEntradaNota,
 	type ItemAuditoriaEntrada,
 } from "./auditar-entrada-nf-confirmada.js";
 import { resolverCfopSaidaDeEntrada } from "./resolver-referencias-importacao.js";
@@ -52,14 +53,8 @@ export type AplicacaoRevalidacaoProdutosNota = {
 	avisos: string[];
 };
 
-function custoUnitarioItem(dadosimportacao: unknown): string {
-	if (!dadosimportacao || typeof dadosimportacao !== "object") return "0";
-	const dados = dadosimportacao as Record<string, unknown>;
-	const bruto = dados.precounitarioEstoque ?? dados.custoContabilCalculado;
-	if (typeof bruto !== "string" && typeof bruto !== "number") return "0";
-	const numero = Number.parseFloat(String(bruto).replace(",", "."));
-	if (!Number.isFinite(numero) || numero < 0) return "0";
-	return numero.toFixed(2);
+function custoUnitarioItem(item: ItemAuditoriaEntrada): string {
+	return resolverCustoUnitarioEntradaNota(item) ?? "0";
 }
 
 function dataMovimentoNota(entradasaida: string | null | undefined): string {
@@ -145,7 +140,7 @@ export async function aplicarRevalidacaoProdutosNotaService(params: {
 			planejados.push({
 				item,
 				quantidade: quantidade.quantidadeEsperada.toFixed(6),
-				custoUnitario: custoUnitarioItem(item.dadosimportacao),
+				custoUnitario: custoUnitarioItem(item),
 			});
 		}
 

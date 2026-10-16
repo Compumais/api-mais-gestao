@@ -229,7 +229,11 @@ import {
 	statusWhatsapp,
 } from "../integracao/whatsapp/servico";
 import { montarCopiaPedidoWhatsapp } from "../integracao/whatsapp/templates";
-import { modalAbrirMesaHabilitado } from "../lan-api/config-pos";
+import {
+	abrirMesaExigirNome,
+	abrirMesaExigirTelefone,
+	modalAbrirMesaHabilitado,
+} from "../lan-api/config-pos";
 import { criarConexoesQrPos } from "../lan-api/qr-pos";
 import * as remoto from "../pdv-secundario/operacoes-remoto";
 import { assertNumeroPrincipalLivre } from "../pdv-secundario/registro";
@@ -245,7 +249,9 @@ import {
 } from "../pdv-secundario/servico";
 import {
 	executarBackupPdv,
+	listarBackupsPdv,
 	reiniciarBackupAgendado,
+	restaurarBackupPdv,
 	statusBackupPdv,
 } from "../sync/backup-agendado";
 import { executarCargaLocal } from "../sync/carga-local";
@@ -774,6 +780,12 @@ export const localApi = {
 			modalAbrirMesaHabilitado: modalAbrirMesaHabilitado(
 				await getConfig("modal_abrir_mesa_habilitado", "1"),
 			),
+			abrirMesaExigirNome: abrirMesaExigirNome(
+				await getConfig("abrir_mesa_exigir_nome", "1"),
+			),
+			abrirMesaExigirTelefone: abrirMesaExigirTelefone(
+				await getConfig("abrir_mesa_exigir_telefone", "1"),
+			),
 			comandaPedirMesaLocal:
 				(await getConfig("comanda_pedir_mesa_local", "0")) === "1",
 			qtdMesas: Math.max(1, Number(await getConfig("qtd_mesas", "20")) || 20),
@@ -806,7 +818,7 @@ export const localApi = {
 			const local = await loginOfflineLocal(login, password, persistirSessao);
 			if (local) return local;
 			throw new Error(
-				"Usuário ou senha inválidos. Sincronize as credenciais com a API key nas configurações (Carga / sync).",
+				"Usuário ou senha inválidos. Em «Configurar conexão», valide a API key para sincronizar as credenciais (ou limpe a key para logar pela nuvem).",
 			);
 		}
 
@@ -898,12 +910,17 @@ export const localApi = {
 		await sincronizarModuloGourmet(await obterSessao());
 		// Fiscal/numeração/certificado primeiro — independente do catálogo.
 		await sincronizarFiscalPdv().catch(() => undefined);
+		let usuarios = 0;
+		let catalogoErro: string | null = null;
 		try {
-			await pullCatalogo();
-		} catch {
+			const pull = await pullCatalogo();
+			usuarios = pull.usuarios ?? 0;
+		} catch (err) {
 			// sync de catálogo opcional no bind; não desfaz o vínculo do device
+			catalogoErro =
+				err instanceof Error ? err.message : "Falha ao sincronizar catálogo";
 		}
-		return device;
+		return { ...device, usuarios, catalogoErro };
 	},
 
 	async selecionarEmpresa(idempresa: string, nomeempresa: string) {
@@ -1027,6 +1044,33 @@ export const localApi = {
 			pasta,
 			forcar: true,
 		});
+	},
+
+	async listarBackups(pasta?: string) {
+		return listarBackupsPdv(pasta);
+	},
+
+	async escolherArquivoBackup() {
+		const win = BrowserWindow.getFocusedWindow();
+		if (!win) {
+			return null;
+		}
+		const resultado = await dialog.showOpenDialog(win, {
+			title: "Escolher backup do PDV",
+			properties: ["openFile"],
+			filters: [{ name: "Backup PDV", extensions: ["gz"] }],
+		});
+		if (resultado.canceled || !resultado.filePaths[0]) {
+			return null;
+		}
+		return resultado.filePaths[0];
+	},
+
+	async restaurarBackup(arquivo: string) {
+		const resultado = await restaurarBackupPdv(arquivo);
+		await reiniciarBackupAgendado().catch(() => undefined);
+		await reconectarDb().catch(() => undefined);
+		return resultado;
 	},
 
 	async escolherPastaBackup() {
@@ -1167,6 +1211,16 @@ export const localApi = {
 		const saved = Object.keys(resto).length
 			? await salvarConfiguracoes(resto)
 			: {};
+		if (resto.iniciar_fullscreen !== undefined) {
+			const { aplicarFullscreenNaJanela } = await import(
+				"../janela-fullscreen"
+			);
+			const win =
+				BrowserWindow.getFocusedWindow() ??
+				BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
+				null;
+			aplicarFullscreenNaJanela(win, resto.iniciar_fullscreen !== "0");
+		}
 		if (
 			resto.lan_habilitada !== undefined ||
 			resto.lan_porta !== undefined ||
@@ -2171,15 +2225,23 @@ export const localApi = {
 		return conta;
 	},
 
-	async abrirContaMesa(numero: number, nomecliente?: string) {
+	async abrirContaMesa(
+		numero: number,
+		nomecliente?: string,
+		telefone?: string | null,
+	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		if (await ehSecundario()) {
-			const conta = await remoto.abrirContaMesaRemoto(numero, nomecliente);
+			const conta = await remoto.abrirContaMesaRemoto(
+				numero,
+				nomecliente,
+				telefone,
+			);
 			avisarTecnibra();
 			return conta;
 		}
-		const conta = await abrirContaMesa(numero, nomecliente);
+		const conta = await abrirContaMesa(numero, nomecliente, telefone);
 		avisarTecnibra();
 		return conta;
 	},

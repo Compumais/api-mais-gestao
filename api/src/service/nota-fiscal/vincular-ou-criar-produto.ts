@@ -166,6 +166,7 @@ export async function criarProdutoParaNf(
 			idfornecedor: dados.idfornecedor ?? null,
 			idgrupo: dados.idgrupo ?? null,
 			custoaquisicao: dados.custoaquisicao ?? null,
+			precoultimacompra: dados.custoaquisicao ?? null,
 			quantidadepadrao: null,
 			preco: precoVendaInformado(dados.preco) ? dados.preco : null,
 			fatorconversao: dados.fatorconversao ?? "1",

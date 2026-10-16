@@ -187,6 +187,8 @@ export type StatusPdv = {
 	emitirNfce: boolean;
 	modeloAtendimento: ModeloAtendimento;
 	modalAbrirMesaHabilitado?: boolean;
+	abrirMesaExigirNome?: boolean;
+	abrirMesaExigirTelefone?: boolean;
 	comandaPedirMesaLocal?: boolean;
 	qtdMesas: number;
 	modo?: "principal" | "secundario";

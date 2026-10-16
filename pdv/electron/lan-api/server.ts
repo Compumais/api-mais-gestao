@@ -743,9 +743,14 @@ async function despachar(
 	const mesaAbrirMatch = path.match(/^\/pos\/mesas\/(\d+)\/abrir$/);
 	if (method === "POST" && mesaAbrirMatch) {
 		const nome = body.nomecliente ? String(body.nomecliente) : undefined;
+		const telefone = body.telefone ? String(body.telefone) : undefined;
 		return {
 			status: 200,
-			body: await localApi.abrirContaMesa(Number(mesaAbrirMatch[1]), nome),
+			body: await localApi.abrirContaMesa(
+				Number(mesaAbrirMatch[1]),
+				nome,
+				telefone,
+			),
 		};
 	}
 

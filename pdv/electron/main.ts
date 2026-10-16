@@ -7,6 +7,10 @@ import {
 	pararWhatsapp,
 } from "./integracao/whatsapp/servico";
 import {
+	aplicarFullscreenPreferido,
+	registrarAtalhoFullscreen,
+} from "./janela-fullscreen";
+import {
 	delegarLanAoServicoExterno,
 	encerrarLanServer,
 	restartLanServer,
@@ -96,6 +100,7 @@ function createWindow(): void {
 		minHeight: 700,
 		title: "PDV Mais Gestão",
 		autoHideMenuBar: true,
+		fullscreenable: true,
 		webPreferences: {
 			preload: join(__dirname, "../preload/index.js"),
 			contextIsolation: true,
@@ -103,6 +108,9 @@ function createWindow(): void {
 			sandbox: false,
 		},
 	});
+
+	registrarAtalhoFullscreen(mainWindow);
+	void aplicarFullscreenPreferido(mainWindow);
 
 	mainWindow.webContents.setWindowOpenHandler((details) => {
 		void shell.openExternal(details.url);
@@ -167,6 +175,9 @@ app.whenReady().then(async () => {
 			await initDbComRetry();
 		} else {
 			await initDb();
+		}
+		if (!LAN_SERVICE_MODE) {
+			await aplicarFullscreenPreferido(mainWindow);
 		}
 		void processarOutbox();
 		void reconciliarNfce().catch(() => undefined);

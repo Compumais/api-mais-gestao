@@ -861,6 +861,8 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["qtd_mesas", "20"],
 		["modelo_atendimento", "mesa"],
 		["modal_abrir_mesa_habilitado", "1"],
+		["abrir_mesa_exigir_nome", "1"],
+		["abrir_mesa_exigir_telefone", "1"],
 		["comanda_pedir_mesa_local", "0"],
 		["tempo_ociosidade_min", "15"],
 		["filtro_apenas_abertas", "0"],
