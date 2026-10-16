@@ -14,8 +14,8 @@ import { fichaproducao } from "./ficha-producao.js";
 import { produtos } from "./produtos.js";
 import { usuarios } from "./usuarios.js";
 
-const numeric186 = numeric({ precision: 18, scale: 6, mode: "string" });
-const numeric2110 = numeric({ precision: 21, scale: 10, mode: "string" });
+const numeric186 = () => numeric({ precision: 18, scale: 6, mode: "string" });
+const numeric2110 = () => numeric({ precision: 21, scale: 10, mode: "string" });
 
 export const registroproducao = pgTable(
 	"registroproducao",
@@ -26,9 +26,9 @@ export const registroproducao = pgTable(
 		idprodutoacabado: text().notNull(),
 		/** 0 = massa, 1 = venda */
 		origem: smallint().notNull(),
-		quantidadeproduzida: numeric186.notNull(),
-		custototal: numeric2110,
-		custounitario: numeric2110,
+		quantidadeproduzida: numeric186().notNull(),
+		custototal: numeric2110(),
+		custounitario: numeric2110(),
 		/** Id da venda PDV ou NF quando origem = venda */
 		idoriginal: text(),
 		/** Tipo de estoque afetado (0 operacional, 1 fiscal, 2 ambos) */
