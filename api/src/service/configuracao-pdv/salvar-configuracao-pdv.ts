@@ -12,7 +12,7 @@ import { paraResposta } from "./mapear-configuracao-pdv.js";
 type SalvarConfiguracaoPdvParametros = {
 	idusuario: string;
 	idempresa: string;
-	dados: ConfiguracaoPdvResposta;
+	dados: Partial<ConfiguracaoPdvResposta>;
 };
 
 export async function salvarConfiguracaoPdvService({
@@ -31,27 +31,33 @@ export async function salvarConfiguracaoPdvService({
 		return httpProibido();
 	}
 
-	const digitos = Number(dados.etiqueta_balanca_digitos_codigo);
+	const existente = await buscarConfiguracaoPdvPorEmpresa(idempresa);
+	const mesclado: ConfiguracaoPdvResposta = {
+		...paraResposta(existente),
+		...dados,
+	};
+
+	const digitos = Number(mesclado.etiqueta_balanca_digitos_codigo);
 	if (digitos !== 4 && digitos !== 5 && digitos !== 6) {
 		return httpBadRequest("Dígitos do código da etiqueta devem ser 4, 5 ou 6");
 	}
 
-	const existente = await buscarConfiguracaoPdvPorEmpresa(idempresa);
 	const salva = await salvarConfiguracaoPdv({
 		id: existente?.id ?? uuidv4(),
 		idempresa,
 		modeloatendimento:
-			dados.modeloAtendimento === "comanda" ? "comanda" : "mesa",
+			mesclado.modeloAtendimento === "comanda" ? "comanda" : "mesa",
 		etiquetabalancahabilitada:
-			dados.etiqueta_balanca_habilitada === "1" ? 1 : 0,
+			mesclado.etiqueta_balanca_habilitada === "1" ? 1 : 0,
 		etiquetabalancaprefixo:
-			dados.etiqueta_balanca_prefixo.replace(/\D/g, "").slice(0, 1) || "2",
+			mesclado.etiqueta_balanca_prefixo.replace(/\D/g, "").slice(0, 1) || "2",
 		etiquetabalancadigitoscodigo: digitos,
 		etiquetabalancaconteudo:
-			dados.etiqueta_balanca_conteudo === "peso" ? "peso" : "preco",
-		etiquetabalancacentavos: dados.etiqueta_balanca_centavos === "0" ? 0 : 1,
+			mesclado.etiqueta_balanca_conteudo === "peso" ? "peso" : "preco",
+		etiquetabalancacentavos: mesclado.etiqueta_balanca_centavos === "0" ? 0 : 1,
 		etiquetabalancaindicadoruso:
-			dados.etiqueta_balanca_indicador_uso === "1" ? 1 : 0,
+			mesclado.etiqueta_balanca_indicador_uso === "1" ? 1 : 0,
+		vendasemestoque: mesclado.venda_sem_estoque === "1" ? 1 : 0,
 		atualizadoem: new Date().toISOString(),
 	});
 

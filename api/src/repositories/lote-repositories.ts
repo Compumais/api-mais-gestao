@@ -108,6 +108,7 @@ export async function aplicarDeltaSaldoLote(
 	id: string,
 	deltaOperacional: number,
 	deltaFiscal: number,
+	permitirNegativo = false,
 ): Promise<Lote | undefined> {
 	const registro = await buscarLotePorId(id);
 	if (!registro) return undefined;
@@ -118,7 +119,11 @@ export async function aplicarDeltaSaldoLote(
 		(Number.parseFloat(registro.quantidadefiscal ?? "0") || 0) + deltaFiscal;
 
 	return atualizarLote(id, {
-		quantidade: Math.max(0, operacional).toFixed(6),
-		quantidadefiscal: Math.max(0, fiscal).toFixed(6),
+		quantidade: (permitirNegativo ? operacional : Math.max(0, operacional)).toFixed(
+			6,
+		),
+		quantidadefiscal: (permitirNegativo ? fiscal : Math.max(0, fiscal)).toFixed(
+			6,
+		),
 	});
 }

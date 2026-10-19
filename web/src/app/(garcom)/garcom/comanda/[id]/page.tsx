@@ -11,7 +11,9 @@ import { useEmpresa } from "@/hooks/use-empresa";
 import { useFecharVenda } from "@/hooks/use-fechar-venda";
 import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { useProdutosGarcom } from "@/hooks/use-produtos-garcom";
+import { useVendaSemEstoque } from "@/hooks/use-configuracao-pdv";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
+import { produtoBloqueadoPorEstoque } from "@/lib/estoque-venda";
 import {
 	buildContaMesaItemFromProduto,
 	buildCupomNfceInfo,
@@ -37,6 +39,7 @@ export default function GarcomComandaPage() {
 	const { fecharConta } = useFecharVenda();
 	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
+	const vendaSemEstoque = useVendaSemEstoque(empresa?.id);
 	const { produtosPorGrupo, isLoading: isLoadingProdutos } = useProdutosGarcom(
 		empresa?.id,
 	);
@@ -67,12 +70,14 @@ export default function GarcomComandaPage() {
 				throw new Error("Dados incompletos para adicionar item");
 			}
 
-			if (produto.codigo != null) {
-				const chave = String(produto.codigo);
-				const saldo = saldoPorCodigo[chave];
-				if (saldo !== undefined && saldo <= 0) {
-					throw new Error(`${produto.nome} está sem estoque disponível`);
-				}
+			if (
+				produtoBloqueadoPorEstoque(
+					produto.codigo,
+					saldoPorCodigo,
+					vendaSemEstoque,
+				)
+			) {
+				throw new Error(`${produto.nome} está sem estoque disponível`);
 			}
 
 			return contaMesaItemService.criar(
@@ -217,6 +222,7 @@ export default function GarcomComandaPage() {
 					onAdicionar={(produto) => adicionarItem(produto)}
 					isAdding={isAdding}
 					saldoPorCodigo={saldoPorCodigo}
+					vendaSemEstoque={vendaSemEstoque}
 				/>
 
 				<div className="fixed right-0 bottom-0 left-0 z-40 border-t bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">

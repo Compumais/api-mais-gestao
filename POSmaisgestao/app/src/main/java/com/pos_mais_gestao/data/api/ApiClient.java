@@ -2547,6 +2547,12 @@ public class ApiClient {
         if (status.has("modalAbrirMesaHabilitado") && !status.get("modalAbrirMesaHabilitado").isJsonNull()) {
             prefsStore.setModalAbrirMesaHabilitado(booleanFlexivel(status.get("modalAbrirMesaHabilitado")));
         }
+        if (status.has("abrirMesaExigirNome") && !status.get("abrirMesaExigirNome").isJsonNull()) {
+            prefsStore.setAbrirMesaExigirNome(booleanFlexivel(status.get("abrirMesaExigirNome")));
+        }
+        if (status.has("abrirMesaExigirTelefone") && !status.get("abrirMesaExigirTelefone").isJsonNull()) {
+            prefsStore.setAbrirMesaExigirTelefone(booleanFlexivel(status.get("abrirMesaExigirTelefone")));
+        }
         aplicarEtiqueta(status);
     }
 

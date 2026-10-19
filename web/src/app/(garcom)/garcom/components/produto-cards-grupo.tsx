@@ -22,6 +22,7 @@ interface ProdutoCardsGrupoProps {
 	onAdicionar: (produto: Produto) => void;
 	isAdding?: boolean;
 	saldoPorCodigo?: Record<string, number>;
+	vendaSemEstoque?: boolean;
 }
 
 const CHIP_TODOS = "__todos__";
@@ -32,6 +33,7 @@ export function ProdutoCardsGrupo({
 	onAdicionar,
 	isAdding,
 	saldoPorCodigo,
+	vendaSemEstoque = false,
 }: ProdutoCardsGrupoProps) {
 	const [busca, setBusca] = useState("");
 	const [grupoAtivo, setGrupoAtivo] = useState<string>(CHIP_TODOS);
@@ -160,7 +162,11 @@ export function ProdutoCardsGrupo({
 							)}
 							<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 								{grupo.produtos.map((produto) => {
-									const saldo = getSaldoProduto(produto, saldoPorCodigo);
+									const saldo = getSaldoProduto(
+										produto,
+										saldoPorCodigo,
+										vendaSemEstoque,
+									);
 									const bloqueado = saldo.semEstoque;
 
 									return (

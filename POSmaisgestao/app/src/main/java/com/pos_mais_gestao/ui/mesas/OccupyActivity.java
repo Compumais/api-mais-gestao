@@ -65,31 +65,39 @@ public class OccupyActivity extends AppCompatActivity {
                 inputName.getText() == null ? "" : inputName.getText().toString());
         String telefone = TelefoneBrasil.formatar(
                 inputTelefone.getText() == null ? "" : inputTelefone.getText().toString());
-        if (nome.isEmpty()) {
+        AberturaMesaPolicy.ErroIdentificacao erro = AberturaMesaPolicy.validarIdentificacao(
+                nome, telefone, prefs.isAbrirMesaExigirNome(), prefs.isAbrirMesaExigirTelefone());
+        if (erro == AberturaMesaPolicy.ErroIdentificacao.NOME_OBRIGATORIO) {
             Toast.makeText(this, R.string.informe_nome_cliente, Toast.LENGTH_SHORT).show();
             inputName.requestFocus();
             return;
         }
-        if (telefone.isEmpty()) {
+        if (erro == AberturaMesaPolicy.ErroIdentificacao.TELEFONE_OBRIGATORIO) {
             Toast.makeText(this, R.string.informe_telefone_cliente, Toast.LENGTH_SHORT).show();
             inputTelefone.requestFocus();
             return;
         }
-        if (!TelefoneBrasil.valido(telefone)) {
+        if (erro == AberturaMesaPolicy.ErroIdentificacao.TELEFONE_INVALIDO) {
             Toast.makeText(this, R.string.telefone_cliente_invalido, Toast.LENGTH_SHORT).show();
             inputTelefone.requestFocus();
             return;
         }
+        String nomeEnvio = nome.isEmpty() ? null : nome;
+        String telefoneEnvio = telefone.isEmpty() ? null : telefone;
         btnOccupy.setEnabled(false);
         executor.execute(() -> {
             try {
-                ContaMesaDto conta = api.abrirMesa(numero, nome, telefone);
+                ContaMesaDto conta = api.abrirMesa(numero, nomeEnvio, telefoneEnvio);
                 runOnUiThread(() -> {
                     Intent intent = new Intent(this, PedidoActivity.class);
                     intent.putExtra(PedidoActivity.EXTRA_ID_CONTA, conta.id);
                     intent.putExtra(PedidoActivity.EXTRA_NUMERO, numero);
-                    intent.putExtra(PedidoActivity.EXTRA_NOME, nome);
-                    intent.putExtra(PedidoActivity.EXTRA_TELEFONE, telefone);
+                    if (nomeEnvio != null) {
+                        intent.putExtra(PedidoActivity.EXTRA_NOME, nomeEnvio);
+                    }
+                    if (telefoneEnvio != null) {
+                        intent.putExtra(PedidoActivity.EXTRA_TELEFONE, telefoneEnvio);
+                    }
                     startActivity(intent);
                     finish();
                 });

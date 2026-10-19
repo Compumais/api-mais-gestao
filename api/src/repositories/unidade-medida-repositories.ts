@@ -228,6 +228,7 @@ export async function listarUnidadesMedidaPorEmpresa(idempresa: string) {
 		.select({
 			id: unidademedida.id,
 			codigo: unidademedida.codigo,
+			nome: unidademedida.nome,
 			idempresa: unidademedida.idempresa,
 		})
 		.from(unidademedida)

@@ -22,6 +22,7 @@ export const configuracaopdv = pgTable(
 		etiquetabalancaconteudo: varchar({ length: 10 }).default("preco").notNull(),
 		etiquetabalancacentavos: smallint().default(1).notNull(),
 		etiquetabalancaindicadoruso: smallint().default(0).notNull(),
+		vendasemestoque: smallint().default(0).notNull(),
 		atualizadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),

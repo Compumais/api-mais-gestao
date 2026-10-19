@@ -8,6 +8,7 @@ import {
 } from "@/repositories/produto-historico-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { comCodigoUnidadeGravado } from "@/service/produto/preencher-sigla-unidade.js";
 import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
@@ -50,7 +51,9 @@ export async function atualizarProdutoService({
 		}
 	}
 
-	const dadosAtualizacao = { ...dados };
+	const dadosAtualizacao = dados.idunidademedida
+		? await comCodigoUnidadeGravado({ ...dados })
+		: { ...dados };
 
 	if (dadosAtualizacao.nome && !dadosAtualizacao.descricao) {
 		dadosAtualizacao.descricao = dadosAtualizacao.nome;

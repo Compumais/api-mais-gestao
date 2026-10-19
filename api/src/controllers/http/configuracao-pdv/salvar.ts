@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import type { ConfiguracaoPdvResposta } from "@/model/configuracao-pdv-model.js";
 import { salvarConfiguracaoPdvService } from "@/service/configuracao-pdv/salvar-configuracao-pdv.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
@@ -12,6 +13,7 @@ const bodySchema = z.object({
 	etiqueta_balanca_conteudo: z.enum(["preco", "peso"]).optional(),
 	etiqueta_balanca_centavos: z.enum(["0", "1"]).optional(),
 	etiqueta_balanca_indicador_uso: z.enum(["0", "1"]).optional(),
+	venda_sem_estoque: z.enum(["0", "1"]).optional(),
 });
 
 export async function salvarConfiguracaoPdv(
@@ -24,20 +26,36 @@ export async function salvarConfiguracaoPdv(
 		}
 
 		const body = bodySchema.parse(request.body);
+		const dados: Partial<ConfiguracaoPdvResposta> = {};
+		if (body.modeloAtendimento !== undefined) {
+			dados.modeloAtendimento = body.modeloAtendimento;
+		}
+		if (body.etiqueta_balanca_habilitada !== undefined) {
+			dados.etiqueta_balanca_habilitada = body.etiqueta_balanca_habilitada;
+		}
+		if (body.etiqueta_balanca_prefixo !== undefined) {
+			dados.etiqueta_balanca_prefixo = body.etiqueta_balanca_prefixo;
+		}
+		if (body.etiqueta_balanca_digitos_codigo !== undefined) {
+			dados.etiqueta_balanca_digitos_codigo = body.etiqueta_balanca_digitos_codigo;
+		}
+		if (body.etiqueta_balanca_conteudo !== undefined) {
+			dados.etiqueta_balanca_conteudo = body.etiqueta_balanca_conteudo;
+		}
+		if (body.etiqueta_balanca_centavos !== undefined) {
+			dados.etiqueta_balanca_centavos = body.etiqueta_balanca_centavos;
+		}
+		if (body.etiqueta_balanca_indicador_uso !== undefined) {
+			dados.etiqueta_balanca_indicador_uso = body.etiqueta_balanca_indicador_uso;
+		}
+		if (body.venda_sem_estoque !== undefined) {
+			dados.venda_sem_estoque = body.venda_sem_estoque;
+		}
+
 		const resultado = await salvarConfiguracaoPdvService({
 			idusuario: request.user.id,
 			idempresa: body.idempresa,
-			dados: {
-				modeloAtendimento: body.modeloAtendimento ?? "mesa",
-				etiqueta_balanca_habilitada: body.etiqueta_balanca_habilitada ?? "0",
-				etiqueta_balanca_prefixo: body.etiqueta_balanca_prefixo ?? "2",
-				etiqueta_balanca_digitos_codigo:
-					body.etiqueta_balanca_digitos_codigo ?? "4",
-				etiqueta_balanca_conteudo: body.etiqueta_balanca_conteudo ?? "preco",
-				etiqueta_balanca_centavos: body.etiqueta_balanca_centavos ?? "1",
-				etiqueta_balanca_indicador_uso:
-					body.etiqueta_balanca_indicador_uso ?? "0",
-			},
+			dados,
 		});
 
 		if (!resultado.success) {

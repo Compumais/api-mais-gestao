@@ -15,6 +15,7 @@ const dadosPadrao = {
 	etiqueta_balanca_conteudo: "preco" as const,
 	etiqueta_balanca_centavos: "1" as const,
 	etiqueta_balanca_indicador_uso: "0" as const,
+	venda_sem_estoque: "0" as const,
 };
 
 describe("configuracao pdv", () => {
@@ -86,6 +87,45 @@ describe("configuracao pdv", () => {
 			expect(resultado.body?.etiqueta_balanca_habilitada).toBe("1");
 			expect(resultado.body?.etiqueta_balanca_conteudo).toBe("peso");
 			expect(resultado.body?.etiqueta_balanca_digitos_codigo).toBe("5");
+			expect(resultado.body?.venda_sem_estoque).toBe("0");
+		}
+	});
+
+	it("liga venda sem estoque sem apagar o modo de atendimento", async () => {
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
+		vi.mocked(
+			configuracaoRepository.buscarConfiguracaoPdvPorEmpresa,
+		).mockResolvedValue({
+			id: "cfg-1",
+			idempresa: "empresa",
+			modeloatendimento: "comanda",
+			etiquetabalancahabilitada: 1,
+			etiquetabalancaprefixo: "2",
+			etiquetabalancadigitoscodigo: 5,
+			etiquetabalancaconteudo: "peso",
+			etiquetabalancacentavos: 1,
+			etiquetabalancaindicadoruso: 0,
+			vendasemestoque: 0,
+			atualizadoem: "2026-01-01T00:00:00.000Z",
+		});
+		vi.mocked(configuracaoRepository.salvarConfiguracaoPdv).mockImplementation(
+			async (dados) => dados,
+		);
+
+		const resultado = await salvarConfiguracaoPdvService({
+			idusuario: "usuario",
+			idempresa: "empresa",
+			dados: { venda_sem_estoque: "1" },
+		});
+
+		expect(resultado.success).toBe(true);
+		if (resultado.success) {
+			expect(resultado.body?.venda_sem_estoque).toBe("1");
+			expect(resultado.body?.modeloAtendimento).toBe("comanda");
+			expect(resultado.body?.etiqueta_balanca_habilitada).toBe("1");
+			expect(resultado.body?.etiqueta_balanca_conteudo).toBe("peso");
 		}
 	});
 });

@@ -19,7 +19,9 @@ import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useFecharVenda } from "@/hooks/use-fechar-venda";
 import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
+import { useVendaSemEstoque } from "@/hooks/use-configuracao-pdv";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
+import { produtoBloqueadoPorEstoque } from "@/lib/estoque-venda";
 import {
 	buildContaMesaItemFromProduto,
 	buildCupomNfceInfo,
@@ -47,6 +49,7 @@ export default function ContaMesaPage() {
 	const { fecharFatiaItens, finalizarMesaConta } = useFecharVenda();
 	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
+	const vendaSemEstoque = useVendaSemEstoque(empresa?.id);
 	const { estaAberto } = useCaixaPdv();
 
 	const [pagamentoDialogAberto, setPagamentoDialogAberto] = useState(false);
@@ -91,12 +94,14 @@ export default function ContaMesaPage() {
 				throw new Error("Dados incompletos para adicionar item");
 			}
 
-			if (produto.codigo != null) {
-				const chave = String(produto.codigo);
-				const saldo = saldoPorCodigo[chave];
-				if (saldo !== undefined && saldo <= 0) {
-					throw new Error(`${produto.nome} está sem estoque disponível`);
-				}
+			if (
+				produtoBloqueadoPorEstoque(
+					produto.codigo,
+					saldoPorCodigo,
+					vendaSemEstoque,
+				)
+			) {
+				throw new Error(`${produto.nome} está sem estoque disponível`);
 			}
 
 			return contaMesaItemService.criar(
@@ -263,6 +268,7 @@ export default function ContaMesaPage() {
 						onAdicionar={(produto) => adicionarItem(produto)}
 						isAdding={isAdding}
 						saldoPorCodigo={saldoPorCodigo}
+						vendaSemEstoque={vendaSemEstoque}
 					/>
 				</div>
 				<div className="min-h-0 lg:w-2/5">

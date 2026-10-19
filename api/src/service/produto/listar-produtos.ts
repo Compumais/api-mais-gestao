@@ -5,6 +5,7 @@ import {
 	listarProdutosPorEmpresa,
 	type ProdutoListagem,
 } from "@/repositories/produtos-repositories.js";
+import { preencherSiglaUnidade } from "@/service/produto/preencher-sigla-unidade.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarProdutosParametros = Omit<
@@ -50,9 +51,10 @@ export async function listarProdutosService({
 
 	const total = resultado.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
+	const data = await preencherSiglaUnidade(idempresa, resultado.produtos);
 
 	return httpOk<ListarProdutosResposta>({
-		data: resultado.produtos,
+		data,
 		paginacao: {
 			page,
 			limit,

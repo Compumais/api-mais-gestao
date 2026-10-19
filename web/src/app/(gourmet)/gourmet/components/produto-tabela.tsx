@@ -24,11 +24,13 @@ interface ProdutoTabelaProps {
 	isAdding?: boolean;
 	/** Mapa codigoProduto → quantidade em estoque vindo de saldoestoque */
 	saldoPorCodigo?: Record<string, number>;
+	vendaSemEstoque?: boolean;
 }
 
 function getSaldoInfo(
 	produto: Produto,
 	saldoPorCodigo?: Record<string, number>,
+	vendaSemEstoque = false,
 ): { quantidade: number | null; semEstoque: boolean; label: string } {
 	if (!saldoPorCodigo || produto.codigo == null) {
 		// Produto sem código ou sem dados de saldo: não gerenciado, venda livre
@@ -42,7 +44,7 @@ function getSaldoInfo(
 	}
 
 	const quantidade = saldoPorCodigo[chave];
-	const semEstoque = quantidade <= 0;
+	const semEstoque = !vendaSemEstoque && quantidade <= 0;
 	return {
 		quantidade,
 		semEstoque,
@@ -56,6 +58,7 @@ export function ProdutoTabela({
 	onAdicionar,
 	isAdding,
 	saldoPorCodigo,
+	vendaSemEstoque = false,
 }: ProdutoTabelaProps) {
 	const [busca, setBusca] = useState("");
 
@@ -111,7 +114,11 @@ export function ProdutoTabela({
 								</TableRow>
 							) : (
 								produtosFiltrados.map((produto) => {
-									const saldo = getSaldoInfo(produto, saldoPorCodigo);
+									const saldo = getSaldoInfo(
+										produto,
+										saldoPorCodigo,
+										vendaSemEstoque,
+									);
 									const bloqueado = saldo.semEstoque;
 
 									return (

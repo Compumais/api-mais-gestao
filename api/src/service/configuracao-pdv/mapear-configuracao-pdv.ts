@@ -23,5 +23,6 @@ export function paraResposta(
 			configuracao?.etiquetabalancacentavos === 0 ? "0" : "1",
 		etiqueta_balanca_indicador_uso:
 			configuracao?.etiquetabalancaindicadoruso === 1 ? "1" : "0",
+		venda_sem_estoque: configuracao?.vendasemestoque === 1 ? "1" : "0",
 	};
 }

@@ -9,6 +9,9 @@ import { baixaEstoqueVendaService } from "./baixa-estoque-venda.js";
 import * as complementarFiscal from "./complementar-baixa-fiscal-venda-pdv.js";
 import * as registrarMovimento from "./registrar-movimento-estoque.js";
 
+vi.mock("@/repositories/configuracao-pdv-repositories.js", () => ({
+	buscarConfiguracaoPdvPorEmpresa: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/movimento-estoque-repositories.js");
 vi.mock("@/repositories/nfce-configuracao-repositories.js");

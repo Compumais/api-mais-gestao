@@ -360,22 +360,26 @@ public class MesasActivity extends AppCompatActivity {
                     inputNome.getText() == null ? "" : inputNome.getText().toString());
             String telefone = TelefoneBrasil.formatar(
                     inputTelefone.getText() == null ? "" : inputTelefone.getText().toString());
-            if (nome.isEmpty()) {
+            AberturaMesaPolicy.ErroIdentificacao erro = AberturaMesaPolicy.validarIdentificacao(
+                    nome, telefone, prefs.isAbrirMesaExigirNome(), prefs.isAbrirMesaExigirTelefone());
+            if (erro == AberturaMesaPolicy.ErroIdentificacao.NOME_OBRIGATORIO) {
                 Toast.makeText(this, R.string.informe_nome_cliente, Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (telefone.isEmpty()) {
+            if (erro == AberturaMesaPolicy.ErroIdentificacao.TELEFONE_OBRIGATORIO) {
                 Toast.makeText(this, R.string.informe_telefone_cliente, Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (!TelefoneBrasil.valido(telefone)) {
+            if (erro == AberturaMesaPolicy.ErroIdentificacao.TELEFONE_INVALIDO) {
                 Toast.makeText(this, R.string.telefone_cliente_invalido, Toast.LENGTH_SHORT).show();
                 return;
             }
             dialog.dismiss();
+            String nomeEnvio = nome.isEmpty() ? null : nome;
+            String telefoneEnvio = telefone.isEmpty() ? null : telefone;
             executor.execute(() -> {
                 try {
-                    ContaMesaDto mesa = api.abrirMesa(numeroMesa, nome, telefone);
+                    ContaMesaDto mesa = api.abrirMesa(numeroMesa, nomeEnvio, telefoneEnvio);
                     runOnUiThread(() -> abrirContaCloud(mesa));
                 } catch (ApiException e) {
                     runOnUiThread(() ->

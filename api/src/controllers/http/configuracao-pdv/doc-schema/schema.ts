@@ -41,6 +41,7 @@ const corpoConfiguracao = {
 		etiqueta_balanca_conteudo: { type: "string", enum: ["preco", "peso"] },
 		etiqueta_balanca_centavos: { type: "string", enum: ["0", "1"] },
 		etiqueta_balanca_indicador_uso: { type: "string", enum: ["0", "1"] },
+		venda_sem_estoque: { type: "string", enum: ["0", "1"] },
 	},
 };
 

@@ -10,11 +10,13 @@ interface PdvGradeProdutosProps {
 	isLoading: boolean;
 	onAdicionar: (produto: Produto) => void;
 	saldoPorCodigo?: Record<string, number>;
+	vendaSemEstoque?: boolean;
 }
 
 function getSaldoInfo(
 	produto: Produto,
 	saldoPorCodigo?: Record<string, number>,
+	vendaSemEstoque = false,
 ): { semEstoque: boolean; label: string } {
 	if (!saldoPorCodigo || produto.codigo == null) {
 		return { semEstoque: false, label: "" };
@@ -27,7 +29,7 @@ function getSaldoInfo(
 
 	const quantidade = saldoPorCodigo[chave];
 	return {
-		semEstoque: quantidade <= 0,
+		semEstoque: !vendaSemEstoque && quantidade <= 0,
 		label: quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 3 }),
 	};
 }
@@ -37,6 +39,7 @@ export function PdvGradeProdutos({
 	isLoading,
 	onAdicionar,
 	saldoPorCodigo,
+	vendaSemEstoque = false,
 }: PdvGradeProdutosProps) {
 	if (isLoading) {
 		return (
@@ -62,7 +65,11 @@ export function PdvGradeProdutos({
 		<div className="min-h-0 flex-1 overflow-y-auto p-4">
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
 				{produtos.map((produto) => {
-					const saldo = getSaldoInfo(produto, saldoPorCodigo);
+					const saldo = getSaldoInfo(
+						produto,
+						saldoPorCodigo,
+						vendaSemEstoque,
+					);
 					const desabilitado = saldo.semEstoque;
 
 					return (

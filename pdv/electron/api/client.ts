@@ -1542,6 +1542,25 @@ export async function abrirCaixaRemoto(body: Record<string, unknown>) {
 	return { id };
 }
 
+export async function buscarConfiguracaoPdvRemota(idempresa: string) {
+	return request<{ venda_sem_estoque?: "0" | "1" }>(
+		`/configuracao-pdv?idempresa=${encodeURIComponent(idempresa)}`,
+	);
+}
+
+export async function salvarVendaSemEstoqueRemota(
+	idempresa: string,
+	habilitada: boolean,
+) {
+	return request<{ venda_sem_estoque?: "0" | "1" }>("/configuracao-pdv", {
+		method: "PUT",
+		body: {
+			idempresa,
+			venda_sem_estoque: habilitada ? "1" : "0",
+		},
+	});
+}
+
 export async function atualizarFechamentoCaixaRemoto(
 	id: string | number,
 	body: Record<string, unknown>,
