@@ -48,6 +48,8 @@ export type ExecutarProducaoParametros = {
 	idoriginal?: string | null;
 	/** Quando true, não exige flag permiteproducaomassa */
 	ignorarFlagMassa?: boolean;
+	/** Venda sem estoque: insumos podem ficar negativos. */
+	ignorarValidacaoEstoque?: boolean;
 };
 
 export type ResultadoProducao = {
@@ -144,6 +146,7 @@ export async function executarProducaoService({
 	tipoestoque = TIPO_ESTOQUE.AMBOS,
 	idoriginal = null,
 	ignorarFlagMassa = false,
+	ignorarValidacaoEstoque = false,
 }: ExecutarProducaoParametros): Promise<HttpResponse<ResultadoProducao>> {
 	const ficha = await buscarFichaProducaoPorId(idficha);
 	if (!ficha) {
@@ -190,16 +193,18 @@ export async function executarProducaoService({
 
 	const consumos = calcularConsumosProducao(itensFicha, qtdProduzir);
 
-	for (const consumo of consumos) {
-		if (consumo.quantidade <= 0) continue;
-		const erroSaldo = await validarSaldoInsumo({
-			idempresa: ficha.idempresa,
-			idproduto: consumo.idproduto,
-			quantidadeNecessaria: consumo.quantidade,
-			tipoestoque,
-		});
-		if (erroSaldo) {
-			return httpBadRequest(erroSaldo);
+	if (!ignorarValidacaoEstoque) {
+		for (const consumo of consumos) {
+			if (consumo.quantidade <= 0) continue;
+			const erroSaldo = await validarSaldoInsumo({
+				idempresa: ficha.idempresa,
+				idproduto: consumo.idproduto,
+				quantidadeNecessaria: consumo.quantidade,
+				tipoestoque,
+			});
+			if (erroSaldo) {
+				return httpBadRequest(erroSaldo);
+			}
 		}
 	}
 
@@ -249,6 +254,7 @@ export async function executarProducaoService({
 				valortotal: custoLinha.toFixed(2),
 				observacao: "Consumo produção",
 				permitirSemLote: true,
+				permitirSaldoNegativo: ignorarValidacaoEstoque,
 			});
 
 			itensRegistro.push({

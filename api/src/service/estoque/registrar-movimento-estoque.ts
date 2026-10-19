@@ -35,6 +35,8 @@ export type RegistrarMovimentoEstoqueParametros = {
 	observacao?: string | null;
 	idlote?: string | null;
 	permitirSemLote?: boolean | undefined;
+	/** Saída de venda com a opção "venda sem estoque" ligada. */
+	permitirSaldoNegativo?: boolean | undefined;
 };
 
 function parseQuantidade(valor: string): number {
@@ -119,6 +121,7 @@ async function aplicarDeltaSaldoDoLote(params: {
 	idproduto: string;
 	delta: number;
 	tipoestoque: TipoEstoque;
+	permitirSaldoNegativo?: boolean;
 }) {
 	const registro = await buscarLotePorId(params.idlote);
 	if (!registro) {
@@ -138,21 +141,24 @@ async function aplicarDeltaSaldoDoLote(params: {
 	const operacional = parseQuantidade(registro.quantidade);
 	const fiscal = parseQuantidade(registro.quantidadefiscal);
 
-	if (aplicaOperacional && operacional + params.delta < -0.000001) {
-		throw new Error(
-			`Saldo do lote ${registro.numero} insuficiente para a saída`,
-		);
-	}
-	if (aplicaFiscal && fiscal + params.delta < -0.000001) {
-		throw new Error(
-			`Saldo fiscal do lote ${registro.numero} insuficiente para a saída`,
-		);
+	if (!params.permitirSaldoNegativo) {
+		if (aplicaOperacional && operacional + params.delta < -0.000001) {
+			throw new Error(
+				`Saldo do lote ${registro.numero} insuficiente para a saída`,
+			);
+		}
+		if (aplicaFiscal && fiscal + params.delta < -0.000001) {
+			throw new Error(
+				`Saldo fiscal do lote ${registro.numero} insuficiente para a saída`,
+			);
+		}
 	}
 
 	await aplicarDeltaSaldoLote(
 		params.idlote,
 		aplicaOperacional ? params.delta : 0,
 		aplicaFiscal ? params.delta : 0,
+		params.permitirSaldoNegativo === true,
 	);
 }
 
@@ -177,6 +183,7 @@ export async function registrarMovimentoEstoque({
 	observacao,
 	idlote,
 	permitirSemLote = false,
+	permitirSaldoNegativo = false,
 }: RegistrarMovimentoEstoqueParametros) {
 	const agora = new Date();
 	const dataIso = data ?? agora.toISOString().slice(0, 10);
@@ -230,6 +237,7 @@ export async function registrarMovimentoEstoque({
 			idproduto,
 			delta,
 			tipoestoque,
+			permitirSaldoNegativo,
 		});
 	}
 

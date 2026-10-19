@@ -2,6 +2,7 @@ import type { AtalhoPdvComProduto } from "@/model/atalho-pdv-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { listarAtalhosPdvComProduto } from "@/repositories/atalho-pdv-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { preencherSiglaUnidade } from "@/service/produto/preencher-sigla-unidade.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarAtalhosPdvParametros = {
@@ -26,7 +27,10 @@ export async function listarAtalhosPdvService({
 		return httpProibido();
 	}
 
-	const atalhos = await listarAtalhosPdvComProduto(idempresa, idusuario);
+	const atalhos = await preencherSiglaUnidade(
+		idempresa,
+		await listarAtalhosPdvComProduto(idempresa, idusuario),
+	);
 
 	return httpOk<ListarAtalhosPdvResposta>({
 		data: atalhos,

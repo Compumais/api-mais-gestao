@@ -6,6 +6,7 @@ import {
 	substituirAtalhosPdv,
 } from "@/repositories/atalho-pdv-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { preencherSiglaUnidade } from "@/service/produto/preencher-sigla-unidade.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type SubstituirAtalhosPdvParametros = {
@@ -49,7 +50,10 @@ export async function substituirAtalhosPdvService({
 		})),
 	});
 
-	const atalhos = await listarAtalhosPdvComProduto(idempresa, idusuario);
+	const atalhos = await preencherSiglaUnidade(
+		idempresa,
+		await listarAtalhosPdvComProduto(idempresa, idusuario),
+	);
 
 	return httpOk<SubstituirAtalhosPdvResposta>({
 		data: atalhos,

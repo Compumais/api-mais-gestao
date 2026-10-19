@@ -1,5 +1,6 @@
 import { listarMovimentosEstoquePorDocumento } from "@/repositories/movimento-estoque-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
+import { empresaPermiteVendaSemEstoque } from "@/service/configuracao-pdv/venda-sem-estoque.js";
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
 import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
 import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
@@ -71,6 +72,9 @@ export async function registrarMovimentosEstoqueNf({
 		};
 	}
 
+	const vendaSemEstoque =
+		sentido === "saida" && (await empresaPermiteVendaSemEstoque(idempresa));
+
 	const existentes = await listarMovimentosEstoquePorDocumento(idnotafiscal);
 	const ativos = existentes.filter((movimento) => movimento.cancelado !== 1);
 	const itensComMovimento = new Set(
@@ -121,6 +125,7 @@ export async function registrarMovimentosEstoqueNf({
 					idoriginal: idnotafiscal,
 					tipoestoque: TIPO_ESTOQUE.AMBOS,
 					idusuario,
+					ignorarValidacaoEstoque: vendaSemEstoque,
 				});
 
 				if (!producao.success) {
@@ -151,6 +156,7 @@ export async function registrarMovimentosEstoqueNf({
 				precocusto: custoUnitario.toFixed(2),
 				precoultimacompra: custoUnitario.toFixed(2),
 				observacao: item.lote ? `Lote ${item.lote}`.slice(0, 50) : null,
+				permitirSaldoNegativo: sentido === "saida" && vendaSemEstoque,
 			});
 
 			if (movimento) movimentosCriados++;

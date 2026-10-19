@@ -5,6 +5,9 @@ import * as registrarMovimento from "@/service/estoque/registrar-movimento-estoq
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
 
+vi.mock("@/repositories/configuracao-pdv-repositories.js", () => ({
+	buscarConfiguracaoPdvPorEmpresa: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("@/repositories/movimento-estoque-repositories.js");
 vi.mock("@/repositories/produtos-repositories.js");
 vi.mock("@/service/estoque/registrar-movimento-estoque.js");

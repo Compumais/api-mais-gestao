@@ -7,10 +7,24 @@ import java.util.Locale;
 
 /** Regras de unidade e quantidade para produtos vendidos por peso. */
 public final class ProdutoQuantidade {
+    /** Unidade global KG (api/drizzle/0016_unidades_medida_globais.sql). */
+    public static final String ID_UNIDADE_KG = "a0000001-0000-4000-8000-000000000002";
+
     private ProdutoQuantidade() {}
 
     public static boolean vendidoPorQuilograma(Produto produto) {
-        return produto != null && unidadeQuilograma(produto.getUnidadeMedida());
+        if (produto == null) {
+            return false;
+        }
+        return idUnidadeQuilograma(produto.getIdUnidadeMedida())
+                || unidadeQuilograma(produto.getUnidadeMedida());
+    }
+
+    public static boolean idUnidadeQuilograma(String idUnidade) {
+        if (idUnidade == null) {
+            return false;
+        }
+        return ID_UNIDADE_KG.equals(idUnidade.trim().toLowerCase(Locale.ROOT));
     }
 
     public static boolean unidadeQuilograma(String unidade) {

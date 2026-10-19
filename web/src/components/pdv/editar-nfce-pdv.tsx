@@ -20,7 +20,9 @@ import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
+import { useVendaSemEstoque } from "@/hooks/use-configuracao-pdv";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
+import { produtoBloqueadoPorEstoque } from "@/lib/estoque-venda";
 import {
 	avaliarResultadoBaixaEstoque,
 	obterMotivoFalhaNfceResultado,
@@ -51,6 +53,7 @@ export function EditarNfcePdv() {
 	const [abrirCaixaDialog, setAbrirCaixaDialog] = useState(false);
 
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
+	const vendaSemEstoque = useVendaSemEstoque(empresa?.id);
 
 	const {
 		data: dadosEdicao,
@@ -140,13 +143,15 @@ export function EditarNfcePdv() {
 			return;
 		}
 
-		if (produto.codigo != null) {
-			const chave = String(produto.codigo);
-			const saldo = saldoPorCodigo[chave];
-			if (saldo !== undefined && saldo <= 0) {
-				toast.error(`${produto.nome} está sem estoque disponível`);
-				return;
-			}
+		if (
+			produtoBloqueadoPorEstoque(
+				produto.codigo,
+				saldoPorCodigo,
+				vendaSemEstoque,
+			)
+		) {
+			toast.error(`${produto.nome} está sem estoque disponível`);
+			return;
 		}
 
 		try {
@@ -354,6 +359,7 @@ export function EditarNfcePdv() {
 						isLoading={isLoadingProdutos}
 						onAdicionar={adicionarProduto}
 						saldoPorCodigo={saldoPorCodigo}
+						vendaSemEstoque={vendaSemEstoque}
 					/>
 				</div>
 				<div className="min-h-0 lg:w-2/5">

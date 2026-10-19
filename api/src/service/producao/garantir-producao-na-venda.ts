@@ -16,6 +16,7 @@ export type GarantirProducaoNaVendaParametros = {
 	idoriginal: string;
 	tipoestoque: TipoEstoque;
 	idusuario: string;
+	ignorarValidacaoEstoque?: boolean;
 };
 
 export type ResultadoGarantirProducao = {
@@ -35,6 +36,7 @@ export async function garantirProducaoNaVendaService({
 	idoriginal,
 	tipoestoque,
 	idusuario,
+	ignorarValidacaoEstoque = false,
 }: GarantirProducaoNaVendaParametros): Promise<
 	HttpResponse<ResultadoGarantirProducao>
 > {
@@ -75,6 +77,7 @@ export async function garantirProducaoNaVendaService({
 		tipoestoque,
 		idoriginal,
 		ignorarFlagMassa: true,
+		ignorarValidacaoEstoque,
 	});
 
 	if (!resultado.success || !resultado.body) {

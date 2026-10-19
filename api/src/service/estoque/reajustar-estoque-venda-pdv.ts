@@ -1,4 +1,5 @@
 import { listarMovimentosEstoquePorIdOriginal } from "@/repositories/movimento-estoque-repositories.js";
+import { empresaPermiteVendaSemEstoque } from "@/service/configuracao-pdv/venda-sem-estoque.js";
 import type { ItemBaixaEstoqueVenda } from "@/service/estoque/baixa-estoque-venda.js";
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
 import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE, type TipoEstoque } from "@/util/tipo-estoque.js";
@@ -23,6 +24,7 @@ export async function reajustarEstoqueVendaPdv({
 }: ReajustarEstoqueVendaPdvParametros): Promise<number> {
 	const movimentos = await listarMovimentosEstoquePorIdOriginal(idvenda);
 	let movimentosRegistrados = 0;
+	const vendaSemEstoque = await empresaPermiteVendaSemEstoque(idempresa);
 
 	for (const movimento of movimentos) {
 		if (movimento.cancelado) continue;
@@ -67,6 +69,8 @@ export async function reajustarEstoqueVendaPdv({
 			idoriginal: idvenda,
 			iditemoriginal: item.idproduto,
 			valortotal: valorTotal,
+			permitirSemLote: true,
+			permitirSaldoNegativo: vendaSemEstoque,
 		});
 
 		if (movimento) movimentosRegistrados++;

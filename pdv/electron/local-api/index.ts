@@ -1155,6 +1155,24 @@ export const localApi = {
 		}
 	},
 
+	async buscarVendaSemEstoque() {
+		const sessao = await obterSessao();
+		if (!sessao.idempresa) return "0";
+		const { buscarConfiguracaoPdvRemota } = await import("../api/client");
+		const remota = await buscarConfiguracaoPdvRemota(sessao.idempresa);
+		return remota.venda_sem_estoque === "1" ? "1" : "0";
+	},
+
+	async salvarVendaSemEstoque(habilitada: boolean) {
+		const sessao = await obterSessao();
+		if (!sessao.idempresa) {
+			throw new Error("Empresa não selecionada");
+		}
+		const { salvarVendaSemEstoqueRemota } = await import("../api/client");
+		await salvarVendaSemEstoqueRemota(sessao.idempresa, habilitada === true);
+		return habilitada === true ? "1" : "0";
+	},
+
 	async saveConfig(dados: Record<string, string>) {
 		const payload = { ...dados };
 		let sessao: SessaoLocal | null = null;

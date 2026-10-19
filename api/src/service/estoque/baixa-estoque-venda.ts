@@ -7,6 +7,7 @@ import {
 	emitirNfceVendaPdvService,
 	type ResultadoEmissaoNfcePdv,
 } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
+import { empresaPermiteVendaSemEstoque } from "@/service/configuracao-pdv/venda-sem-estoque.js";
 import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
 import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import { avaliarEmissaoNfcePorPagamento } from "@/util/avaliar-emissao-nfce-pagamento.js";
@@ -87,6 +88,7 @@ export async function baixaEstoqueVendaService({
 
 	const avisos: string[] = [];
 	let movimentosRegistrados = 0;
+	const vendaSemEstoque = await empresaPermiteVendaSemEstoque(idempresa);
 
 	// Homologação SEFAZ: emite NFC-e de teste, sem baixa operacional nem fiscal.
 	if (!homologacao) {
@@ -127,6 +129,7 @@ export async function baixaEstoqueVendaService({
 					idoriginal: idvenda,
 					tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
 					idusuario,
+					ignorarValidacaoEstoque: vendaSemEstoque,
 				});
 
 				if (!producao.success) {
@@ -147,6 +150,7 @@ export async function baixaEstoqueVendaService({
 					iditemoriginal: item.idproduto,
 					valortotal: valorTotal,
 					permitirSemLote: true,
+					permitirSaldoNegativo: vendaSemEstoque,
 				});
 
 				if (movimento) movimentosRegistrados++;
@@ -195,6 +199,7 @@ export async function baixaEstoqueVendaService({
 					idvenda,
 					itens,
 					idusuario,
+					vendaSemEstoque,
 				});
 				movimentosRegistrados += complemento.movimentosRegistrados;
 				avisos.push(...complemento.avisos);

@@ -20,6 +20,7 @@ import { NotificacoesForm } from "./components/notificacoes-form";
 import { OrdemServicoConfigForm } from "./components/ordem-servico-form";
 import { RelatoriosForm } from "./components/relatorios-form";
 import { TemaForm } from "./components/tema-form";
+import { VendaSemEstoqueForm } from "./components/venda-sem-estoque-form";
 
 function AvisoEmpresaNecessaria() {
 	return (
@@ -81,6 +82,7 @@ export default function ConfiguracoesPage() {
 							</TabsTrigger>
 							<TabsTrigger value="relatorios">Relatórios</TabsTrigger>
 							<TabsTrigger value="impressao">Impressão</TabsTrigger>
+							<TabsTrigger value="estoque">Estoque</TabsTrigger>
 							<TabsTrigger value="pdv">PDV</TabsTrigger>
 						</TabsList>
 
@@ -164,6 +166,12 @@ export default function ConfiguracoesPage() {
 									configuracao={configuracao}
 									idempresa={empresa!.id}
 								/>
+							)}
+						</TabsContent>
+
+						<TabsContent value="estoque" className="mt-4">
+							{conteudoEmpresa ?? (
+								<VendaSemEstoqueForm idempresa={empresa!.id} />
 							)}
 						</TabsContent>
 

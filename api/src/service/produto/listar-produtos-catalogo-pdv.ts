@@ -4,6 +4,7 @@ import {
 	listarProdutosCatalogoPdv,
 	type ProdutoCatalogoPdv,
 } from "@/repositories/produtos-repositories.js";
+import { preencherSiglaUnidade } from "@/service/produto/preencher-sigla-unidade.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarProdutosCatalogoPdvParametros = {
@@ -48,9 +49,10 @@ export async function listarProdutosCatalogoPdvService({
 
 	const total = resultado.total ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / limit) || 1);
+	const data = await preencherSiglaUnidade(idempresa, resultado.produtos);
 
 	return httpOk<ListarProdutosCatalogoPdvResposta>({
-		data: resultado.produtos,
+		data,
 		paginacao: {
 			page,
 			limit,

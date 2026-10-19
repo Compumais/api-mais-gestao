@@ -1,5 +1,6 @@
 package com.pos_mais_gestao.domain;
 
+import com.pos_mais_gestao.util.ProdutoQuantidade;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -73,6 +74,10 @@ public class Produto implements Serializable {
     }
 
     public String getUnidadeMedida() {
+        if (ProdutoQuantidade.idUnidadeQuilograma(idUnidadeMedida)
+                && !ProdutoQuantidade.unidadeQuilograma(unidadeMedida)) {
+            return "KG";
+        }
         return unidadeMedida;
     }
 

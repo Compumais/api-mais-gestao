@@ -79,6 +79,7 @@ export function filtrarProdutosPorBusca(
 export function getSaldoProduto(
 	produto: Produto,
 	saldoPorCodigo?: Record<string, number>,
+	vendaSemEstoque = false,
 ): { quantidade: number | null; semEstoque: boolean; label: string } {
 	if (!saldoPorCodigo || produto.codigo == null) {
 		return { quantidade: null, semEstoque: false, label: "—" };
@@ -90,7 +91,7 @@ export function getSaldoProduto(
 	}
 
 	const quantidade = saldoPorCodigo[chave];
-	const semEstoque = quantidade <= 0;
+	const semEstoque = !vendaSemEstoque && quantidade <= 0;
 	return {
 		quantidade,
 		semEstoque,

@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as produtosRepository from "@/repositories/produtos-repositories.js";
+import * as unidadeMedidaRepository from "@/repositories/unidade-medida-repositories.js";
 import { listarProdutosService } from "./listar-produtos.js";
 
 vi.mock("@/repositories/produtos-repositories");
 vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/unidade-medida-repositories");
 
 describe("listarProdutosService", () => {
 	beforeEach(() => {
@@ -107,5 +109,43 @@ describe("listarProdutosService", () => {
 		expect(produtosRepository.listarProdutosPorEmpresa).toHaveBeenCalledWith(
 			expect.objectContaining({ somenteDivergencia: true }),
 		);
+	});
+
+	it("preenche a sigla KG quando o produto só tem o id da unidade", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(produtosRepository.listarProdutosPorEmpresa).mockResolvedValue({
+			produtos: [
+				{
+					id: "prod-kg",
+					idempresa: "empresa-1",
+					nome: "Queijo",
+					unidademedida: null,
+					idunidademedida: "a0000001-0000-4000-8000-000000000002",
+				} as never,
+			],
+			total: 1,
+		});
+		vi.mocked(
+			unidadeMedidaRepository.listarUnidadesMedidaPorEmpresa,
+		).mockResolvedValue([
+			{
+				id: "a0000001-0000-4000-8000-000000000002",
+				codigo: "KG",
+				nome: "Quilograma",
+				idempresa: null,
+			},
+		]);
+
+		const resultado = await listarProdutosService({
+			idusuario: "usuario-1",
+			idempresa: "empresa-1",
+		});
+
+		expect(resultado.success).toBe(true);
+		if (resultado.success && resultado.body) {
+			expect(resultado.body.data[0]?.unidademedida).toBe("KG");
+		}
 	});
 });

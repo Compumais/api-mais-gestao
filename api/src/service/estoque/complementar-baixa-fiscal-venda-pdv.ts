@@ -1,4 +1,5 @@
 import { listarMovimentosEstoquePorIdOriginal } from "@/repositories/movimento-estoque-repositories.js";
+import { empresaPermiteVendaSemEstoque } from "@/service/configuracao-pdv/venda-sem-estoque.js";
 import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
 import {
 	TIPO_DOCUMENTO_ESTOQUE,
@@ -17,9 +18,13 @@ export async function complementarBaixaFiscalVendaPdv(params: {
 	idvenda: string;
 	itens: ItemBaixaEstoqueVenda[];
 	idusuario?: string;
+	vendaSemEstoque?: boolean;
 }): Promise<{ movimentosRegistrados: number; avisos: string[] }> {
 	const avisos: string[] = [];
 	let movimentosRegistrados = 0;
+	const vendaSemEstoque =
+		params.vendaSemEstoque ??
+		(await empresaPermiteVendaSemEstoque(params.idempresa));
 
 	const movimentos = await listarMovimentosEstoquePorIdOriginal(params.idvenda);
 	const itensComFiscal = new Set(
@@ -55,6 +60,7 @@ export async function complementarBaixaFiscalVendaPdv(params: {
 					idoriginal: params.idvenda,
 					tipoestoque: TIPO_ESTOQUE.FISCAL,
 					idusuario: params.idusuario,
+					ignorarValidacaoEstoque: vendaSemEstoque,
 				});
 
 				if (!producao.success) {
@@ -77,6 +83,7 @@ export async function complementarBaixaFiscalVendaPdv(params: {
 				valortotal: valorTotal,
 				observacao: "Baixa fiscal NFC-e",
 				permitirSemLote: true,
+				permitirSaldoNegativo: vendaSemEstoque,
 			});
 			if (movimento) movimentosRegistrados++;
 		} catch (erro) {

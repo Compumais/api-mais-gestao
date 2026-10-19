@@ -6,8 +6,6 @@ import java.math.RoundingMode;
 
 /** Leitura de etiqueta EAN-13 impressa por balança (PLU + peso ou preço). */
 public final class EtiquetaBalanca {
-    private static final String ID_UNIDADE_KG = "a0000001-0000-4000-8000-000000000002";
-
     private EtiquetaBalanca() {}
 
     public static final class Config {
@@ -152,12 +150,6 @@ public final class EtiquetaBalanca {
     }
 
     private static boolean pareceKg(Produto produto) {
-        String id = produto.getIdUnidadeMedida() == null
-                ? ""
-                : produto.getIdUnidadeMedida().trim().toLowerCase();
-        if (ID_UNIDADE_KG.equals(id)) {
-            return true;
-        }
-        return ProdutoQuantidade.unidadeQuilograma(produto.getUnidadeMedida());
+        return ProdutoQuantidade.vendidoPorQuilograma(produto);
     }
 }

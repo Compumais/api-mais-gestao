@@ -335,6 +335,8 @@ export function ConfigPage() {
 	const [numeropdvPrincipal, setNumeropdvPrincipal] = useState<number | null>(
 		null,
 	);
+	const [vendaSemEstoque, setVendaSemEstoque] = useState("0");
+	const [salvandoVendaSemEstoque, setSalvandoVendaSemEstoque] = useState(false);
 	const [testeEtiqueta, setTesteEtiqueta] = useState("");
 	const [resultadoTesteEtiqueta, setResultadoTesteEtiqueta] = useState("");
 	const rotulo = rotuloModelo(
@@ -366,6 +368,12 @@ export function ConfigPage() {
 		void (async () => {
 			const cfgInicial = await pdvInvoke<Config>("getConfig");
 			setConfig(cfgInicial);
+			try {
+				const venda = await pdvInvoke<string>("buscarVendaSemEstoque");
+				setVendaSemEstoque(venda === "1" ? "1" : "0");
+			} catch {
+				setVendaSemEstoque("0");
+			}
 			try {
 				setImpressoras(await pdvInvoke("listarImpressoras"));
 			} catch {
@@ -450,6 +458,31 @@ export function ConfigPage() {
 
 	function set(chave: string, valor: string) {
 		setConfig((prev) => ({ ...prev, [chave]: valor }));
+	}
+
+	async function alterarVendaSemEstoque(valor: string) {
+		const anterior = vendaSemEstoque;
+		const habilitada = valor === "1";
+		setVendaSemEstoque(habilitada ? "1" : "0");
+		setSalvandoVendaSemEstoque(true);
+		setMsg("");
+		try {
+			await pdvInvoke("salvarVendaSemEstoque", habilitada);
+			setMsg(
+				habilitada
+					? "Venda sem estoque habilitada"
+					: "Venda sem estoque desabilitada",
+			);
+		} catch (err) {
+			setVendaSemEstoque(anterior);
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Erro ao salvar venda sem estoque",
+			);
+		} finally {
+			setSalvandoVendaSemEstoque(false);
+		}
 	}
 
 	async function autenticarDevice(forcar = false) {
@@ -1186,6 +1219,37 @@ export function ConfigPage() {
 				<div className="pdv-scrollbar min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-5">
 					<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 [&_[data-slot=card]]:border-t-4 [&_[data-slot=card]]:border-t-blue-600 [&_[data-slot=card]]:shadow-sm [&_[data-slot=card-header]]:border-b [&_[data-slot=card-header]]:border-border/70 [&_[data-slot=card-header]]:pb-3 [&_[data-slot=card-title]]:text-base [&_[data-slot=card-title]]:font-bold [&_[data-slot=card-title]]:text-slate-900 dark:[&_[data-slot=card-title]]:text-slate-100">
 						{aba === "geral" && (
+							<>
+							<Card>
+								<CardHeader>
+									<CardTitle>Estoque</CardTitle>
+								</CardHeader>
+								<CardContent className="grid gap-4">
+									<div className="space-y-2">
+										<Label htmlFor="venda_sem_estoque">
+											Venda sem estoque
+										</Label>
+										<Select
+											id="venda_sem_estoque"
+											value={vendaSemEstoque}
+											disabled={salvandoVendaSemEstoque}
+											onChange={(e) =>
+												void alterarVendaSemEstoque(e.target.value)
+											}
+										>
+											<option value="0">Desligada</option>
+											<option value="1">
+												Ligada — permite estoque negativo
+											</option>
+										</Select>
+										<p className="text-xs text-muted-foreground">
+											Com a opção ligada, o PDV web, o gourmet e o garçom não
+											bloqueiam produto sem saldo. A baixa continua e o estoque
+											pode ficar negativo.
+										</p>
+									</div>
+								</CardContent>
+							</Card>
 							<Card>
 								<CardHeader>
 									<CardTitle>Este PDV</CardTitle>
@@ -1673,6 +1737,7 @@ export function ConfigPage() {
 									</div>
 								</CardContent>
 							</Card>
+							</>
 						)}
 
 						{aba === "atalhos" && (

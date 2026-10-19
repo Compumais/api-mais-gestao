@@ -27,6 +27,7 @@ export async function salvarConfiguracaoPdv(dados: ConfiguracaoPdv) {
 				etiquetabalancaconteudo: dados.etiquetabalancaconteudo,
 				etiquetabalancacentavos: dados.etiquetabalancacentavos,
 				etiquetabalancaindicadoruso: dados.etiquetabalancaindicadoruso,
+				vendasemestoque: dados.vendasemestoque,
 				atualizadoem: dados.atualizadoem,
 			},
 		})

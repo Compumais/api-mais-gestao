@@ -73,6 +73,7 @@ describe("registrarMovimentoEstoque com lote", () => {
 			"lote-1",
 			-3,
 			-3,
+			false,
 		);
 		expect(saldoRepository.atualizarSaldoEstoque).toHaveBeenCalledWith(
 			1,
@@ -113,6 +114,37 @@ describe("registrarMovimentoEstoque com lote", () => {
 			expect.objectContaining({
 				quantidade: "-3.000000",
 			}),
+		);
+	});
+
+	it("permite saldo de lote negativo quando a venda sem estoque está ligada", async () => {
+		vi.mocked(loteRepository.buscarLotePorId).mockResolvedValue({
+			id: "lote-1",
+			idproduto: "prod-1",
+			numero: "A",
+			quantidade: "1",
+			quantidadefiscal: "1",
+		} as never);
+		vi.mocked(loteRepository.aplicarDeltaSaldoLote).mockResolvedValue(
+			{} as never,
+		);
+
+		await registrarMovimentoEstoque({
+			idempresa: "emp-1",
+			idproduto: "prod-1",
+			quantidade: "4",
+			sentido: "saida",
+			tipoestoque: 2,
+			tipodocumento: 0,
+			idlote: "lote-1",
+			permitirSaldoNegativo: true,
+		});
+
+		expect(loteRepository.aplicarDeltaSaldoLote).toHaveBeenCalledWith(
+			"lote-1",
+			-4,
+			-4,
+			true,
 		);
 	});
 });

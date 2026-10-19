@@ -778,6 +778,13 @@
       "when": 1790400000000,
       "tag": "0108_configuracao_pdv",
       "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1790500000000,
+      "tag": "0109_venda_sem_estoque",
+      "breakpoints": true
     }
   ]
 }

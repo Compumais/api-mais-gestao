@@ -5,6 +5,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { criarProdutoComHistorico } from "@/repositories/produto-historico-repositories.js";
 import { excluirProduto } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { comCodigoUnidadeGravado } from "@/service/produto/preencher-sigla-unidade.js";
 import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import {
 	httpCriacao,
@@ -46,10 +47,13 @@ export async function criarProdutoService({
 		return httpProibido();
 	}
 
-	const registro = await criarProdutoComHistorico(dadosProduto, {
-		idusuario,
-		ip,
-	});
+	const registro = await criarProdutoComHistorico(
+		await comCodigoUnidadeGravado(dadosProduto),
+		{
+			idusuario,
+			ip,
+		},
+	);
 
 	if (!registro) {
 		return httpErro();
