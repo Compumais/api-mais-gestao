@@ -276,6 +276,8 @@ const propriedadesProdutoResposta = {
 	idmarca: { type: "string", format: "uuid", nullable: true },
 	idgrupogourmet: { type: "string", format: "uuid", nullable: true },
 	preco: { type: "string", nullable: true },
+	custoaquisicao: { type: "string", nullable: true },
+	tipoproduto: { type: "string", nullable: true },
 	tipo: { type: "string", enum: ["P", "S"], nullable: true },
 	iat: {
 		anyOf: [{ type: "string", enum: ["A", "T"] }, { type: "null" }],
@@ -355,6 +357,10 @@ export const criarProdutoSchema: FastifySchema = {
 			},
 			idgrupogourmet: { anyOf: [{ type: "string" }, { type: "null" }] },
 			preco: { type: "string" },
+			custoaquisicao: {
+				anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+			},
+			tipoproduto: { anyOf: [{ type: "string" }, { type: "null" }] },
 			tipo: { type: "string", enum: ["P", "S"] },
 			iat: {
 				anyOf: [{ type: "string", enum: ["A", "T"] }, { type: "null" }],
@@ -550,6 +556,10 @@ export const atualizarProdutoSchema: FastifySchema = {
 				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
 			},
 			preco: { anyOf: [{ type: "string" }, { type: "number" }] },
+			custoaquisicao: {
+				anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+			},
+			tipoproduto: { anyOf: [{ type: "string" }, { type: "null" }] },
 			tipo: { type: "string", enum: ["P", "S"] },
 			iat: {
 				anyOf: [{ type: "string", enum: ["A", "T"] }, { type: "null" }],
