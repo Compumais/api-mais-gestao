@@ -114,10 +114,7 @@ function buildProdutoPayload(
 	payload.enviamobile = data.enviamobile ? 1 : 0;
 	payload.quantidadepadrao = data.quantidadepadrao ?? 0;
 
-	const custoaquisicao = data.custoaquisicao?.trim();
-	if (custoaquisicao) {
-		payload.custoaquisicao = custoaquisicao;
-	}
+	payload.custoaquisicao = data.custoaquisicao?.trim() || null;
 
 	if (data.quantidademinima != null) {
 		payload.quantidademinima = data.quantidademinima;
