@@ -76,6 +76,8 @@ export interface AdminEmpresa {
 	proprietarioEmail: string | null;
 	planoCodigo: string | null;
 	planoNome: string | null;
+	ativo: boolean;
+	ultimoacesso: string | null;
 }
 
 export interface Informativo {
@@ -280,6 +282,20 @@ export const adminService = {
 	async listarEmpresas() {
 		const { data } = await api.get<{ empresas: AdminEmpresa[] }>(
 			"/admin/empresas",
+		);
+		return data;
+	},
+
+	async inativarEmpresa(id: string) {
+		const { data } = await api.patch<AdminEmpresa>(
+			`/admin/empresas/${id}/inativar`,
+		);
+		return data;
+	},
+
+	async ativarEmpresa(id: string) {
+		const { data } = await api.patch<AdminEmpresa>(
+			`/admin/empresas/${id}/ativar`,
 		);
 		return data;
 	},

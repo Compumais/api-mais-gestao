@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -13,7 +14,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Table,
 	TableBody,
@@ -26,6 +29,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { marcarAcessoBaseAtivo } from "@/lib/acesso-base";
 import { setSessionToken } from "@/lib/auth-token";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { acessoBaseService } from "@/services/acesso-base.service";
 import { type AdminEmpresa, adminService } from "@/services/admin.service";
 import { DialogEntitlementProprietario } from "../components/dialog-entitlement-proprietario";
@@ -43,12 +47,22 @@ function rotuloProprietario(empresa: AdminEmpresa) {
 	return empresa.proprietarioNome ?? empresa.proprietarioEmail ?? "—";
 }
 
+function empresaInativa(empresa: AdminEmpresa) {
+	return empresa.ativo === false;
+}
+
+function rotuloUltimoAcesso(empresa: AdminEmpresa) {
+	if (!empresa.ultimoacesso) return "Nunca acessou";
+	return formatDateTimeBrasilia(empresa.ultimoacesso);
+}
+
 export default function SuperEmpresasPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { selecionarEmpresa } = useEmpresa();
 	const [modo, setModo] = useState<ModoVisualizacao>("cards");
 	const [busca, setBusca] = useState("");
+	const [exibirInativas, setExibirInativas] = useState(false);
 	const [empresaEntitlement, setEmpresaEntitlement] =
 		useState<AdminEmpresa | null>(null);
 	const [empresaAcessandoId, setEmpresaAcessandoId] = useState<string | null>(
@@ -75,13 +89,33 @@ export default function SuperEmpresasPage() {
 		},
 	});
 
+	const statusMutation = useMutation({
+		mutationFn: (empresa: AdminEmpresa) =>
+			empresaInativa(empresa)
+				? adminService.ativarEmpresa(empresa.id)
+				: adminService.inativarEmpresa(empresa.id),
+		onSuccess: (_resposta, empresa) => {
+			queryClient.invalidateQueries({ queryKey: ["admin-empresas"] });
+			toast.success(
+				empresaInativa(empresa) ? "Empresa ativada" : "Empresa inativada",
+			);
+		},
+		onError: (erro: Error) => {
+			toast.error("Não foi possível alterar o status da empresa", {
+				description: erro.message,
+			});
+		},
+	});
+
 	const { data, isLoading } = useQuery({
 		queryKey: ["admin-empresas"],
 		queryFn: adminService.listarEmpresas,
 	});
 
 	const empresasFiltradas = useMemo(() => {
-		const empresas = data?.empresas ?? [];
+		const empresas = (data?.empresas ?? []).filter(
+			(empresa) => exibirInativas || !empresaInativa(empresa),
+		);
 		const termo = busca.trim().toLowerCase();
 		if (!termo) return empresas;
 		return empresas.filter((empresa) => {
@@ -89,7 +123,50 @@ export default function SuperEmpresasPage() {
 			const cnpj = empresa.cnpj?.toLowerCase() ?? "";
 			return nome.includes(termo) || cnpj.includes(termo);
 		});
-	}, [busca, data?.empresas]);
+	}, [busca, data?.empresas, exibirInativas]);
+
+	function renderAcoes(empresa: AdminEmpresa, larguraCheia = false) {
+		const inativa = empresaInativa(empresa);
+		const alterandoStatus =
+			statusMutation.isPending && statusMutation.variables?.id === empresa.id;
+
+		return (
+			<div
+				className={
+					larguraCheia
+						? "flex w-full flex-col gap-2"
+						: "flex justify-end gap-2"
+				}
+			>
+				<Button
+					size="sm"
+					className={larguraCheia ? "w-full" : undefined}
+					disabled={inativa || empresaAcessandoId === empresa.id}
+					onClick={() => acessarBase(empresa)}
+				>
+					{empresaAcessandoId === empresa.id ? "Acessando..." : "Acessar base"}
+				</Button>
+				<Button
+					size="sm"
+					variant="outline"
+					className={larguraCheia ? "w-full" : undefined}
+					disabled={!empresa.idproprietario}
+					onClick={() => setEmpresaEntitlement(empresa)}
+				>
+					Plano e módulos
+				</Button>
+				<Button
+					size="sm"
+					variant={inativa ? "outline" : "destructive"}
+					className={larguraCheia ? "w-full" : undefined}
+					disabled={alterandoStatus}
+					onClick={() => statusMutation.mutate(empresa)}
+				>
+					{alterandoStatus ? "Salvando..." : inativa ? "Ativar" : "Inativar"}
+				</Button>
+			</div>
+		);
+	}
 
 	return (
 		<div className="space-y-6">
@@ -97,8 +174,8 @@ export default function SuperEmpresasPage() {
 				<div>
 					<h1 className="text-2xl font-bold">Empresas</h1>
 					<p className="text-muted-foreground">
-						Listagem das empresas da plataforma e atalho para plano/módulos do
-						proprietário
+						Listagem das empresas da plataforma, último acesso e atalho para
+						plano/módulos do proprietário
 					</p>
 				</div>
 				<ToggleGroup
@@ -119,12 +196,21 @@ export default function SuperEmpresasPage() {
 				</ToggleGroup>
 			</div>
 
-			<Input
-				placeholder="Buscar por nome ou CNPJ..."
-				value={busca}
-				onChange={(e) => setBusca(e.target.value)}
-				className="max-w-md"
-			/>
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+				<Input
+					placeholder="Buscar por nome ou CNPJ..."
+					value={busca}
+					onChange={(e) => setBusca(e.target.value)}
+					className="max-w-md"
+				/>
+				<Label className="text-sm font-normal">
+					<Checkbox
+						checked={exibirInativas}
+						onCheckedChange={(checked) => setExibirInativas(checked === true)}
+					/>
+					Exibir inativas
+				</Label>
+			</div>
 
 			{isLoading ? (
 				<p>Carregando...</p>
@@ -138,93 +224,84 @@ export default function SuperEmpresasPage() {
 							<TableHead>CNPJ</TableHead>
 							<TableHead>Proprietário</TableHead>
 							<TableHead>Plano</TableHead>
+							<TableHead>Último acesso</TableHead>
+							<TableHead>Status</TableHead>
 							<TableHead className="text-right">Ações</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{empresasFiltradas.map((empresa) => (
-							<TableRow key={empresa.id}>
-								<TableCell className="font-medium">{empresa.nome}</TableCell>
-								<TableCell>{empresa.cnpj || "—"}</TableCell>
-								<TableCell>
-									<div className="flex flex-col">
-										<span>{empresa.proprietarioNome ?? "—"}</span>
-										{empresa.proprietarioEmail && (
-											<span className="text-xs text-muted-foreground">
-												{empresa.proprietarioEmail}
-											</span>
-										)}
-									</div>
-								</TableCell>
-								<TableCell>{rotuloPlano(empresa)}</TableCell>
-								<TableCell className="text-right">
-									<div className="flex justify-end gap-2">
-										<Button
-											size="sm"
-											disabled={empresaAcessandoId === empresa.id}
-											onClick={() => acessarBase(empresa)}
-										>
-											{empresaAcessandoId === empresa.id
-												? "Acessando..."
-												: "Acessar base"}
-										</Button>
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={!empresa.idproprietario}
-											onClick={() => setEmpresaEntitlement(empresa)}
-										>
-											Plano e módulos
-										</Button>
-									</div>
-								</TableCell>
-							</TableRow>
-						))}
+						{empresasFiltradas.map((empresa) => {
+							const inativa = empresaInativa(empresa);
+							return (
+								<TableRow
+									key={empresa.id}
+									className={inativa ? "opacity-60" : undefined}
+								>
+									<TableCell className="font-medium">{empresa.nome}</TableCell>
+									<TableCell>{empresa.cnpj || "—"}</TableCell>
+									<TableCell>
+										<div className="flex flex-col">
+											<span>{empresa.proprietarioNome ?? "—"}</span>
+											{empresa.proprietarioEmail && (
+												<span className="text-xs text-muted-foreground">
+													{empresa.proprietarioEmail}
+												</span>
+											)}
+										</div>
+									</TableCell>
+									<TableCell>{rotuloPlano(empresa)}</TableCell>
+									<TableCell>{rotuloUltimoAcesso(empresa)}</TableCell>
+									<TableCell>
+										<Badge variant={inativa ? "secondary" : "outline"}>
+											{inativa ? "Inativa" : "Ativa"}
+										</Badge>
+									</TableCell>
+									<TableCell className="text-right">
+										{renderAcoes(empresa)}
+									</TableCell>
+								</TableRow>
+							);
+						})}
 					</TableBody>
 				</Table>
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-					{empresasFiltradas.map((empresa) => (
-						<Card key={empresa.id}>
-							<CardHeader>
-								<CardTitle className="text-base">{empresa.nome}</CardTitle>
-								<p className="text-sm text-muted-foreground">
-									{empresa.cnpj || "Sem CNPJ"}
-								</p>
-							</CardHeader>
-							<CardContent className="space-y-2 text-sm">
-								<div>
-									<p className="text-muted-foreground">Proprietário</p>
-									<p>{rotuloProprietario(empresa)}</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground">Plano</p>
-									<p>{rotuloPlano(empresa)}</p>
-								</div>
-							</CardContent>
-							<CardFooter className="flex flex-col gap-2">
-								<Button
-									size="sm"
-									className="w-full"
-									disabled={empresaAcessandoId === empresa.id}
-									onClick={() => acessarBase(empresa)}
-								>
-									{empresaAcessandoId === empresa.id
-										? "Acessando..."
-										: "Acessar base"}
-								</Button>
-								<Button
-									size="sm"
-									variant="outline"
-									className="w-full"
-									disabled={!empresa.idproprietario}
-									onClick={() => setEmpresaEntitlement(empresa)}
-								>
-									Plano e módulos
-								</Button>
-							</CardFooter>
-						</Card>
-					))}
+					{empresasFiltradas.map((empresa) => {
+						const inativa = empresaInativa(empresa);
+						return (
+							<Card
+								key={empresa.id}
+								className={inativa ? "opacity-60" : undefined}
+							>
+								<CardHeader>
+									<div className="flex items-start justify-between gap-2">
+										<CardTitle className="text-base">{empresa.nome}</CardTitle>
+										<Badge variant={inativa ? "secondary" : "outline"}>
+											{inativa ? "Inativa" : "Ativa"}
+										</Badge>
+									</div>
+									<p className="text-sm text-muted-foreground">
+										{empresa.cnpj || "Sem CNPJ"}
+									</p>
+								</CardHeader>
+								<CardContent className="space-y-2 text-sm">
+									<div>
+										<p className="text-muted-foreground">Proprietário</p>
+										<p>{rotuloProprietario(empresa)}</p>
+									</div>
+									<div>
+										<p className="text-muted-foreground">Plano</p>
+										<p>{rotuloPlano(empresa)}</p>
+									</div>
+									<div>
+										<p className="text-muted-foreground">Último acesso</p>
+										<p>{rotuloUltimoAcesso(empresa)}</p>
+									</div>
+								</CardContent>
+								<CardFooter>{renderAcoes(empresa, true)}</CardFooter>
+							</Card>
+						);
+					})}
 				</div>
 			)}
 

@@ -27,6 +27,8 @@ describe("buscarEmpresaService", () => {
 		prazocartaocredito: 30,
 		prazocartaodebito: 1,
 		regimetributario: null,
+		ativo: true,
+		ultimoacesso: null,
 	};
 
 	beforeEach(() => {
@@ -138,6 +140,8 @@ describe("buscarEmpresaService", () => {
 			prazocartaocredito: 30,
 			prazocartaodebito: 1,
 			regimetributario: null,
+		ativo: true,
+		ultimoacesso: null,
 		};
 
 		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(

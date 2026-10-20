@@ -26,6 +26,8 @@ describe("listarEmpresasService", () => {
 			prazocartaocredito: 30,
 			prazocartaodebito: 1,
 			regimetributario: null,
+			ativo: true,
+			ultimoacesso: null,
 		},
 		{
 			id: "empresa-2",
@@ -46,6 +48,8 @@ describe("listarEmpresasService", () => {
 			prazocartaocredito: 30,
 			prazocartaodebito: 1,
 			regimetributario: null,
+			ativo: true,
+			ultimoacesso: null,
 		},
 	];
 

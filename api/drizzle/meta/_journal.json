@@ -785,6 +785,13 @@
       "when": 1790500000000,
       "tag": "0109_venda_sem_estoque",
       "breakpoints": true
+    },
+    {
+      "idx": 111,
+      "version": "7",
+      "when": 1790600000000,
+      "tag": "0110_empresas_ativo_ultimoacesso",
+      "breakpoints": true
     }
   ]
 }

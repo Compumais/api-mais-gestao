@@ -6,6 +6,7 @@ import { requireFeature, requireModulo } from "./verify-plano.js";
 
 vi.mock("@/repositories/empresa-repositories.js", () => ({
 	buscarEmpresaPorId: vi.fn(),
+	registrarUltimoAcessoEmpresa: vi.fn(),
 }));
 vi.mock("@/repositories/entidade-repositories.js", () => ({
 	verificarUsuarioPertenceEmpresa: vi.fn(),
@@ -18,7 +19,10 @@ vi.mock("@/service/planos/buscar-plano-efetivo.js", () => ({
 	usuarioTemModulo: vi.fn(),
 }));
 
-import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
+import {
+	buscarEmpresaPorId,
+	registrarUltimoAcessoEmpresa,
+} from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	usuarioTemFeature,
@@ -94,6 +98,26 @@ describe("resolveEmpresaContext", () => {
 			idempresa: "e1",
 			idproprietario: "prop-1",
 		});
+		expect(registrarUltimoAcessoEmpresa).toHaveBeenCalledWith("e1");
+	});
+
+	it("bloqueia empresa inativa", async () => {
+		vi.mocked(verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(buscarEmpresaPorId).mockResolvedValue({
+			id: "e1",
+			idproprietario: "prop-1",
+			ativo: false,
+		} as never);
+		const request = {
+			headers: { "x-empresa-id": "e1" },
+			user: { id: "u1", name: "U", roles: ["usuario"] },
+		} as unknown as FastifyRequest;
+		const reply = criarReply();
+
+		await resolveEmpresaContext(request, reply);
+		expect(reply.statusCode).toBe(403);
+		expect((reply.payload as { code: string }).code).toBe("EMPRESA_INATIVA");
+		expect(registrarUltimoAcessoEmpresa).not.toHaveBeenCalled();
 	});
 });
 
