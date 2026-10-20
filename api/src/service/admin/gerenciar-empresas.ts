@@ -4,7 +4,9 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { db } from "@/repositories/connection.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import {
+	atualizarStatusEmpresa,
 	buscarEmpresaPorCnpj,
+	buscarEmpresaPorId,
 	criarEmpresa,
 } from "@/repositories/empresa-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
@@ -155,6 +157,8 @@ export async function listarEmpresasAdminService(): Promise<
 			proprietarioEmail: schema.usuarios.email,
 			planoCodigo: schema.usuarios.plano,
 			planoNome: schema.planosSaas.nome,
+			ativo: schema.empresa.ativo,
+			ultimoacesso: schema.empresa.ultimoacesso,
 		})
 		.from(schema.empresa)
 		.leftJoin(
@@ -168,4 +172,26 @@ export async function listarEmpresasAdminService(): Promise<
 		.orderBy(desc(schema.empresa.criadoem));
 
 	return httpOk({ empresas });
+}
+
+async function definirAtivoEmpresaAdmin(id: string, ativo: boolean) {
+	const existente = await buscarEmpresaPorId(id);
+	if (!existente) {
+		return httpNaoEncontrado();
+	}
+
+	const empresa = await atualizarStatusEmpresa(id, ativo);
+	if (!empresa) {
+		return httpNaoEncontrado();
+	}
+
+	return httpOk(empresa);
+}
+
+export function inativarEmpresaAdminService({ id }: { id: string }) {
+	return definirAtivoEmpresaAdmin(id, false);
+}
+
+export function ativarEmpresaAdminService({ id }: { id: string }) {
+	return definirAtivoEmpresaAdmin(id, true);
 }

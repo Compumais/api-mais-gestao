@@ -56,6 +56,11 @@ export function acessoBasePlugin(): BetterAuthPlugin {
 							message: "Empresa não encontrada",
 						});
 					}
+					if (empresa.ativo === false) {
+						throw APIError.fromStatus("BAD_REQUEST", {
+							message: "Esta empresa está inativa.",
+						});
+					}
 					if (!administrador) {
 						throw APIError.fromStatus("BAD_REQUEST", {
 							message:

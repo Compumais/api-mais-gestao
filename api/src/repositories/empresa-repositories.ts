@@ -6,6 +6,7 @@ import {
 	eq,
 	ilike,
 	inArray,
+	isNull,
 	or,
 	sql,
 } from "drizzle-orm";
@@ -99,6 +100,38 @@ export async function atualizarEmpresa(
 		.returning();
 
 	return empresa;
+}
+
+export async function atualizarStatusEmpresa(id: string, ativo: boolean) {
+	const [empresa] = await db
+		.update(schema.empresa)
+		.set({
+			ativo,
+			atualizadoem: new Date().toISOString(),
+		})
+		.where(eq(schema.empresa.id, id))
+		.returning();
+
+	return empresa;
+}
+
+/** Atualiza o último uso real da empresa, no máximo a cada 15 minutos. */
+export function registrarUltimoAcessoEmpresa(idempresa: string) {
+	void db
+		.update(schema.empresa)
+		.set({ ultimoacesso: new Date().toISOString() })
+		.where(
+			and(
+				eq(schema.empresa.id, idempresa),
+				or(
+					isNull(schema.empresa.ultimoacesso),
+					sql`${schema.empresa.ultimoacesso} < NOW() - interval '15 minutes'`,
+				),
+			),
+		)
+		.catch((error: unknown) => {
+			console.error("Falha ao registrar último acesso da empresa", error);
+		});
 }
 
 export async function excluirEmpresa(id: string) {
@@ -214,6 +247,10 @@ export async function listarEmpresas({
 	}
 	if (telefone) {
 		where.push(ilike(schema.empresa.telefone, `%${telefone}%`));
+	}
+
+	if (idusuario || idproprietario) {
+		where.push(eq(schema.empresa.ativo, true));
 	}
 
 	const offset = (page - 1) * limit;

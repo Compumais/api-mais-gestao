@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	boolean,
 	foreignKey,
 	integer,
 	pgTable,
@@ -33,6 +34,8 @@ export const empresa = pgTable(
 		prazocartaocredito: integer().default(30).notNull(),
 		prazocartaodebito: integer().default(1).notNull(),
 		regimetributario: varchar({ length: 2 }),
+		ativo: boolean().default(true).notNull(),
+		ultimoacesso: timestamp({ precision: 3, mode: "string" }),
 	},
 	(table) => [
 		uniqueIndex("empresas_cnpj_key").using(

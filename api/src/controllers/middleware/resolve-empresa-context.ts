@@ -1,5 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
+import {
+	buscarEmpresaPorId,
+	registrarUltimoAcessoEmpresa,
+} from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
 import { isSuper } from "@/util/verificar-super.js";
@@ -64,10 +67,17 @@ export async function resolveEmpresaContext(
 				code: "EMPRESA_NAO_ENCONTRADA",
 			});
 		}
+		if (empresaDevice.ativo === false) {
+			return reply.status(403).send({
+				error: "Empresa inativa",
+				code: "EMPRESA_INATIVA",
+			});
+		}
 		request.empresaContext = {
 			idempresa,
 			idproprietario: empresaDevice.idproprietario,
 		};
+		registrarUltimoAcessoEmpresa(idempresa);
 		return;
 	}
 
@@ -89,11 +99,18 @@ export async function resolveEmpresaContext(
 			code: "EMPRESA_NAO_ENCONTRADA",
 		});
 	}
+	if (empresa.ativo === false) {
+		return reply.status(403).send({
+			error: "Empresa inativa",
+			code: "EMPRESA_INATIVA",
+		});
+	}
 
 	request.empresaContext = {
 		idempresa,
 		idproprietario: empresa.idproprietario,
 	};
+	registrarUltimoAcessoEmpresa(idempresa);
 }
 
 export function obterIdEmpresaDoContexto(

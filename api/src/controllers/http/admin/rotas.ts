@@ -8,7 +8,9 @@ import {
 	listarAjudaPostsAdminService,
 } from "@/service/admin/gerenciar-ajuda-posts.js";
 import {
+	ativarEmpresaAdminService,
 	criarEmpresaAdminService,
+	inativarEmpresaAdminService,
 	listarEmpresasAdminService,
 } from "@/service/admin/gerenciar-empresas.js";
 import {
@@ -237,6 +239,22 @@ export async function adminRotas(app: FastifyInstance) {
 
 	app.get("/admin/empresas", async (_request, reply) => {
 		return enviarResultado(reply, await listarEmpresasAdminService());
+	});
+
+	app.patch("/admin/empresas/:id/inativar", async (request, reply) => {
+		const params = z.object({ id: z.string() }).parse(request.params);
+		return enviarResultado(
+			reply,
+			await inativarEmpresaAdminService({ id: params.id }),
+		);
+	});
+
+	app.patch("/admin/empresas/:id/ativar", async (request, reply) => {
+		const params = z.object({ id: z.string() }).parse(request.params);
+		return enviarResultado(
+			reply,
+			await ativarEmpresaAdminService({ id: params.id }),
+		);
 	});
 
 	app.post("/admin/empresas", async (request: FastifyRequest, reply) => {

@@ -25,6 +25,8 @@ describe("atualizarEmpresaService", () => {
 		prazocartaocredito: 30,
 		prazocartaodebito: 1,
 		regimetributario: null,
+		ativo: true,
+		ultimoacesso: null,
 	};
 
 	const empresaAtualizadaMock: Empresa = {
