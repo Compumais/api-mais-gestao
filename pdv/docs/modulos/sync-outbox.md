@@ -53,7 +53,9 @@ Não apague linha `pendente`/`processando` para “zerar erro”. A venda local 
 
 ## Comportamento offline/outbox
 
-`pingApi` falso: o ciclo retorna sem mexer na fila. A loja segue no Postgres.
+`pingApi` falso: o ciclo retorna sem mexer na fila (com `motivoParada` explícito). A loja segue no Postgres.
+
+“Enviar para retaguarda” chama `repararFilaSyncVendasPendentes` antes do ciclo: recria `criar_venda` para cupons órfãos (`sync_status=pendente` sem outbox ativo), reativa itens `cancelado` permanentes ainda sem `idremoto`, e zera `proxima_tentativa` (backoff) para tentativa imediata. A UI mostra `motivoParada`, erros de fila cancelada e o aviso de órfão.
 
 Simplificar de fila para chamada síncrona no fechamento da venda:
 

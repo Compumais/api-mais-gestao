@@ -39,6 +39,8 @@ import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.ui.OfflineBanner;
 import com.pos_mais_gestao.ui.mesas.MesasActivity;
 import com.pos_mais_gestao.util.CampoCodigoOculto;
+import com.pos_mais_gestao.hardware.ImpressoraPos;
+import com.pos_mais_gestao.util.CupomTexto;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.PizzaMeioAMeio;
 import com.pos_mais_gestao.util.ProdutoImagemHelper;
@@ -569,8 +571,34 @@ public class PedidoActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.conta_da_mesa, rotulo))
                 .setView(view)
+                .setNeutralButton(R.string.imprimir_conferencia, (d, w) -> imprimirConferencia(conta, itens, rotulo))
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
+    }
+
+    private void imprimirConferencia(ContaMesaDto conta, List<ContaMesaItemDto> itens, String rotulo) {
+        String cliente = conta != null && conta.observacao != null ? conta.observacao : nomeCliente;
+        String telefone = conta != null && conta.telefone != null && !conta.telefone.isEmpty()
+                ? conta.telefone
+                : telefoneCliente;
+        BigDecimal total = MoneyFormat.parse(conta != null ? conta.valortotal : null);
+        String texto = CupomTexto.conferencia(
+                prefs.cabecalhoCupom(),
+                rotulo,
+                cliente,
+                telefone,
+                CupomTexto.deConta(itens),
+                total);
+        try {
+            ImpressoraPos impressora = ((PosApplication) getApplication()).getImpressoraPos();
+            impressora.imprimirTexto(texto);
+            Toast.makeText(this, R.string.conferencia_enviada, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(
+                    this,
+                    e.getMessage() != null ? e.getMessage() : getString(R.string.erro_imprimir_conferencia),
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     private void repetirItem(ContaMesaItemDto item) {

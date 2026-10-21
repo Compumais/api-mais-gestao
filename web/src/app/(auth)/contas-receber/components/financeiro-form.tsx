@@ -3,7 +3,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	ApropriacaoCentroCustoField,
+	type ApropriacaoCentroCustoFieldValue,
+	mapApropriacaoParaApi,
+} from "@/components/apropriacao-centro-custo-field";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,8 +47,15 @@ import {
 	type CriarFinanceiroData,
 	financeiroService,
 } from "@/services/financeiro.service";
+import { apropriacaoCentroCustoService } from "@/services/apropriacao-centro-custo.service";
 import { planoContasService } from "@/services/plano-contas.service";
 import { tipoCobrancaService } from "@/services/tipo-cobranca.service";
+
+const apropriacaoCentroCustoInicial: ApropriacaoCentroCustoFieldValue = {
+	modo: "unico",
+	idcriteriorateio: null,
+	linhas: [{ idcentrocusto: "" }],
+};
 
 const formatDateForInput = (date?: string | null): string =>
 	extractDateOnly(date) ?? "";
@@ -97,6 +109,8 @@ export function FinanceiroForm({
 	const queryClient = useQueryClient();
 	const formRef = useRef<HTMLFormElement>(null);
 	const isEdicao = modo === "editar";
+	const [apropriacaoCentroCusto, setApropriacaoCentroCusto] =
+		useState<ApropriacaoCentroCustoFieldValue>(apropriacaoCentroCustoInicial);
 
 	const form = useForm<CriarFinanceiroFormData | AtualizarFinanceiroFormData>({
 		resolver: zodResolver(
@@ -142,14 +156,41 @@ export function FinanceiroForm({
 	} = form;
 
 	const tipoDocumento = watch("tipoDocumento");
+	const valorTitulo = watch("valor");
 	const showCamposCheque = isTipoCheque(tipoDocumento);
 	const showCamposCartao = isTipoCartao(tipoDocumento);
+
+	const valorTotalNumerico = useMemo(() => {
+		const n = Number(valorTitulo);
+		return Number.isNaN(n) ? 0 : n;
+	}, [valorTitulo]);
 
 	// Carregar dados para edição
 	const { data: financeiroData, isLoading: isLoadingFinanceiro } = useQuery({
 		queryKey: ["financeiro", financeiroId],
 		queryFn: () => financeiroService.buscar(financeiroId!),
 		enabled: isEdicao && !!financeiroId,
+	});
+
+	const { data: apropriacoesExistentes } = useQuery({
+		queryKey: [
+			"apropriacoes-centro-custo",
+			"financeiro",
+			empresa?.id,
+			financeiroId,
+		],
+		queryFn: async () => {
+			if (!empresa?.id || !financeiroId) {
+				throw new Error("Dados insuficientes");
+			}
+			return apropriacaoCentroCustoService.listarPorOrigem({
+				idempresa: empresa.id,
+				origemtipo: "financeiro",
+				origemid: financeiroId,
+				regime: "competencia",
+			});
+		},
+		enabled: isEdicao && !!financeiroId && !!empresa?.id,
 	});
 
 	useTituloAba(
@@ -262,6 +303,35 @@ export function FinanceiroForm({
 		}
 	}, [isEdicao, financeiroData, valoresIniciais, empresa?.id, form]);
 
+	useEffect(() => {
+		const linhas = apropriacoesExistentes?.data ?? [];
+		if (!linhas.length) return;
+
+		if (linhas.length === 1) {
+			setApropriacaoCentroCusto({
+				modo: "unico",
+				idcriteriorateio: null,
+				linhas: [
+					{
+						idcentrocusto: linhas[0].idcentrocusto,
+						valor: Number(linhas[0].valor),
+					},
+				],
+			});
+			return;
+		}
+
+		setApropriacaoCentroCusto({
+			modo: "rateio_manual",
+			idcriteriorateio: null,
+			linhas: linhas.map((l) => ({
+				idcentrocusto: l.idcentrocusto,
+				valor: Number(l.valor),
+				percentual: l.percentual ? Number(l.percentual) : null,
+			})),
+		});
+	}, [apropriacoesExistentes]);
+
 	// Atalho F10 para salvar
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
@@ -290,6 +360,15 @@ export function FinanceiroForm({
 				throw new Error("Empresa não selecionada");
 			}
 
+			const temApropriacaoCentroCusto =
+				apropriacaoCentroCusto.modo === "rateio_criterio"
+					? !!apropriacaoCentroCusto.idcriteriorateio
+					: apropriacaoCentroCusto.linhas.some((l) => l.idcentrocusto);
+
+			const apropriacaoPayload = temApropriacaoCentroCusto
+				? mapApropriacaoParaApi(apropriacaoCentroCusto, valorTotalNumerico)
+				: {};
+
 			const payload: CriarFinanceiroData = {
 				idempresa: empresa.id,
 				identidade: data.identidade || null,
@@ -306,6 +385,7 @@ export function FinanceiroForm({
 				idcodigocontabil: data.idplanocontas
 					? Number(data.idplanocontas)
 					: null,
+				idplanocontas: data.idplanocontas || null,
 				valor: data.valor || "0.00",
 				saldo: data.valor || "0.00",
 				historico: data.observacoes || null,
@@ -327,6 +407,7 @@ export function FinanceiroForm({
 					: null,
 				nomebandeira: showCamposCartao ? data.nomebandeira || null : null,
 				idbandeira: showCamposCartao ? data.idbandeira || null : null,
+				...apropriacaoPayload,
 			};
 
 			return await financeiroService.criar(payload);
@@ -352,6 +433,15 @@ export function FinanceiroForm({
 				throw new Error("ID do financeiro é obrigatório para editar");
 			}
 
+			const temApropriacaoCentroCusto =
+				apropriacaoCentroCusto.modo === "rateio_criterio"
+					? !!apropriacaoCentroCusto.idcriteriorateio
+					: apropriacaoCentroCusto.linhas.some((l) => l.idcentrocusto);
+
+			const apropriacaoPayload = temApropriacaoCentroCusto
+				? mapApropriacaoParaApi(apropriacaoCentroCusto, valorTotalNumerico)
+				: {};
+
 			const payload: AtualizarFinanceiroData = {
 				identidade: data.identidade || null,
 				documento: data.documento || null,
@@ -366,6 +456,7 @@ export function FinanceiroForm({
 				idcodigocontabil: data.idplanocontas
 					? Number(data.idplanocontas)
 					: null,
+				idplanocontas: data.idplanocontas || null,
 				valor: data.valor || undefined,
 				saldo: data.valor || undefined,
 				historico: data.observacoes || null,
@@ -386,6 +477,7 @@ export function FinanceiroForm({
 					: null,
 				nomebandeira: showCamposCartao ? data.nomebandeira || null : null,
 				idbandeira: showCamposCartao ? data.idbandeira || null : null,
+				...apropriacaoPayload,
 			};
 
 			return await financeiroService.atualizar(financeiroId, payload);
@@ -866,6 +958,12 @@ export function FinanceiroForm({
 						</div>
 					</div>
 				)}
+
+				<ApropriacaoCentroCustoField
+					valorTotal={valorTotalNumerico}
+					value={apropriacaoCentroCusto}
+					onChange={setApropriacaoCentroCusto}
+				/>
 
 				<div className="space-y-4">
 					<h2 className="text-lg font-semibold">Observações</h2>

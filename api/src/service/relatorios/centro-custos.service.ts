@@ -6,6 +6,9 @@ import {
 export interface GerarRelatorioCentroCustosParams {
 	idempresa: string;
 	formato: "pdf" | "txt" | "html";
+	dataInicio?: string;
+	dataFim?: string;
+	regime?: "competencia" | "caixa";
 }
 
 export async function gerarRelatorioCentroCustos(
@@ -13,15 +16,18 @@ export async function gerarRelatorioCentroCustos(
 ): Promise<{ content: string; contentType: string; filename: string }> {
 	const dados = await buscarDadosCentroCustos({
 		idempresa: params.idempresa,
+		dataInicio: params.dataInicio,
+		dataFim: params.dataFim,
+		regime: params.regime,
 	});
 
 	switch (params.formato) {
 		case "txt":
-			return gerarRelatorioTXT(dados);
+			return gerarRelatorioTXT(dados, params);
 		case "html":
-			return gerarRelatorioHTML(dados);
+			return gerarRelatorioHTML(dados, params);
 		case "pdf":
-			return gerarRelatorioPDF(dados);
+			return gerarRelatorioPDF(dados, params);
 		default:
 			throw new Error(`Formato não suportado: ${params.formato}`);
 	}
@@ -33,7 +39,10 @@ const formatCurrency = (value: number): string =>
 		currency: "BRL",
 	}).format(value);
 
-function gerarRelatorioTXT(dados: CentroCustosItem[]): {
+function gerarRelatorioTXT(
+	dados: CentroCustosItem[],
+	params: GerarRelatorioCentroCustosParams,
+): {
 	content: string;
 	contentType: string;
 	filename: string;
@@ -52,8 +61,7 @@ function gerarRelatorioTXT(dados: CentroCustosItem[]): {
 	relatorio += "RELATORIO DE CENTRO DE CUSTOS\n";
 	relatorio += "=".repeat(120) + "\n\n";
 	relatorio += `Data de Emissao: ${new Date().toLocaleDateString("pt-BR")}\n`;
-	relatorio +=
-		"Observação: relatório estrutural (sem rateio financeiro por centro de custo).\n\n";
+	relatorio += `Regime: ${params.regime ?? "competencia"}\n\n`;
 	relatorio += "-".repeat(120) + "\n";
 	relatorio +=
 		"Codigo".padEnd(18) +
@@ -94,7 +102,10 @@ function gerarRelatorioTXT(dados: CentroCustosItem[]): {
 	};
 }
 
-function gerarRelatorioHTML(dados: CentroCustosItem[]): {
+function gerarRelatorioHTML(
+	dados: CentroCustosItem[],
+	params: GerarRelatorioCentroCustosParams,
+): {
 	content: string;
 	contentType: string;
 	filename: string;
@@ -145,7 +156,7 @@ function gerarRelatorioHTML(dados: CentroCustosItem[]): {
   <h1>Relatório de Centro de Custos</h1>
   <div class="info">
     <p><strong>Data de Emissão:</strong> ${new Date().toLocaleDateString("pt-BR")}</p>
-    <p><strong>Observação:</strong> relatório estrutural (sem rateio financeiro por centro de custo).</p>
+    <p><strong>Regime:</strong> ${params.regime ?? "competencia"}</p>
   </div>
   <table>
     <thead>
@@ -177,12 +188,15 @@ function gerarRelatorioHTML(dados: CentroCustosItem[]): {
 	};
 }
 
-function gerarRelatorioPDF(dados: CentroCustosItem[]): {
+function gerarRelatorioPDF(
+	dados: CentroCustosItem[],
+	params: GerarRelatorioCentroCustosParams,
+): {
 	content: string;
 	contentType: string;
 	filename: string;
 } {
-	const htmlResult = gerarRelatorioHTML(dados);
+	const htmlResult = gerarRelatorioHTML(dados, params);
 	return {
 		content: htmlResult.content,
 		contentType: "text/html; charset=utf-8",

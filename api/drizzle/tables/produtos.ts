@@ -30,6 +30,7 @@ export const produtos = pgTable(
 	{
 		id: text().primaryKey().notNull(),
 		idempresa: text().notNull(),
+		idprodutopai: text(),
 		descricao: varchar({ length: 100 }).notNull(),
 		aliquotacbs: numeric({ precision: 7, scale: 4 }),
 		aliquotacofins: numeric({ precision: 12, scale: 2 }),
@@ -238,6 +239,17 @@ export const produtos = pgTable(
 	},
 	(table) => [
 		index("produtos_idmarca_idx").on(table.idmarca),
+		index("produtos_idempresa_idprodutopai_idx").on(
+			table.idempresa,
+			table.idprodutopai,
+		),
+		foreignKey({
+			columns: [table.idprodutopai],
+			foreignColumns: [table.id],
+			name: "produtos_idprodutopai_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("restrict"),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],

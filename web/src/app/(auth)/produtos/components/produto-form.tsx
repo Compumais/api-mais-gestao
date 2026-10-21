@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { type Resolver, useForm } from "react-hook-form";
@@ -50,6 +51,7 @@ import { ProdutoAbaBalanca } from "./produto-aba-balanca";
 import { ProdutoAbaGourmet } from "./produto-aba-gourmet";
 import { ProdutoAbaImagens } from "./produto-aba-imagens";
 import { ProdutoAbaImpostos } from "./produto-aba-impostos";
+import { ProdutoAbaVariacoes } from "./produto-aba-variacoes";
 
 type ProdutoFormProps = {
 	modo?: "criar" | "editar";
@@ -57,6 +59,8 @@ type ProdutoFormProps = {
 	valoresIniciais?: Partial<ProdutoFormData>;
 	/** Chave do rascunho da aba; útil ao clonar para não misturar com rascunho de novo produto. */
 	chaveRascunho?: string;
+	idprodutopai?: string | null;
+	nomeProdutoPai?: string | null;
 };
 
 function textoOuNulo(valor: string | null | undefined): string | null {
@@ -179,7 +183,14 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
 	const modo = props.modo ?? "criar";
 	const isEdicao = modo === "editar";
+	const ehVariacao = Boolean(props.idprodutopai);
 	const [arquivosImagem, setArquivosImagem] = useState<File[]>([]);
+	const { data: produtoPai } = useQuery({
+		queryKey: ["produto", props.idprodutopai, "pai-variacao"],
+		queryFn: () => produtosService.buscar(props.idprodutopai ?? ""),
+		enabled: ehVariacao && !props.nomeProdutoPai,
+	});
+	const nomeProdutoPai = props.nomeProdutoPai ?? produtoPai?.nome;
 
 	const form = useForm<ProdutoFormData>({
 		resolver: zodResolver(produtoFormSchema) as Resolver<ProdutoFormData>,
@@ -388,8 +399,16 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
 			queryClient.invalidateQueries({ queryKey: ["saldos-estoque"] });
 			limparRascunho();
-			toast.success("Produto cadastrado com sucesso!");
-			router.push("/produtos");
+			toast.success(
+				ehVariacao
+					? "Variação cadastrada com sucesso!"
+					: "Produto cadastrado com sucesso!",
+			);
+			router.push(
+				ehVariacao && props.idprodutopai
+					? `/produtos/${props.idprodutopai}/editar`
+					: "/produtos",
+			);
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao cadastrar produto");
@@ -423,8 +442,16 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					queryClient.setQueryData(["produto", props.produtoId], produto);
 				}
 				limparRascunho();
-				toast.success("Produto atualizado com sucesso!");
-				router.push("/produtos");
+				toast.success(
+					ehVariacao
+						? "Variação atualizada com sucesso!"
+						: "Produto atualizado com sucesso!",
+				);
+				router.push(
+					ehVariacao && props.idprodutopai
+						? `/produtos/${props.idprodutopai}/editar`
+						: "/produtos",
+				);
 			},
 			onError: (error: Error) => {
 				toast.error(error.message || "Erro ao atualizar produto");
@@ -444,6 +471,9 @@ export function ProdutoForm(props: ProdutoFormProps) {
 				dados: {
 					idempresa: empresa.id,
 					...payloadBase,
+					...(ehVariacao && props.idprodutopai
+						? { idprodutopai: props.idprodutopai }
+						: {}),
 				},
 				imagens: arquivosImagem,
 			});
@@ -485,12 +515,40 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			})}
 		>
 			<Tabs defaultValue="geral" className="w-full">
-				<TabsList className="mb-6 grid w-full grid-cols-2 md:grid-cols-5">
+				{ehVariacao ? (
+					<p className="mb-4 rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+						A tributação desta variação segue o produto pai
+						{nomeProdutoPai ? ` ${nomeProdutoPai}` : ""} e não é editada aqui.
+						{props.idprodutopai ? (
+							<>
+								{" "}
+								<Link
+									className="font-medium text-primary underline-offset-4 hover:underline"
+									href={`/produtos/${props.idprodutopai}/editar`}
+								>
+									Abrir produto pai
+								</Link>
+							</>
+						) : null}
+					</p>
+				) : null}
+				<TabsList
+					className={
+						ehVariacao
+							? "mb-6 grid w-full grid-cols-2 md:grid-cols-4"
+							: "mb-6 grid w-full grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
+					}
+				>
 					<TabsTrigger value="geral">Geral</TabsTrigger>
 					<TabsTrigger value="imagens">Imagens</TabsTrigger>
 					<TabsTrigger value="gourmet">Gourmet</TabsTrigger>
 					<TabsTrigger value="balanca">Balança</TabsTrigger>
-					<TabsTrigger value="impostos">Impostos</TabsTrigger>
+					{ehVariacao ? null : (
+						<TabsTrigger value="impostos">Impostos</TabsTrigger>
+					)}
+					{ehVariacao ? null : (
+						<TabsTrigger value="variacoes">Variações</TabsTrigger>
+					)}
 				</TabsList>
 
 				<TabsContent
@@ -929,19 +987,35 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					/>
 				</TabsContent>
 
-				<TabsContent
-					value="impostos"
-					forceMount
-					className="data-[state=inactive]:hidden"
-				>
-					<ProdutoAbaImpostos
-						control={control}
-						register={register}
-						setValue={setValue}
-						watch={watch}
-						errors={errors}
-					/>
-				</TabsContent>
+				{ehVariacao ? null : (
+					<TabsContent
+						value="impostos"
+						forceMount
+						className="data-[state=inactive]:hidden"
+					>
+						<ProdutoAbaImpostos
+							control={control}
+							register={register}
+							setValue={setValue}
+							watch={watch}
+							errors={errors}
+						/>
+					</TabsContent>
+				)}
+				{ehVariacao ? null : (
+					<TabsContent value="variacoes">
+						{props.produtoId && empresa ? (
+							<ProdutoAbaVariacoes
+								produtoId={props.produtoId}
+								idempresa={empresa.id}
+							/>
+						) : (
+							<p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+								Salve o produto para cadastrar variações.
+							</p>
+						)}
+					</TabsContent>
+				)}
 			</Tabs>
 
 			<div className="flex justify-end gap-2 pt-4">

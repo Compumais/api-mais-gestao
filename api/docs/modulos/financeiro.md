@@ -2,7 +2,7 @@
 
 ## Propósito no produto
 
-Contas a pagar e a receber, baixas, contas correntes, lançamentos (incluindo OFX), bancos, orçamentos, centros de custo, condições de pagamento, tipos de cobrança e de documento, bandeiras de cartão.
+Contas a pagar e a receber, baixas, contas correntes, lançamentos (incluindo OFX), bancos, orçamentos, centros de custo (apropriação, rateio, orçamento por CC — ver [centro-custo.md](./centro-custo.md)), condições de pagamento, tipos de cobrança e de documento, bandeiras de cartão.
 
 ## Pastas e entrypoints
 

@@ -1030,7 +1030,16 @@ async function despachar(
 	}
 
 	if (method === "GET" && path === "/pos/vendas") {
-		return { status: 200, body: await localApi.listarVendas() };
+		const limit =
+			body.limit != null && String(body.limit).trim() !== ""
+				? Number(body.limit)
+				: undefined;
+		return {
+			status: 200,
+			body: await localApi.listarVendas(
+				Number.isFinite(limit) ? limit : undefined,
+			),
+		};
 	}
 
 	if (method === "POST" && path === "/pos/nfce/sincronizar") {

@@ -356,6 +356,11 @@ export const criarProdutoSchema: FastifySchema = {
 				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
 			},
 			idgrupogourmet: { anyOf: [{ type: "string" }, { type: "null" }] },
+			idprodutopai: {
+				anyOf: [{ type: "string" }, { type: "null" }],
+				description:
+					"Produto pai, quando este cadastro é uma variação. A tributação é copiada do pai.",
+			},
 			preco: { type: "string" },
 			custoaquisicao: {
 				anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
@@ -436,6 +441,7 @@ export const listarProdutosSchema: FastifySchema = {
 			codigolistalc11603: { type: "string" },
 			codigonbs: { type: "string" },
 			somenteDivergencia: { type: "string", enum: ["true", "false"] },
+			idprodutopai: { type: "string" },
 			ordenarPor: { type: "string" },
 			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },

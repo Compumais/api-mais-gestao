@@ -113,6 +113,9 @@
         <receiver
             android:name=".hardware.balanca.usb.BalancaUsbPermissionReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".hardware.ImpressoraUsbPermissionReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

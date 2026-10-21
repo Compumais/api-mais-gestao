@@ -4,6 +4,7 @@ public class ImpressoraInfo {
     public static final String TIPO_NENHUMA = "nenhuma";
     public static final String TIPO_BLUETOOTH = "bluetooth";
     public static final String TIPO_USB = "usb";
+    public static final String TIPO_REDE = "rede";
 
     public final String id;
     public final String nome;

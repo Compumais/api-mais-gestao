@@ -5,6 +5,7 @@ import { buscarCondicaoPagamentoPorId } from "@/repositories/condicao-pagamento-
 import { buscarEntidadePorId } from "@/repositories/entidade-repositories.js";
 import { criarFinanceiro } from "@/repositories/financeiro-repositories.js";
 import { montarIdentificacaoFinanceiroNf } from "@/util/financeiro-nf-util.js";
+import { aplicarApropriacaoUnicaCentroFinanceiro } from "@/service/apropriacao-centro-custo/aplicar-apropriacao-origem.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import { TIPO_ORIGEM_FINANCEIRO_NF_COMPRA } from "@/util/nota-fiscal-constants.js";
 import { resolverParcelasCondicaoPagamento } from "@/util/resolver-parcelas-condicao-pagamento.js";
@@ -17,6 +18,8 @@ type GerarContasPagarNfParametros = {
 	duplicatas?: DuplicataImportacaoNf[] | undefined;
 	idtipodocumento?: string | undefined;
 	idplanocontas?: string | undefined;
+	idcentrocusto?: string | undefined;
+	idusuario?: string | undefined;
 	valortotalnota: string;
 	emissao: string;
 	numero?: string | undefined;
@@ -115,6 +118,14 @@ async function gerarParcelasPorDuplicatas(
 
 		if (financeiro) {
 			parcelasGeradas++;
+			if (parametros.idcentrocusto && parametros.idusuario) {
+				await aplicarApropriacaoUnicaCentroFinanceiro({
+					idusuario: parametros.idusuario,
+					idempresa: parametros.idempresa,
+					idfinanceiro: financeiro.id,
+					idcentrocusto: parametros.idcentrocusto,
+				});
+			}
 		}
 	}
 
@@ -129,6 +140,8 @@ export async function gerarContasPagarNfService({
 	duplicatas,
 	idtipodocumento,
 	idplanocontas,
+	idcentrocusto,
+	idusuario,
 	valortotalnota,
 	emissao,
 	numero,
@@ -241,6 +254,14 @@ export async function gerarContasPagarNfService({
 
 		if (financeiro) {
 			parcelasGeradas++;
+			if (idcentrocusto && idusuario) {
+				await aplicarApropriacaoUnicaCentroFinanceiro({
+					idusuario,
+					idempresa,
+					idfinanceiro: financeiro.id,
+					idcentrocusto,
+				});
+			}
 		}
 	}
 

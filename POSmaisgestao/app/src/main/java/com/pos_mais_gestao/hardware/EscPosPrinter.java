@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Impressão ESC/POS. Envia via Bluetooth SPP quando há impressora selecionada;
- * caso contrário, registra o cupom no log.
+ * Impressão ESC/POS. Envia por Bluetooth SPP, USB host ou TCP (porta 9100)
+ * quando há impressora selecionada; caso contrário, registra o cupom no log.
  */
 public class EscPosPrinter implements ImpressoraPos {
     private static final String TAG = "EscPosPrinter";
@@ -78,11 +78,16 @@ public class EscPosPrinter implements ImpressoraPos {
             enviarBluetooth(id, dados);
             return;
         }
+        if (ImpressoraInfo.TIPO_USB.equals(tipo)) {
+            UsbEscPos.enviar(context, id, dados);
+            return;
+        }
+        if (ImpressoraInfo.TIPO_REDE.equals(tipo)) {
+            RedeEscPos.enviar(id, dados);
+            return;
+        }
         Log.i(TAG, "Cupom ESC/POS (" + dados.length + " bytes)"
                 + (prefs.getImpressoraNome() != null ? " [" + prefs.getImpressoraNome() + "]" : ""));
-        if (ImpressoraInfo.TIPO_USB.equals(tipo)) {
-            throw new Exception("Impressora USB selecionada: conecte o driver do fabricante ou use Bluetooth.");
-        }
     }
 
     private void enviarBluetooth(String mac, byte[] dados) throws Exception {

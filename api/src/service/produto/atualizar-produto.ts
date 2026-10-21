@@ -8,9 +8,14 @@ import {
 } from "@/repositories/produto-historico-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import {
+	aplicarHerancaVariacao,
+	payloadAlteraTributacao,
+	propagarTributacaoDoPai,
+} from "@/service/produto/aplicar-heranca-variacao.js";
 import { comCodigoUnidadeGravado } from "@/service/produto/preencher-sigla-unidade.js";
 import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import { httpBadRequest, httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarProdutoParametros = {
 	produtoId: string;
@@ -40,20 +45,37 @@ export async function atualizarProdutoService({
 		return httpProibido();
 	}
 
-	if (dados.idunidademedida) {
+	let dadosAtualizacao: Partial<NovoProduto> = { ...dados };
+	delete dadosAtualizacao.idprodutopai;
+
+	if (registroExistente.idprodutopai) {
+		const pai = await buscarProdutoPorId(registroExistente.idprodutopai);
+		if (!pai || pai.idempresa !== registroExistente.idempresa) {
+			return httpBadRequest("Produto pai da variação não encontrado");
+		}
+		if (pai.idprodutopai) {
+			return httpBadRequest("Uma variação não pode ter variações");
+		}
+		dadosAtualizacao = aplicarHerancaVariacao(
+			dadosAtualizacao,
+			pai,
+			"atualizar",
+		);
+		delete dadosAtualizacao.idprodutopai;
+	}
+
+	if (dadosAtualizacao.idunidademedida) {
 		const unidadeValida = await validarUnidadeMedidaParaEmpresa(
-			dados.idunidademedida,
+			dadosAtualizacao.idunidademedida,
 			registroExistente.idempresa,
 		);
 
 		if (!unidadeValida) {
 			return httpProibido();
 		}
-	}
 
-	const dadosAtualizacao = dados.idunidademedida
-		? await comCodigoUnidadeGravado({ ...dados })
-		: { ...dados };
+		dadosAtualizacao = await comCodigoUnidadeGravado(dadosAtualizacao);
+	}
 
 	if (dadosAtualizacao.nome && !dadosAtualizacao.descricao) {
 		dadosAtualizacao.descricao = dadosAtualizacao.nome;
@@ -86,6 +108,14 @@ export async function atualizarProdutoService({
 			),
 		},
 	});
+
+	if (
+		!registroExistente.idprodutopai &&
+		payloadAlteraTributacao(dados) &&
+		registroAtualizado
+	) {
+		await propagarTributacaoDoPai(registroAtualizado, dados);
+	}
 
 	return httpOk<Produto>(registroAtualizado);
 }

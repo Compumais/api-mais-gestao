@@ -17,6 +17,7 @@ import com.pos_mais_gestao.domain.PagamentosResumo;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.domain.ResumoTurnoCaixa;
 import com.pos_mais_gestao.ui.pedido.SacolaLinha;
+import com.pos_mais_gestao.util.CupomTexto;
 import com.pos_mais_gestao.util.EtiquetaBalanca;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.PagamentosMisto;
@@ -216,6 +217,41 @@ public class ApiClient {
             }
         }
         return empresas;
+    }
+
+    public void guardarContatoEmpresa(EmpresaDto empresa) {
+        if (empresa == null) {
+            return;
+        }
+        prefsStore.setEmpresaContato(
+                empresa.cnpj,
+                empresa.telefone,
+                CupomTexto.endereco(
+                        empresa.endereco, empresa.numero, empresa.complemento, empresa.bairro, empresa.cep));
+    }
+
+    public void atualizarCabecalhoEmpresa() throws ApiException {
+        if (isLocal()) {
+            return;
+        }
+        String id = prefsStore.getEmpresaId();
+        if (id == null || id.isEmpty()) {
+            return;
+        }
+        JsonObject json = getJson("/empresas/" + id);
+        String nome = texto(json, "nome");
+        if (nome != null && !nome.isEmpty()) {
+            prefsStore.setEmpresa(id, nome);
+        }
+        EmpresaDto empresa = new EmpresaDto();
+        empresa.cnpj = texto(json, "cnpj");
+        empresa.telefone = texto(json, "telefone");
+        empresa.endereco = texto(json, "endereco");
+        empresa.numero = texto(json, "numero");
+        empresa.complemento = texto(json, "complemento");
+        empresa.bairro = texto(json, "bairro");
+        empresa.cep = texto(json, "cep");
+        guardarContatoEmpresa(empresa);
     }
 
     public List<Produto> buscarProdutos(String termo) throws ApiException {
@@ -1161,7 +1197,14 @@ public class ApiClient {
         }
         resultado.pedidoDav = false;
         aplicarResultadoEmissaoNfce(
-                resultado, baixaJson, itens, totalStr, PagamentosMisto.rotulo(fechamento.efetivos));
+                resultado,
+                baixaJson,
+                itens,
+                totalStr,
+                PagamentosMisto.rotulo(fechamento.efetivos),
+                fechamento,
+                nomeCliente,
+                null);
         return resultado;
     }
 
@@ -1310,8 +1353,28 @@ public class ApiClient {
             resultado.codigo = String.valueOf(vendaJson.get("codigo").getAsLong());
         }
         resultado.pedidoDav = false;
+        String clienteCupom = null;
+        String mesaCupom = null;
+        try {
+            ContaMesaDto contaCupom = buscarContaMesa(idConta);
+            if (contaCupom != null) {
+                clienteCupom = contaCupom.observacao;
+                if (contaCupom.numeromesa != null && contaCupom.numeromesa > 0) {
+                    mesaCupom = (prefsStore.isModeloComanda() ? "Comanda " : "Mesa ")
+                            + contaCupom.numeromesa;
+                }
+            }
+        } catch (ApiException ignored) {
+        }
         aplicarResultadoEmissaoNfce(
-                resultado, baixaJson, itens, totalStr, PagamentosMisto.rotulo(fechamento.efetivos));
+                resultado,
+                baixaJson,
+                itens,
+                totalStr,
+                PagamentosMisto.rotulo(fechamento.efetivos),
+                fechamento,
+                clienteCupom,
+                mesaCupom);
         if (resultado.sucessoFiscalCompleto && !resultado.cupomFiscal
                 && (resultado.mensagemNfce == null
                         || resultado.mensagemNfce.equals("Venda registrada")
@@ -1354,7 +1417,10 @@ public class ApiClient {
             JsonObject baixaJson,
             List<ItemCarrinho> itens,
             String totalStr,
-            String meio) {
+            String meio,
+            PagamentosMisto.ResultadoFechamento fechamento,
+            String cliente,
+            String referencia) {
         boolean deveEmitir = baixaJson.has("deveEmitirNfce")
                 && !baixaJson.get("deveEmitirNfce").isJsonNull()
                 && baixaJson.get("deveEmitirNfce").getAsBoolean();
@@ -1419,10 +1485,11 @@ public class ApiClient {
                 }
                 resultado.cupomFiscal = false;
                 resultado.comprovanteTexto =
-                        montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
+                        montarComprovanteNaoFiscal(itens, totalStr, fechamento, cliente, referencia, resultado);
             } else {
                 resultado.mensagemNfce = "Venda registrada (sem emissão NFC-e para este pagamento)";
-                resultado.comprovanteTexto = montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
+                resultado.comprovanteTexto =
+                        montarComprovanteNaoFiscal(itens, totalStr, fechamento, cliente, referencia, resultado);
             }
         } else if (deveEmitir) {
             resultado.sucessoFiscalCompleto = false;
@@ -1431,10 +1498,12 @@ public class ApiClient {
                 resultado.mensagemNfce = "NFC-e não autorizada";
             }
             resultado.cupomFiscal = false;
-            resultado.comprovanteTexto = montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
+            resultado.comprovanteTexto =
+                    montarComprovanteNaoFiscal(itens, totalStr, fechamento, cliente, referencia, resultado);
         } else {
             resultado.mensagemNfce = "Venda registrada";
-            resultado.comprovanteTexto = montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
+            resultado.comprovanteTexto =
+                    montarComprovanteNaoFiscal(itens, totalStr, fechamento, cliente, referencia, resultado);
         }
     }
 
@@ -1704,68 +1773,69 @@ public class ApiClient {
         resultado.cupomFiscal = false;
         resultado.mensagemNfce = "Pedido #" + (resultado.codigo != null ? resultado.codigo : "—")
                 + " — veja em Pedidos da maquininha";
-        resultado.comprovanteTexto =
-                montarComprovanteDav(itens, totalStr, PagamentosMisto.rotulo(fechamento.efetivos), resultado);
+        resultado.comprovanteTexto = montarComprovanteDav(itens, fechamento, nomeCliente, resultado);
         return resultado;
     }
 
     private String montarComprovanteDav(
-            List<ItemCarrinho> itens, String total, String meio, VendaResultadoDto resultado) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MAIS GESTAO - POS\n");
-        sb.append("PEDIDO (DAV) - NAO FISCAL\n");
-        sb.append("----------------\n");
-        for (ItemCarrinho item : itens) {
-            sb.append(item.getQuantidade().toPlainString())
-                    .append("x ")
-                    .append(item.getDescricaoExibicao())
-                    .append(" ")
-                    .append(item.getSubtotal().toPlainString())
-                    .append("\n");
-        }
-        sb.append("----------------\n");
-        sb.append("TOTAL: ").append(total).append("\n");
-        sb.append("PAGTO: ").append(meio).append("\n");
-        if (resultado.codigo != null) {
-            sb.append("PEDIDO: ").append(resultado.codigo).append("\n");
-        }
-        sb.append("Retaguarda: Pedidos da maquininha\n");
-        return sb.toString();
+            List<ItemCarrinho> itens,
+            PagamentosMisto.ResultadoFechamento fechamento,
+            String cliente,
+            VendaResultadoDto resultado) {
+        List<String> avisos = new ArrayList<>();
+        avisos.add("Pedido sem NFC-e. Consulte Pedidos da maquininha.");
+        return CupomTexto.venda(
+                prefsStore.cabecalhoCupom(),
+                "PEDIDO (DAV)",
+                resultado.codigo,
+                null,
+                cliente,
+                null,
+                CupomTexto.deCarrinho(itens),
+                totalItens(itens),
+                CupomTexto.deLancamentos(fechamento != null ? fechamento.efetivos : null),
+                fechamento != null ? fechamento.troco : null,
+                avisos);
     }
 
     private String montarComprovanteNaoFiscal(
-            List<ItemCarrinho> itens, String total, String meio, VendaResultadoDto resultado) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MAIS GESTAO - POS\n");
-        sb.append("COMPROVANTE NAO FISCAL\n");
+            List<ItemCarrinho> itens,
+            String total,
+            PagamentosMisto.ResultadoFechamento fechamento,
+            String cliente,
+            String referencia,
+            VendaResultadoDto resultado) {
+        List<String> avisos = new ArrayList<>();
         if (resultado.deveEmitirNfce && !resultado.nfceEmitida) {
-            sb.append("NFC-e NAO TRANSMITIDA\n");
-        }
-        sb.append("----------------\n");
-        for (ItemCarrinho item : itens) {
-            sb.append(item.getQuantidade().toPlainString())
-                    .append("x ")
-                    .append(item.getDescricaoExibicao())
-                    .append(" ")
-                    .append(item.getSubtotal().toPlainString())
-                    .append("\n");
-        }
-        sb.append("----------------\n");
-        sb.append("TOTAL: ").append(total).append("\n");
-        sb.append("PAGTO: ").append(meio).append("\n");
-        if (resultado.codigo != null) {
-            sb.append("VENDA: ").append(resultado.codigo).append("\n");
+            avisos.add("NFC-e NAO TRANSMITIDA");
         }
         if (resultado.cStat != null && !resultado.cStat.isEmpty()) {
-            sb.append("SEFAZ cStat: ").append(resultado.cStat).append("\n");
+            avisos.add("SEFAZ cStat: " + resultado.cStat);
         }
-        if (resultado.mensagemNfce != null) {
-            sb.append(resultado.mensagemNfce).append("\n");
+        if (resultado.mensagemNfce != null && !resultado.mensagemNfce.isEmpty()) {
+            avisos.add(resultado.mensagemNfce);
         }
         if (resultado.deveEmitirNfce && !resultado.nfceEmitida) {
-            sb.append("Reemitir em Consulta NFC-e\n");
+            avisos.add("Reemitir em Consulta NFC-e");
         }
-        return sb.toString();
+        BigDecimal totalValor;
+        try {
+            totalValor = new BigDecimal(total);
+        } catch (Exception error) {
+            totalValor = totalItens(itens);
+        }
+        return CupomTexto.venda(
+                prefsStore.cabecalhoCupom(),
+                "COMPROVANTE NAO FISCAL",
+                resultado.codigo,
+                referencia,
+                cliente,
+                null,
+                CupomTexto.deCarrinho(itens),
+                totalValor,
+                CupomTexto.deLancamentos(fechamento != null ? fechamento.efetivos : null),
+                fechamento != null ? fechamento.troco : null,
+                avisos);
     }
 
     public List<ContaMesaDto> listarMesasGrade() throws ApiException {
@@ -2657,7 +2727,26 @@ public class ApiClient {
         if (garcom != null && !garcom.trim().isEmpty()) {
             body.addProperty("garcom", garcom.trim());
         }
-        return mapearResultadoFiscalPdv(localPdv.vendaRapida(body));
+        VendaResultadoDto resultado = mapearResultadoFiscalPdv(localPdv.vendaRapida(body));
+        if (!resultado.nfceEmitida) {
+            List<String> avisos = new ArrayList<>();
+            if (resultado.mensagemNfce != null && !resultado.mensagemNfce.isEmpty()) {
+                avisos.add(resultado.mensagemNfce);
+            }
+            resultado.comprovanteTexto = CupomTexto.venda(
+                    prefsStore.cabecalhoCupom(),
+                    "COMPROVANTE NAO FISCAL",
+                    resultado.codigo,
+                    null,
+                    null,
+                    null,
+                    CupomTexto.deCarrinho(itens),
+                    totalItens(itens),
+                    CupomTexto.deLancamentos(lancamentos),
+                    troco,
+                    avisos);
+        }
+        return resultado;
     }
 
     private static BigDecimal totalItens(List<ItemCarrinho> itens) {

@@ -11,6 +11,14 @@ import { gerarRelatorioFiscalComprasController } from "./fiscal-compras.js";
 import { gerarRelatorioFiscalContabilidadeController } from "./fiscal-contabilidade.js";
 import { gerarRelatorioFiscalVendasController } from "./fiscal-vendas.js";
 import { gerarRelatorioFluxoCaixaController } from "./fluxo-caixa.js";
+import { gerarRelatorioCentroCustosController } from "./centro-custos.js";
+import {
+	centroCustosComparativoController,
+	centroCustosComposicaoController,
+	centroCustosDespesasController,
+	centroCustosEvolucaoController,
+	centroCustosRateiosController,
+} from "./centro-custos-analiticos.js";
 import {
 	exportarRelatorioNotasFiscaisController,
 	listarRelatorioNotasFiscaisController,
@@ -383,5 +391,29 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			requireFeature(FEATURES_SAAS.NOTAS_FISCAIS),
 		],
 		handler: gerarRelatorioFiscalContabilidadeController,
+	});
+
+	app.post("/relatorios/centro-custos", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório de centro de custos",
+		},
+		handler: gerarRelatorioCentroCustosController,
+	});
+
+	app.get("/relatorios/centro-custos/despesas", {
+		handler: centroCustosDespesasController,
+	});
+	app.get("/relatorios/centro-custos/comparativo-mensal", {
+		handler: centroCustosComparativoController,
+	});
+	app.get("/relatorios/centro-custos/composicao", {
+		handler: centroCustosComposicaoController,
+	});
+	app.get("/relatorios/centro-custos/rateios", {
+		handler: centroCustosRateiosController,
+	});
+	app.get("/relatorios/centro-custos/evolucao", {
+		handler: centroCustosEvolucaoController,
 	});
 }

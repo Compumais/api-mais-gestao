@@ -91,3 +91,21 @@ export async function listarCentrosCusto({
 		total: totalCount[0]?.value ?? 0,
 	};
 }
+
+export async function listarTodosCentrosCusto({
+	idempresa,
+	inativo,
+}: {
+	idempresa: string;
+	inativo?: number;
+}) {
+	const where = [eq(centrocusto.idempresa, idempresa)];
+	if (inativo !== undefined) {
+		where.push(eq(centrocusto.inativo, inativo));
+	}
+	return db
+		.select()
+		.from(centrocusto)
+		.where(and(...where))
+		.orderBy(centrocusto.codigoreduzido, centrocusto.nome);
+}

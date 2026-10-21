@@ -115,6 +115,8 @@ export type ResultadoCicloOutbox = {
 	restantes: number;
 	primeiraFalha?: DetalheCicloOutbox;
 	detalhes: DetalheCicloOutbox[];
+	/** Por que o ciclo saiu sem processar itens (auth, autor, offline…). */
+	motivoParada?: string;
 };
 
 let cicloEmAndamento: Promise<ResultadoCicloOutbox> | null = null;
@@ -691,17 +693,27 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 	let processados = 0;
 	let erros = 0;
 	let vendasConfirmadas = 0;
+	let motivoParada: string | undefined;
 	const detalhes: DetalheCicloOutbox[] = [];
 	const totalVendas = await contarVendasCriarPendentes();
 
 	try {
 		const online = await pingApi();
 		if (!online) {
+			motivoParada =
+				"Sem conexão com a retaguarda (ping falhou). Verifique a internet e a URL da API.";
 			return montarResultado();
 		}
 
 		const sessao = await obterSessao();
-		if (!sessao.idempresa || !(await temAuthNuvem())) {
+		if (!sessao.idempresa) {
+			motivoParada =
+				"Empresa não vinculada neste PDV. Configure a conexão / API key antes de enviar.";
+			return montarResultado();
+		}
+		if (!(await temAuthNuvem())) {
+			motivoParada =
+				"Sem autenticação na nuvem: faça login ou configure a API key do terminal (pdv_…).";
 			return montarResultado();
 		}
 
@@ -711,6 +723,9 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 		// não precisa de operador logado: usa o do último turno de caixa.
 		const userid = await resolverAutorSync(sessao.userid);
 		if (!userid) {
+			motivoParada = (await usaApiKeyDevice())
+				? "Não há operador para enviar as vendas: faça login ou abra/feche um caixa neste terminal para registrar o autor."
+				: "Operador não logado. Faça login para enviar as vendas à retaguarda.";
 			return montarResultado();
 		}
 
@@ -783,20 +798,44 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 					},
 				);
 				if (sessaoExpirada) {
+					motivoParada =
+						"Sessão expirada na retaguarda. Faça login novamente (ou valide a API key).";
 					await invalidarSessaoExpirada();
 					break;
 				}
 				// Venda não confirmada é uma barreira FIFO: não permite que
 				// dependências fiscais nem vendas posteriores avancem neste ciclo.
 				if (item.tipo === "criar_venda") {
+					motivoParada = `Fila parada na venda: ${detalhe.mensagem}`;
 					break;
 				}
+			}
+		}
+
+		if (
+			!motivoParada &&
+			processados === 0 &&
+			erros === 0 &&
+			totalVendas > 0
+		) {
+			motivoParada =
+				"Há vendas na fila, mas nenhum item pôde ser reivindicado agora (lease de outro worker ou backoff). Tente de novo em instantes.";
+		} else if (
+			!motivoParada &&
+			processados === 0 &&
+			erros === 0 &&
+			totalVendas === 0
+		) {
+			const orfas = await contarVendasSyncPendentesSemOutbox();
+			if (orfas > 0) {
+				motivoParada = `${orfas} cupom(ns) com sync pendente sem item na fila (órfãos). Use “Enviar para retaguarda” para recriar a fila.`;
 			}
 		}
 	} catch (err) {
 		if (!isBancoIndisponivelError(err)) {
 			throw err;
 		}
+		motivoParada = "Banco local indisponível durante o sync.";
 	}
 
 	return montarResultado();
@@ -810,9 +849,27 @@ async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 			vendasConfirmadas,
 			restantes: Math.max(0, totalVendas - vendasConfirmadas),
 			...(primeiraFalha ? { primeiraFalha } : {}),
+			...(motivoParada ? { motivoParada } : {}),
 			detalhes,
 		};
 	}
+}
+
+async function contarVendasSyncPendentesSemOutbox(): Promise<number> {
+	const { queryOne } = await import("../db/database");
+	const row = await queryOne<{ total: number }>(
+		`SELECT COUNT(*)::int AS total
+		 FROM venda v
+		 WHERE v.sync_status = 'pendente'
+		   AND v.idremoto IS NULL
+		   AND NOT EXISTS (
+			 SELECT 1 FROM outbox o
+			 WHERE o.tipo = 'criar_venda'
+			   AND o.status IN ('pendente', 'processando')
+			   AND o.payload LIKE '%' || v.id || '%'
+		   )`,
+	);
+	return row?.total ?? 0;
 }
 
 async function contarVendasCriarPendentes(): Promise<number> {

@@ -3,10 +3,12 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarProdutoPorId,
+	contarVariacoesDoProduto,
 	excluirProduto,
 } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
+	httpBadRequest,
 	httpErroInterno,
 	httpNaoEncontrado,
 	httpProibido,
@@ -35,6 +37,13 @@ export async function excluirProdutoService({
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
+	}
+
+	const variacoes = await contarVariacoesDoProduto(produtoId);
+	if (variacoes > 0) {
+		return httpBadRequest(
+			"Não é possível excluir o produto porque ele possui variações",
+		);
 	}
 
 	const auditoriaId = uuidv4();

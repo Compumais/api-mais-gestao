@@ -120,9 +120,12 @@ import {
 	listarPizzasLocal,
 	listarProdutosPorGrupo,
 	listarProdutosPorGrupoGourmet,
+	LIMITE_HISTORICO_VENDAS,
 	listarVendas,
 	listarVendasNaoSincronizadas,
 	type MeioPagamento,
+	normalizarLimiteHistoricoVendas,
+	repararFilaSyncVendasPendentes,
 	marcarNfceTransmitida,
 	marcarPedidoEntregue,
 	marcarVendaCanceladaLocal,
@@ -1953,12 +1956,16 @@ export const localApi = {
 		return { venda, fiscal };
 	},
 
-	async listarVendas() {
+	async listarVendas(limit?: number) {
+		const lim = normalizarLimiteHistoricoVendas(
+			limit ?? LIMITE_HISTORICO_VENDAS,
+		);
 		if (await ehSecundario()) {
 			await garantirOperacaoSecundario();
-			return remoto.listarVendasRemoto();
+			// Secundário usa a mesma API LAN; o principal aplica o limite.
+			return remoto.listarVendasRemoto(lim);
 		}
-		return listarVendas(200);
+		return listarVendas(lim);
 	},
 
 	async listarVendasNaoSincronizadas() {
@@ -1997,6 +2004,7 @@ export const localApi = {
 				"Sem conexão com a retaguarda. Verifique a internet e tente novamente.",
 			);
 		}
+		const reparo = await repararFilaSyncVendasPendentes();
 		const outbox = await processarOutbox();
 		const nfceAtualizadas = await puxarNfceDaRetaguarda(80);
 		const pendentes = await contarOutboxPendentes();
@@ -2008,6 +2016,8 @@ export const localApi = {
 			restantes: outbox.restantes,
 			primeiraFalha: outbox.primeiraFalha,
 			detalhes: outbox.detalhes,
+			motivoParada: outbox.motivoParada,
+			reparo,
 			nfceAtualizadas,
 			pendentes,
 		};

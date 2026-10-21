@@ -308,6 +308,27 @@ export const DATA = {
 					},
 				},
 				{
+					title: "Centros de custo",
+					url: "/centros-custo",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Orçamento CC",
+					url: "/orcamento-centro-custos",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Classificação pendente",
+					url: "/centros-custo/pendentes",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
 					title: "Budget",
 					url: "/budget",
 					acesso: {

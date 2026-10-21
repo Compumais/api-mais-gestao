@@ -21,6 +21,7 @@ import {
 	buscarOrdemServicoPorIdEempresa,
 } from "@/repositories/ordem-servico-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
+import { aplicarApropriacaoUnicaCentroFinanceiro } from "@/service/apropriacao-centro-custo/aplicar-apropriacao-origem.js";
 import { inserirLancamentoCaixa } from "@/service/conta-corrente/inserir-lancamento-caixa.js";
 import { buscarTipoEventoPadrao } from "@/service/ordem-servico/ordem-servico-helpers.js";
 import { registrarEventoOrdemServicoService } from "@/service/ordem-servico/registrar-evento-ordem-servico.js";
@@ -118,6 +119,16 @@ export async function gerarContasReceberOrdemServicoService({
 
 	const dataEmissao = new Date().toISOString().substring(0, 10);
 	const dataRegistro = new Date().toISOString();
+
+	const aplicarCentroCustoOs = async (idfinanceiro: string) => {
+		if (!os.idcentrocusto) return;
+		await aplicarApropriacaoUnicaCentroFinanceiro({
+			idusuario,
+			idempresa,
+			idfinanceiro,
+			idcentrocusto: os.idcentrocusto,
+		});
+	};
 	const nomeCliente =
 		cliente.razaosocial?.trim() ||
 		cliente.nome?.trim() ||
@@ -179,6 +190,7 @@ export async function gerarContasReceberOrdemServicoService({
 
 				if (financeiro) {
 					parcelasGeradas++;
+					await aplicarCentroCustoOs(financeiro.id);
 					await criarOrdemServicoFaturamento({
 						id: uuidv4(),
 						idempresa,
@@ -291,6 +303,7 @@ export async function gerarContasReceberOrdemServicoService({
 
 			if (financeiro) {
 				parcelasGeradas++;
+				await aplicarCentroCustoOs(financeiro.id);
 				await criarOrdemServicoFaturamento({
 					id: uuidv4(),
 					idempresa,

@@ -11,6 +11,7 @@ import {
 import { buscarProdutosPorIds } from "@/repositories/produtos-repositories.js";
 import { buscarUnidadeMedidaPorId } from "@/repositories/unidade-medida-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { propagarTributacaoAposAlteracaoEmMassa } from "@/service/produto/aplicar-heranca-variacao.js";
 import { unidadeMedidaPertenceEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import {
 	type CamposAlteracaoEmMassaProduto,
@@ -101,6 +102,11 @@ export async function alterarProdutosEmMassaService({
 		dadosPersistencia,
 		{ idusuario, ip },
 	);
+
+	await propagarTributacaoAposAlteracaoEmMassa({
+		atualizados,
+		dados: dadosPersistencia,
+	});
 
 	await criarAuditoriaService({
 		id: uuidv4(),

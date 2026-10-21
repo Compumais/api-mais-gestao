@@ -46,20 +46,4 @@ public class AberturaMesaPolicyTest {
                 AberturaMesaPolicy.ErroIdentificacao.TELEFONE_INVALIDO,
                 AberturaMesaPolicy.validarIdentificacao("Ana", "(11) 123", false, false));
     }
-
-    @Test
-    public void identificacaoAbreQuandoTelefoneOuPalavraChaveEstaoLigados() {
-        assertFalse(AberturaMesaPolicy.devePedirIdentificacao(false, false, false, false));
-        assertTrue(AberturaMesaPolicy.devePedirIdentificacao(false, true, false, false));
-        assertTrue(AberturaMesaPolicy.devePedirIdentificacao(false, false, true, false));
-        assertFalse(AberturaMesaPolicy.devePedirIdentificacao(true, true, true, true));
-    }
-
-    @Test
-    public void palavraChaveExigeTelefoneMesmoComInterruptorDesligado() {
-        assertTrue(AberturaMesaPolicy.deveExigirTelefone(false, true));
-        assertFalse(AberturaMesaPolicy.deveExigirTelefone(false, false));
-        assertFalse(AberturaMesaPolicy.deveExigirNome(false, true));
-        assertTrue(AberturaMesaPolicy.deveExigirNome(true, true));
-    }
 }

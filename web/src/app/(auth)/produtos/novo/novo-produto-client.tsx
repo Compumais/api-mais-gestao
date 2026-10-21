@@ -5,29 +5,40 @@ import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { produtosService } from "@/services/produtos.service";
 import { ProdutoForm } from "../components/produto-form";
-import { mapProdutoParaClone } from "../map-produto-form";
+import {
+	mapProdutoParaClone,
+	mapProdutoParaVariacao,
+} from "../map-produto-form";
 
 export function NovoProdutoClient() {
 	const searchParams = useSearchParams();
-	const clonarId = searchParams.get("clonar");
+	const variacaoDeId = searchParams.get("variacaoDe");
+	const clonarId = variacaoDeId ? null : searchParams.get("clonar");
+	const origemId = variacaoDeId ?? clonarId;
 
 	const { data, isLoading, isError } = useQuery({
-		queryKey: ["produto", clonarId, "clonar"],
+		queryKey: ["produto", origemId, variacaoDeId ? "variacao" : "clonar"],
 		queryFn: async () => {
-			if (!clonarId) throw new Error("Produto origem não informado");
-			return await produtosService.buscar(clonarId);
+			if (!origemId) throw new Error("Produto origem não informado");
+			return await produtosService.buscar(origemId);
 		},
-		enabled: !!clonarId,
+		enabled: !!origemId,
 	});
 
-	const valoresIniciais = useMemo(
-		() => (data ? mapProdutoParaClone(data) : undefined),
-		[data],
-	);
+	const valoresIniciais = useMemo(() => {
+		if (!data) return undefined;
+		return variacaoDeId
+			? mapProdutoParaVariacao(data)
+			: mapProdutoParaClone(data);
+	}, [data, variacaoDeId]);
 
-	const titulo = clonarId ? "Clonar Produto" : "Novo Produto";
+	const titulo = variacaoDeId
+		? "Nova variação"
+		: clonarId
+			? "Clonar Produto"
+			: "Novo Produto";
 
-	if (clonarId && isLoading) {
+	if (origemId && isLoading) {
 		return (
 			<>
 				<div className="flex items-center justify-between p-4">
@@ -42,7 +53,7 @@ export function NovoProdutoClient() {
 		);
 	}
 
-	if (clonarId && (isError || !valoresIniciais)) {
+	if (origemId && (isError || !valoresIniciais)) {
 		return (
 			<>
 				<div className="flex items-center justify-between p-4">
@@ -51,7 +62,9 @@ export function NovoProdutoClient() {
 				<div className="rounded-lg border bg-card p-4 mx-4">
 					<div className="flex items-center justify-center py-8">
 						<p className="text-muted-foreground">
-							Produto de origem não encontrado para clonar.
+							{variacaoDeId
+								? "Produto pai não encontrado para criar a variação."
+								: "Produto de origem não encontrado para clonar."}
 						</p>
 					</div>
 				</div>
@@ -66,11 +79,23 @@ export function NovoProdutoClient() {
 			</div>
 			<div className="rounded-lg border bg-card p-4 mx-4">
 				<ProdutoForm
-					key={clonarId ? `clonar-${clonarId}` : "novo"}
+					key={
+						variacaoDeId
+							? `variacao-${variacaoDeId}`
+							: clonarId
+								? `clonar-${clonarId}`
+								: "novo"
+					}
 					modo="criar"
 					valoresIniciais={valoresIniciais}
+					idprodutopai={variacaoDeId}
+					nomeProdutoPai={variacaoDeId ? data?.nome : null}
 					chaveRascunho={
-						clonarId ? `/produtos/novo?clonar=${clonarId}` : "/produtos/novo"
+						variacaoDeId
+							? `/produtos/novo?variacaoDe=${variacaoDeId}`
+							: clonarId
+								? `/produtos/novo?clonar=${clonarId}`
+								: "/produtos/novo"
 					}
 				/>
 			</div>

@@ -125,6 +125,10 @@ public class HomeActivity extends AppCompatActivity {
                     outboxSync.processarPendentes();
                 }
                 api.sincronizarConfiguracaoEmpresa();
+                try {
+                    api.atualizarCabecalhoEmpresa();
+                } catch (Exception ignored) {
+                }
                 List<Produto> remotos = api.listarAtalhosRemotos();
                 if (!remotos.isEmpty() || prefs.getAtalhos().isEmpty()) {
                     prefs.setAtalhos(remotos);
@@ -300,13 +304,20 @@ public class HomeActivity extends AppCompatActivity {
                 BigDecimal falta = diferenca.negate().max(BigDecimal.ZERO);
                 String obs = inputObs.getText() == null ? null : inputObs.getText().toString();
                 dialog.dismiss();
+                String comprovante = FechamentoCaixaTexto.montar(
+                        prefs.cabecalhoCupom(),
+                        resumo,
+                        saldoInformado,
+                        obs,
+                        caixa.datacriacao);
                 fecharCaixa(
                         caixa.id,
                         MoneyFormat.toApi(saldoInformado),
                         MoneyFormat.toApi(resumo.saldoapurado),
                         MoneyFormat.toApi(sobra),
                         MoneyFormat.toApi(falta),
-                        obs);
+                        obs,
+                        comprovante);
             });
         });
         dialog.show();
@@ -379,20 +390,29 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void imprimirFechamento(ResumoTurnoCaixa resumo, BigDecimal saldoInformado, String observacao) {
+        String abertoEm = caixaAberto != null ? caixaAberto.datacriacao : null;
         String texto = FechamentoCaixaTexto.montar(
-                prefs.getEmpresaNome(),
-                prefs.getNumeroPdv(),
-                resumo,
-                saldoInformado,
-                observacao);
+                prefs.cabecalhoCupom(), resumo, saldoInformado, observacao, abertoEm);
+        imprimirCupom(texto, R.string.fechamento_enviado, R.string.erro_imprimir_fechamento);
+    }
+
+    private void imprimirAbertura(FechamentoCaixaDto caixa, String suprimento) {
+        String texto = com.pos_mais_gestao.util.CupomTexto.abertura(
+                prefs.cabecalhoCupom(),
+                MoneyFormat.parse(suprimento),
+                caixa != null && caixa.id != null ? String.valueOf(caixa.id) : "");
+        imprimirCupom(texto, R.string.abertura_enviada, R.string.erro_imprimir_abertura);
+    }
+
+    private void imprimirCupom(String texto, int mensagemOk, int mensagemErro) {
         try {
             ImpressoraPos impressora = ((PosApplication) getApplication()).getImpressoraPos();
             impressora.imprimirTexto(texto);
-            Toast.makeText(this, R.string.fechamento_enviado, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, mensagemOk, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Toast.makeText(
                             this,
-                            e.getMessage() != null ? e.getMessage() : getString(R.string.erro_imprimir_fechamento),
+                            e.getMessage() != null ? e.getMessage() : getString(mensagemErro),
                             Toast.LENGTH_LONG)
                     .show();
         }
@@ -426,6 +446,7 @@ public class HomeActivity extends AppCompatActivity {
                     caixaAberto = caixa;
                     atualizarStatusCaixaUi();
                     Toast.makeText(this, R.string.caixa_aberto, Toast.LENGTH_SHORT).show();
+                    imprimirAbertura(caixa, suprimento);
                 });
             } catch (ApiException e) {
                 runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
@@ -439,7 +460,8 @@ public class HomeActivity extends AppCompatActivity {
             String saldoApurado,
             String sobra,
             String falta,
-            String observacao) {
+            String observacao,
+            String comprovante) {
         executor.execute(() -> {
             try {
                 api.fecharCaixa(id, saldoInformado, saldoApurado, sobra, falta, observacao);
@@ -447,6 +469,10 @@ public class HomeActivity extends AppCompatActivity {
                     caixaAberto = null;
                     atualizarStatusCaixaUi();
                     Toast.makeText(this, R.string.caixa_fechado, Toast.LENGTH_SHORT).show();
+                    if (comprovante != null && !comprovante.isEmpty()) {
+                        imprimirCupom(
+                                comprovante, R.string.fechamento_enviado, R.string.erro_imprimir_fechamento);
+                    }
                 });
             } catch (ApiException e) {
                 runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());

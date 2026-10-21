@@ -179,6 +179,14 @@
             android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnImprimirConferencia"
+            style="@style/PosOutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/imprimir_conferencia" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFecharConta"
             style="@style/PosBigButton"
             android:layout_width="match_parent"

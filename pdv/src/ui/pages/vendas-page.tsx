@@ -66,6 +66,8 @@ import {
 } from "./vendas-colunas";
 
 const CHAVE_COLUNAS_VENDAS = "pdv.vendas.colunas";
+/** Alinhado a LIMITE_HISTORICO_VENDAS no main (repos). */
+const LIMITE_HISTORICO_VENDAS = 5000;
 
 type ItemVendaDetalhe = {
 	id: string;
@@ -152,7 +154,12 @@ export function VendasPage() {
 	const load = useCallback(async () => {
 		setLoading(true);
 		try {
-			setVendas(await pdvInvoke<VendaListagem[]>("listarVendas"));
+			setVendas(
+				await pdvInvoke<VendaListagem[]>(
+					"listarVendas",
+					LIMITE_HISTORICO_VENDAS,
+				),
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -561,7 +568,9 @@ export function VendasPage() {
 						<p className="px-1 text-sm font-medium text-muted-foreground">
 							{loading
 								? "Carregando…"
-								: `${vendasFiltradas.length} venda${vendasFiltradas.length === 1 ? "" : "s"}`}
+								: vendas.length >= LIMITE_HISTORICO_VENDAS
+									? `${vendasFiltradas.length} venda${vendasFiltradas.length === 1 ? "" : "s"} (exibindo as ${LIMITE_HISTORICO_VENDAS} mais recentes)`
+									: `${vendasFiltradas.length} venda${vendasFiltradas.length === 1 ? "" : "s"}`}
 						</p>
 					)}
 					<div className="flex flex-wrap items-center gap-2">

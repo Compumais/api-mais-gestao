@@ -72,6 +72,7 @@ public class EmpresaActivity extends AppCompatActivity {
     private void selecionarEmpresa(EmpresaDto empresa) {
         if (!prefs.isModoPdvLocal()) {
             prefs.setEmpresa(empresa.id, empresa.nome);
+            api.guardarContatoEmpresa(empresa);
             irParaHome();
             return;
         }
@@ -80,6 +81,7 @@ public class EmpresaActivity extends AppCompatActivity {
             try {
                 api.selecionarEmpresaNoPdv(empresa.id, empresa.nome);
                 prefs.setEmpresa(empresa.id, empresa.nome);
+                api.guardarContatoEmpresa(empresa);
                 runOnUiThread(this::irParaHome);
             } catch (ApiException e) {
                 runOnUiThread(() -> {

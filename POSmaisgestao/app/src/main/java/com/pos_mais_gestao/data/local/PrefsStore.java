@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.domain.balanca.BalancaConfig;
+import com.pos_mais_gestao.util.CupomTexto;
 import com.pos_mais_gestao.util.EtiquetaBalanca;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -33,6 +34,10 @@ public class PrefsStore {
     private static final String KEY_IMPRESSORA_ID = "impressora_id";
     private static final String KEY_IMPRESSORA_NOME = "impressora_nome";
     private static final String KEY_IMPRESSORA_TIPO = "impressora_tipo";
+    private static final String KEY_IMPRESSORA_COLUNAS = "impressora_colunas";
+    private static final String KEY_EMPRESA_CNPJ = "empresa_cnpj";
+    private static final String KEY_EMPRESA_TELEFONE = "empresa_telefone";
+    private static final String KEY_EMPRESA_ENDERECO = "empresa_endereco";
     private static final String KEY_TEMA = "tema";
     private static final String KEY_IMPRIMIR_FICHAS_EVENTO = "imprimir_fichas_evento";
     private static final String KEY_PIX_QR_HABILITADO = "pix_qr_habilitado";
@@ -44,10 +49,6 @@ public class PrefsStore {
     private static final String KEY_MODAL_ABRIR_MESA = "modal_abrir_mesa_habilitado";
     private static final String KEY_ABRIR_MESA_EXIGIR_NOME = "abrir_mesa_exigir_nome";
     private static final String KEY_ABRIR_MESA_EXIGIR_TELEFONE = "abrir_mesa_exigir_telefone";
-    private static final String KEY_PEDIR_TELEFONE_OCUPACAO = "pos_pedir_telefone_ocupacao";
-    private static final String KEY_PALAVRA_CHAVE_OCUPACAO = "pos_palavra_chave_ocupacao";
-    private static final String KEY_COMPUCHAT_URL = "compuchat_url";
-    private static final String KEY_COMPUCHAT_TOKEN = "compuchat_occupation_token";
     private static final String KEY_COMANDA_PEDIR_MESA_LOCAL = "comanda_pedir_mesa_local";
     private static final String KEY_TERMINAL_ID = "terminal_id";
     private static final String KEY_BALANCA_HABILITADA = "balanca_habilitada";
@@ -201,45 +202,6 @@ public class PrefsStore {
         prefs.edit().putBoolean(KEY_ABRIR_MESA_EXIGIR_TELEFONE, exigir).apply();
     }
 
-    /** Interruptor local do POS. O sync do PDV não altera este valor. */
-    public boolean isPedirTelefoneOcupacao() {
-        return prefs.getBoolean(KEY_PEDIR_TELEFONE_OCUPACAO, true);
-    }
-
-    public void setPedirTelefoneOcupacao(boolean pedir) {
-        prefs.edit().putBoolean(KEY_PEDIR_TELEFONE_OCUPACAO, pedir).apply();
-    }
-
-    /** Interruptor local do POS. O sync do PDV não altera este valor. */
-    public boolean isPalavraChaveOcupacao() {
-        return prefs.getBoolean(KEY_PALAVRA_CHAVE_OCUPACAO, false);
-    }
-
-    public void setPalavraChaveOcupacao(boolean exigir) {
-        prefs.edit().putBoolean(KEY_PALAVRA_CHAVE_OCUPACAO, exigir).apply();
-    }
-
-    public String getCompuchatUrl() {
-        String url = prefs.getString(KEY_COMPUCHAT_URL, "");
-        if (url == null) {
-            return "";
-        }
-        return url.trim().replaceAll("/+$", "");
-    }
-
-    public void setCompuchatUrl(String url) {
-        prefs.edit().putString(KEY_COMPUCHAT_URL, url == null ? "" : url.trim()).apply();
-    }
-
-    public String getCompuchatToken() {
-        String token = sessionPrefs.getString(KEY_COMPUCHAT_TOKEN, "");
-        return token == null ? "" : token.trim();
-    }
-
-    public void setCompuchatToken(String token) {
-        sessionPrefs.edit().putString(KEY_COMPUCHAT_TOKEN, token == null ? "" : token.trim()).apply();
-    }
-
     public boolean isComandaPedirMesaLocal() {
         return isModeloComanda() && prefs.getBoolean(KEY_COMANDA_PEDIR_MESA_LOCAL, false);
     }
@@ -340,6 +302,9 @@ public class PrefsStore {
         prefs.edit()
                 .remove(KEY_EMPRESA_ID)
                 .remove(KEY_EMPRESA_NOME)
+                .remove(KEY_EMPRESA_CNPJ)
+                .remove(KEY_EMPRESA_TELEFONE)
+                .remove(KEY_EMPRESA_ENDERECO)
                 .putString(KEY_ATALHOS, "[]")
                 .apply();
     }
@@ -350,6 +315,51 @@ public class PrefsStore {
 
     public String getEmpresaNome() {
         return prefs.getString(KEY_EMPRESA_NOME, null);
+    }
+
+    public void setEmpresaContato(String cnpj, String telefone, String endereco) {
+        prefs.edit()
+                .putString(KEY_EMPRESA_CNPJ, cnpj == null ? "" : cnpj.trim())
+                .putString(KEY_EMPRESA_TELEFONE, telefone == null ? "" : telefone.trim())
+                .putString(KEY_EMPRESA_ENDERECO, endereco == null ? "" : endereco.trim())
+                .apply();
+    }
+
+    public String getEmpresaCnpj() {
+        return prefs.getString(KEY_EMPRESA_CNPJ, "");
+    }
+
+    public String getEmpresaTelefone() {
+        return prefs.getString(KEY_EMPRESA_TELEFONE, "");
+    }
+
+    public String getEmpresaEndereco() {
+        return prefs.getString(KEY_EMPRESA_ENDERECO, "");
+    }
+
+    public int getColunasImpressao() {
+        int colunas = prefs.getInt(KEY_IMPRESSORA_COLUNAS, CupomTexto.COLUNAS_58);
+        return colunas == CupomTexto.COLUNAS_80 ? CupomTexto.COLUNAS_80 : CupomTexto.COLUNAS_58;
+    }
+
+    public void setColunasImpressao(int colunas) {
+        prefs.edit()
+                .putInt(KEY_IMPRESSORA_COLUNAS, colunas == CupomTexto.COLUNAS_80
+                        ? CupomTexto.COLUNAS_80
+                        : CupomTexto.COLUNAS_58)
+                .apply();
+    }
+
+    public CupomTexto.Cabecalho cabecalhoCupom() {
+        return new CupomTexto.Cabecalho(
+                getEmpresaNome(),
+                getEmpresaCnpj(),
+                getEmpresaEndereco(),
+                getEmpresaTelefone(),
+                getUserName(),
+                getNumeroPdv(),
+                getColunasImpressao(),
+                new java.util.Date());
     }
 
     public int getNumeroPdv() {

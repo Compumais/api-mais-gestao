@@ -33,7 +33,9 @@ import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
 import com.pos_mais_gestao.ui.venda.ProdutoAdapter;
+import com.pos_mais_gestao.hardware.ImpressoraPos;
 import com.pos_mais_gestao.util.CampoCodigoOculto;
+import com.pos_mais_gestao.util.CupomTexto;
 import com.pos_mais_gestao.util.TelefoneBrasil;
 import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
@@ -43,6 +45,7 @@ import com.pos_mais_gestao.util.ProdutoQuantidade;
 import com.pos_mais_gestao.util.QuantidadeProdutoDialog;
 import com.pos_mais_gestao.util.SoftInputHelper;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -73,6 +76,8 @@ public class ContaMesaActivity extends AppCompatActivity {
     private TextInputEditText inputBusca;
     private CampoCodigoOculto capturaCodigo;
     private MaterialButton btnFecharConta;
+    private MaterialButton btnImprimirConferencia;
+    private List<ContaMesaItemDto> itensConta = new ArrayList<>();
     private TextInputLayout layoutQuantidadeItem;
     private TextInputEditText inputQuantidadeItem;
     private BigDecimal totalAtual = BigDecimal.ZERO;
@@ -121,6 +126,8 @@ public class ContaMesaActivity extends AppCompatActivity {
         txtTotalConta = findViewById(R.id.txtTotalConta);
         btnFecharConta = findViewById(R.id.btnFecharConta);
         btnFecharConta.setOnClickListener(v -> irParaPagamento());
+        btnImprimirConferencia = findViewById(R.id.btnImprimirConferencia);
+        btnImprimirConferencia.setOnClickListener(v -> imprimirConferencia());
         inputBusca = findViewById(R.id.inputBuscaConta);
         EditText inputCodigoOculto = findViewById(R.id.inputCodigoOculto);
         capturaCodigo = CampoCodigoOculto.ligar(inputCodigoOculto, inputBusca, this::aoCodigoEscaneado);
@@ -369,6 +376,7 @@ public class ContaMesaActivity extends AppCompatActivity {
             }
         }
         totalAtual = total;
+        itensConta = itens != null ? itens : new ArrayList<>();
         txtTotalConta.setText(getString(R.string.total, MoneyFormat.format(total)));
         btnFecharConta.setEnabled(total.compareTo(BigDecimal.ZERO) > 0);
     }
@@ -456,6 +464,28 @@ public class ContaMesaActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    private void imprimirConferencia() {
+        String rotulo = getString(
+                prefs.isModeloComanda() ? R.string.comanda_n : R.string.mesa_n, numeroMesa);
+        String texto = CupomTexto.conferencia(
+                prefs.cabecalhoCupom(),
+                rotulo,
+                TelefoneBrasil.nomeInformado(nomeCliente),
+                telefoneCliente == null ? "" : TelefoneBrasil.formatar(telefoneCliente),
+                CupomTexto.deConta(itensConta),
+                totalAtual);
+        try {
+            ImpressoraPos impressora = ((PosApplication) getApplication()).getImpressoraPos();
+            impressora.imprimirTexto(texto);
+            Toast.makeText(this, R.string.conferencia_enviada, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(
+                    this,
+                    e.getMessage() != null ? e.getMessage() : getString(R.string.erro_imprimir_conferencia),
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     private void irParaPagamento() {

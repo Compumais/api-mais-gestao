@@ -71,10 +71,12 @@ const criarProdutoBodySchema = z
 		quantidademaxima: z.number().int().positive().optional().nullable(),
 		custoaquisicao: z.union([z.string(), z.number()]).optional().nullable(),
 		estoque: z.number().min(0).optional(),
+		idprodutopai: z.string().min(1).optional().nullable(),
 		...camposImpostosProdutoSchema,
 		...camposServicoProdutoSchema,
 	})
 	.superRefine((dados, ctx) => {
+		if (dados.idprodutopai) return;
 		if (dados.tipo === "S") return;
 		if (!dados.idgrupo) {
 			ctx.addIssue({
@@ -184,6 +186,7 @@ export async function criarProduto(
 				Object.entries(camposServico).filter(([, valor]) => valor != null),
 			),
 			inativo: camposServico.inativo ?? 0,
+			idprodutopai: dadosValidados.idprodutopai ?? null,
 		};
 
 		const resultado = await criarProdutoService({

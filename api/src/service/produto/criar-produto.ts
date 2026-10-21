@@ -3,14 +3,20 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoProduto, Produto } from "@/model/produto-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarProdutoComHistorico } from "@/repositories/produto-historico-repositories.js";
-import { excluirProduto } from "@/repositories/produtos-repositories.js";
+import {
+	buscarProdutoPorId,
+	excluirProduto,
+} from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { aplicarHerancaVariacao } from "@/service/produto/aplicar-heranca-variacao.js";
 import { comCodigoUnidadeGravado } from "@/service/produto/preencher-sigla-unidade.js";
 import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import {
+	httpBadRequest,
 	httpCriacao,
 	httpErro,
 	httpErroInterno,
+	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
 
@@ -47,8 +53,26 @@ export async function criarProdutoService({
 		return httpProibido();
 	}
 
+	let dadosGravacao = dadosProduto;
+	if (dadosProduto.idprodutopai) {
+		const pai = await buscarProdutoPorId(dadosProduto.idprodutopai);
+		if (!pai) {
+			return httpNaoEncontrado("Produto pai não encontrado");
+		}
+		if (pai.idempresa !== dadosProduto.idempresa) {
+			return httpProibido();
+		}
+		if (pai.idprodutopai) {
+			return httpBadRequest("Uma variação não pode ter variações");
+		}
+		dadosGravacao = {
+			...aplicarHerancaVariacao(dadosProduto, pai, "criar"),
+			idprodutopai: pai.id,
+		};
+	}
+
 	const registro = await criarProdutoComHistorico(
-		await comCodigoUnidadeGravado(dadosProduto),
+		await comCodigoUnidadeGravado(dadosGravacao),
 		{
 			idusuario,
 			ip,

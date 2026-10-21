@@ -44,6 +44,12 @@ type ResultadoEnvioRetaguarda = {
 	totalVendas: number;
 	vendasConfirmadas: number;
 	restantes: number;
+	motivoParada?: string;
+	reparo?: {
+		orfasReenfileiradas: number;
+		canceladosReativados: number;
+		backoffsLiberados: number;
+	};
 	primeiraFalha?: {
 		idvenda?: string;
 		idremoto?: string;
@@ -69,6 +75,22 @@ type ResultadoTransmitirPendentes = {
 
 function montarMensagemEnvio(result: ResultadoEnvioRetaguarda): string {
 	const partes: string[] = [];
+	const reparo = result.reparo;
+	if (reparo) {
+		if (reparo.orfasReenfileiradas > 0) {
+			partes.push(
+				`${reparo.orfasReenfileiradas} cupom(ns) órfão(s) recolocados na fila`,
+			);
+		}
+		if (reparo.canceladosReativados > 0) {
+			partes.push(
+				`${reparo.canceladosReativados} item(ns) cancelado(s) reativados para nova tentativa`,
+			);
+		}
+		if (reparo.backoffsLiberados > 0) {
+			partes.push(`${reparo.backoffsLiberados} backoff(s) liberado(s)`);
+		}
+	}
 	if (result.totalVendas > 0) {
 		partes.push(
 			`vendas confirmadas ${result.vendasConfirmadas}/${result.totalVendas}`,
@@ -103,8 +125,11 @@ function montarMensagemEnvio(result: ResultadoEnvioRetaguarda): string {
 			`parado em ${result.primeiraFalha.idvenda ?? "venda"}: ${result.primeiraFalha.mensagem}`,
 		);
 	}
+	if (result.motivoParada) {
+		partes.push(result.motivoParada);
+	}
 	if (!partes.length) {
-		return "Nenhuma alteração — verifique a conexão ou se ainda há itens pendentes.";
+		return "Nenhuma alteração — verifique a conexão, login/API key ou se ainda há itens na fila.";
 	}
 	return partes.join(" · ");
 }
@@ -441,8 +466,22 @@ export function NotasNaoSincronizadasPage() {
 													)}
 												</div>
 											) : null}
+											{venda.outbox_status === "cancelado" &&
+											venda.outbox_ultimo_erro ? (
+												<div
+													className="mt-1 max-w-72 truncate text-xs text-destructive"
+													title={venda.outbox_ultimo_erro}
+												>
+													Fila cancelada
+													{venda.outbox_classificacao_erro
+														? ` (${venda.outbox_classificacao_erro})`
+														: ""}
+													: {venda.outbox_ultimo_erro}
+												</div>
+											) : null}
 											{(venda.nfce_ultimo_erro ||
-												venda.outbox_ultimo_erro) ? (
+												(venda.outbox_status !== "cancelado" &&
+													venda.outbox_ultimo_erro)) ? (
 												<div
 													className="mt-1 max-w-72 truncate text-xs text-destructive"
 													title={
@@ -453,6 +492,14 @@ export function NotasNaoSincronizadasPage() {
 												>
 													{venda.nfce_ultimo_erro ??
 														venda.outbox_ultimo_erro}
+												</div>
+											) : null}
+											{venda.sync_status === "pendente" &&
+											!venda.outbox_status &&
+											!venda.idremoto ? (
+												<div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+													Sem item na fila (órfão) — use “Enviar para
+													retaguarda”
 												</div>
 											) : null}
 										</TableCell>

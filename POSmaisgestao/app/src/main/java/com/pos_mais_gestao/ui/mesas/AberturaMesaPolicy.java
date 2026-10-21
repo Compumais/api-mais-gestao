@@ -16,23 +16,6 @@ public final class AberturaMesaPolicy {
         return flagHabilitada && !contaJaAberta;
     }
 
-    /** Abre a identificação quando nome, telefone ou palavra-chave estiver ligado. */
-    public static boolean devePedirIdentificacao(
-            boolean pedirNome,
-            boolean pedirTelefone,
-            boolean palavraChave,
-            boolean contaJaAberta) {
-        return !contaJaAberta && (pedirNome || pedirTelefone || palavraChave);
-    }
-
-    public static boolean deveExigirNome(boolean pedirNome, boolean exigirNome) {
-        return pedirNome && exigirNome;
-    }
-
-    public static boolean deveExigirTelefone(boolean pedirTelefone, boolean palavraChave) {
-        return pedirTelefone || palavraChave;
-    }
-
     /**
      * Valida nome/telefone conforme flags do PDV.
      * Campo opcional vazio é aceito; telefone preenchido (mesmo opcional) precisa ser válido.

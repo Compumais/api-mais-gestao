@@ -185,6 +185,13 @@ export interface CriarFinanceiroData {
 	idadministradora?: number | null;
 	nomebandeira?: string | null;
 	idbandeira?: number | null;
+	idplanocontas?: string | null;
+	apropriacoesCentroCusto?: Array<{
+		idcentrocusto: string;
+		valor?: number;
+		percentual?: number | null;
+	}>;
+	idcriteriorateio?: string | null;
 }
 
 export interface AtualizarFinanceiroData {
@@ -234,6 +241,13 @@ export interface AtualizarFinanceiroData {
 	idadministradora?: number | null;
 	nomebandeira?: string | null;
 	idbandeira?: number | null;
+	idplanocontas?: string | null;
+	apropriacoesCentroCusto?: Array<{
+		idcentrocusto: string;
+		valor?: number;
+		percentual?: number | null;
+	}>;
+	idcriteriorateio?: string | null;
 }
 
 export const financeiroService = {

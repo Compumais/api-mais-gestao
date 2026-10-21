@@ -96,6 +96,8 @@ export interface Produto {
 	possuiSaldo?: boolean;
 	imagem?: string | null;
 	caminhoimagem?: string | null;
+	idprodutopai?: string | null;
+	nomepai?: string | null;
 }
 
 export interface ProdutoImagem {
@@ -109,6 +111,7 @@ export interface ProdutoImagem {
 	tamanho: number | null;
 	referencia: string;
 	origem: "gerenciada" | "legada";
+	herdada?: boolean;
 	criadoem: string;
 	atualizadoem: string;
 }
@@ -170,6 +173,7 @@ export interface CriarProdutoData
 	extends CamposServicoProduto,
 		CamposAliquotaProduto {
 	idempresa: string;
+	idprodutopai?: string | null;
 	codigo: number;
 	ean?: number | null;
 	referencia?: string | null;
@@ -344,6 +348,7 @@ export type ListarProdutosParams = {
 	codigolistalc11603?: string;
 	codigonbs?: string;
 	somenteDivergencia?: boolean;
+	idprodutopai?: string;
 	ordenarPor?: string;
 	ordem?: "asc" | "desc";
 };

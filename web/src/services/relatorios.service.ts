@@ -19,6 +19,9 @@ export interface GerarRelatorioFiscalParams extends GerarRelatorioContasParams {
 export interface GerarRelatorioCentroCustosParams {
 	idempresa: string;
 	formato: "pdf" | "txt" | "html";
+	dataInicio?: string;
+	dataFim?: string;
+	regime?: "competencia" | "caixa";
 }
 
 async function downloadRelatorioBlob(
