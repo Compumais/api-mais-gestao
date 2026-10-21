@@ -5,6 +5,9 @@ import { gerarRelatorioCentroCustos } from "@/service/relatorios/centro-custos.s
 const gerarRelatorioCentroCustosSchema = z.object({
 	idempresa: z.string().uuid(),
 	formato: z.enum(["pdf", "txt", "html"]),
+	dataInicio: z.string().optional(),
+	dataFim: z.string().optional(),
+	regime: z.enum(["competencia", "caixa"]).optional(),
 });
 
 export async function gerarRelatorioCentroCustosController(
@@ -21,10 +24,7 @@ export async function gerarRelatorioCentroCustosController(
 
 		const body = gerarRelatorioCentroCustosSchema.parse(request.body);
 
-		const resultado = await gerarRelatorioCentroCustos({
-			idempresa: body.idempresa,
-			formato: body.formato,
-		});
+		const resultado = await gerarRelatorioCentroCustos(body);
 
 		reply.header("Content-Type", resultado.contentType);
 		reply.header(

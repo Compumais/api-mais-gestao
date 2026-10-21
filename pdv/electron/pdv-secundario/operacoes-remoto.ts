@@ -407,8 +407,14 @@ export async function marcarPedidoEntregueRemoto(
 	);
 }
 
-export async function listarVendasRemoto(): Promise<VendaLocal[]> {
-	return remoto("/pos/vendas");
+export async function listarVendasRemoto(
+	limit?: number,
+): Promise<VendaLocal[]> {
+	const qs =
+		limit != null && Number.isFinite(limit)
+			? `?limit=${encodeURIComponent(String(Math.floor(limit)))}`
+			: "";
+	return remoto(`/pos/vendas${qs}`);
 }
 
 export async function sincronizarNfceRemoto() {

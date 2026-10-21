@@ -41,6 +41,8 @@ export type VendaListagem = {
 	nfce_revisao_manual?: number | null;
 	outbox_tentativas?: number | null;
 	outbox_ultimo_erro?: string | null;
+	outbox_status?: string | null;
+	outbox_classificacao_erro?: string | null;
 };
 
 export function vendaPendenteSincronizacao(venda: {

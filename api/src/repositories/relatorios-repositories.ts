@@ -275,23 +275,35 @@ export interface CentroCustosItem {
 
 export async function buscarDadosCentroCustos({
 	idempresa,
+	dataInicio,
+	dataFim,
+	regime = "competencia",
 }: {
 	idempresa: string;
+	dataInicio?: string;
+	dataFim?: string;
+	regime?: "competencia" | "caixa";
 }): Promise<CentroCustosItem[]> {
-	const rows = await db.execute(
-		sql`
-			SELECT c.codigoreduzido AS codigo, c.nome AS nome
-			FROM centrocusto c
-			WHERE c.idempresa = ${idempresa} AND COALESCE(c.inativo, 0) = 0
-			ORDER BY c.codigoreduzido NULLS LAST, c.nome
-		`,
+	const inicio: string =
+		dataInicio ?? `${new Date().getFullYear()}-01-01`;
+	const fim: string =
+		dataFim ?? new Date().toISOString().slice(0, 10);
+
+	const { buscarTotaisCentroCustosPorPeriodo } = await import(
+		"./centro-custo-relatorios-repositories.js"
 	);
-	return (rows.rows as Record<string, unknown>[]).map((row) => ({
-		codigo: (row.codigo as string | undefined) ?? null,
-		nome: String(row.nome ?? "-"),
-		totalReceitas: 0,
-		totalDespesas: 0,
-		saldo: 0,
+	const rows = await buscarTotaisCentroCustosPorPeriodo({
+		idempresa,
+		dataInicio: inicio,
+		dataFim: fim,
+		regime: regime ?? "competencia",
+	});
+	return rows.map((row) => ({
+		codigo: row.codigo,
+		nome: row.nome,
+		totalReceitas: row.totalReceitas,
+		totalDespesas: row.totalDespesas,
+		saldo: row.saldo,
 	}));
 }
 

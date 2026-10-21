@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type {
 	NovoCardapioDelivery,
 	NovoPedidoCardapioDelivery,
@@ -9,6 +10,7 @@ import {
 	pedidocardapiodelivery,
 	produtos,
 } from "@/repositories/schema.js";
+import { resolverImagemVariacao } from "@/service/produto/resolver-imagem-variacao.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { db } from "./connection";
 
@@ -164,6 +166,7 @@ export async function listarProdutosCardapioPublico(idempresa: string) {
 	if (filtroProdutoAtivo) condicoes.push(filtroProdutoAtivo);
 	if (filtroGrupoAtivo) condicoes.push(filtroGrupoAtivo);
 
+	const produtoPai = alias(produtos, "produto_pai_cardapio");
 	const rows = await db
 		.select({
 			id: produtos.id,
@@ -175,9 +178,20 @@ export async function listarProdutosCardapioPublico(idempresa: string) {
 			idgrupogourmet: produtos.idgrupogourmet,
 			gruponome: grupogourmet.nome,
 			caminhoimagem: produtos.caminhoimagem,
+			imagem: produtos.imagem,
+			caminhoimagemPai: produtoPai.caminhoimagem,
+			imagemPai: produtoPai.imagem,
+			possuiImagemPropria: sql<boolean>`(
+				COALESCE(NULLIF(${produtos.caminhoimagem}, ''), NULLIF(${produtos.imagem}, '')) IS NOT NULL
+				OR EXISTS (
+					SELECT 1 FROM "produtoimagem" pi
+					WHERE pi.idproduto = ${produtos.id}
+				)
+			)`,
 		})
 		.from(produtos)
 		.innerJoin(grupogourmet, eq(produtos.idgrupogourmet, grupogourmet.id))
+		.leftJoin(produtoPai, eq(produtos.idprodutopai, produtoPai.id))
 		.where(and(...condicoes))
 		.orderBy(grupogourmet.nome, produtos.descricao);
 
@@ -186,16 +200,27 @@ export async function listarProdutosCardapioPublico(idempresa: string) {
 			(row): row is typeof row & { idgrupogourmet: string } =>
 				Boolean(row.idgrupogourmet),
 		)
-		.map((row) => ({
-			id: row.id,
-			descricao: row.descricao || row.nome || "",
-			observacoes: row.observacoes,
-			preco: row.preco,
-			espizza: row.espizza,
-			idgrupogourmet: row.idgrupogourmet,
-			gruponome: row.gruponome,
-			temimagem: Boolean(row.caminhoimagem),
-		})) satisfies ProdutoCardapioPublico[];
+		.map((row) => {
+			const imagemResolvida = resolverImagemVariacao({
+				imagem: row.imagem,
+				caminhoimagem: row.caminhoimagem,
+				possuiImagemPropria: Boolean(row.possuiImagemPropria),
+				imagemPai: row.imagemPai,
+				caminhoimagemPai: row.caminhoimagemPai,
+			});
+			return {
+				id: row.id,
+				descricao: row.descricao || row.nome || "",
+				observacoes: row.observacoes,
+				preco: row.preco,
+				espizza: row.espizza,
+				idgrupogourmet: row.idgrupogourmet,
+				gruponome: row.gruponome,
+				temimagem: Boolean(
+					imagemResolvida.caminhoimagem || imagemResolvida.imagem,
+				),
+			};
+		}) satisfies ProdutoCardapioPublico[];
 }
 
 export async function buscarProdutosCardapioPorIds(

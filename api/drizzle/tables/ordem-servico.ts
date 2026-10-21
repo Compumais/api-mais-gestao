@@ -13,6 +13,7 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { area } from "./area.js";
+import { centrocusto } from "./centro-custo.js";
 import { condicaopagamento } from "./condicao-pagamento.js";
 import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
@@ -139,6 +140,7 @@ export const ordemservico = pgTable(
 		valorbrinde: numeric({ precision: 12, scale: 2 }), // Valor Total Brinde
 		valorprodutos: numeric({ precision: 12, scale: 2 }), // Valor dos produtos
 		valorservicos: numeric({ precision: 12, scale: 2 }), // Valor dos serviços
+		idcentrocusto: text(),
 	},
 	(table) => [
 		index("ordemservico_idempresa_idx").using(
@@ -213,6 +215,13 @@ export const ordemservico = pgTable(
 			columns: [table.idarea],
 			foreignColumns: [area.id],
 			name: "fk_ordemservico_area",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idcentrocusto],
+			foreignColumns: [centrocusto.id],
+			name: "fk_ordemservico_centrocusto",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),

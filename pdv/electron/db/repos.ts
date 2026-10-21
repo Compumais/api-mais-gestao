@@ -31,6 +31,7 @@ import {
 import {
 	type LancamentoPagamento,
 	type MeioPagamento,
+	meioPrincipal,
 	type StatusLancamentoPagamento,
 	totaisParaSync,
 	validarFechamentoPagamentos,
@@ -198,6 +199,8 @@ export type VendaLocal = {
 	nfce_revisao_manual?: number | null;
 	outbox_tentativas?: number | null;
 	outbox_ultimo_erro?: string | null;
+	outbox_status?: string | null;
+	outbox_classificacao_erro?: string | null;
 	idcliente?: string | null;
 	nomecliente?: string | null;
 	cnpjcpf?: string | null;
@@ -2293,7 +2296,20 @@ export async function criarVendaRapida(params: {
 	return venda;
 }
 
-export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
+/** Teto do histórico de vendas na UI (antes era 200 e cortava o caixa). */
+export const LIMITE_HISTORICO_VENDAS = 5000;
+export const LIMITE_HISTORICO_VENDAS_MAX = 20_000;
+
+export function normalizarLimiteHistoricoVendas(limit?: number): number {
+	const n = Number(limit);
+	if (!Number.isFinite(n) || n < 1) return LIMITE_HISTORICO_VENDAS;
+	return Math.min(Math.floor(n), LIMITE_HISTORICO_VENDAS_MAX);
+}
+
+export async function listarVendas(
+	limit = LIMITE_HISTORICO_VENDAS,
+): Promise<VendaLocal[]> {
+	const lim = normalizarLimiteHistoricoVendas(limit);
 	return query<VendaLocal>(
 		`SELECT v.*,
 			c.numero_mesa AS numero_mesa,
@@ -2325,7 +2341,7 @@ export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
 		 ) o ON true
 		 ORDER BY v.criadoem DESC
 		 LIMIT $1`,
-		[limit],
+		[lim],
 	);
 }
 
@@ -2392,7 +2408,9 @@ export async function listarVendasNaoSincronizadas(
 			n.numero AS nfce_numero,
 			n.chave AS nfce_chave,
 			o.tentativas AS outbox_tentativas,
-			o.ultimo_erro AS outbox_ultimo_erro
+			o.ultimo_erro AS outbox_ultimo_erro,
+			o.status AS outbox_status,
+			o.classificacao_erro AS outbox_classificacao_erro
 		 FROM venda v
 		 LEFT JOIN conta_mesa c ON c.id = v.idconta
 		 LEFT JOIN LATERAL (
@@ -2403,11 +2421,18 @@ export async function listarVendasNaoSincronizadas(
 			LIMIT 1
 		 ) n ON true
 		 LEFT JOIN LATERAL (
-			SELECT tentativas, ultimo_erro
+			SELECT tentativas, ultimo_erro, status, classificacao_erro
 			FROM outbox
-			WHERE status IN ('pendente', 'processando')
+			WHERE tipo = 'criar_venda'
+			  AND status IN ('pendente', 'processando', 'cancelado')
 			  AND payload LIKE '%' || v.id || '%'
-			ORDER BY criadoem DESC
+			ORDER BY
+				CASE status
+					WHEN 'processando' THEN 0
+					WHEN 'pendente' THEN 1
+					ELSE 2
+				END,
+				criadoem DESC
 			LIMIT 1
 		 ) o ON true
 		 WHERE v.sync_status = 'pendente'
@@ -2417,6 +2442,84 @@ export async function listarVendasNaoSincronizadas(
 		 LIMIT $1`,
 		[limit],
 	);
+}
+
+export type ResultadoRepararFilaSync = {
+	orfasReenfileiradas: number;
+	canceladosReativados: number;
+	backoffsLiberados: number;
+};
+
+/**
+ * Antes do envio manual: recria fila para cupons órfãos, reativa cancelados
+ * permanentes ainda com sync pendente e zera backoff de criar_venda.
+ */
+export async function repararFilaSyncVendasPendentes(): Promise<ResultadoRepararFilaSync> {
+	const resultado: ResultadoRepararFilaSync = {
+		orfasReenfileiradas: 0,
+		canceladosReativados: 0,
+		backoffsLiberados: 0,
+	};
+
+	const liberados = await query<{ id: string }>(
+		`UPDATE outbox
+		 SET proxima_tentativa = NULL
+		 WHERE tipo = 'criar_venda'
+		   AND status = 'pendente'
+		   AND proxima_tentativa IS NOT NULL
+		 RETURNING id`,
+	);
+	resultado.backoffsLiberados = liberados.length;
+
+	const vendas = await query<{ id: string }>(
+		`SELECT id FROM venda
+		 WHERE sync_status = 'pendente' AND idremoto IS NULL
+		 ORDER BY criadoem ASC
+		 LIMIT 200`,
+	);
+
+	for (const { id } of vendas) {
+		const ativo = await queryOne<{ id: string; status: string }>(
+			`SELECT id, status FROM outbox
+			 WHERE tipo = 'criar_venda'
+			   AND status IN ('pendente', 'processando')
+			   AND payload LIKE '%' || $1 || '%'
+			 ORDER BY criadoem DESC
+			 LIMIT 1`,
+			[id],
+		);
+		if (ativo) continue;
+
+		const cancelado = await queryOne<{ id: string }>(
+			`SELECT id FROM outbox
+			 WHERE tipo = 'criar_venda'
+			   AND status = 'cancelado'
+			   AND payload LIKE '%' || $1 || '%'
+			 ORDER BY criadoem DESC
+			 LIMIT 1`,
+			[id],
+		);
+		if (cancelado) {
+			await execute(
+				`UPDATE outbox
+				 SET status = 'pendente',
+				     proxima_tentativa = NULL,
+				     classificacao_erro = NULL,
+				     worker_id = NULL,
+				     bloqueado_ate = NULL,
+				     processadoem = NULL
+				 WHERE id = $1`,
+				[cancelado.id],
+			);
+			resultado.canceladosReativados += 1;
+			continue;
+		}
+
+		await enfileirarCriarVendaAPartirLocal(id);
+		resultado.orfasReenfileiradas += 1;
+	}
+
+	return resultado;
 }
 
 export async function obterVenda(id: string): Promise<
@@ -2452,6 +2555,50 @@ export async function obterVenda(id: string): Promise<
 	);
 	const pagamentos = await listarLancamentosVenda(id);
 	return { ...venda, itens, pagamentos };
+}
+
+async function enfileirarCriarVendaAPartirLocal(idlocal: string): Promise<void> {
+	const venda = await obterVenda(idlocal);
+	if (!venda) {
+		throw new Error(`Venda local não encontrada para reenfileirar: ${idlocal}`);
+	}
+	const pagamentos = venda.pagamentos.filter(
+		(p) => (p.status ?? "ok") !== "cancelado",
+	);
+	const sync = totaisParaSync(pagamentos, Number(venda.valortroco ?? 0));
+	const meio =
+		venda.meio_pagamento?.trim() ||
+		meioPrincipal(pagamentos) ||
+		"DINHEIRO";
+	await enfileirarOutbox("criar_venda", {
+		idlocal: venda.id,
+		meio,
+		pagamentos,
+		valordinheiro: sync.valordinheiro,
+		valorpix: sync.valorpix,
+		valorcartao: arredondarMoeda(
+			sync.valorcartaocredito + sync.valorcartaodebito,
+		),
+		itens: venda.itens.map((i) => ({
+			id: i.id,
+			idproduto: i.idproduto,
+			descricao: i.descricao,
+			quantidade: i.quantidade,
+			precounitario: i.precounitario,
+			precototal: i.precototal,
+		})),
+		valortotal: Number(venda.valortotal),
+		valortroco: Number(venda.valortroco ?? 0),
+		valordesconto: Number(venda.valordesconto ?? 0),
+		valoracrescimo: Number(venda.valoracrescimo ?? 0),
+		valortaxaservico: Number(venda.valortaxaservico ?? 0),
+		valorcouvert: Number(venda.valorcouvert ?? 0),
+		valorentrega: Number(venda.valorentrega ?? 0),
+		origem: venda.origem,
+		idconta_local: venda.idconta ?? undefined,
+		numero_mesa: venda.numero_mesa ?? undefined,
+		identidade: venda.idcliente ?? undefined,
+	});
 }
 
 export async function atualizarVendaSync(

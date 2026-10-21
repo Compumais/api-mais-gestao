@@ -87,6 +87,20 @@ export function mapProdutoToForm(
 	};
 }
 
+/** Variação: copia o pai, com código novo, estoque zerado e código de barras em branco. */
+export function mapProdutoParaVariacao(
+	data: ProdutoDetalhe,
+): Partial<ProdutoFormData> {
+	return {
+		...mapProdutoToForm(data),
+		codigo: undefined,
+		ean: null,
+		quantidadepadrao: 0,
+		quantidademinima: null,
+		quantidademaxima: null,
+	};
+}
+
 /** Clone: copia cadastro; nome, preço, quantidades e código ficam em branco (código recebe o próximo). */
 export function mapProdutoParaClone(
 	data: ProdutoDetalhe,

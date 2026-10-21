@@ -192,8 +192,20 @@ export async function listarGaleriaProduto(params: {
 	idproduto: string;
 	idusuario: string;
 }) {
-	await obterProdutoAutorizado(params.idproduto, params.idusuario);
-	return listarImagensProduto(params.idproduto);
+	const produto = await obterProdutoAutorizado(
+		params.idproduto,
+		params.idusuario,
+	);
+	const proprias = await listarImagensProduto(params.idproduto);
+	const temMidiaPropria =
+		proprias.length > 0 ||
+		Boolean(produto.caminhoimagem?.trim()) ||
+		Boolean(produto.imagem?.trim());
+	if (temMidiaPropria || !produto.idprodutopai) {
+		return proprias;
+	}
+	const herdadas = await listarImagensProduto(produto.idprodutopai);
+	return herdadas.map((imagem) => ({ ...imagem, herdada: true as const }));
 }
 
 export async function salvarImagemProduto(params: {
@@ -405,6 +417,18 @@ export async function lerImagemProduto(params: {
 		produto.caminhoimagem,
 	);
 	if (legado) return legado;
+	if (
+		produto.idprodutopai &&
+		produto.idprodutopai !== produto.id &&
+		imagens.length === 0 &&
+		!produto.caminhoimagem?.trim() &&
+		!produto.imagem?.trim()
+	) {
+		return lerImagemProduto({
+			idproduto: produto.idprodutopai,
+			idusuario: params.idusuario,
+		});
+	}
 	throw new ErroImagemProduto(
 		"Imagem não encontrada",
 		404,
@@ -442,6 +466,18 @@ export async function lerImagemProdutoDaEmpresa(params: {
 		principal?.referencia ?? produto.caminhoimagem,
 	);
 	if (legado) return legado;
+	if (
+		produto.idprodutopai &&
+		produto.idprodutopai !== produto.id &&
+		imagens.length === 0 &&
+		!produto.caminhoimagem?.trim() &&
+		!produto.imagem?.trim()
+	) {
+		return lerImagemProdutoDaEmpresa({
+			idproduto: produto.idprodutopai,
+			idempresa: params.idempresa,
+		});
+	}
 	throw new ErroImagemProduto(
 		"Imagem não encontrada",
 		404,

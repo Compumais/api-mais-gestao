@@ -66,14 +66,12 @@ function versaoReferencia(referencia: string) {
 }
 
 function ImagemGaleria({
-	produtoId,
 	nomeProduto,
 	imagem,
 	ocupada,
 	onPrincipal,
 	onRemover,
 }: {
-	produtoId: string;
 	nomeProduto: string;
 	imagem: ProdutoImagem;
 	ocupada: boolean;
@@ -86,13 +84,13 @@ function ImagemGaleria({
 	const { data, isLoading, isError } = useQuery({
 		queryKey: [
 			"produto-imagem-arquivo",
-			produtoId,
+			imagem.idproduto,
 			imagem.id,
 			versaoReferencia(imagem.referencia),
 		],
 		queryFn: () =>
 			produtosService.baixarArquivoImagem(
-				produtoId,
+				imagem.idproduto,
 				imagem.id,
 				versaoReferencia(imagem.referencia),
 			),
@@ -139,7 +137,9 @@ function ImagemGaleria({
 					{imagem.nomearquivo ??
 						(imagem.origem === "legada" ? "Imagem existente" : "Imagem")}
 				</p>
-				{imagem.principal ? (
+				{imagem.herdada ? (
+					<p className="text-sm text-muted-foreground">Imagem do produto pai</p>
+				) : imagem.principal ? (
 					<p className="flex items-center text-sm font-medium text-primary">
 						<Star className="mr-1 h-4 w-4 fill-current" aria-hidden="true" />
 						Capa
@@ -156,18 +156,20 @@ function ImagemGaleria({
 						Tornar capa
 					</Button>
 				)}
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					className="text-destructive"
-					disabled={ocupada}
-					onClick={onRemover}
-					aria-label={`Remover ${imagem.nomearquivo ?? "imagem"}`}
-				>
-					<Trash2 className="mr-1 h-4 w-4" aria-hidden="true" />
-					Remover
-				</Button>
+				{imagem.herdada ? null : (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="text-destructive"
+						disabled={ocupada}
+						onClick={onRemover}
+						aria-label={`Remover ${imagem.nomearquivo ?? "imagem"}`}
+					>
+						<Trash2 className="mr-1 h-4 w-4" aria-hidden="true" />
+						Remover
+					</Button>
+				)}
 			</div>
 		</li>
 	);
@@ -250,6 +252,12 @@ export function ProdutoAbaImagens({
 					A primeira imagem é usada como capa. Você pode trocar a capa a
 					qualquer momento.
 				</p>
+				{imagens.some((imagem) => imagem.herdada) ? (
+					<p className="mt-2 text-sm text-muted-foreground">
+						Esta variação ainda não tem imagens próprias e está usando as do
+						produto pai. Envie uma imagem para substituir.
+					</p>
+				) : null}
 			</div>
 			<div className="rounded-lg border border-dashed p-4">
 				<label
@@ -296,7 +304,6 @@ export function ProdutoAbaImagens({
 				{imagens.map((imagem) => (
 					<ImagemGaleria
 						key={imagem.id}
-						produtoId={produtoId ?? ""}
 						nomeProduto={nomeProduto}
 						imagem={imagem}
 						ocupada={ocupada}

@@ -1,6 +1,10 @@
 import type { CentroCusto } from "@/model/centro-custo-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { listarCentrosCusto } from "@/repositories/centro-custo-repositories.js";
+import {
+	listarCentrosCusto,
+	listarTodosCentrosCusto,
+} from "@/repositories/centro-custo-repositories.js";
+import { montarArvoreCentrosCusto } from "@/util/centro-custo-arvore.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
@@ -11,6 +15,7 @@ type ListarCentrosCustoParametros = {
 	inativo?: number | undefined;
 	page?: number;
 	limit?: number;
+	formato?: "lista" | "arvore";
 };
 
 type ListarCentroCustosResposta = {
@@ -30,6 +35,7 @@ export async function listarCentroCustosService({
 	inativo,
 	page = 1,
 	limit = 10,
+	formato = "lista",
 }: ListarCentrosCustoParametros): Promise<
 	HttpResponse<ListarCentroCustosResposta>
 > {
@@ -40,6 +46,19 @@ export async function listarCentroCustosService({
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
+	}
+
+	if (formato === "arvore") {
+		const itens = await listarTodosCentrosCusto({ idempresa, inativo });
+		return httpOk({
+			data: montarArvoreCentrosCusto(itens),
+			paginacao: {
+				page: 1,
+				limit: itens.length,
+				total: itens.length,
+				totalPages: 1,
+			},
+		});
 	}
 
 	const resultado = await listarCentrosCusto({

@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { buscarContaCorrentePorId } from "@/repositories/conta-corrente-repositories.js";
+import { aplicarApropriacaoContaCorrenteCaixa } from "@/service/apropriacao-centro-custo/aplicar-apropriacao-origem.js";
 import { criarContaCorrenteLancamentoService } from "@/service/contacorrentelancamento/criar-conta-corrente-lancamento.js";
 import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 import {
@@ -21,6 +22,16 @@ const criarContaCorrenteLancamentoBodySchema = z.object({
 	debito: z.string().optional(),
 	documento: z.string().max(60).optional(),
 	dataconciliacao: z.string().optional(),
+	apropriacoesCentroCusto: z
+		.array(
+			z.object({
+				idcentrocusto: z.string(),
+				valor: z.coerce.number().optional(),
+				percentual: z.coerce.number().optional().nullable(),
+			}),
+		)
+		.optional(),
+	idcriteriorateio: z.string().optional().nullable(),
 });
 
 export async function criarContaCorrenteLancamento(
@@ -32,9 +43,9 @@ export async function criarContaCorrenteLancamento(
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const dadosValidados = criarContaCorrenteLancamentoBodySchema.parse(
-			request.body,
-		);
+		const parsed = criarContaCorrenteLancamentoBodySchema.parse(request.body);
+		const { apropriacoesCentroCusto, idcriteriorateio, ...dadosValidados } =
+			parsed;
 
 		// Buscar conta corrente para obter idempresa
 		const contaCorrente = await buscarContaCorrentePorId({
@@ -77,8 +88,21 @@ export async function criarContaCorrenteLancamento(
 			contaCorrente.idempresa,
 		);
 
-		if (!resultado.success) {
+		if (!resultado.success || !resultado.body) {
 			return reply.status(resultado.status).send(resultado);
+		}
+
+		if (apropriacoesCentroCusto?.length) {
+			const apropriacao = await aplicarApropriacaoContaCorrenteCaixa({
+				idusuario: request.user.id,
+				idempresa: contaCorrente.idempresa,
+				idlancamento: resultado.body.id,
+				linhas: apropriacoesCentroCusto,
+				idcriteriorateio,
+			});
+			if (apropriacao && !apropriacao.success) {
+				return reply.status(apropriacao.status).send(apropriacao);
+			}
 		}
 
 		const perfilAutor = Array.isArray(request.user.roles)

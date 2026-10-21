@@ -16,7 +16,13 @@ import com.pos_mais_gestao.data.api.ApiClient;
 import com.pos_mais_gestao.data.api.ApiException;
 import com.pos_mais_gestao.data.api.VendaItemDetalheDto;
 import com.pos_mais_gestao.data.api.VendaResumoDto;
+import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.hardware.ImpressoraPos;
+import com.pos_mais_gestao.util.CupomTexto;
+import com.pos_mais_gestao.util.MoneyFormat;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,6 +32,7 @@ public class VendaDetalheActivity extends AppCompatActivity {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private ApiClient api;
+    private PrefsStore prefs;
     private ImpressoraPos impressora;
     private VendaResumoDto venda;
     private VendaItemAdapter adapter;
@@ -42,6 +49,7 @@ public class VendaDetalheActivity extends AppCompatActivity {
 
         PosApplication app = (PosApplication) getApplication();
         api = app.getApiClient();
+        prefs = app.getPrefsStore();
         impressora = app.getImpressoraPos();
 
         Object raw = getIntent().getSerializableExtra(EXTRA_VENDA);
@@ -146,32 +154,40 @@ public class VendaDetalheActivity extends AppCompatActivity {
     }
 
     private String montarComprovanteSimples() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MAIS GESTAO - POS\n");
-        sb.append("COMPROVANTE NAO FISCAL\n");
-        sb.append("--------------------------------\n");
-        if (venda.codigo != null) {
-            sb.append("Codigo: ").append(venda.codigo).append("\n");
-        }
-        if (venda.dataHora != null) {
-            sb.append(VendaAdapter.formatarData(venda.dataHora)).append("\n");
-        }
-        sb.append("--------------------------------\n");
+        List<CupomTexto.LinhaItem> linhas = new ArrayList<>();
         if (itensCarregados != null) {
             for (VendaItemDetalheDto item : itensCarregados) {
-                sb.append(item.quantidade != null ? item.quantidade : "1")
-                        .append("x ")
-                        .append(item.nome != null ? item.nome : "Item")
-                        .append("\n");
+                BigDecimal quantidade = MoneyFormat.parse(item.quantidade);
+                if (quantidade.compareTo(BigDecimal.ZERO) == 0 && item.quantidade != null) {
+                    quantidade = BigDecimal.ONE;
+                }
+                BigDecimal unitario = MoneyFormat.parse(item.precounitario);
+                BigDecimal subtotal = item.precototal != null && !item.precototal.isEmpty()
+                        ? MoneyFormat.parse(item.precototal)
+                        : unitario.multiply(quantidade);
+                linhas.add(new CupomTexto.LinhaItem(
+                        item.nome != null ? item.nome : "Item", quantidade, unitario, subtotal));
             }
         }
-        sb.append("--------------------------------\n");
-        sb.append("TOTAL ").append(VendaAdapter.formatarValor(venda.valorTotal)).append("\n");
-        if (venda.pagamentosResumo != null) {
-            sb.append(venda.pagamentosResumo).append("\n");
-        }
-        sb.append("--------------------------------\n");
-        return sb.toString();
+        BigDecimal total = MoneyFormat.parse(venda.valorTotal);
+        List<CupomTexto.LinhaPagamento> pagamentos = venda.pagamentosResumo == null
+                || venda.pagamentosResumo.trim().isEmpty()
+                ? Collections.emptyList()
+                : Collections.singletonList(
+                        new CupomTexto.LinhaPagamento(venda.pagamentosResumo, total));
+        String titulo = venda.tipo == VendaResumoDto.Tipo.DAV ? "PEDIDO (DAV)" : "COMPROVANTE NAO FISCAL";
+        return CupomTexto.venda(
+                prefs.cabecalhoCupom(),
+                titulo,
+                venda.codigo,
+                venda.mesa ? (prefs.isModeloComanda() ? "Comanda" : "Mesa") : null,
+                venda.nomeCliente,
+                venda.dataHora != null ? VendaAdapter.formatarData(venda.dataHora) : null,
+                linhas,
+                total,
+                pagamentos,
+                null,
+                null);
     }
 
     @Override

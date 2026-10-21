@@ -5,7 +5,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
 import androidx.core.content.ContextCompat;
@@ -68,13 +70,33 @@ public final class ImpressoraDiscovery {
             return lista;
         }
         for (UsbDevice device : usbManager.getDeviceList().values()) {
-            String nome = device.getProductName();
+            String nome = nomeUsb(device);
             if (nome == null || nome.trim().isEmpty()) {
                 nome = "USB " + device.getDeviceName();
             }
-            String id = "usb:" + device.getVendorId() + ":" + device.getProductId() + ":" + device.getDeviceId();
-            lista.add(new ImpressoraInfo(id, nome + " (USB)", ImpressoraInfo.TIPO_USB));
+            String id = new ImpressoraUsbId(
+                    device.getVendorId(), device.getProductId(), device.getDeviceId()).formatar();
+            String sufixo = temClasseImpressora(device) ? " (USB ESC/POS)" : " (USB)";
+            lista.add(new ImpressoraInfo(id, nome + sufixo, ImpressoraInfo.TIPO_USB));
         }
         return lista;
+    }
+
+    private static String nomeUsb(UsbDevice device) {
+        try {
+            return device.getProductName();
+        } catch (SecurityException error) {
+            return null;
+        }
+    }
+
+    private static boolean temClasseImpressora(UsbDevice device) {
+        for (int i = 0; i < device.getInterfaceCount(); i++) {
+            UsbInterface iface = device.getInterface(i);
+            if (iface.getInterfaceClass() == UsbConstants.USB_CLASS_PRINTER) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -377,6 +377,7 @@ export function HomePage() {
 					vendasConfirmadas: number;
 					restantes: number;
 					primeiraFalha?: { idvenda?: string; mensagem: string };
+					motivoParada?: string;
 				};
 			}>("syncAgora");
 			await refresh();
@@ -388,8 +389,11 @@ export function HomePage() {
 			const falha = result.outbox.primeiraFalha
 				? ` · primeira falha: ${result.outbox.primeiraFalha.idvenda ?? "venda"} — ${result.outbox.primeiraFalha.mensagem}`
 				: "";
+			const motivo = result.outbox.motivoParada
+				? ` · ${result.outbox.motivoParada}`
+				: "";
 			setMsg(
-				`Catálogo: ${result.pull.produtos} produtos · ${result.pull.grupos} grupos${vendas} · fila ${result.pendentes}${falha}`,
+				`Catálogo: ${result.pull.produtos} produtos · ${result.pull.grupos} grupos${vendas} · fila ${result.pendentes}${falha}${motivo}`,
 			);
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Falha ao sincronizar");

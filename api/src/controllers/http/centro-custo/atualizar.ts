@@ -14,7 +14,14 @@ const atualizarCentroCustoBodySchema = z.object({
 	codigoreduzido: z.string().max(20).optional(),
 	inativo: z.number().int().optional(),
 	obrigatorio: z.number().int().optional(),
-	idcentrocustopai: z.string().optional()
+	idcentrocustopai: z.string().optional(),
+	descricao: z.string().optional().nullable(),
+	iddepartamento: z.string().optional().nullable(),
+	idresponsavel: z.string().optional().nullable(),
+	datainiciovigencia: z.string().optional().nullable(),
+	datafimvigencia: z.string().optional().nullable(),
+	tipogestao: z.string().length(3).optional().nullable(),
+	observacao: z.string().optional().nullable(),
 });
 
 export async function atualizarCentroCusto(request: FastifyRequest, reply: FastifyReply) {

@@ -26,6 +26,7 @@ import {
 	saldoestoque,
 } from "@/repositories/schema.js";
 import { LIMITE_EXPORTACAO_CSV } from "@/util/csv.js";
+import { resolverImagemVariacao } from "@/service/produto/resolver-imagem-variacao.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
@@ -130,6 +131,7 @@ export type ProdutoListagem = Produto & {
 	quantidadefiscal: string;
 	divergencia: string;
 	possuiSaldo: boolean;
+	nomepai: string | null;
 };
 
 function adicionarFiltroTexto(
@@ -184,6 +186,7 @@ export type ListarProdutosPorEmpresaParametros = {
 	codigolistalc11603?: string | undefined;
 	codigonbs?: string | undefined;
 	somenteDivergencia?: boolean | undefined;
+	idprodutopai?: string | undefined;
 	ordenarPor?: OrdenarProdutosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 	page?: number;
@@ -209,6 +212,7 @@ function montarWhereProdutosListagem({
 	codigolistalc11603,
 	codigonbs,
 	somenteDivergencia,
+	idprodutopai,
 }: Omit<
 	ListarProdutosPorEmpresaParametros,
 	"page" | "limit" | "ordenarPor" | "ordem"
@@ -267,6 +271,10 @@ function montarWhereProdutosListagem({
 		where.push(sql`${expressaoDivergencia} = 0`);
 	}
 
+	if (idprodutopai) {
+		where.push(eq(produtos.idprodutopai, idprodutopai));
+	}
+
 	return where;
 }
 
@@ -301,6 +309,7 @@ export async function listarProdutosPorEmpresa({
 	codigolistalc11603,
 	codigonbs,
 	somenteDivergencia,
+	idprodutopai,
 	ordenarPor,
 	ordem = "asc",
 	page = 1,
@@ -332,11 +341,20 @@ export async function listarProdutosPorEmpresa({
 		codigolistalc11603,
 		codigonbs,
 		somenteDivergencia,
+		idprodutopai,
 	});
 
 	const offset = (page - 1) * limit;
 	const ordenacao = montarOrdenacaoProdutos(ordenarPor, ordem);
 	const joinSaldo = joinSaldoPorProduto();
+	const produtoPai = alias(produtos, "produto_pai_listagem");
+	const possuiImagemPropria = sql<boolean>`(
+		COALESCE(NULLIF(${produtos.caminhoimagem}, ''), NULLIF(${produtos.imagem}, '')) IS NOT NULL
+		OR EXISTS (
+			SELECT 1 FROM "produtoimagem" pi
+			WHERE pi.idproduto = ${produtos.id}
+		)
+	)`;
 
 	const [totalCount, rows] = await Promise.all([
 		db
@@ -350,9 +368,14 @@ export async function listarProdutosPorEmpresa({
 				idsaldo: saldoestoque.id,
 				quantidadeSaldo: saldoestoque.quantidade,
 				quantidadefiscalSaldo: saldoestoque.quantidadefiscal,
+				nomepai: produtoPai.nome,
+				imagemPai: produtoPai.imagem,
+				caminhoimagemPai: produtoPai.caminhoimagem,
+				possuiImagemPropria,
 			})
 			.from(produtos)
 			.leftJoin(saldoestoque, joinSaldo)
+			.leftJoin(produtoPai, eq(produtos.idprodutopai, produtoPai.id))
 			.where(and(...where))
 			.orderBy(ordenacao)
 			.limit(limit)
@@ -360,12 +383,31 @@ export async function listarProdutosPorEmpresa({
 	]);
 
 	const produtosListagem: ProdutoListagem[] = rows.map((row) => {
-		const { idsaldo, quantidadeSaldo, quantidadefiscalSaldo, ...produto } = row;
+		const {
+			idsaldo,
+			quantidadeSaldo,
+			quantidadefiscalSaldo,
+			nomepai,
+			imagemPai,
+			caminhoimagemPai,
+			possuiImagemPropria: possuiMidiaPropria,
+			...produto
+		} = row;
 		const quantidade = quantidadeSaldo ?? "0";
 		const quantidadefiscal = quantidadefiscalSaldo ?? "0";
+		const imagemResolvida = resolverImagemVariacao({
+			imagem: produto.imagem,
+			caminhoimagem: produto.caminhoimagem,
+			possuiImagemPropria: Boolean(possuiMidiaPropria),
+			imagemPai,
+			caminhoimagemPai,
+		});
 
 		return {
 			...produto,
+			imagem: imagemResolvida.imagem,
+			caminhoimagem: imagemResolvida.caminhoimagem,
+			nomepai: nomepai ?? null,
 			quantidade,
 			quantidadefiscal,
 			divergencia: calcularDivergencia(quantidade, quantidadefiscal),
@@ -666,6 +708,28 @@ export async function listarTodosProdutosParaExportacao({
 		.limit(LIMITE_EXPORTACAO_CSV);
 }
 
+export async function contarVariacoesDoProduto(idprodutopai: string) {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(produtos)
+		.where(eq(produtos.idprodutopai, idprodutopai));
+
+	return resultado?.value ?? 0;
+}
+
+export async function atualizarTributacaoVariacoes(
+	idprodutopai: string,
+	tributacao: Partial<NovoProduto>,
+) {
+	if (Object.keys(tributacao).length === 0) return [];
+
+	return db
+		.update(produtos)
+		.set(tributacao)
+		.where(eq(produtos.idprodutopai, idprodutopai))
+		.returning({ id: produtos.id });
+}
+
 export async function excluirProduto(id: string) {
 	const [produto] = await db
 		.delete(produtos)
@@ -805,6 +869,7 @@ export async function listarProdutosCatalogoPdv({
 	const cfopNfce = alias(cfop, "cfop_nfce_pdv");
 	const cfopSaida = alias(cfop, "cfop_saida_pdv");
 	const cfopExterna = alias(cfop, "cfop_ext_pdv");
+	const produtoPai = alias(produtos, "produto_pai_catalogo");
 
 	const condicoes: SQL[] = [eq(produtos.idempresa, idempresa)];
 	const filtroTipo = or(eq(produtos.tipo, "P"), isNull(produtos.tipo));
@@ -835,6 +900,15 @@ export async function listarProdutosCatalogoPdv({
 				espizza: produtos.espizza,
 				imagem: produtos.imagem,
 				caminhoimagem: produtos.caminhoimagem,
+				imagemPai: produtoPai.imagem,
+				caminhoimagemPai: produtoPai.caminhoimagem,
+				possuiImagemPropria: sql<boolean>`(
+					COALESCE(NULLIF(${produtos.caminhoimagem}, ''), NULLIF(${produtos.imagem}, '')) IS NOT NULL
+					OR EXISTS (
+						SELECT 1 FROM "produtoimagem" pi
+						WHERE pi.idproduto = ${produtos.id}
+					)
+				)`,
 				ncmProduto: produtos.ncm,
 				ncmCadastro: ncm.codigo,
 				cestCadastro: cest.codigo,
@@ -854,6 +928,7 @@ export async function listarProdutosCatalogoPdv({
 			.leftJoin(cfopNfce, eq(produtos.idcfopsaidanfce, cfopNfce.id))
 			.leftJoin(cfopSaida, eq(produtos.idcfopsaida, cfopSaida.id))
 			.leftJoin(cfopExterna, eq(produtos.idcfopsaidaexterna, cfopExterna.id))
+			.leftJoin(produtoPai, eq(produtos.idprodutopai, produtoPai.id))
 			.where(where)
 			.orderBy(ordenacaoCodigoNumericoAsc(produtos.codigo))
 			.limit(limit)
@@ -871,6 +946,13 @@ export async function listarProdutosCatalogoPdv({
 		const csosn =
 			digitosOuNulo(row.tributacaosn) ??
 			digitosOuNulo(row.situacaotributariasn);
+		const imagemResolvida = resolverImagemVariacao({
+			imagem: row.imagem,
+			caminhoimagem: row.caminhoimagem,
+			possuiImagemPropria: Boolean(row.possuiImagemPropria),
+			imagemPai: row.imagemPai,
+			caminhoimagemPai: row.caminhoimagemPai,
+		});
 
 		return {
 			id: row.id,
@@ -883,10 +965,10 @@ export async function listarProdutosCatalogoPdv({
 			idgrupo: row.idgrupo,
 			idgrupogourmet: row.idgrupogourmet,
 			espizza: row.espizza,
-			imagem: row.imagem,
-			caminhoimagem: row.caminhoimagem,
-			imagemurl: row.caminhoimagem?.startsWith("/produtos/")
-				? row.caminhoimagem
+			imagem: imagemResolvida.imagem,
+			caminhoimagem: imagemResolvida.caminhoimagem,
+			imagemurl: imagemResolvida.caminhoimagem?.startsWith("/produtos/")
+				? imagemResolvida.caminhoimagem
 				: null,
 			ncm: ncmResolvido,
 			cest: cestResolvido,

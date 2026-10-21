@@ -47,6 +47,7 @@ export function EditarProdutoClient({ id }: EditarProdutoClientProps) {
 			key={id}
 			modo="editar"
 			produtoId={id}
+			idprodutopai={data.idprodutopai}
 			valoresIniciais={valoresIniciais}
 		/>
 	);

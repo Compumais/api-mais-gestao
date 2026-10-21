@@ -31,6 +31,8 @@ cd POSmaisgestao
 ./gradlew assembleDebug
 ```
 
+No Windows, `.\build_apk.ps1` gera o mesmo APK e copia para `build\apk\POS-Mais-Gestao-<versão>.apk`.
+
 ### Balança Toledo Prix 3 Fit
 
 Suporte a Prix 3 Fit configurada em **Prt3, 2400 baud, 8N1**, conectada ao

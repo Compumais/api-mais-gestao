@@ -241,8 +241,13 @@ export function criarColunasProdutos(
 					header,
 					meta,
 					cell: ({ row }) => (
-						<div className="flex items-center gap-2">
+						<div className="flex flex-wrap items-center gap-2">
 							<span>{row.original.nome}</span>
+							{row.original.nomepai ? (
+								<Badge variant="outline" className="text-xs">
+									Variação de {row.original.nomepai}
+								</Badge>
+							) : null}
 							{row.original.possuiSaldo === false && (
 								<Badge variant="secondary" className="text-xs">
 									Sem movimento

@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
+import { aplicarApropriacaoBaixaFinanceiroCaixa } from "@/service/apropriacao-centro-custo/aplicar-apropriacao-origem.js";
 import { criarFinanceiroLancamentoService } from "@/service/financeirolancamento/criar-financeiro-lancamento.js";
 import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
@@ -61,11 +62,21 @@ export async function criarFinanceiroLancamento(
 			idusuario: request.user.id,
 		});
 
-		if (!resultado.success) {
+		if (!resultado.success || !resultado.body) {
 			return reply.status(resultado.status).send(resultado);
 		}
 
 		const financeiro = await buscarFinanceiroPorId(dadosValidados.idfinanceiro);
+		if (financeiro?.idempresa && dadosValidados.valor) {
+			await aplicarApropriacaoBaixaFinanceiroCaixa({
+				idusuario: request.user.id,
+				idempresa: financeiro.idempresa,
+				idfinanceirolancamento: resultado.body.id,
+				idfinanceiro: financeiro.id,
+				valorBaixa: Math.abs(Number(dadosValidados.valor)),
+			});
+		}
+
 		if (financeiro?.idempresa && request.user) {
 			const perfilAutor = Array.isArray(request.user.roles)
 				? request.user.roles

@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
+import { aplicarApropriacaoFinanceiroCompetencia } from "@/service/apropriacao-centro-custo/aplicar-apropriacao-origem.js";
 import { criarFinanceiroService } from "@/service/financeiro/criar-financeiro.js";
 import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 
@@ -56,6 +57,17 @@ const criarFinanceiroBodySchema = z.object({
 	boletoimpresso: z.number().optional().nullable(),
 	currenttimemillis: z.number().optional().nullable(),
 	idtipocobranca: z.string().uuid().optional().nullable(),
+	idplanocontas: z.string().uuid().optional().nullable(),
+	apropriacoesCentroCusto: z
+		.array(
+			z.object({
+				idcentrocusto: z.string(),
+				valor: z.coerce.number().optional(),
+				percentual: z.coerce.number().optional().nullable(),
+			}),
+		)
+		.optional(),
+	idcriteriorateio: z.string().optional().nullable(),
 });
 
 export async function criarFinanceiro(
@@ -72,11 +84,13 @@ export async function criarFinanceiro(
 
 		const usuarioId = request.user.id;
 		const dadosValidados = criarFinanceiroBodySchema.parse(request.body);
+		const { apropriacoesCentroCusto, idcriteriorateio, ...resto } =
+			dadosValidados;
 		const uuid = uuidv4();
 
 		const dadosFinanceiro = {
 			id: uuid,
-			...dadosValidados,
+			...resto,
 		};
 
 		const resultado = await criarFinanceiroService({
@@ -86,6 +100,19 @@ export async function criarFinanceiro(
 
 		if (!resultado.success || !resultado.body) {
 			return reply.status(resultado.status).send(resultado);
+		}
+
+		if (apropriacoesCentroCusto?.length) {
+			const apropriacao = await aplicarApropriacaoFinanceiroCompetencia({
+				idusuario: usuarioId,
+				idempresa: dadosValidados.idempresa,
+				idfinanceiro: resultado.body.id,
+				linhas: apropriacoesCentroCusto,
+				idcriteriorateio,
+			});
+			if (apropriacao && !apropriacao.success) {
+				return reply.status(apropriacao.status).send(apropriacao);
+			}
 		}
 
 		const perfilAutor = Array.isArray(request.user.roles)

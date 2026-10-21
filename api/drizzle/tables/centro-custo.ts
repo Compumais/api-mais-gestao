@@ -1,12 +1,15 @@
 import {
 	bigint,
+	char,
 	date,
 	foreignKey,
+	index,
 	integer,
 	pgTable,
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { departamento } from "./departamento.js";
 import { empresa } from "./empresas.js";
 import { usuarios } from "./usuarios.js";
 
@@ -36,8 +39,39 @@ export const centrocusto = pgTable(
 		nivelcentro8: varchar({ length: 20 }),
 		nivelcentro9: varchar({ length: 20 }),
 		nome: varchar({ length: 50 }).notNull(),
+		descricao: text(),
+		iddepartamento: text(),
+		idresponsavel: text(),
+		datainiciovigencia: date(),
+		datafimvigencia: date(),
+		tipogestao: char({ length: 3 }),
+		observacao: text(),
 	},
 	(table) => [
+		index("centrocusto_idempresa_inativo_idx").using(
+			"btree",
+			table.idempresa.asc().nullsLast().op("text_ops"),
+			table.inativo.asc().nullsLast().op("int4_ops"),
+		),
+		index("centrocusto_idempresa_tipogestao_idx").using(
+			"btree",
+			table.idempresa.asc().nullsLast().op("text_ops"),
+			table.tipogestao.asc().nullsLast().op("bpchar_ops"),
+		),
+		foreignKey({
+			columns: [table.iddepartamento],
+			foreignColumns: [departamento.id],
+			name: "centrocusto_iddepartamento_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idresponsavel],
+			foreignColumns: [usuarios.id],
+			name: "centrocusto_idresponsavel_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],

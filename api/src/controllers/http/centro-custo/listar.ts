@@ -9,6 +9,7 @@ const listarCentroCustosQuerySchema = z.object({
 	inativo: z.coerce.number().int().optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
+	formato: z.enum(["lista", "arvore"]).optional().default("lista"),
 });
 
 export async function listarCentroCustos(request: FastifyRequest, reply: FastifyReply) {
@@ -26,6 +27,7 @@ export async function listarCentroCustos(request: FastifyRequest, reply: Fastify
 			inativo: query.inativo,
 			page: query.page,
 			limit: query.limit,
+			formato: query.formato,
 		});
 
 		if (!resultado.success) {

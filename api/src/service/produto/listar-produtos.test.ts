@@ -148,4 +148,24 @@ describe("listarProdutosService", () => {
 			expect(resultado.body.data[0]?.unidademedida).toBe("KG");
 		}
 	});
+
+	it("repassa o produto pai ao listar variações", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(produtosRepository.listarProdutosPorEmpresa).mockResolvedValue({
+			produtos: [],
+			total: 0,
+		});
+
+		await listarProdutosService({
+			idusuario: "usuario-1",
+			idempresa: "empresa-1",
+			idprodutopai: "pai-1",
+		});
+
+		expect(produtosRepository.listarProdutosPorEmpresa).toHaveBeenCalledWith(
+			expect.objectContaining({ idprodutopai: "pai-1" }),
+		);
+	});
 });

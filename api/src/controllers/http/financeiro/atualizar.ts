@@ -1,6 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { aplicarApropriacaoFinanceiroCompetencia } from "@/service/apropriacao-centro-custo/aplicar-apropriacao-origem.js";
 import { atualizarFinanceiroService } from "@/service/financeiro/atualizar-financeiro.js";
+import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
 
 const atualizarFinanceiroParamsSchema = z.object({
 	id: z.string().uuid(),
@@ -57,6 +59,17 @@ const atualizarFinanceiroBodySchema = z.object({
 	boletoimpresso: z.number().optional().nullable(),
 	currenttimemillis: z.number().optional().nullable(),
 	idtipocobranca: z.string().uuid().optional().nullable(),
+	idplanocontas: z.string().uuid().optional().nullable(),
+	apropriacoesCentroCusto: z
+		.array(
+			z.object({
+				idcentrocusto: z.string(),
+				valor: z.coerce.number().optional(),
+				percentual: z.coerce.number().optional().nullable(),
+			}),
+		)
+		.optional(),
+	idcriteriorateio: z.string().optional().nullable(),
 });
 
 export async function atualizarFinanceiro(
@@ -64,13 +77,34 @@ export async function atualizarFinanceiro(
 	reply: FastifyReply,
 ) {
 	try {
+		if (!request.user) {
+			return reply.status(401).send({ error: "Não autorizado" });
+		}
+
 		const { id } = atualizarFinanceiroParamsSchema.parse(request.params);
-		const dados = atualizarFinanceiroBodySchema.parse(request.body);
+		const parsed = atualizarFinanceiroBodySchema.parse(request.body);
+		const { apropriacoesCentroCusto, idcriteriorateio, ...dados } = parsed;
 
 		const resultado = await atualizarFinanceiroService({ id, dados });
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
+		}
+
+		if (apropriacoesCentroCusto) {
+			const financeiro = await buscarFinanceiroPorId(id);
+			if (financeiro) {
+				const apropriacao = await aplicarApropriacaoFinanceiroCompetencia({
+					idusuario: request.user.id,
+					idempresa: financeiro.idempresa,
+					idfinanceiro: id,
+					linhas: apropriacoesCentroCusto,
+					idcriteriorateio,
+				});
+				if (apropriacao && !apropriacao.success) {
+					return reply.status(apropriacao.status).send(apropriacao);
+				}
+			}
 		}
 
 		return reply.status(resultado.status).send(resultado.body);

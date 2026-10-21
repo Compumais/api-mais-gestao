@@ -28,10 +28,13 @@ import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.hardware.ImpressoraDiscovery;
 import com.pos_mais_gestao.hardware.ImpressoraInfo;
+import com.pos_mais_gestao.hardware.ImpressoraRedeEndereco;
+import com.pos_mais_gestao.hardware.UsbEscPos;
 import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
 import com.pos_mais_gestao.util.CodigoScanHelper;
+import com.pos_mais_gestao.util.CupomTexto;
 import com.pos_mais_gestao.util.EtiquetaBalanca;
 import com.pos_mais_gestao.util.PosConnectionQrParser;
 import com.pos_mais_gestao.util.SoftInputHelper;
@@ -75,6 +78,9 @@ public class ConfigActivity extends AppCompatActivity {
     private LinearLayout listaImpressoras;
     private TextView txtImpressoraSelecionada;
     private TextView txtSemImpressoras;
+    private TextInputEditText inputImpressoraHost;
+    private TextInputEditText inputImpressoraPorta;
+    private RadioGroup radioGrupoLargura;
     private final List<ImpressoraInfo> impressoras = new ArrayList<>();
     private String impressoraIdSelecionada = "";
     private String impressoraNomeSelecionada;
@@ -137,11 +143,15 @@ public class ConfigActivity extends AppCompatActivity {
         listaImpressoras = findViewById(R.id.listaImpressoras);
         txtImpressoraSelecionada = findViewById(R.id.txtImpressoraSelecionada);
         txtSemImpressoras = findViewById(R.id.txtSemImpressoras);
+        inputImpressoraHost = findViewById(R.id.inputImpressoraHost);
+        inputImpressoraPorta = findViewById(R.id.inputImpressoraPorta);
+        radioGrupoLargura = findViewById(R.id.radioGrupoLargura);
         MaterialButton btnSalvar = findViewById(R.id.btnSalvarConfig);
         MaterialButton btnAtalhos = findViewById(R.id.btnGerenciarAtalhos);
         MaterialButton btnTrocarEmpresa = findViewById(R.id.btnTrocarEmpresa);
         MaterialButton btnLogout = findViewById(R.id.btnLogout);
         MaterialButton btnAtualizarImpressoras = findViewById(R.id.btnAtualizarImpressoras);
+        MaterialButton btnUsarImpressoraRede = findViewById(R.id.btnUsarImpressoraRede);
         MaterialButton btnConfigBalanca = findViewById(R.id.btnConfigBalanca);
         scanHelper = new CodigoScanHelper(
                 this,
@@ -176,6 +186,12 @@ public class ConfigActivity extends AppCompatActivity {
         impressoraIdSelecionada = prefs.getImpressoraId() != null ? prefs.getImpressoraId() : "";
         impressoraNomeSelecionada = prefs.getImpressoraNome();
         impressoraTipoSelecionada = prefs.getImpressoraTipo();
+        preencherCamposRede();
+        if (prefs.getColunasImpressao() == CupomTexto.COLUNAS_80) {
+            radioGrupoLargura.check(R.id.radioLargura80);
+        } else {
+            radioGrupoLargura.check(R.id.radioLargura58);
+        }
         atualizarTextoImpressoraSelecionada();
         SoftInputHelper.hideOnStart(this);
 
@@ -185,6 +201,7 @@ public class ConfigActivity extends AppCompatActivity {
         btnLerQrPdv.setOnClickListener(v -> scanHelper.iniciar());
         btnAtalhos.setOnClickListener(v -> startActivity(new Intent(this, AtalhosActivity.class)));
         btnAtualizarImpressoras.setOnClickListener(v -> solicitarPermissaoECarregar());
+        btnUsarImpressoraRede.setOnClickListener(v -> usarImpressoraRede());
         btnConfigBalanca.setOnClickListener(v ->
                 startActivity(new Intent(this, BalancaConfigActivity.class)));
         btnTrocarEmpresa.setOnClickListener(v -> trocarEmpresa());
@@ -231,6 +248,7 @@ public class ConfigActivity extends AppCompatActivity {
     private void carregarImpressoras() {
         impressoras.clear();
         impressoras.addAll(ImpressoraDiscovery.listar(this));
+        acrescentarImpressoraRede();
         listaImpressoras.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(this);
         int dispositivosReais = 0;
@@ -260,16 +278,71 @@ public class ConfigActivity extends AppCompatActivity {
         if (ImpressoraInfo.TIPO_BLUETOOTH.equals(info.tipo)) {
             return info.id;
         }
-        if (ImpressoraInfo.TIPO_USB.equals(info.tipo)) {
+        if (ImpressoraInfo.TIPO_USB.equals(info.tipo) || ImpressoraInfo.TIPO_REDE.equals(info.tipo)) {
             return info.id;
         }
         return getString(R.string.impressora_nenhuma);
+    }
+
+    private void preencherCamposRede() {
+        ImpressoraRedeEndereco endereco = ImpressoraInfo.TIPO_REDE.equals(impressoraTipoSelecionada)
+                ? ImpressoraRedeEndereco.parse(impressoraIdSelecionada)
+                : null;
+        inputImpressoraHost.setText(endereco == null ? "" : endereco.host);
+        inputImpressoraPorta.setText(String.valueOf(
+                endereco == null ? ImpressoraRedeEndereco.PORTA_PADRAO : endereco.porta));
+    }
+
+    private void usarImpressoraRede() {
+        ImpressoraInfo rede = impressoraRedeDosCampos();
+        if (rede == null) {
+            Toast.makeText(this, R.string.impressora_rede_invalida, Toast.LENGTH_LONG).show();
+            return;
+        }
+        selecionarImpressora(rede);
+        carregarImpressoras();
+        Toast.makeText(this, R.string.impressora_rede_pronta, Toast.LENGTH_SHORT).show();
+    }
+
+    private void acrescentarImpressoraRede() {
+        ImpressoraInfo rede = impressoraRedeDosCampos();
+        if (rede == null && ImpressoraInfo.TIPO_REDE.equals(impressoraTipoSelecionada)) {
+            ImpressoraRedeEndereco endereco = ImpressoraRedeEndereco.parse(impressoraIdSelecionada);
+            if (endereco != null) {
+                rede = new ImpressoraInfo(endereco.formatar(), endereco.nomeExibicao(), ImpressoraInfo.TIPO_REDE);
+            }
+        }
+        if (rede == null) {
+            return;
+        }
+        if (ImpressoraInfo.TIPO_REDE.equals(impressoraTipoSelecionada)) {
+            impressoraIdSelecionada = rede.id;
+            impressoraNomeSelecionada = rede.nome;
+        }
+        impressoras.add(rede);
+    }
+
+    private ImpressoraInfo impressoraRedeDosCampos() {
+        String host = inputImpressoraHost.getText() == null
+                ? ""
+                : inputImpressoraHost.getText().toString();
+        String porta = inputImpressoraPorta.getText() == null
+                ? ""
+                : inputImpressoraPorta.getText().toString();
+        ImpressoraRedeEndereco endereco = ImpressoraRedeEndereco.montar(host, porta);
+        if (endereco == null) {
+            return null;
+        }
+        return new ImpressoraInfo(endereco.formatar(), endereco.nomeExibicao(), ImpressoraInfo.TIPO_REDE);
     }
 
     private void selecionarImpressora(ImpressoraInfo info) {
         impressoraIdSelecionada = info.id != null ? info.id : "";
         impressoraNomeSelecionada = info.nome;
         impressoraTipoSelecionada = info.tipo;
+        if (ImpressoraInfo.TIPO_USB.equals(info.tipo)) {
+            UsbEscPos.solicitarPermissaoSeNecessario(this, info.id);
+        }
         atualizarTextoImpressoraSelecionada();
         sincronizarRadios();
     }
@@ -318,6 +391,15 @@ public class ConfigActivity extends AppCompatActivity {
             Toast.makeText(this, "Informe a URL da API", Toast.LENGTH_SHORT).show();
             return;
         }
+        if (ImpressoraInfo.TIPO_REDE.equals(impressoraTipoSelecionada)) {
+            ImpressoraInfo rede = impressoraRedeDosCampos();
+            if (rede == null) {
+                Toast.makeText(this, R.string.impressora_rede_invalida, Toast.LENGTH_LONG).show();
+                return;
+            }
+            impressoraIdSelecionada = rede.id;
+            impressoraNomeSelecionada = rede.nome;
+        }
         int pdv = 1;
         try {
             pdv = Integer.parseInt(pdvStr);
@@ -358,6 +440,9 @@ public class ConfigActivity extends AppCompatActivity {
         prefs.setNomePix(inputNomePix.getText() == null ? "" : inputNomePix.getText().toString());
         prefs.setCidadePix(inputCidadePix.getText() == null ? "" : inputCidadePix.getText().toString());
         prefs.setImpressora(impressoraIdSelecionada, impressoraNomeSelecionada, impressoraTipoSelecionada);
+        prefs.setColunasImpressao(radioGrupoLargura.getCheckedRadioButtonId() == R.id.radioLargura80
+                ? CupomTexto.COLUNAS_80
+                : CupomTexto.COLUNAS_58);
         String tema = lerTemaSelecionado();
         prefs.setTema(tema);
         ThemeHelper.aplicar(tema);
