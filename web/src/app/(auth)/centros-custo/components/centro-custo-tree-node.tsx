@@ -17,7 +17,6 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -105,9 +104,13 @@ export function CentroCustoTreeNode({
 				</div>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+						<button
+							type="button"
+							className="flex h-7 w-7 shrink-0 items-center justify-center rounded hover:bg-muted"
+							aria-label="Abrir menu de ações"
+						>
 							<MoreVertical className="h-4 w-4" />
-						</Button>
+						</button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuItem

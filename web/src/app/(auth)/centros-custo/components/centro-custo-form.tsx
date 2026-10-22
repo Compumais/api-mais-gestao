@@ -8,6 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CampoDepartamento } from "@/components/campo-departamento";
 import { Combobox } from "@/components/ui/combobox";
 import {
 	Field,
@@ -26,7 +27,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TIPO_GESTAO_CENTRO_CUSTO } from "@/constants/centro-custo-constants";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { api } from "@/lib/axios";
 import {
 	type AtualizarCentroCustoFormData,
 	atualizarCentroCustoSchema,
@@ -37,11 +37,6 @@ import {
 	type CentroCusto,
 	centroCustoService,
 } from "@/services/centro-custo.service";
-
-interface Departamento {
-	id: string;
-	descricao: string | null;
-}
 
 type CentroCustoFormProps = {
 	modo: "criar" | "editar";
@@ -115,20 +110,6 @@ export function CentroCustoForm({
 			});
 		},
 		enabled: !!empresa && isEdicao,
-	});
-
-	const { data: departamentosData } = useQuery({
-		queryKey: ["departamentos", empresa?.id],
-		queryFn: async () => {
-			if (!empresa) throw new Error("Empresa não selecionada");
-			const { data } = await api.get<{
-				data: Departamento[];
-			}>("/departamentos", {
-				params: { idempresa: empresa.id, limit: 200, page: 1, inativo: 0 },
-			});
-			return data.data;
-		},
-		enabled: !!empresa,
 	});
 
 	useEffect(() => {
@@ -208,18 +189,12 @@ export function CentroCustoForm({
 				: c.nome,
 		}));
 
-	const opcoesDepartamento =
-		departamentosData?.map((d) => ({
-			value: d.id,
-			label: d.descricao ?? d.id,
-		})) ?? [];
-
 	if (isEdicao && loadingCentro) {
 		return <p className="text-muted-foreground p-4">Carregando...</p>;
 	}
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl">
+		<form onSubmit={handleSubmit(onSubmit)}>
 			<FieldGroup className="space-y-4">
 				{paiData ? (
 					<p className="text-sm text-muted-foreground">
@@ -268,22 +243,16 @@ export function CentroCustoForm({
 						/>
 					</Field>
 
-					<Field>
-						<FieldLabel>Departamento</FieldLabel>
-						<Controller
-							control={control}
-							name="iddepartamento"
-							render={({ field }) => (
-								<Combobox
-									options={opcoesDepartamento}
-									value={field.value ?? ""}
-									onChange={(v) => field.onChange(v || null)}
-									placeholder="Opcional"
-									allowEmpty
-								/>
-							)}
-						/>
-					</Field>
+					<Controller
+						control={control}
+						name="iddepartamento"
+						render={({ field }) => (
+							<CampoDepartamento
+								value={field.value ?? null}
+								onChange={field.onChange}
+							/>
+						)}
+					/>
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -329,7 +298,7 @@ export function CentroCustoForm({
 					</FieldLabel>
 				</Field>
 
-				<div className="flex justify-end gap-2 pt-4">
+				<div className="flex justify-end gap-2 mt-6">
 					<Button type="button" variant="outline" onClick={() => router.back()}>
 						Cancelar
 					</Button>
@@ -337,7 +306,13 @@ export function CentroCustoForm({
 						type="submit"
 						disabled={criarMutation.isPending || atualizarMutation.isPending}
 					>
-						{isEdicao ? "Salvar" : "Cadastrar"}
+						{isEdicao
+							? atualizarMutation.isPending
+								? "Salvando..."
+								: "Salvar"
+							: criarMutation.isPending
+								? "Criando..."
+								: "Criar"}
 					</Button>
 				</div>
 			</FieldGroup>

@@ -242,12 +242,12 @@ export function BudgetCentroCustoForm() {
 					<FieldError errors={errors.valor ? [errors.valor] : []} />
 				</Field>
 
-				<div className="flex justify-end gap-2 pt-2">
+				<div className="flex justify-end gap-2 mt-6">
 					<Button type="button" variant="outline" onClick={() => router.back()}>
 						Cancelar
 					</Button>
 					<Button type="submit" disabled={criarMutation.isPending}>
-						Cadastrar
+						{criarMutation.isPending ? "Cadastrando..." : "Cadastrar"}
 					</Button>
 				</div>
 			</FieldGroup>

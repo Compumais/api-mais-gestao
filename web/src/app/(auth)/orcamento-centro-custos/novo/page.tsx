@@ -6,8 +6,10 @@ import { BudgetCentroCustoForm } from "../components/budget-centro-custo-form";
 export default function NovoOrcamentoCentroCustoPage() {
 	return (
 		<PageContainer>
-			<div className="flex flex-col gap-4 py-4 md:py-6 px-4">
+			<div className="flex items-center justify-between p-4">
 				<h1 className="text-2xl font-bold">Novo orçamento de centro de custo</h1>
+			</div>
+			<div className="rounded-lg border bg-card p-4 mx-4">
 				<BudgetCentroCustoForm />
 			</div>
 		</PageContainer>

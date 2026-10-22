@@ -136,7 +136,7 @@ export default function CentrosCustoPendentesPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:py-6">
-				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+				<div className="flex flex-wrap items-center justify-between gap-2 p-4">
 					<div>
 						<h1 className="text-2xl font-bold">Classificação pendente</h1>
 						<p className="text-sm text-muted-foreground">
