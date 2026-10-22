@@ -1,10 +1,30 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { ORDENAR_PRODUTOS_CAMPOS } from "@/repositories/produtos-repositories.js";
+import { ORDENAR_PRODUTOS_CAMPOS_LISTAGEM } from "@/util/produtos-meta-colunas.js";
 import { listarProdutosService } from "@/service/produto/listar-produtos.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const textoOpcional = z.string().optional();
+
+function parseFiltrosColunaJson(valor: string | undefined) {
+	if (!valor?.trim()) return undefined;
+	try {
+		const parsed = JSON.parse(valor) as unknown;
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+			return undefined;
+		}
+		const record: Record<string, string> = {};
+		for (const [chave, v] of Object.entries(parsed)) {
+			if (typeof v === "string" && v.trim()) {
+				record[chave] = v.trim();
+			}
+		}
+		return Object.keys(record).length ? record : undefined;
+	} catch {
+		return undefined;
+	}
+}
 
 const listarProdutosQuerySchema = z.object({
 	idempresa: z.string(),
@@ -29,7 +49,16 @@ const listarProdutosQuerySchema = z.object({
 		.optional()
 		.transform((v) => (v === undefined ? undefined : v === "true")),
 	idprodutopai: z.string().min(1).optional(),
-	ordenarPor: z.enum(ORDENAR_PRODUTOS_CAMPOS).optional(),
+	filtrosColuna: z.string().optional().transform(parseFiltrosColunaJson),
+	ordenarPor: z
+		.string()
+		.optional()
+		.refine(
+			(v) =>
+				v === undefined ||
+				(ORDENAR_PRODUTOS_CAMPOS_LISTAGEM as readonly string[]).includes(v),
+			{ message: "Campo de ordenação inválido" },
+		),
 	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
@@ -67,7 +96,8 @@ export async function listarProdutos(
 			codigonbs: query.codigonbs,
 			somenteDivergencia: query.somenteDivergencia,
 			idprodutopai: query.idprodutopai,
-			ordenarPor: query.ordenarPor,
+			filtrosColuna: query.filtrosColuna,
+			ordenarPor: query.ordenarPor as (typeof ORDENAR_PRODUTOS_CAMPOS)[number] | undefined,
 			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,

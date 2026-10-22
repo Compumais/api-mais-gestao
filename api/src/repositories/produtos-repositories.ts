@@ -31,29 +31,18 @@ import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 import { db } from "./connection";
+import {
+	colunaProdutoFiltravel,
+	ehColunaFiltroBoolean,
+	type OrdenarProdutosCampoListagem,
+	ORDENAR_PRODUTOS_CAMPOS_LISTAGEM,
+	referenciaColunaProduto,
+} from "@/util/produtos-meta-colunas.js";
 import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
 
-export const ORDENAR_PRODUTOS_CAMPOS = [
-	"codigo",
-	"nome",
-	"preco",
-	"inativo",
-	"ean",
-	"referencia",
-	"ncm",
-	"unidademedida",
-	"tipoproduto",
-	"fornecedor",
-	"custoaquisicao",
-	"datacadastro",
-	"codigolistalc11603",
-	"codigonbs",
-	"quantidade",
-	"quantidadefiscal",
-	"divergencia",
-] as const;
+export const ORDENAR_PRODUTOS_CAMPOS = ORDENAR_PRODUTOS_CAMPOS_LISTAGEM;
 
-export type OrdenarProdutosCampo = (typeof ORDENAR_PRODUTOS_CAMPOS)[number];
+export type OrdenarProdutosCampo = OrdenarProdutosCampoListagem;
 
 const COLUNAS_ORDENACAO = {
 	codigo: produtos.codigo,
@@ -118,12 +107,24 @@ function montarOrdenacaoProdutos(
 			: sql`${expressaoDivergencia} ASC NULLS LAST`;
 	}
 
+	if (ordenarPor === "codigo") {
+		return ordem === "desc"
+			? desc(produtos.codigo)
+			: ordenacaoCodigoNumericoAsc(produtos.codigo);
+	}
+
 	const coluna =
 		COLUNAS_ORDENACAO[ordenarPor as keyof typeof COLUNAS_ORDENACAO];
-	if (!coluna) {
-		return ordenacaoCodigoNumericoAsc(produtos.codigo);
+	if (coluna) {
+		return ordem === "desc" ? desc(coluna) : asc(coluna);
 	}
-	return ordem === "desc" ? desc(coluna) : asc(coluna);
+
+	const colunaDinamica = referenciaColunaProduto(ordenarPor);
+	if (colunaDinamica) {
+		return ordem === "desc" ? desc(colunaDinamica) : asc(colunaDinamica);
+	}
+
+	return ordenacaoCodigoNumericoAsc(produtos.codigo);
 }
 
 export type ProdutoListagem = Produto & {
@@ -149,6 +150,94 @@ function filtroDataDia(coluna: typeof produtos.datacadastro, data: string) {
 		gte(coluna, `${data}T00:00:00.000`),
 		lte(coluna, `${data}T23:59:59.999`),
 	);
+}
+
+function aplicarFiltroColunaProduto(
+	where: SQL[],
+	campo: string,
+	valor: string | undefined,
+) {
+	if (!valor?.trim()) return;
+
+	if (campo === "inativo") {
+		const filtroInativo = filtroRegistroAtivo(
+			produtos.inativo,
+			Number(valor),
+		);
+		if (filtroInativo) where.push(filtroInativo);
+		return;
+	}
+
+	if (
+		ehColunaFiltroBoolean(campo) &&
+		campo !== "inativo" &&
+		(valor === "0" || valor === "1")
+	) {
+		const colunaFlag = referenciaColunaProduto(campo);
+		if (colunaFlag) {
+			if (valor === "0") {
+				const condicao = or(isNull(colunaFlag), eq(colunaFlag, 0));
+				if (condicao) where.push(condicao);
+			} else {
+				where.push(eq(colunaFlag, 1));
+			}
+			return;
+		}
+	}
+
+	if (campo === "divergencia") {
+		if (valor === "com") {
+			where.push(sql`${expressaoDivergencia} <> 0`);
+		} else if (valor === "sem") {
+			where.push(sql`${expressaoDivergencia} = 0`);
+		}
+		return;
+	}
+
+	if (campo === "quantidade") {
+		adicionarFiltroTexto(
+			where,
+			sql`COALESCE(${saldoestoque.quantidade}::text, '0')`,
+			valor,
+		);
+		return;
+	}
+
+	if (campo === "quantidadefiscal") {
+		adicionarFiltroTexto(
+			where,
+			sql`COALESCE(${saldoestoque.quantidadefiscal}::text, '0')`,
+			valor,
+		);
+		return;
+	}
+
+	if (campo === "nomepai") {
+		adicionarFiltroTexto(
+			where,
+			sql`(SELECT pp.nome FROM produtos pp WHERE pp.id = ${produtos.idprodutopai} LIMIT 1)`,
+			valor,
+		);
+		return;
+	}
+
+	if (campo === "datacadastro") {
+		const condicao = filtroDataDia(produtos.datacadastro, valor.trim());
+		if (condicao) where.push(condicao);
+		return;
+	}
+
+	if (campo === "nome") {
+		where.push(ilike(produtos.nome, `%${valor.trim()}%`));
+		return;
+	}
+
+	if (!colunaProdutoFiltravel(campo)) return;
+
+	const coluna = referenciaColunaProduto(campo);
+	if (coluna) {
+		adicionarFiltroTexto(where, sql`${coluna}::text`, valor);
+	}
 }
 
 export async function criarProduto(dadosProduto: NovoProduto) {
@@ -187,6 +276,7 @@ export type ListarProdutosPorEmpresaParametros = {
 	codigonbs?: string | undefined;
 	somenteDivergencia?: boolean | undefined;
 	idprodutopai?: string | undefined;
+	filtrosColuna?: Record<string, string | undefined>;
 	ordenarPor?: OrdenarProdutosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 	page?: number;
@@ -213,6 +303,7 @@ function montarWhereProdutosListagem({
 	codigonbs,
 	somenteDivergencia,
 	idprodutopai,
+	filtrosColuna,
 }: Omit<
 	ListarProdutosPorEmpresaParametros,
 	"page" | "limit" | "ordenarPor" | "ordem"
@@ -220,10 +311,6 @@ function montarWhereProdutosListagem({
 	const where: SQL[] = [];
 
 	where.push(inArray(produtos.idempresa, idempresas));
-
-	if (nome) {
-		where.push(ilike(produtos.nome, `%${nome}%`));
-	}
 
 	if (q) {
 		const termo = `%${q}%`;
@@ -240,39 +327,39 @@ function montarWhereProdutosListagem({
 		where.push(eq(produtos.tipo, tipo));
 	}
 
-	const filtroInativo = filtroRegistroAtivo(produtos.inativo, inativo);
-	if (filtroInativo) {
-		where.push(filtroInativo);
-	}
-
-	adicionarFiltroTexto(where, sql`${produtos.codigo}::text`, codigo);
-	adicionarFiltroTexto(where, sql`${produtos.ean}::text`, ean);
-	adicionarFiltroTexto(where, produtos.referencia, referencia);
-	adicionarFiltroTexto(where, produtos.ncm, ncm);
-	adicionarFiltroTexto(where, produtos.unidademedida, unidademedida);
-	adicionarFiltroTexto(where, produtos.tipoproduto, tipoproduto);
-	adicionarFiltroTexto(where, produtos.fornecedor, fornecedor);
-	adicionarFiltroTexto(where, sql`${produtos.preco}::text`, preco);
-	adicionarFiltroTexto(
-		where,
-		sql`${produtos.custoaquisicao}::text`,
-		custoaquisicao,
-	);
-	adicionarFiltroTexto(where, produtos.codigolistalc11603, codigolistalc11603);
-	adicionarFiltroTexto(where, produtos.codigonbs, codigonbs);
-	if (datacadastro) {
-		const condicao = filtroDataDia(produtos.datacadastro, datacadastro);
-		if (condicao) where.push(condicao);
-	}
-
-	if (somenteDivergencia === true) {
-		where.push(sql`${expressaoDivergencia} <> 0`);
-	} else if (somenteDivergencia === false) {
-		where.push(sql`${expressaoDivergencia} = 0`);
-	}
-
 	if (idprodutopai) {
 		where.push(eq(produtos.idprodutopai, idprodutopai));
+	}
+
+	const filtrosUnificados: Record<string, string | undefined> = {
+		...(filtrosColuna ?? {}),
+	};
+	if (nome) filtrosUnificados.nome = nome;
+	if (codigo) filtrosUnificados.codigo = codigo;
+	if (ean) filtrosUnificados.ean = ean;
+	if (referencia) filtrosUnificados.referencia = referencia;
+	if (ncm) filtrosUnificados.ncm = ncm;
+	if (unidademedida) filtrosUnificados.unidademedida = unidademedida;
+	if (tipoproduto) filtrosUnificados.tipoproduto = tipoproduto;
+	if (fornecedor) filtrosUnificados.fornecedor = fornecedor;
+	if (preco) filtrosUnificados.preco = preco;
+	if (custoaquisicao) filtrosUnificados.custoaquisicao = custoaquisicao;
+	if (datacadastro) filtrosUnificados.datacadastro = datacadastro;
+	if (codigolistalc11603) {
+		filtrosUnificados.codigolistalc11603 = codigolistalc11603;
+	}
+	if (codigonbs) filtrosUnificados.codigonbs = codigonbs;
+	if (inativo !== undefined) {
+		filtrosUnificados.inativo = String(inativo);
+	}
+	if (somenteDivergencia === true) {
+		filtrosUnificados.divergencia = "com";
+	} else if (somenteDivergencia === false) {
+		filtrosUnificados.divergencia = "sem";
+	}
+
+	for (const [campo, valor] of Object.entries(filtrosUnificados)) {
+		aplicarFiltroColunaProduto(where, campo, valor);
 	}
 
 	return where;
@@ -281,12 +368,17 @@ function montarWhereProdutosListagem({
 function precisaJoinSaldo(params: {
 	somenteDivergencia?: boolean | undefined;
 	ordenarPor?: OrdenarProdutosCampo | undefined;
+	filtrosColuna?: Record<string, string | undefined>;
 }) {
+	const filtros = params.filtrosColuna ?? {};
 	return (
 		params.somenteDivergencia !== undefined ||
 		params.ordenarPor === "quantidade" ||
 		params.ordenarPor === "quantidadefiscal" ||
-		params.ordenarPor === "divergencia"
+		params.ordenarPor === "divergencia" ||
+		filtros.quantidade?.trim() ||
+		filtros.quantidadefiscal?.trim() ||
+		filtros.divergencia?.trim()
 	);
 }
 
@@ -310,6 +402,7 @@ export async function listarProdutosPorEmpresa({
 	codigonbs,
 	somenteDivergencia,
 	idprodutopai,
+	filtrosColuna,
 	ordenarPor,
 	ordem = "asc",
 	page = 1,
@@ -342,6 +435,7 @@ export async function listarProdutosPorEmpresa({
 		codigonbs,
 		somenteDivergencia,
 		idprodutopai,
+		filtrosColuna,
 	});
 
 	const offset = (page - 1) * limit;

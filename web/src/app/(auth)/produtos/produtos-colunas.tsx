@@ -16,58 +16,33 @@ export const DIVERGENCIA_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 	{ value: "sem", label: "Sem divergência" },
 ];
 
-export type FiltrosColunaProdutosState = {
-	codigo: string;
-	nome: string;
-	preco: string;
-	inativo: string;
-	ean: string;
-	referencia: string;
-	ncm: string;
-	unidademedida: string;
-	tipoproduto: string;
-	fornecedor: string;
-	custoaquisicao: string;
-	datacadastro: string;
-	divergencia: string;
+export type FiltrosColunaProdutosState = Record<string, string>;
+
+export type MetaColunaProduto = {
+	id: string;
+	label: string;
+	origem: "banco" | "calculada";
+	visivelPadrao: boolean;
+	filtravel: boolean;
+	ordenavel: boolean;
+	tipoFiltro?: "texto" | "boolean" | "data" | "divergencia";
 };
 
-export const filtrosColunaProdutosVazios: FiltrosColunaProdutosState = {
-	codigo: "",
-	nome: "",
-	preco: "",
-	inativo: "",
-	ean: "",
-	referencia: "",
-	ncm: "",
-	unidademedida: "",
-	tipoproduto: "",
-	fornecedor: "",
-	custoaquisicao: "",
-	datacadastro: "",
-	divergencia: "",
-};
+export function criarFiltrosColunaProdutosVazios(
+	ids: string[],
+): FiltrosColunaProdutosState {
+	return Object.fromEntries(ids.map((id) => [id, ""]));
+}
 
-export type CampoFiltroColunaProdutos = keyof FiltrosColunaProdutosState;
+/** @deprecated use criarFiltrosColunaProdutosVazios após carregar meta-colunas */
+export const filtrosColunaProdutosVazios: FiltrosColunaProdutosState = {};
 
-export const COLUNA_PARA_CAMPO_FILTRO_PRODUTO: Record<
-	string,
-	CampoFiltroColunaProdutos
-> = {
-	codigo: "codigo",
-	nome: "nome",
-	preco: "preco",
-	inativo: "inativo",
-	ean: "ean",
-	referencia: "referencia",
-	ncm: "ncm",
-	unidademedida: "unidademedida",
-	tipoproduto: "tipoproduto",
-	fornecedor: "fornecedor",
-	custoaquisicao: "custoaquisicao",
-	datacadastro: "datacadastro",
-	divergencia: "divergencia",
-};
+export function campoFiltroColunaProduto(colunaId: string): string | undefined {
+	if (colunaId === "select" || colunaId === "imagem" || colunaId === "acoes") {
+		return undefined;
+	}
+	return colunaId;
+}
 
 export type ConfigFiltroColunaProduto = {
 	tipo: TipoFiltroColunaTabela;
@@ -80,31 +55,86 @@ type DefinicaoColunaProduto = {
 	label: string;
 	visivelPadrao: boolean;
 	enableHiding?: boolean;
+	filtravel?: boolean;
 };
 
-const DEFINICOES_COLUNAS: DefinicaoColunaProduto[] = [
-	{ id: "select", label: "Seleção", visivelPadrao: true, enableHiding: false },
-	{ id: "codigo", label: "Código", visivelPadrao: true },
-	{ id: "nome", label: "Nome", visivelPadrao: true },
-	{ id: "imagem", label: "Imagem", visivelPadrao: true },
-	{ id: "preco", label: "Preço", visivelPadrao: true },
-	{ id: "inativo", label: "Situação", visivelPadrao: true },
-	{ id: "quantidade", label: "Operacional", visivelPadrao: true },
-	{ id: "quantidadefiscal", label: "Fiscal", visivelPadrao: true },
-	{ id: "divergencia", label: "Divergência", visivelPadrao: true },
-	{ id: "ean", label: "EAN", visivelPadrao: false },
-	{ id: "referencia", label: "Referência", visivelPadrao: false },
-	{ id: "ncm", label: "NCM", visivelPadrao: false },
-	{ id: "unidademedida", label: "Unidade", visivelPadrao: false },
-	{ id: "tipoproduto", label: "Tipo", visivelPadrao: false },
-	{ id: "fornecedor", label: "Fornecedor", visivelPadrao: false },
-	{ id: "custoaquisicao", label: "Custo", visivelPadrao: false },
-	{ id: "datacadastro", label: "Data cadastro", visivelPadrao: false },
-	{ id: "acoes", label: "Ações", visivelPadrao: true, enableHiding: false },
-];
+const ORDEM_COLUNAS_FIXAS = [
+	"select",
+	"codigo",
+	"nome",
+	"imagem",
+	"preco",
+	"inativo",
+	"quantidade",
+	"quantidadefiscal",
+	"divergencia",
+] as const;
 
-export function listarDefinicoesColunasProdutos() {
-	return DEFINICOES_COLUNAS.map(
+const ROTULOS_FIXOS: Record<string, string> = {
+	select: "Seleção",
+	imagem: "Imagem",
+	acoes: "Ações",
+	inativo: "Situação",
+};
+
+export function montarDefinicoesColunasProdutos(
+	metaColunas: MetaColunaProduto[],
+): DefinicaoColunaProduto[] {
+	const metaPorId = new Map(metaColunas.map((c) => [c.id, c]));
+	const usados = new Set<string>();
+	const defs: DefinicaoColunaProduto[] = [];
+
+	const push = (def: DefinicaoColunaProduto) => {
+		if (usados.has(def.id)) return;
+		usados.add(def.id);
+		defs.push(def);
+	};
+
+	for (const id of ORDEM_COLUNAS_FIXAS) {
+		if (id === "select" || id === "imagem") {
+			push({
+				id,
+				label: ROTULOS_FIXOS[id] ?? id,
+				visivelPadrao: true,
+				enableHiding: false,
+				filtravel: false,
+			});
+			continue;
+		}
+		const meta = metaPorId.get(id);
+		push({
+			id,
+			label: meta?.label ?? ROTULOS_FIXOS[id] ?? id,
+			visivelPadrao: meta?.visivelPadrao ?? true,
+			filtravel: meta?.filtravel ?? true,
+		});
+	}
+
+	for (const meta of metaColunas) {
+		if (usados.has(meta.id)) continue;
+		push({
+			id: meta.id,
+			label: meta.label,
+			visivelPadrao: meta.visivelPadrao,
+			filtravel: meta.filtravel,
+		});
+	}
+
+	push({
+		id: "acoes",
+		label: ROTULOS_FIXOS.acoes,
+		visivelPadrao: true,
+		enableHiding: false,
+		filtravel: false,
+	});
+
+	return defs;
+}
+
+export function listarDefinicoesColunasProdutos(
+	metaColunas: MetaColunaProduto[],
+) {
+	return montarDefinicoesColunasProdutos(metaColunas).map(
 		({ id, label, visivelPadrao, enableHiding }) => ({
 			id,
 			label,
@@ -114,13 +144,65 @@ export function listarDefinicoesColunasProdutos() {
 	);
 }
 
-export function visibilidadePadraoColunasProdutos(): VisibilityState {
+export function visibilidadePadraoColunasProdutos(
+	metaColunas: MetaColunaProduto[],
+): VisibilityState {
 	const state: VisibilityState = {};
-	for (const def of DEFINICOES_COLUNAS) {
+	for (const def of montarDefinicoesColunasProdutos(metaColunas)) {
 		if (def.enableHiding === false) continue;
 		state[def.id] = def.visivelPadrao;
 	}
 	return state;
+}
+
+export function idsColunasFiltravelProdutos(
+	metaColunas: MetaColunaProduto[],
+): string[] {
+	return montarDefinicoesColunasProdutos(metaColunas)
+		.filter((d) => d.filtravel !== false && d.id !== "acoes")
+		.map((d) => d.id);
+}
+
+function formatarValorColunaGenerica(
+	produto: Produto,
+	campo: string,
+	tipoFiltro?: MetaColunaProduto["tipoFiltro"],
+): ReactNode {
+	const bruto = (produto as unknown as Record<string, unknown>)[campo];
+	if (bruto == null || bruto === "") return "-";
+
+	if (campo === "datacadastro" && typeof bruto === "string") {
+		return formatDataCivilBrasilia(bruto);
+	}
+	if (campo === "preco" || campo === "custoaquisicao") {
+		return formatarPreco(String(bruto));
+	}
+	if (tipoFiltro === "boolean" && ehValorBooleanoColuna(bruto)) {
+		const marcado = Number(bruto) === 1;
+		if (campo === "inativo") {
+			return (
+				<span
+					className={
+						marcado
+							? "text-muted-foreground"
+							: "text-green-600 dark:text-green-400"
+					}
+				>
+					{marcado ? "Inativo" : "Ativo"}
+				</span>
+			);
+		}
+		return marcado ? "Sim" : "Não";
+	}
+	if (
+		campo === "quantidade" ||
+		campo === "quantidadefiscal" ||
+		campo === "divergencia"
+	) {
+		return formatarQuantidade(String(bruto));
+	}
+
+	return String(bruto);
 }
 
 function formatarPreco(preco: string | null | undefined) {
@@ -131,6 +213,10 @@ function formatarPreco(preco: string | null | undefined) {
 		style: "currency",
 		currency: "BRL",
 	}).format(numero);
+}
+
+function ehValorBooleanoColuna(valor: unknown) {
+	return valor === 0 || valor === 1 || valor === "0" || valor === "1";
 }
 
 function formatarQuantidade(valor: string | null | undefined) {
@@ -145,6 +231,7 @@ function formatarDataCadastro(valor: string | null | undefined) {
 }
 
 export type OpcoesColunasProdutos = {
+	metaColunas: MetaColunaProduto[];
 	filtros: FiltrosColunaProdutosState;
 	ordenarPor: string | null;
 	ordem: "asc" | "desc" | null;
@@ -171,7 +258,7 @@ function criarHeaderColuna(
 	const configFiltro = opcoes.configFiltroPorColuna[def.id] ?? {
 		tipo: "texto" as const,
 	};
-	const campo = COLUNA_PARA_CAMPO_FILTRO_PRODUTO[def.id];
+	const campo = campoFiltroColunaProduto(def.id);
 	const valorFiltro = campo ? (opcoes.filtros[campo] ?? "") : "";
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacao: OrdenacaoColunaTabela =
@@ -197,8 +284,10 @@ export function criarColunasProdutos(
 	opcoes: OpcoesColunasProdutos,
 ): ColumnDef<Produto>[] {
 	const colunas: ColumnDef<Produto>[] = [];
+	const definicoes = montarDefinicoesColunasProdutos(opcoes.metaColunas);
+	const metaPorId = new Map(opcoes.metaColunas.map((c) => [c.id, c]));
 
-	for (const def of DEFINICOES_COLUNAS) {
+	for (const def of definicoes) {
 		const meta = { label: def.label };
 
 		if (def.id === "select") {
@@ -408,9 +497,71 @@ export function criarColunasProdutos(
 				});
 				break;
 			default:
+				colunas.push({
+					id: def.id,
+					accessorFn: (row) =>
+						(row as unknown as Record<string, unknown>)[def.id] ?? null,
+					header: def.filtravel === false ? def.label : header,
+					meta,
+					cell: ({ row }) => (
+						<div className="max-w-xs truncate">
+							{formatarValorColunaGenerica(
+								row.original,
+								def.id,
+								metaPorId.get(def.id)?.tipoFiltro,
+							)}
+						</div>
+					),
+				});
 				break;
 		}
 	}
 
 	return colunas;
+}
+
+export function montarConfigFiltroColunasProdutos(
+	metaColunas: MetaColunaProduto[],
+): Record<string, ConfigFiltroColunaProduto> {
+	const texto = (placeholder?: string): ConfigFiltroColunaProduto => ({
+		tipo: "texto",
+		placeholder,
+	});
+	const config: Record<string, ConfigFiltroColunaProduto> = {};
+
+	const opcoesBoolean = (ativoInativo: boolean): ConfigFiltroColunaProduto => ({
+		tipo: "opcoes",
+		opcoes: ativoInativo
+			? [
+					{ value: "0", label: "Ativo" },
+					{ value: "1", label: "Inativo" },
+				]
+			: [
+					{ value: "0", label: "Não" },
+					{ value: "1", label: "Sim" },
+				],
+	});
+
+	for (const col of metaColunas) {
+		if (!col.filtravel) continue;
+		const tipo = col.tipoFiltro ?? "texto";
+		if (tipo === "boolean") {
+			config[col.id] = opcoesBoolean(col.id === "inativo");
+			continue;
+		}
+		if (tipo === "data") {
+			config[col.id] = { tipo: "data" };
+			continue;
+		}
+		if (tipo === "divergencia") {
+			config[col.id] = {
+				tipo: "opcoes",
+				opcoes: DIVERGENCIA_OPCOES_FILTRO,
+			};
+			continue;
+		}
+		config[col.id] = texto();
+	}
+
+	return config;
 }

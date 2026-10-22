@@ -176,7 +176,11 @@ export function CabecalhoColunaTabela({
 						{(tipoFiltro === "opcoes" || tipoFiltro === "catalogo") && (
 							<>
 								<DropdownMenuRadioGroup
-									value={valorFiltro || "__todos__"}
+									value={
+										valorFiltro === "" || valorFiltro === undefined
+											? "__todos__"
+											: valorFiltro
+									}
 									onValueChange={(value) =>
 										onFiltrar(value === "__todos__" ? "" : value)
 									}
@@ -188,6 +192,7 @@ export function CabecalhoColunaTabela({
 										<DropdownMenuRadioItem
 											key={`${colunaId}-${opcao.value}`}
 											value={opcao.value}
+											onSelect={(event) => event.preventDefault()}
 										>
 											{opcao.label}
 										</DropdownMenuRadioItem>

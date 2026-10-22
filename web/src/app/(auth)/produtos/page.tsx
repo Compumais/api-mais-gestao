@@ -4,11 +4,9 @@ import {
 	IconBan,
 	IconCalculator,
 	IconCheck,
-	IconChevronDown,
 	IconCopy,
 	IconDotsVertical,
 	IconHistory,
-	IconLayoutColumns,
 	IconPackage,
 	IconPencil,
 	IconPlus,
@@ -38,7 +36,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
-	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -76,13 +73,15 @@ import {
 	produtosService,
 } from "@/services/produtos.service";
 import { PageContainer } from "../components/page-container";
+import { PersonalizarColunasDropdown } from "@/components/personalizar-colunas-dropdown";
 import {
-	COLUNA_PARA_CAMPO_FILTRO_PRODUTO,
-	type ConfigFiltroColunaProduto,
+	campoFiltroColunaProduto,
 	criarColunasProdutos,
-	DIVERGENCIA_OPCOES_FILTRO,
+	criarFiltrosColunaProdutosVazios,
 	type FiltrosColunaProdutosState,
-	filtrosColunaProdutosVazios,
+	idsColunasFiltravelProdutos,
+	listarDefinicoesColunasProdutos,
+	montarConfigFiltroColunasProdutos,
 	visibilidadePadraoColunasProdutos,
 } from "./produtos-colunas";
 
@@ -102,6 +101,17 @@ function filtrosColunaAtivos(filtros: FiltrosColunaProdutosState) {
 	return Object.values(filtros).some((valor) => valor.trim() !== "");
 }
 
+function serializarFiltrosColunaProdutos(
+	filtrosColuna: FiltrosColunaProdutosState,
+) {
+	const ativos = Object.fromEntries(
+		Object.entries(filtrosColuna).filter(([, v]) => v.trim() !== ""),
+	);
+	return Object.keys(ativos).length
+		? JSON.stringify(ativos)
+		: undefined;
+}
+
 function montarParamsFiltroProdutos(params: {
 	idempresa: string;
 	qAplicado: string;
@@ -110,41 +120,12 @@ function montarParamsFiltroProdutos(params: {
 	ordem: "asc" | "desc" | null;
 }) {
 	const { idempresa, qAplicado, filtrosColuna, ordenarPor, ordem } = params;
+	const filtrosSerializados = serializarFiltrosColunaProdutos(filtrosColuna);
 	return {
 		idempresa,
 		tipo: "P" as const,
 		...(qAplicado ? { q: qAplicado } : {}),
-		...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
-		...(filtrosColuna.inativo !== ""
-			? { inativo: Number(filtrosColuna.inativo) }
-			: {}),
-		...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
-		...(filtrosColuna.ean ? { ean: filtrosColuna.ean } : {}),
-		...(filtrosColuna.referencia
-			? { referencia: filtrosColuna.referencia }
-			: {}),
-		...(filtrosColuna.ncm ? { ncm: filtrosColuna.ncm } : {}),
-		...(filtrosColuna.unidademedida
-			? { unidademedida: filtrosColuna.unidademedida }
-			: {}),
-		...(filtrosColuna.tipoproduto
-			? { tipoproduto: filtrosColuna.tipoproduto }
-			: {}),
-		...(filtrosColuna.fornecedor
-			? { fornecedor: filtrosColuna.fornecedor }
-			: {}),
-		...(filtrosColuna.preco ? { preco: filtrosColuna.preco } : {}),
-		...(filtrosColuna.custoaquisicao
-			? { custoaquisicao: filtrosColuna.custoaquisicao }
-			: {}),
-		...(filtrosColuna.datacadastro
-			? { datacadastro: filtrosColuna.datacadastro }
-			: {}),
-		...(filtrosColuna.divergencia === "com"
-			? { somenteDivergencia: true }
-			: filtrosColuna.divergencia === "sem"
-				? { somenteDivergencia: false }
-				: {}),
+		...(filtrosSerializados ? { filtrosColuna: filtrosSerializados } : {}),
 		...(ordenarPor ? { ordenarPor } : {}),
 		...(ordem ? { ordem } : {}),
 	};
@@ -174,16 +155,39 @@ export default function ProdutosPage() {
 	);
 	const [ajusteAberto, setAjusteAberto] = useState(false);
 	const [filtrosColuna, setFiltrosColuna] =
-		useState<FiltrosColunaProdutosState>(filtrosColunaProdutosVazios);
+		useState<FiltrosColunaProdutosState>({});
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 
+	const { data: metaColunas = [], isLoading: carregandoMetaColunas } = useQuery(
+		{
+			queryKey: ["produtos", "meta-colunas-listagem"],
+			queryFn: () => produtosService.metaColunasListagem(),
+			staleTime: 1000 * 60 * 60,
+		},
+	);
+
+	useEffect(() => {
+		if (!metaColunas.length) return;
+		setFiltrosColuna((atual) => {
+			const base = criarFiltrosColunaProdutosVazios(
+				idsColunasFiltravelProdutos(metaColunas),
+			);
+			return { ...base, ...atual };
+		});
+	}, [metaColunas]);
+
 	const visibilidadePadrao = useMemo(
-		() => visibilidadePadraoColunasProdutos(),
-		[],
+		() =>
+			metaColunas.length
+				? visibilidadePadraoColunasProdutos(metaColunas)
+				: {},
+		[metaColunas],
 	);
 	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
-		useColunasTabelaPersistidas(TABELA_PRODUTOS, visibilidadePadrao);
+		useColunasTabelaPersistidas(TABELA_PRODUTOS, visibilidadePadrao, {
+			enabled: metaColunas.length > 0,
+		});
 
 	useEffect(() => {
 		setQInput(qAplicado);
@@ -223,47 +227,21 @@ export default function ProdutosPage() {
 	);
 
 	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
-		const campo = COLUNA_PARA_CAMPO_FILTRO_PRODUTO[colunaId];
+		const campo = campoFiltroColunaProduto(colunaId);
 		if (!campo) return;
 		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
 		setPagination((p) => ({ ...p, pageIndex: 0 }));
 	}, []);
 
-	const configFiltroPorColuna = useMemo((): Record<
-		string,
-		ConfigFiltroColunaProduto
-	> => {
-		const texto = (placeholder?: string): ConfigFiltroColunaProduto => ({
-			tipo: "texto",
-			placeholder,
-		});
-		return {
-			codigo: texto("Ex: 123"),
-			nome: texto("Nome do produto"),
-			preco: texto("Preço"),
-			inativo: {
-				tipo: "opcoes",
-				opcoes: [
-					{ value: "0", label: "Ativo" },
-					{ value: "1", label: "Inativo" },
-				],
-			},
-			ean: texto("EAN"),
-			referencia: texto("Referência"),
-			ncm: texto("NCM"),
-			unidademedida: texto("Unidade"),
-			tipoproduto: texto("Tipo"),
-			fornecedor: texto("Fornecedor"),
-			custoaquisicao: texto("Custo"),
-			datacadastro: { tipo: "data" },
-			quantidade: { tipo: "nenhum" },
-			quantidadefiscal: { tipo: "nenhum" },
-			divergencia: {
-				tipo: "opcoes",
-				opcoes: DIVERGENCIA_OPCOES_FILTRO,
-			},
-		};
-	}, []);
+	const configFiltroPorColuna = useMemo(
+		() => montarConfigFiltroColunasProdutos(metaColunas),
+		[metaColunas],
+	);
+
+	const definicoesColunas = useMemo(
+		() => listarDefinicoesColunasProdutos(metaColunas),
+		[metaColunas],
+	);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -403,7 +381,9 @@ export default function ProdutosPage() {
 
 	const columns = useMemo(
 		() =>
-			criarColunasProdutos({
+			metaColunas.length
+				? criarColunasProdutos({
+				metaColunas,
 				filtros: filtrosColuna,
 				ordenarPor,
 				ordem,
@@ -493,8 +473,10 @@ export default function ProdutosPage() {
 						</div>
 					);
 				},
-			}),
+			})
+				: [],
 		[
+			metaColunas,
 			filtrosColuna,
 			ordenarPor,
 			ordem,
@@ -572,7 +554,8 @@ export default function ProdutosPage() {
 		},
 	});
 
-	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const mostrarSkeleton =
+		carregandoMetaColunas || isLoading || isLoadingPreferencias;
 	const comFiltros =
 		!!qAplicado || filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
@@ -712,37 +695,12 @@ export default function ProdutosPage() {
 							Buscar
 						</Button>
 					</div>
-					{localStorageEmpresa && (
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="sm">
-									<IconLayoutColumns className="size-4" />
-									<span className="hidden lg:inline">Personalizar Colunas</span>
-									<span className="lg:hidden">Colunas</span>
-									<IconChevronDown className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="max-h-72 w-56 overflow-y-auto"
-							>
-								{table
-									.getAllColumns()
-									.filter((column) => column.getCanHide())
-									.map((column) => (
-										<DropdownMenuCheckboxItem
-											key={column.id}
-											checked={column.getIsVisible()}
-											onCheckedChange={(value) =>
-												column.toggleVisibility(!!value)
-											}
-										>
-											{rotuloColuna(column)}
-										</DropdownMenuCheckboxItem>
-									))}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					)}
+					{localStorageEmpresa && metaColunas.length > 0 ? (
+						<PersonalizarColunasDropdown
+							table={table}
+							definicoes={definicoesColunas}
+						/>
+					) : null}
 				</div>
 				<div className="rounded-lg border bg-card mx-4">
 					{!localStorageEmpresa ? (
