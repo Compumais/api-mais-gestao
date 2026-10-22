@@ -1,6 +1,6 @@
 "use client";
 
-import { IconAlertCircle, IconPlus } from "@tabler/icons-react";
+import { AlertCircle, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -32,18 +32,18 @@ export default function CentrosCustoPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+				<div className="flex flex-wrap items-center justify-between gap-2 p-4">
 					<h1 className="text-2xl font-bold">Centros de custo</h1>
-					<div className="flex flex-wrap gap-2">
-						<Button variant="outline" asChild>
+					<div className="flex flex-wrap items-center gap-2">
+						<Button variant="outline" className="gap-2" asChild>
 							<Link href="/centros-custo/pendentes">
-								<IconAlertCircle className="size-4" />
+								<AlertCircle className="h-4 w-4" aria-hidden="true" />
 								Classificação pendente
 							</Link>
 						</Button>
-						<Button asChild>
+						<Button className="gap-2" asChild>
 							<Link href="/centros-custo/novo">
-								<IconPlus className="size-4" />
+								<PlusIcon className="h-4 w-4" aria-hidden="true" />
 								Incluir (F2)
 							</Link>
 						</Button>

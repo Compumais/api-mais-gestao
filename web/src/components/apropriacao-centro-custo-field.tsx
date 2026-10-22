@@ -140,7 +140,7 @@ export function ApropriacaoCentroCustoField({
 	};
 
 	return (
-		<div className="space-y-4 rounded-lg border bg-card p-4">
+		<div className="space-y-4">
 			<div>
 				<h2 className="text-lg font-semibold">Centro de custos</h2>
 				<p className="text-sm text-muted-foreground">
