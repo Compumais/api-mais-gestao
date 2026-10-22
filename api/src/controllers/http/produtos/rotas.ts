@@ -25,6 +25,7 @@ import { importarProdutos } from "./importar.js";
 import { previewImportacaoProdutos } from "./importar-preview.js";
 import { inativarProduto } from "./inativar.js";
 import { listarProdutos } from "./listar.js";
+import { metaColunasListagemProdutos } from "./meta-colunas-listagem.js";
 import { listarLotesProduto } from "./lotes.js";
 import { templateProdutos } from "./template.js";
 import { tributacaoPorCfop } from "./tributacao-por-cfop.js";
@@ -52,6 +53,9 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.get("/produtos", {
 		schema: schema.listarProdutosSchema,
 		handler: listarProdutos,
+	});
+	app.get("/produtos/meta-colunas-listagem", {
+		handler: metaColunasListagemProdutos,
 	});
 	app.get("/produtos/exportar", {
 		schema: schema.exportarProdutosSchema,

@@ -349,11 +349,29 @@ export type ListarProdutosParams = {
 	codigonbs?: string;
 	somenteDivergencia?: boolean;
 	idprodutopai?: string;
+	filtrosColuna?: string;
 	ordenarPor?: string;
 	ordem?: "asc" | "desc";
 };
 
+export type MetaColunaProdutoListagem = {
+	id: string;
+	label: string;
+	origem: "banco" | "calculada";
+	visivelPadrao: boolean;
+	filtravel: boolean;
+	ordenavel: boolean;
+	tipoFiltro: "texto" | "boolean" | "data" | "divergencia";
+};
+
 export const produtosService = {
+	async metaColunasListagem(): Promise<MetaColunaProdutoListagem[]> {
+		const { data } = await api.get<{ colunas: MetaColunaProdutoListagem[] }>(
+			"/produtos/meta-colunas-listagem",
+		);
+		return data.colunas;
+	},
+
 	async listar(params: ListarProdutosParams): Promise<ListarProdutosResponse> {
 		const { data } = await api.get<ListarProdutosResponse>("/produtos", {
 			params,
