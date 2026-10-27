@@ -61,7 +61,7 @@ export const toolsRelatorios: DefinicaoTool[] = [
 	{
 		nome: "gerar_relatorio",
 		descricao:
-			"Gera um relatório já disponível no ERP (fluxo de caixa, contas, DRE, fiscais). Use formato txt ou html para caber no chat.",
+			"Gera um relatório do ERP. Para vendas ou faturamento de um período use tipo fiscal-vendas, sem ID de pedido. Também cobre fluxo de caixa, contas, DRE e outros fiscais. Formato txt cabe melhor no chat.",
 		mutavel: false,
 		schema: z.object({
 			tipo: z.enum(tiposRelatorio).describe("Tipo do relatório"),
