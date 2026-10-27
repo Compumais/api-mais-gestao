@@ -609,9 +609,9 @@ export async function chatComAtenaService({
 		// Fallback auto: se preferência auto e falhou o provedor atual, tenta o outro
 		const preferido = integracoes.provedorPreferido ?? "auto";
 		if (preferido === "auto") {
-			const alternativos: ProvedorIa[] = ["gemini", "openai", "openrouter"].filter(
-				(p) => p !== provedor,
-			) as ProvedorIa[];
+			const alternativos = (
+				["gemini", "openai", "openrouter"] as const
+			).filter((p) => p !== provedor);
 
 			for (const alt of alternativos) {
 				const altKey = chaveDoProvedor(integracoes, alt);
