@@ -90,6 +90,42 @@ describe("chatComAtenaService", () => {
 		}
 	});
 
+	it("consulta o relatório fiscal quando perguntam as vendas do mês", async () => {
+		const tools = await import("@/service/ia/tools/registrar-tools.js");
+		vi.mocked(tools.executarToolPorNome).mockResolvedValue({
+			resultado: {
+				ok: true,
+				resumo: "Relatório fiscal-vendas gerado.",
+				dados: { conteudo: "Total geral: 2 documento(s) — R$ 150,00" },
+			},
+			acao: {
+				nome: "gerar_relatorio",
+				status: "sucesso",
+				resumo: "Relatório fiscal-vendas gerado.",
+			},
+		});
+
+		const resultado = await chatComAtenaService({
+			idusuario: "usuario-1",
+			idempresa: "empresa-1",
+			mensagem: "quais foram as vendas do mês?",
+		});
+
+		expect(tools.executarToolPorNome).toHaveBeenCalledWith(
+			"gerar_relatorio",
+			{ idusuario: "usuario-1", idempresa: "empresa-1" },
+			expect.objectContaining({
+				tipo: "fiscal-vendas",
+				formato: "txt",
+			}),
+		);
+		expect(resultado.success).toBe(true);
+		if (resultado.success) {
+			expect(resultado.body?.resposta).toContain("R$ 150,00");
+			expect(resultado.body?.resposta).not.toMatch(/ID do pedido/i);
+		}
+	});
+
 	it("deve retornar resposta e acoes no loop OpenAI", async () => {
 		const buscarConfiguracaoUsuarioService =
 			await mockBuscarConfiguracaoUsuarioService();

@@ -10,6 +10,10 @@ import {
 	resolverProvedor,
 } from "@/service/ia/provedores.js";
 import {
+	dataHojeBrasil,
+	interpretarPerguntaVendasPeriodo,
+} from "@/service/ia/pergunta-vendas-periodo.js";
+import {
 	executarToolPorNome,
 	toolsParaGemini,
 	toolsParaOpenAI,
@@ -35,8 +39,10 @@ const MAX_HISTORY_ITEMS = 20;
 const MAX_HISTORY_ITEM_CHARS = 1_000;
 const MAX_AGENT_ROUNDS = 6;
 
-const SYSTEM_PROMPT = `Você é Atena, assistente operacional do ERP Mais Gestão.
+function systemPrompt(): string {
+	return `Você é Atena, assistente operacional do ERP Mais Gestão.
 Você ajuda com cadastros, pedidos (DAV), NF-e/NFC-e, relatórios e envio de documentos à contabilidade.
+Data de hoje: ${dataHojeBrasil()} (America/Sao_Paulo).
 
 Regras:
 - Responda sempre em português brasileiro, de forma clara e objetiva.
@@ -44,10 +50,12 @@ Regras:
 - Colete dados em turnos quando faltar informação (ex.: PF ou PJ → CNPJ/CPF → confirmação).
 - Em ações sensíveis (criar cliente, criar pedido, faturar NF-e/NFC-e, enviar docs à contabilidade), SEMPRE peça confirmação explícita do usuário e só então chame a ferramenta com confirmado=true.
 - Para cliente PJ: consulte o CNPJ, resuma os dados e só crie após confirmação.
-- Para relatórios: peça tipo e período (dataInicio/dataFim) se não forem informados.
-- Para faturar pedido: confirme o iddav (ou código) com o usuário antes.
+- Vendas, faturamento ou notas de um período não são um pedido. Não peça ID de pedido para resumir o mês.
+- Para "vendas do mês" ou "faturamento do mês", chame gerar_relatorio com tipo fiscal-vendas. Se disser só "do mês", use o mês corrente: dia 1 até o último dia. Não peça o período de novo.
+- ID de pedido só quando o usuário quer um pedido específico ou faturar esse pedido. Para faturar, confirme o iddav (ou código) antes.
 - Se uma ferramenta retornar erro ou bloqueio, explique ao usuário e oriente o próximo passo.
 - Não exponha chaves de API nem detalhes internos técnicos.`;
+}
 
 function normalizarHistorico(
 	historico?: MensagemChat[],
@@ -92,7 +100,7 @@ async function loopOpenAI(params: {
 	omitirTools?: boolean;
 }): Promise<RespostaAgente> {
 	const messages: OpenAIMessage[] = [
-		{ role: "system", content: SYSTEM_PROMPT },
+		{ role: "system", content: systemPrompt() },
 	];
 
 	if (params.historico) {
@@ -289,7 +297,7 @@ async function loopGemini(params: {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
-							systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+							systemInstruction: { parts: [{ text: systemPrompt() }] },
 							contents,
 							tools,
 							generationConfig: {
@@ -414,7 +422,7 @@ async function chatCompatSemTools(params: {
 	rotulo: string;
 }): Promise<string> {
 	const messages: Array<{ role: string; content: string }> = [
-		{ role: "system", content: SYSTEM_PROMPT },
+		{ role: "system", content: systemPrompt() },
 	];
 	if (params.historico) {
 		messages.push(...params.historico);
@@ -528,6 +536,28 @@ export async function chatComAtenaService({
 	}
 
 	const historicoNormalizado = normalizarHistorico(historico);
+
+	const periodoVendas = interpretarPerguntaVendasPeriodo(mensagem);
+	if (periodoVendas) {
+		const { resultado, acao } = await executarToolPorNome(
+			"gerar_relatorio",
+			{ idusuario, idempresa },
+			{
+				tipo: "fiscal-vendas",
+				dataInicio: periodoVendas.dataInicio,
+				dataFim: periodoVendas.dataFim,
+				formato: "txt",
+			},
+		);
+		if (resultado.ok) {
+			const dados = resultado.dados as { conteudo?: string } | undefined;
+			const corpo = dados?.conteudo?.trim() || resultado.resumo;
+			return httpOk({
+				resposta: `Vendas fiscais de ${periodoVendas.rotulo} (${periodoVendas.dataInicio} a ${periodoVendas.dataFim}):\n\n${corpo}`,
+				acoes: [acao],
+			});
+		}
+	}
 
 	const configuracaoResult = await buscarConfiguracaoUsuarioService({
 		idusuario,

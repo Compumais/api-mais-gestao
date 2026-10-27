@@ -67,7 +67,8 @@ export const toolsPedidos: DefinicaoTool[] = [
 	},
 	{
 		nome: "buscar_pedido",
-		descricao: "Busca um pedido (DAV) pelo ID UUID.",
+		descricao:
+			"Busca um pedido (DAV) pelo ID UUID que o usuário já informou. Não use para vendas ou faturamento de um período.",
 		mutavel: false,
 		schema: z.object({
 			iddav: z.string().uuid().describe("ID do pedido (UUID)"),
