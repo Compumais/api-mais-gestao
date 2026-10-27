@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:estacao_balanca/atualizacao/atualizacao_app.dart';
 import 'package:estacao_balanca/core/lan_client.dart';
 import 'package:estacao_balanca/core/prefs.dart';
 import 'package:estacao_balanca/features/balanca/balanca_facade.dart';
@@ -29,6 +30,8 @@ class _ConfigPageState extends State<ConfigPage> {
   String? _testeMsg;
   bool _busy = false;
   bool _carregandoPortas = false;
+  bool _atualizandoApp = false;
+  String? _atualizacaoMsg;
 
   bool get _usbOtg => plataformaUsaUsbOtg();
 
@@ -72,6 +75,19 @@ class _ConfigPageState extends State<ConfigPage> {
     await widget.prefs.setBalancaLocalHabilitada(_balancaLocal);
     await widget.prefs.setIgnorarDigitoVerificador(_ignorarDigitoVerificador);
     await widget.prefs.setFontePeso(_fonte);
+  }
+
+  Future<void> _atualizarAplicativo() async {
+    setState(() {
+      _atualizandoApp = true;
+      _atualizacaoMsg = 'Verificando versão…';
+    });
+    final aviso = await AtualizacaoApp.instancia.verificarManual();
+    if (!mounted) return;
+    setState(() {
+      _atualizandoApp = false;
+      _atualizacaoMsg = aviso;
+    });
   }
 
   Future<void> _salvar() async {
@@ -305,6 +321,37 @@ class _ConfigPageState extends State<ConfigPage> {
                           color: MgColors.mutedForeground,
                         ),
                   ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _section(
+            title: 'Aplicativo',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Consulta a versão publicada e instala se houver uma nova.',
+                  style: TextStyle(color: MgColors.mutedForeground),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _atualizandoApp ? null : _atualizarAplicativo,
+                  icon: _atualizandoApp
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.system_update_alt),
+                  label: Text(
+                    _atualizandoApp ? 'Verificando…' : 'Atualizar aplicativo',
+                  ),
+                ),
+                if (_atualizacaoMsg != null) ...[
+                  const SizedBox(height: 12),
+                  Text(_atualizacaoMsg!),
                 ],
               ],
             ),

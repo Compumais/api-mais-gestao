@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:estacao_balanca/app.dart';
+import 'package:estacao_balanca/atualizacao/atualizacao_app.dart';
 import 'package:estacao_balanca/core/prefs.dart';
 import 'package:estacao_balanca/theme/mg_theme.dart';
 import 'package:estacao_balanca/widgets/mg_boot_screen.dart';
@@ -43,6 +44,7 @@ class _BootApp extends StatefulWidget {
 }
 
 class _BootAppState extends State<_BootApp> {
+  final _navKey = GlobalKey<NavigatorState>();
   AppPrefs? _prefs;
   Object? _erro;
 
@@ -62,6 +64,9 @@ class _BootAppState extends State<_BootApp> {
       );
       if (!mounted) return;
       setState(() => _prefs = prefs);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AtualizacaoApp.verificar(_navKey);
+      });
     } catch (e, st) {
       debugPrint('Falha no boot: $e\n$st');
       if (!mounted) return;
@@ -72,7 +77,7 @@ class _BootAppState extends State<_BootApp> {
   @override
   Widget build(BuildContext context) {
     if (_prefs != null) {
-      return EstacaoApp(prefs: _prefs!);
+      return EstacaoApp(prefs: _prefs!, navigatorKey: _navKey);
     }
     return MaterialApp(
       debugShowCheckedModeBanner: false,

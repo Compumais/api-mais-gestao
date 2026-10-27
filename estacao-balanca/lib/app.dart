@@ -9,9 +9,14 @@ import 'package:estacao_balanca/features/historico/historico_page.dart';
 import 'package:estacao_balanca/theme/mg_theme.dart';
 
 class EstacaoApp extends StatelessWidget {
-  const EstacaoApp({super.key, required this.prefs});
+  const EstacaoApp({
+    super.key,
+    required this.prefs,
+    required this.navigatorKey,
+  });
 
   final AppPrefs prefs;
+  final GlobalKey<NavigatorState> navigatorKey;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +26,7 @@ class EstacaoApp extends StatelessWidget {
         : LoginPage(prefs: prefs, client: client);
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Estação Balança',
       debugShowCheckedModeBanner: false,
       theme: buildMgTheme(),

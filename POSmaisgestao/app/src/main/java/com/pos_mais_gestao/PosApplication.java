@@ -33,6 +33,7 @@ public class PosApplication extends Application {
         impressoraPos = new EscPosPrinter(this);
         pagamentoHardware = new StubPagamentoHardware();
         balancaManager = new BalancaManager(this, prefsStore);
+        AppUpdater.iniciar(this);
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {

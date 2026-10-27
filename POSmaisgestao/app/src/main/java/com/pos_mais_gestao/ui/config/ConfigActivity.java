@@ -20,6 +20,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.pos_mais_gestao.AppUpdater;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
@@ -195,6 +196,7 @@ public class ConfigActivity extends AppCompatActivity {
         atualizarTextoImpressoraSelecionada();
         SoftInputHelper.hideOnStart(this);
 
+        findViewById(R.id.btnAtualizarApp).setOnClickListener(v -> atualizarAplicativo());
         btnSalvar.setOnClickListener(v -> salvar());
         btnTestarPdv.setOnClickListener(v -> testarPdv());
         btnCarregarCatalogo.setOnClickListener(v -> carregarCatalogo());
@@ -215,6 +217,16 @@ public class ConfigActivity extends AppCompatActivity {
         });
 
         solicitarPermissaoECarregar();
+    }
+
+    private void atualizarAplicativo() {
+        View botao = findViewById(R.id.btnAtualizarApp);
+        TextView aviso = findViewById(R.id.txtAtualizacaoApp);
+        botao.setEnabled(false);
+        AppUpdater.verificarManual(this, texto -> runOnUiThread(() -> {
+            aviso.setText(texto);
+            botao.setEnabled(!texto.startsWith("Verificando"));
+        }));
     }
 
     @Override
