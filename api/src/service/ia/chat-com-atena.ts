@@ -13,6 +13,8 @@ import {
 	dataHojeBrasil,
 	interpretarPerguntaVendasPeriodo,
 } from "@/service/ia/pergunta-vendas-periodo.js";
+import { contextoVendasParaPrompt } from "@/service/ia/rag/parsear-contexto-vendas.js";
+import { recuperarContextoVendas } from "@/service/ia/rag/recuperar-contexto-vendas.js";
 import {
 	executarToolPorNome,
 	toolsParaGemini,
@@ -51,7 +53,7 @@ Regras:
 - Em ações sensíveis (criar cliente, criar pedido, faturar NF-e/NFC-e, enviar docs à contabilidade), SEMPRE peça confirmação explícita do usuário e só então chame a ferramenta com confirmado=true.
 - Para cliente PJ: consulte o CNPJ, resuma os dados e só crie após confirmação.
 - Vendas, faturamento ou notas de um período não são um pedido. Não peça ID de pedido para resumir o mês.
-- Para "vendas do mês" ou "faturamento do mês", chame gerar_relatorio com tipo fiscal-vendas. Se disser só "do mês", use o mês corrente: dia 1 até o último dia. Não peça o período de novo.
+- Se a mensagem trouxer "Contexto recuperado da base", responda só com esses números e documentos. Não peça período nem ID.
 - ID de pedido só quando o usuário quer um pedido específico ou faturar esse pedido. Para faturar, confirme o iddav (ou código) antes.
 - Se uma ferramenta retornar erro ou bloqueio, explique ao usuário e oriente o próximo passo.
 - Não exponha chaves de API nem detalhes internos técnicos.`;
@@ -538,26 +540,37 @@ export async function chatComAtenaService({
 	const historicoNormalizado = normalizarHistorico(historico);
 
 	const periodoVendas = interpretarPerguntaVendasPeriodo(mensagem);
+	let mensagemModelo = mensagem;
+	let textoContexto: string | null = null;
+	let acaoRag: AcaoExecutada | null = null;
 	if (periodoVendas) {
-		const { resultado, acao } = await executarToolPorNome(
-			"gerar_relatorio",
-			{ idusuario, idempresa },
-			{
-				tipo: "fiscal-vendas",
-				dataInicio: periodoVendas.dataInicio,
-				dataFim: periodoVendas.dataFim,
-				formato: "txt",
-			},
-		);
-		if (resultado.ok) {
-			const dados = resultado.dados as { conteudo?: string } | undefined;
-			const corpo = dados?.conteudo?.trim() || resultado.resumo;
-			return httpOk({
-				resposta: `Vendas fiscais de ${periodoVendas.rotulo} (${periodoVendas.dataInicio} a ${periodoVendas.dataFim}):\n\n${corpo}`,
-				acoes: [acao],
+		try {
+			const contexto = await recuperarContextoVendas({
+				idempresa,
+				periodo: periodoVendas,
 			});
+			textoContexto = contextoVendasParaPrompt(contexto);
+			mensagemModelo = [
+				"Contexto recuperado da base. Responda somente com estes dados. Não peça ID de pedido e não invente valores.",
+				"",
+				textoContexto,
+				"",
+				`Pergunta: ${mensagem}`,
+			].join("\n");
+			acaoRag = {
+				nome: "rag-vendas",
+				status: "sucesso",
+				resumo: `Vendas fiscais de ${periodoVendas.rotulo}: ${contexto.quantidadeTotal} documento(s).`,
+			};
+		} catch (error) {
+			console.error("Falha ao recuperar contexto de vendas:", error);
 		}
 	}
+
+	const anexarRag = (resultado: RespostaAgente): RespostaAgente =>
+		acaoRag
+			? { ...resultado, acoes: [acaoRag, ...resultado.acoes] }
+			: resultado;
 
 	const configuracaoResult = await buscarConfiguracaoUsuarioService({
 		idusuario,
@@ -571,6 +584,12 @@ export async function chatComAtenaService({
 	const resolvido = resolverProvedor(integracoes);
 
 	if (!resolvido) {
+		if (textoContexto && acaoRag) {
+			return httpOk({
+				resposta: textoContexto,
+				acoes: [acaoRag],
+			});
+		}
 		return httpBadRequest({
 			error:
 				"Nenhuma API de IA configurada. Configure OpenAI ou Gemini em Configurações > Integrações e use o botão Testar.",
@@ -584,43 +603,43 @@ export async function chatComAtenaService({
 			const resultado = await responderOllama({
 				chatCompletionsUrl: resolvido.chatCompletionsUrl,
 				modelo,
-				mensagem,
+				mensagem: mensagemModelo,
 				historico: historicoNormalizado,
 				idusuario,
 				idempresa,
 			});
-			return httpOk(resultado);
+			return httpOk(anexarRag(resultado));
 		}
 
 		if (provedor === "openai") {
 			const resultado = await loopOpenAI({
 				apiKey,
 				modelo,
-				mensagem,
+				mensagem: mensagemModelo,
 				historico: historicoNormalizado,
 				idusuario,
 				idempresa,
 			});
-			return httpOk(resultado);
+			return httpOk(anexarRag(resultado));
 		}
 
 		if (provedor === "gemini") {
 			const resultado = await loopGemini({
 				apiKey,
 				modelo,
-				mensagem,
+				mensagem: mensagemModelo,
 				historico: historicoNormalizado,
 				idusuario,
 				idempresa,
 			});
-			return httpOk(resultado);
+			return httpOk(anexarRag(resultado));
 		}
 
 		const resposta = await chatCompatSemTools({
 			url: "https://openrouter.ai/api/v1/chat/completions",
 			apiKey,
 			modelo,
-			mensagem,
+			mensagem: mensagemModelo,
 			historico: historicoNormalizado,
 			rotulo: "OpenRouter",
 			headersExtras: {
@@ -628,10 +647,12 @@ export async function chatComAtenaService({
 				"X-Title": "Mais Gestão - Atena",
 			},
 		});
-		return httpOk({
-			resposta: `${resposta}\n\n(Observação: com OpenRouter as automações/ferramentas ficam limitadas. Preferência: OpenAI ou Gemini.)`,
-			acoes: [],
-		});
+		return httpOk(
+			anexarRag({
+				resposta: `${resposta}\n\n(Observação: com OpenRouter as automações/ferramentas ficam limitadas. Preferência: OpenAI ou Gemini.)`,
+				acoes: [],
+			}),
+		);
 	} catch (error) {
 		console.error("Erro ao chamar API de IA:", error);
 		const msg = mensagemErroIaAmigavel(error);
@@ -654,32 +675,43 @@ export async function chatComAtenaService({
 				try {
 					if (alt === "gemini") {
 						return httpOk(
-							await loopGemini({
-								apiKey: altResolvido.apiKey,
-								modelo: altResolvido.modelo,
-								mensagem,
-								historico: historicoNormalizado,
-								idusuario,
-								idempresa,
-							}),
+							anexarRag(
+								await loopGemini({
+									apiKey: altResolvido.apiKey,
+									modelo: altResolvido.modelo,
+									mensagem: mensagemModelo,
+									historico: historicoNormalizado,
+									idusuario,
+									idempresa,
+								}),
+							),
 						);
 					}
 					if (alt === "openai") {
 						return httpOk(
-							await loopOpenAI({
-								apiKey: altResolvido.apiKey,
-								modelo: altResolvido.modelo,
-								mensagem,
-								historico: historicoNormalizado,
-								idusuario,
-								idempresa,
-							}),
+							anexarRag(
+								await loopOpenAI({
+									apiKey: altResolvido.apiKey,
+									modelo: altResolvido.modelo,
+									mensagem: mensagemModelo,
+									historico: historicoNormalizado,
+									idusuario,
+									idempresa,
+								}),
+							),
 						);
 					}
 				} catch (altError) {
 					console.error(`Fallback ${alt} também falhou:`, altError);
 				}
 			}
+		}
+
+		if (textoContexto && acaoRag) {
+			return httpOk({
+				resposta: textoContexto,
+				acoes: [acaoRag],
+			});
 		}
 
 		if (/autenticação|API key|invalid|401|403/i.test(msg)) {

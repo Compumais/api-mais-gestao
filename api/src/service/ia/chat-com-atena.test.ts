@@ -8,6 +8,10 @@ vi.mock(
 	}),
 );
 
+vi.mock("@/service/ia/rag/recuperar-contexto-vendas.js", () => ({
+	recuperarContextoVendas: vi.fn(),
+}));
+
 vi.mock("@/service/ia/tools/registrar-tools.js", async () => {
 	const actual = await vi.importActual<
 		typeof import("@/service/ia/tools/registrar-tools.js")
@@ -90,20 +94,54 @@ describe("chatComAtenaService", () => {
 		}
 	});
 
-	it("consulta o relatório fiscal quando perguntam as vendas do mês", async () => {
-		const tools = await import("@/service/ia/tools/registrar-tools.js");
-		vi.mocked(tools.executarToolPorNome).mockResolvedValue({
-			resultado: {
-				ok: true,
-				resumo: "Relatório fiscal-vendas gerado.",
-				dados: { conteudo: "Total geral: 2 documento(s) — R$ 150,00" },
+	it("recupera e parseia as vendas do mês antes de responder", async () => {
+		const rag = await import("@/service/ia/rag/recuperar-contexto-vendas.js");
+		vi.mocked(rag.recuperarContextoVendas).mockResolvedValue({
+			fonte: "notas-fiscais-autorizadas",
+			periodo: {
+				dataInicio: "2026-10-01",
+				dataFim: "2026-10-31",
+				rotulo: "outubro/2026",
 			},
-			acao: {
-				nome: "gerar_relatorio",
-				status: "sucesso",
-				resumo: "Relatório fiscal-vendas gerado.",
-			},
+			quantidadeNfe: 1,
+			quantidadeNfce: 1,
+			quantidadeTotal: 2,
+			valorNfe: 100.5,
+			valorNfce: 49.5,
+			valorTotal: 150,
+			documentos: [],
 		});
+
+		const buscarConfiguracaoUsuarioService =
+			await mockBuscarConfiguracaoUsuarioService();
+		buscarConfiguracaoUsuarioService.mockResolvedValue({
+			success: true,
+			status: 200,
+			body: {
+				id: "cfg-1",
+				idusuario: "usuario-1",
+				integracoes: {
+					openaiApiKey: "key",
+					provedorPreferido: "openai",
+				},
+				criadoem: "",
+				atualizadoem: "",
+			},
+		} as never);
+
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				choices: [
+					{
+						message: {
+							content: "No mês foram R$ 150,00 em 2 notas.",
+						},
+					},
+				],
+			}),
+		});
+		globalThis.fetch = fetchMock as never;
 
 		const resultado = await chatComAtenaService({
 			idusuario: "usuario-1",
@@ -111,18 +149,18 @@ describe("chatComAtenaService", () => {
 			mensagem: "quais foram as vendas do mês?",
 		});
 
-		expect(tools.executarToolPorNome).toHaveBeenCalledWith(
-			"gerar_relatorio",
-			{ idusuario: "usuario-1", idempresa: "empresa-1" },
-			expect.objectContaining({
-				tipo: "fiscal-vendas",
-				formato: "txt",
-			}),
-		);
+		const init = fetchMock.mock.calls[0]?.[1] as { body: string };
+		const enviado = JSON.parse(init.body) as {
+			messages: Array<{ role: string; content: string }>;
+		};
+		const pergunta = enviado.messages.find((m) => m.role === "user");
+		expect(pergunta?.content).toContain("Contexto recuperado da base");
+		expect(pergunta?.content).toContain("150,00");
+		expect(pergunta?.content).not.toMatch(/ID do pedido/i);
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {
 			expect(resultado.body?.resposta).toContain("R$ 150,00");
-			expect(resultado.body?.resposta).not.toMatch(/ID do pedido/i);
+			expect(resultado.body?.acoes[0]?.nome).toBe("rag-vendas");
 		}
 	});
 
