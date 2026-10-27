@@ -4,6 +4,7 @@ import { buscarConfiguracaoUsuarioService } from "@/service/configuracao-usuario
 import {
 	fetchWithTimeout,
 	MODELOS_GEMINI,
+	OLLAMA_TIMEOUT_MS,
 	mensagemErroIaAmigavel,
 	type ProvedorIa,
 	resolverProvedor,
@@ -60,6 +61,13 @@ function normalizarHistorico(
 	}));
 }
 
+class ToolsNaoSuportadasError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "ToolsNaoSuportadasError";
+	}
+}
+
 type OpenAIMessage = {
 	role: "system" | "user" | "assistant" | "tool";
 	content: string | null;
@@ -79,6 +87,9 @@ async function loopOpenAI(params: {
 	historico?: MensagemChat[];
 	idusuario: string;
 	idempresa: string;
+	chatCompletionsUrl?: string;
+	timeoutMs?: number;
+	omitirTools?: boolean;
 }): Promise<RespostaAgente> {
 	const messages: OpenAIMessage[] = [
 		{ role: "system", content: SYSTEM_PROMPT },
@@ -95,35 +106,53 @@ async function loopOpenAI(params: {
 	const acoes: AcaoExecutada[] = [];
 	const ctx = { idusuario: params.idusuario, idempresa: params.idempresa };
 
+	const rotulo = params.chatCompletionsUrl ? "Ollama" : "OpenAI";
+
 	for (let round = 0; round < MAX_AGENT_ROUNDS; round++) {
+		const headers: Record<string, string> = {
+			"Content-Type": "application/json",
+		};
+		if (params.apiKey) {
+			headers.Authorization = `Bearer ${params.apiKey}`;
+		}
+
+		const payload: Record<string, unknown> = {
+			model: params.modelo,
+			messages,
+			temperature: 0.3,
+			max_tokens: 2000,
+		};
+		if (!params.omitirTools) {
+			payload.tools = tools;
+			payload.tool_choice = "auto";
+		}
+
 		const response = await fetchWithTimeout(
-			"https://api.openai.com/v1/chat/completions",
+			params.chatCompletionsUrl ??
+				"https://api.openai.com/v1/chat/completions",
 			{
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${params.apiKey}`,
-				},
-				body: JSON.stringify({
-					model: params.modelo,
-					messages,
-					tools,
-					tool_choice: "auto",
-					temperature: 0.3,
-					max_tokens: 2000,
-				}),
+				headers,
+				body: JSON.stringify(payload),
 			},
-			FETCH_TIMEOUT_MS,
+			params.timeoutMs ?? FETCH_TIMEOUT_MS,
 		);
 
 		if (!response.ok) {
 			const error = await response
 				.json()
 				.catch(() => ({ error: { message: "Erro desconhecido" } }));
-			throw new Error(
+			const message =
 				error.error?.message ||
-					`Erro ao chamar OpenAI: ${response.statusText}`,
-			);
+				`Erro ao chamar ${rotulo}: ${response.statusText}`;
+			if (
+				!params.omitirTools &&
+				params.chatCompletionsUrl &&
+				/tool/i.test(message)
+			) {
+				throw new ToolsNaoSuportadasError(message);
+			}
+			throw new Error(message);
 		}
 
 		const data = await response.json();
@@ -374,11 +403,15 @@ async function loopGemini(params: {
 	};
 }
 
-async function chatOpenRouterSemTools(params: {
-	apiKey: string;
+async function chatCompatSemTools(params: {
+	url: string;
+	apiKey?: string;
 	modelo: string;
 	mensagem: string;
 	historico?: MensagemChat[];
+	timeoutMs?: number;
+	headersExtras?: Record<string, string>;
+	rotulo: string;
 }): Promise<string> {
 	const messages: Array<{ role: string; content: string }> = [
 		{ role: "system", content: SYSTEM_PROMPT },
@@ -388,16 +421,19 @@ async function chatOpenRouterSemTools(params: {
 	}
 	messages.push({ role: "user", content: params.mensagem });
 
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+		...params.headersExtras,
+	};
+	if (params.apiKey) {
+		headers.Authorization = `Bearer ${params.apiKey}`;
+	}
+
 	const response = await fetchWithTimeout(
-		"https://openrouter.ai/api/v1/chat/completions",
+		params.url,
 		{
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${params.apiKey}`,
-				"HTTP-Referer": getApiBaseUrl(),
-				"X-Title": "Mais Gestão - Atena",
-			},
+			headers,
 			body: JSON.stringify({
 				model: params.modelo,
 				messages,
@@ -405,7 +441,7 @@ async function chatOpenRouterSemTools(params: {
 				max_tokens: 1500,
 			}),
 		},
-		FETCH_TIMEOUT_MS,
+		params.timeoutMs ?? FETCH_TIMEOUT_MS,
 	);
 
 	if (!response.ok) {
@@ -414,7 +450,7 @@ async function chatOpenRouterSemTools(params: {
 			.catch(() => ({ error: { message: "Erro desconhecido" } }));
 		throw new Error(
 			error.error?.message ||
-				`Erro ao chamar OpenRouter: ${response.statusText}`,
+				`Erro ao chamar ${params.rotulo}: ${response.statusText}`,
 		);
 	}
 
@@ -431,7 +467,48 @@ function chaveDoProvedor(
 ): string | undefined {
 	if (provedor === "openai") return integracoes.openaiApiKey?.trim() || undefined;
 	if (provedor === "gemini") return integracoes.geminiApiKey?.trim() || undefined;
-	return integracoes.openrouterApiKey?.trim() || undefined;
+	if (provedor === "openrouter") {
+		return integracoes.openrouterApiKey?.trim() || undefined;
+	}
+	return undefined;
+}
+
+async function responderOllama(params: {
+	chatCompletionsUrl: string;
+	modelo: string;
+	mensagem: string;
+	historico?: MensagemChat[];
+	idusuario: string;
+	idempresa: string;
+}): Promise<RespostaAgente> {
+	try {
+		return await loopOpenAI({
+			apiKey: "",
+			modelo: params.modelo,
+			mensagem: params.mensagem,
+			historico: params.historico,
+			idusuario: params.idusuario,
+			idempresa: params.idempresa,
+			chatCompletionsUrl: params.chatCompletionsUrl,
+			timeoutMs: OLLAMA_TIMEOUT_MS,
+		});
+	} catch (error) {
+		if (!(error instanceof ToolsNaoSuportadasError)) {
+			throw error;
+		}
+		const resposta = await chatCompatSemTools({
+			url: params.chatCompletionsUrl,
+			modelo: params.modelo,
+			mensagem: params.mensagem,
+			historico: params.historico,
+			timeoutMs: OLLAMA_TIMEOUT_MS,
+			rotulo: "Ollama",
+		});
+		return {
+			resposta: `${resposta}\n\n(Observação: este modelo não executa automações. A resposta é só orientativa.)`,
+			acoes: [],
+		};
+	}
 }
 
 export async function chatComAtenaService({
@@ -457,14 +534,10 @@ export async function chatComAtenaService({
 		idempresa,
 	});
 
-	if (!configuracaoResult.success || !configuracaoResult.body) {
-		return httpBadRequest({
-			error:
-				"Nenhuma API de IA configurada. Configure OpenAI ou Gemini em Configurações > Integrações.",
-		});
-	}
-
-	const integracoes = configuracaoResult.body.integracoes;
+	const integracoes =
+		configuracaoResult.success && configuracaoResult.body
+			? configuracaoResult.body.integracoes
+			: {};
 	const resolvido = resolverProvedor(integracoes);
 
 	if (!resolvido) {
@@ -477,6 +550,18 @@ export async function chatComAtenaService({
 	const { provedor, apiKey, modelo } = resolvido;
 
 	try {
+		if (provedor === "ollama" && resolvido.chatCompletionsUrl) {
+			const resultado = await responderOllama({
+				chatCompletionsUrl: resolvido.chatCompletionsUrl,
+				modelo,
+				mensagem,
+				historico: historicoNormalizado,
+				idusuario,
+				idempresa,
+			});
+			return httpOk(resultado);
+		}
+
 		if (provedor === "openai") {
 			const resultado = await loopOpenAI({
 				apiKey,
@@ -501,11 +586,17 @@ export async function chatComAtenaService({
 			return httpOk(resultado);
 		}
 
-		const resposta = await chatOpenRouterSemTools({
+		const resposta = await chatCompatSemTools({
+			url: "https://openrouter.ai/api/v1/chat/completions",
 			apiKey,
 			modelo,
 			mensagem,
 			historico: historicoNormalizado,
+			rotulo: "OpenRouter",
+			headersExtras: {
+				"HTTP-Referer": getApiBaseUrl(),
+				"X-Title": "Mais Gestão - Atena",
+			},
 		});
 		return httpOk({
 			resposta: `${resposta}\n\n(Observação: com OpenRouter as automações/ferramentas ficam limitadas. Preferência: OpenAI ou Gemini.)`,

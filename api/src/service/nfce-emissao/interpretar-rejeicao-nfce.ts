@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { HttpResponse } from "@/model/http-model.js";
 import { buscarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/buscar-configuracao-usuario.js";
 import { completarTextoIa } from "@/service/ia/completar-texto.js";
+import { resolverProvedor } from "@/service/ia/provedores.js";
 import {
 	buscarDetalhesNfceService,
 	type DetalhesNfce,
@@ -154,7 +155,12 @@ export async function interpretarRejeicaoNfceService({
 		idempresa,
 	});
 
-	if (!configuracao.success || !configuracao.body) {
+	const integracoes =
+		configuracao.success && configuracao.body
+			? configuracao.body.integracoes
+			: {};
+
+	if (!resolverProvedor(integracoes)) {
 		return httpOk(
 			respostaVazia({
 				interpretado: false,
@@ -166,7 +172,7 @@ export async function interpretarRejeicaoNfceService({
 	}
 
 	const resultadoIa = await completarTextoIa({
-		integracoes: configuracao.body.integracoes,
+		integracoes,
 		systemPrompt: SYSTEM_PROMPT,
 		mensagem: montarPromptUsuario(body),
 	});
