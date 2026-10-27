@@ -71,6 +71,32 @@ function limparEnvOllama() {
 	delete process.env.OLLAMA_MODEL;
 }
 
+async function interpretarTexto(texto: string) {
+	const { detalhes, config, ia } = await mocks();
+	vi.mocked(detalhes.buscarDetalhesNfceService).mockResolvedValue(
+		detalhesComRejeicao(),
+	);
+	vi.mocked(config.buscarConfiguracaoUsuarioService).mockResolvedValue({
+		success: true,
+		status: 200,
+		body: {
+			id: "cfg-1",
+			idusuario: "usuario-1",
+			integracoes: { openaiApiKey: "sk-test" },
+			criadoem: "",
+			atualizadoem: "",
+		},
+	});
+	vi.mocked(ia.completarTextoIa).mockResolvedValue({
+		ok: true,
+		texto,
+		provedor: "ollama",
+		modelo: "qwen2.5:1.5b",
+	});
+
+	return interpretarRejeicaoNfceService(PARAMS);
+}
+
 describe("interpretarRejeicaoNfceService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -222,6 +248,105 @@ describe("interpretarRejeicaoNfceService", () => {
 			comoCorrigir:
 				"Abra o cadastro do produto e informe um NCM válido de 8 dígitos.",
 		});
+	});
+
+	it("interpreta JSON com ponto e vírgula depois da string, como o qwen2.5 devolve", async () => {
+		const texto = `{
+  "classificacao": "INDETERMINADA",
+  "explicacao": "A SEFAZ rejeitou a NFC-e por falta de CEST no item 1 e no item 2, mas não especificou a causa específica.",
+  "comoCorrigir": "1. Verifique se o CEST foi inserido corretamente no item 1 e no item 2 do NFC-e.";
+}`;
+		const resultado = await interpretarTexto(texto);
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body).toEqual({
+			interpretado: true,
+			motivoNaoInterpretado: null,
+			mensagem: null,
+			provedor: "ollama",
+			classificacao: "INDETERMINADA",
+			explicacao:
+				"A SEFAZ rejeitou a NFC-e por falta de CEST no item 1 e no item 2, mas não especificou a causa específica.",
+			comoCorrigir:
+				"1. Verifique se o CEST foi inserido corretamente no item 1 e no item 2 do NFC-e.",
+		});
+	});
+
+	it("interpreta JSON dentro de cerca markdown", async () => {
+		const texto = `\`\`\`json
+{
+  "classificacao": "PROVAVEL",
+  "explicacao": "A SEFAZ recusou o NCM informado no item.",
+  "comoCorrigir": "Corrija o NCM no cadastro do produto."
+}
+\`\`\``;
+		const resultado = await interpretarTexto(texto);
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body).toEqual(
+			expect.objectContaining({
+				interpretado: true,
+				classificacao: "PROVAVEL",
+				explicacao: "A SEFAZ recusou o NCM informado no item.",
+				comoCorrigir: "Corrija o NCM no cadastro do produto.",
+			}),
+		);
+	});
+
+	it("interpreta cerca markdown com ponto e vírgula depois da chave", async () => {
+		const texto = `\`\`\`json
+{
+  "classificacao": "PROVAVEL",
+  "explicacao": "A SEFAZ recusou o CEST do item.",
+  "comoCorrigir": "Informe o CEST no cadastro do produto."
+};
+\`\`\``;
+		const resultado = await interpretarTexto(texto);
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body).toEqual(
+			expect.objectContaining({
+				interpretado: true,
+				classificacao: "PROVAVEL",
+				explicacao: "A SEFAZ recusou o CEST do item.",
+				comoCorrigir: "Informe o CEST no cadastro do produto.",
+			}),
+		);
+	});
+
+	it("recupera os campos quando o JSON continua inválido", async () => {
+		const texto = `{
+  "classificacao": "PROVAVEL",
+  "explicacao": "Falta o CEST no item."
+  "comoCorrigir": "Preencha o CEST no cadastro do produto."
+}`;
+		const resultado = await interpretarTexto(texto);
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body).toEqual(
+			expect.objectContaining({
+				interpretado: true,
+				classificacao: "PROVAVEL",
+				explicacao: "Falta o CEST no item.",
+				comoCorrigir: "Preencha o CEST no cadastro do produto.",
+			}),
+		);
+	});
+
+	it("usa o texto cru somente quando não dá para recuperar os campos", async () => {
+		const texto = "A rejeição não veio em JSON.";
+		const resultado = await interpretarTexto(texto);
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body).toEqual(
+			expect.objectContaining({
+				interpretado: true,
+				classificacao: "INDETERMINADA",
+				explicacao: texto,
+				comoCorrigir:
+					"Revise o motivo SEFAZ acima e os dados da nota no ERP. A IA não devolveu um plano estruturado.",
+			}),
+		);
 	});
 
 	it("retorna 200 com erro_ia quando o provedor falha", async () => {
