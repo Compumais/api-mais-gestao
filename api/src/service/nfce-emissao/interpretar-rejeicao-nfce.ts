@@ -70,14 +70,104 @@ function respostaVazia(
 	};
 }
 
-function extrairJson(texto: string): unknown | null {
+function textoSemCercaMarkdown(texto: string): string {
 	const trimmed = texto.trim();
-	const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
-	const candidato = fence?.[1]?.trim() ?? trimmed;
-	try {
-		return JSON.parse(candidato);
-	} catch {
+	const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+	if (fence?.[1]) {
+		return fence[1].trim();
+	}
+	return trimmed
+		.replace(/^```(?:json)?\s*/i, "")
+		.replace(/\s*```$/i, "")
+		.trim();
+}
+
+function recortarObjetoExterno(texto: string): string {
+	const inicio = texto.indexOf("{");
+	const fim = texto.lastIndexOf("}");
+	if (inicio === -1 || fim <= inicio) {
+		return texto;
+	}
+	return texto.slice(inicio, fim + 1);
+}
+
+/**
+ * O qwen2.5:1.5b costuma emitir um ponto e vírgula depois de uma string
+ * (`";` antes de `}` ou da próxima chave) ou depois da chave de fechamento.
+ */
+function removerPontoEVirgulaInvalido(json: string): string {
+	return json
+		.replace(/"\s*;(?=\s*")/g, '",')
+		.replace(/"\s*;(?=\s*[,}\]])/g, '"')
+		.replace(/;\s*$/g, "");
+}
+
+function desescaparStringJson(valor: string): string {
+	return valor.replace(
+		/\\(u[0-9a-fA-F]{4}|["\\/bfnrt])/g,
+		(_, codigo: string) => {
+			if (codigo.startsWith("u")) {
+				return String.fromCharCode(Number.parseInt(codigo.slice(1), 16));
+			}
+			switch (codigo) {
+				case "n":
+					return "\n";
+				case "r":
+					return "\r";
+				case "t":
+					return "\t";
+				case "b":
+					return "\b";
+				case "f":
+					return "\f";
+				default:
+					return codigo;
+			}
+		},
+	);
+}
+
+function extrairCampoString(texto: string, campo: string): string | null {
+	const padrao = new RegExp(`"${campo}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`);
+	const match = texto.match(padrao);
+	if (!match?.[1]) {
 		return null;
+	}
+	const valor = desescaparStringJson(match[1]).trim();
+	return valor.length > 0 ? valor : null;
+}
+
+function recuperarCamposEstruturados(texto: string): {
+	classificacao: "PROVAVEL" | "INDETERMINADA";
+	explicacao: string;
+	comoCorrigir: string;
+} | null {
+	const classificacao = texto.match(
+		/"classificacao"\s*:\s*"(PROVAVEL|INDETERMINADA)"/,
+	)?.[1];
+	if (classificacao !== "PROVAVEL" && classificacao !== "INDETERMINADA") {
+		return null;
+	}
+	const explicacao = extrairCampoString(texto, "explicacao");
+	const comoCorrigir = extrairCampoString(texto, "comoCorrigir");
+	if (!explicacao || !comoCorrigir) {
+		return null;
+	}
+	return { classificacao, explicacao, comoCorrigir };
+}
+
+function extrairJson(texto: string): unknown | null {
+	const semCerca = textoSemCercaMarkdown(texto).replace(/;\s*$/g, "").trim();
+	const objeto = recortarObjetoExterno(semCerca);
+	const normalizado = removerPontoEVirgulaInvalido(objeto);
+
+	try {
+		return JSON.parse(normalizado);
+	} catch {
+		return (
+			recuperarCamposEstruturados(normalizado) ??
+			recuperarCamposEstruturados(objeto)
+		);
 	}
 }
 
