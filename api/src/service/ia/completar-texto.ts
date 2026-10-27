@@ -2,6 +2,7 @@ import type { IntegracoesUsuario } from "@/repositories/configuracao-usuario-rep
 import {
 	fetchWithTimeout,
 	MODELOS_GEMINI,
+	OLLAMA_TIMEOUT_MS,
 	mensagemErroIaAmigavel,
 	type ProvedorIa,
 	resolverProvedor,
@@ -51,12 +52,16 @@ export async function completarTextoIa(params: {
 
 	try {
 		if (resolvido.provedor === "openai") {
-			return await completarOpenAi({
+			return await completarChatCompletions({
+				url: "https://api.openai.com/v1/chat/completions",
 				apiKey: resolvido.apiKey,
 				modelo: resolvido.modelo,
 				systemPrompt: params.systemPrompt,
 				mensagem: params.mensagem,
 				maxTokens,
+				timeoutMs: FETCH_TIMEOUT_MS,
+				provedor: "openai",
+				rotulo: "OpenAI",
 			});
 		}
 
@@ -69,12 +74,29 @@ export async function completarTextoIa(params: {
 			});
 		}
 
-		return await completarOpenRouter({
+		if (resolvido.provedor === "ollama" && resolvido.chatCompletionsUrl) {
+			return await completarChatCompletions({
+				url: resolvido.chatCompletionsUrl,
+				modelo: resolvido.modelo,
+				systemPrompt: params.systemPrompt,
+				mensagem: params.mensagem,
+				maxTokens,
+				timeoutMs: OLLAMA_TIMEOUT_MS,
+				provedor: "ollama",
+				rotulo: "Ollama",
+			});
+		}
+
+		return await completarChatCompletions({
+			url: "https://openrouter.ai/api/v1/chat/completions",
 			apiKey: resolvido.apiKey,
 			modelo: resolvido.modelo,
 			systemPrompt: params.systemPrompt,
 			mensagem: params.mensagem,
 			maxTokens,
+			timeoutMs: FETCH_TIMEOUT_MS,
+			provedor: "openrouter",
+			rotulo: "OpenRouter",
 		});
 	} catch (error) {
 		return {
@@ -84,21 +106,29 @@ export async function completarTextoIa(params: {
 	}
 }
 
-async function completarOpenAi(params: {
-	apiKey: string;
+async function completarChatCompletions(params: {
+	url: string;
+	apiKey?: string;
 	modelo: string;
 	systemPrompt: string;
 	mensagem: string;
 	maxTokens: number;
+	timeoutMs: number;
+	provedor: ProvedorIa;
+	rotulo: string;
 }): Promise<ResultadoCompletarTextoIa> {
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+	};
+	if (params.apiKey) {
+		headers.Authorization = `Bearer ${params.apiKey}`;
+	}
+
 	const response = await fetchWithTimeout(
-		"https://api.openai.com/v1/chat/completions",
+		params.url,
 		{
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${params.apiKey}`,
-			},
+			headers,
 			body: JSON.stringify({
 				model: params.modelo,
 				messages: [
@@ -109,7 +139,7 @@ async function completarOpenAi(params: {
 				temperature: 0.2,
 			}),
 		},
-		FETCH_TIMEOUT_MS,
+		params.timeoutMs,
 	);
 
 	const data = (await response.json().catch(() => ({}))) as OpenAiChatResponse;
@@ -118,7 +148,7 @@ async function completarOpenAi(params: {
 			ok: false,
 			erro:
 				data.error?.message ??
-				`OpenAI rejeitou a requisição (HTTP ${response.status}).`,
+				`${params.rotulo} rejeitou a requisição (HTTP ${response.status}).`,
 		};
 	}
 
@@ -130,7 +160,7 @@ async function completarOpenAi(params: {
 	return {
 		ok: true,
 		texto,
-		provedor: "openai",
+		provedor: params.provedor,
 		modelo: params.modelo,
 	};
 }
@@ -209,53 +239,3 @@ async function completarGemini(params: {
 	return { ok: false, erro: ultimoErro };
 }
 
-async function completarOpenRouter(params: {
-	apiKey: string;
-	modelo: string;
-	systemPrompt: string;
-	mensagem: string;
-	maxTokens: number;
-}): Promise<ResultadoCompletarTextoIa> {
-	const response = await fetchWithTimeout(
-		"https://openrouter.ai/api/v1/chat/completions",
-		{
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${params.apiKey}`,
-			},
-			body: JSON.stringify({
-				model: params.modelo,
-				messages: [
-					{ role: "system", content: params.systemPrompt },
-					{ role: "user", content: params.mensagem },
-				],
-				max_tokens: params.maxTokens,
-				temperature: 0.2,
-			}),
-		},
-		FETCH_TIMEOUT_MS,
-	);
-
-	const data = (await response.json().catch(() => ({}))) as OpenAiChatResponse;
-	if (!response.ok) {
-		return {
-			ok: false,
-			erro:
-				data.error?.message ??
-				`OpenRouter rejeitou a requisição (HTTP ${response.status}).`,
-		};
-	}
-
-	const texto = data.choices?.[0]?.message?.content?.trim() ?? "";
-	if (!texto) {
-		return { ok: false, erro: "A IA não retornou conteúdo." };
-	}
-
-	return {
-		ok: true,
-		texto,
-		provedor: "openrouter",
-		modelo: params.modelo,
-	};
-}

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { interpretarRejeicaoNfceService } from "./interpretar-rejeicao-nfce.js";
 
 vi.mock("@/service/nfce-emissao/buscar-detalhes-nfce.js");
@@ -66,9 +66,19 @@ function detalhesComRejeicao() {
 	};
 }
 
+function limparEnvOllama() {
+	delete process.env.OLLAMA_BASE_URL;
+	delete process.env.OLLAMA_MODEL;
+}
+
 describe("interpretarRejeicaoNfceService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		limparEnvOllama();
+	});
+
+	afterEach(() => {
+		limparEnvOllama();
 	});
 
 	it("propaga erro do detalhe quando a nota não é encontrada", async () => {
@@ -127,6 +137,46 @@ describe("interpretarRejeicaoNfceService", () => {
 			expect.objectContaining({
 				interpretado: false,
 				motivoNaoInterpretado: "sem_chave",
+			}),
+		);
+	});
+
+	it("interpreta a rejeição sem configuração do usuário quando o Ollama está no env", async () => {
+		process.env.OLLAMA_BASE_URL = "http://ollama.interno:11434";
+		process.env.OLLAMA_MODEL = "llama3.1";
+
+		const { detalhes, config, ia } = await mocks();
+		vi.mocked(detalhes.buscarDetalhesNfceService).mockResolvedValue(
+			detalhesComRejeicao(),
+		);
+		vi.mocked(config.buscarConfiguracaoUsuarioService).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: null,
+		});
+		vi.mocked(ia.completarTextoIa).mockResolvedValue({
+			ok: true,
+			texto: JSON.stringify({
+				classificacao: "PROVAVEL",
+				explicacao: "A SEFAZ recusou o NCM informado no item.",
+				comoCorrigir: "Corrija o NCM no cadastro do produto.",
+			}),
+			provedor: "ollama",
+			modelo: "llama3.1",
+		});
+
+		const resultado = await interpretarRejeicaoNfceService(PARAMS);
+
+		expect(ia.completarTextoIa).toHaveBeenCalledWith(
+			expect.objectContaining({ integracoes: {} }),
+		);
+		expect(resultado.success).toBe(true);
+		expect(resultado.body).toEqual(
+			expect.objectContaining({
+				interpretado: true,
+				provedor: "ollama",
+				classificacao: "PROVAVEL",
+				comoCorrigir: "Corrija o NCM no cadastro do produto.",
 			}),
 		);
 	});

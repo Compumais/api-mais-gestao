@@ -1,7 +1,42 @@
 import type { IntegracoesUsuario } from "@/repositories/configuracao-usuario-repositories.js";
 
-export type ProvedorIa = "openai" | "gemini" | "openrouter";
+export type ProvedorIa = "openai" | "gemini" | "openrouter" | "ollama";
 export type ProvedorPreferido = "auto" | ProvedorIa;
+
+export const OLLAMA_TIMEOUT_MS = 90_000;
+
+export type ConfigOllama = {
+	baseUrl: string;
+	modelo: string;
+	chatCompletionsUrl: string;
+};
+
+export type ProvedorResolvido = {
+	provedor: ProvedorIa;
+	apiKey: string;
+	modelo: string;
+	chatCompletionsUrl?: string;
+};
+
+/** Aceita a raiz do Ollama ou uma URL que já termina em /v1. */
+export function urlChatCompletionsOllama(baseUrl: string): string {
+	const semBarra = baseUrl.trim().replace(/\/+$/, "");
+	if (/\/v1$/i.test(semBarra)) {
+		return `${semBarra}/chat/completions`;
+	}
+	return `${semBarra}/v1/chat/completions`;
+}
+
+export function lerConfigOllama(): ConfigOllama | null {
+	const baseUrl = process.env.OLLAMA_BASE_URL?.trim().replace(/\/+$/, "");
+	const modelo = process.env.OLLAMA_MODEL?.trim();
+	if (!baseUrl || !modelo) return null;
+	return {
+		baseUrl,
+		modelo,
+		chatCompletionsUrl: urlChatCompletionsOllama(baseUrl),
+	};
+}
 
 export const MODELOS_OPENAI = [
 	"gpt-4o-mini",
@@ -47,7 +82,7 @@ function chaveValida(valor: string | null | undefined): string | undefined {
 
 export function resolverProvedor(
 	integracoes: IntegracoesUsuario,
-): { provedor: ProvedorIa; apiKey: string; modelo: string } | null {
+): ProvedorResolvido | null {
 	const preferido = (integracoes.provedorPreferido ?? "auto") as ProvedorPreferido;
 	const openai = chaveValida(integracoes.openaiApiKey);
 	const gemini = chaveValida(integracoes.geminiApiKey);
@@ -72,7 +107,19 @@ export function resolverProvedor(
 		};
 	}
 
-	// auto: Gemini primeiro (gratuito/comum), depois OpenAI, depois OpenRouter
+	// auto: Ollama da plataforma, se o servidor estiver no env; senão chaves do usuário
+	if (preferido === "auto") {
+		const ollama = lerConfigOllama();
+		if (ollama) {
+			return {
+				provedor: "ollama",
+				apiKey: "",
+				modelo: ollama.modelo,
+				chatCompletionsUrl: ollama.chatCompletionsUrl,
+			};
+		}
+	}
+
 	if (gemini) {
 		return { provedor: "gemini", apiKey: gemini, modelo: modeloGemini };
 	}
@@ -134,6 +181,67 @@ export async function testarConexaoIa(params: {
 	apiKey: string;
 	modelo?: string;
 }): Promise<ResultadoTesteIa> {
+	if (params.provedor === "ollama") {
+		const config = lerConfigOllama();
+		if (!config) {
+			return {
+				ok: false,
+				provedor: "ollama",
+				modelo: "",
+				mensagem: "Defina OLLAMA_BASE_URL e OLLAMA_MODEL no servidor.",
+			};
+		}
+		try {
+			const response = await fetchWithTimeout(
+				config.chatCompletionsUrl,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						model: config.modelo,
+						messages: [
+							{ role: "user", content: 'Responda apenas com a palavra "ok".' },
+						],
+						max_tokens: 16,
+						temperature: 0,
+					}),
+				},
+				OLLAMA_TIMEOUT_MS,
+			);
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				return {
+					ok: false,
+					provedor: "ollama",
+					modelo: config.modelo,
+					mensagem:
+						data?.error?.message ||
+						`Ollama rejeitou (HTTP ${response.status}).`,
+				};
+			}
+			const texto = data?.choices?.[0]?.message?.content?.trim() ?? "";
+			return {
+				ok: true,
+				provedor: "ollama",
+				modelo: config.modelo,
+				mensagem: "Conexão Ollama OK.",
+				respostaModelo: texto,
+			};
+		} catch (error) {
+			return {
+				ok: false,
+				provedor: "ollama",
+				modelo: config.modelo,
+				mensagem:
+					error instanceof Error
+						? error.name === "AbortError"
+							? "Timeout ao testar a API de IA."
+							: error.message
+						: "Falha inesperada ao testar a API de IA.",
+			};
+		}
+	}
+
 	const apiKey = params.apiKey.trim();
 	if (!apiKey) {
 		return {

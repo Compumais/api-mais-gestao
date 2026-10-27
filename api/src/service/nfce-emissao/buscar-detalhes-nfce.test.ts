@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { buscarDetalhesNfceService } from "./buscar-detalhes-nfce.js";
 
@@ -49,9 +49,19 @@ async function mocks() {
 	};
 }
 
+function limparEnvOllama() {
+	delete process.env.OLLAMA_BASE_URL;
+	delete process.env.OLLAMA_MODEL;
+}
+
 describe("buscarDetalhesNfceService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		limparEnvOllama();
+	});
+
+	afterEach(() => {
+		limparEnvOllama();
 	});
 
 	it("retorna 403 quando o usuário não pertence à empresa", async () => {
@@ -264,6 +274,58 @@ describe("buscarDetalhesNfceService", () => {
 		expect(resultado.success).toBe(true);
 		expect(resultado.body?.iaDisponivel).toBe(false);
 		expect(resultado.body?.rejeicao).toBeNull();
+	});
+
+	it("marca iaDisponivel=true quando o Ollama está no env e não há chave", async () => {
+		process.env.OLLAMA_BASE_URL = "http://ollama.interno:11434";
+		process.env.OLLAMA_MODEL = "llama3.1";
+
+		const { entidade, resolver, itemRepo, fiscalRepo, config, notaRepo } =
+			await mocks();
+
+		vi.mocked(entidade.verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(resolver.resolverVendaPorNotaFiscalNfce).mockResolvedValue({
+			nota: {
+				id: ID_NOTA,
+				idempresa: ID_EMPRESA,
+				modelo: "65",
+				numeronotafiscal: "1",
+				serie: "1",
+				chavenfe: null,
+				protocolonfe: null,
+				status: NFE_STATUS.AUTORIZADA,
+				tipoambientenfe: 2,
+				valortotalnota: "10.00",
+				emissao: null,
+				datahoraemissao: null,
+				mensagemtransmissaonfe: null,
+				codigostatusprotocolonfe: 100,
+			},
+			venda: {
+				id: ID_VENDA,
+				valordinheiro: "10.00",
+				valortroco: "0",
+			},
+		} as never);
+		vi.mocked(itemRepo.listarItensPorVendaPdv).mockResolvedValue([]);
+		vi.mocked(fiscalRepo.buscarEmpresaFiscalPorEmpresa).mockResolvedValue(
+			undefined,
+		);
+		vi.mocked(config.buscarConfiguracaoUsuarioService).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: null,
+		});
+		vi.mocked(notaRepo.listarItensPorNotaFiscal).mockResolvedValue([]);
+
+		const resultado = await buscarDetalhesNfceService({
+			idusuario: ID_USUARIO,
+			idempresa: ID_EMPRESA,
+			idnotafiscal: ID_NOTA,
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body?.iaDisponivel).toBe(true);
 	});
 
 	it("não monta rejeição para NFC-e autorizada com cStat 100", async () => {

@@ -137,8 +137,8 @@ function BlocoInterpretacaoIa({
 				) : null}
 			</div>
 			<p className="text-xs text-muted-foreground">
-				Interpretação assistida com a chave de IA das integrações. Não substitui
-				consulta à legislação ou ao retorno oficial da SEFAZ.
+				Interpretação assistida pela IA do Mais Gestão. Não substitui consulta à
+				legislação ou ao retorno oficial da SEFAZ.
 			</p>
 			{interpretacao.explicacao ? (
 				<p className="whitespace-pre-wrap text-sm">

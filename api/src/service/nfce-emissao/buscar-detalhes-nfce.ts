@@ -276,11 +276,12 @@ export async function usuarioTemChaveIa(
 		idempresa,
 	});
 
-	if (!configuracao.success || !configuracao.body) {
-		return false;
-	}
+	const integracoes =
+		configuracao.success && configuracao.body
+			? configuracao.body.integracoes
+			: {};
 
-	return resolverProvedor(configuracao.body.integracoes) != null;
+	return resolverProvedor(integracoes) != null;
 }
 
 export async function buscarDetalhesNfceService({

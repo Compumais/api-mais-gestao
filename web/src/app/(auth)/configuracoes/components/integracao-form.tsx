@@ -578,9 +578,11 @@ export function IntegracaoForm({
 							: "Estas são as configurações do proprietário da empresa. Você pode visualizar, mas não pode editar."}
 					</p>
 					<p className="mt-2 text-xs text-muted-foreground">
-						No modo automático, a Atena usa Gemini se houver chave; depois
-						OpenAI; depois OpenRouter. Se falhar, tenta o próximo provedor
-						disponível.
+						No modo automático, com o servidor de IA do Mais Gestão configurado,
+						a Atena e a interpretação de rejeição da NFC-e funcionam sem chave.
+						Gemini, OpenAI e OpenRouter continuam opcionais. Se o servidor não
+						estiver configurado, a ordem é Gemini, depois OpenAI, depois
+						OpenRouter.
 					</p>
 				</div>
 
@@ -610,7 +612,7 @@ export function IntegracaoForm({
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="auto">
-										Automático (Gemini → OpenAI)
+										Automático (IA do Mais Gestão)
 									</SelectItem>
 									<SelectItem value="gemini">Forçar Gemini</SelectItem>
 									<SelectItem value="openai">Forçar OpenAI</SelectItem>

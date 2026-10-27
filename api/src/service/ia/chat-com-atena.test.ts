@@ -27,15 +27,22 @@ const mockBuscarConfiguracaoUsuarioService = async () => {
 	return vi.mocked(mod.buscarConfiguracaoUsuarioService);
 };
 
+function limparEnvOllama() {
+	delete process.env.OLLAMA_BASE_URL;
+	delete process.env.OLLAMA_MODEL;
+}
+
 describe("chatComAtenaService", () => {
 	const originalFetch = globalThis.fetch;
 
 	beforeEach(() => {
 		vi.restoreAllMocks();
+		limparEnvOllama();
 	});
 
 	afterEach(() => {
 		globalThis.fetch = originalFetch;
+		limparEnvOllama();
 	});
 
 	it("deve retornar 400 quando mensagem excede o limite", async () => {
