@@ -703,6 +703,25 @@
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAtualizarApp"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:minHeight="56dp"
+            android:text="Atualizar aplicativo"
+            android:textColor="@color/primary_dark"
+            app:strokeColor="@color/primary" />
+
+        <TextView
+            android:id="@+id/txtAtualizacaoApp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/muted_foreground"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSalvarConfig"
             style="@style/PosBigButton"
             android:layout_width="match_parent"

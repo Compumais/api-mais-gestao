@@ -36,6 +36,9 @@ app.*.symbols
 # Obfuscation
 app.*.map.json
 
+# Atualização automática (URL e hash entram no APK só na hora do build)
+/atualizacao.properties
+
 # Android Studio
 /android/app/debug
 /android/app/profile
