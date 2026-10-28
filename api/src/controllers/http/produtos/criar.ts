@@ -99,20 +99,6 @@ const criarProdutoBodySchema = z
 				path: ["ippt"],
 			});
 		}
-		if (dados.origem == null) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "Origem é obrigatória",
-				path: ["origem"],
-			});
-		}
-		if (!dados.ncm?.trim()) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "NCM é obrigatório",
-				path: ["ncm"],
-			});
-		}
 		refinirCamposIbsCbsProduto(dados, ctx);
 	});
 
@@ -170,8 +156,8 @@ export async function criarProduto(
 			tipo: dadosValidados.tipo,
 			iat: dadosValidados.iat ?? null,
 			ippt: dadosValidados.ippt ?? (ehServico ? "T" : "P"),
-			origem: dadosValidados.origem ?? (ehServico ? 0 : 0),
-			ncm: dadosValidados.ncm?.trim() || (ehServico ? null : ""),
+			origem: dadosValidados.origem ?? 0,
+			ncm: dadosValidados.ncm?.trim() || null,
 			tipoproduto: dadosValidados.tipoproduto ?? (ehServico ? "09" : null),
 			observacoes: dadosValidados.observacoes ?? null,
 			enviamobile: dadosValidados.enviamobile ?? 0,

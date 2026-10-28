@@ -264,7 +264,12 @@ export function ProdutoAbaImpostos({
 						<h3 className="text-base font-semibold">Classificação fiscal</h3>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<Field data-invalid={!!errors.ncm}>
-								<FieldLabel htmlFor="ncm">NCM *</FieldLabel>
+								<FieldLabel htmlFor="ncm">
+									NCM{" "}
+									<span className="font-normal text-muted-foreground">
+										(opcional)
+									</span>
+								</FieldLabel>
 								<Input
 									id="ncm"
 									placeholder="Ex.: 22021000"
@@ -281,7 +286,10 @@ export function ProdutoAbaImpostos({
 								render={({ field }) => (
 									<Field data-invalid={!!errors.origem}>
 										<FieldLabel htmlFor="origem">
-											Origem da mercadoria *
+											Origem da mercadoria{" "}
+											<span className="font-normal text-muted-foreground">
+												(opcional — padrão 0 Nacional)
+											</span>
 										</FieldLabel>
 										<Select
 											value={field.value?.toString()}

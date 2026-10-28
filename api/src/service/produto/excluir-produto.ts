@@ -9,7 +9,6 @@ import {
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
 	httpBadRequest,
-	httpErroInterno,
 	httpNaoEncontrado,
 	httpProibido,
 	httpSemConteudo,
@@ -48,22 +47,28 @@ export async function excluirProdutoService({
 
 	const auditoriaId = uuidv4();
 
-	const auditoria = await criarAuditoriaService({
-		id: auditoriaId,
-		acao: "excluir_produto",
-		idusuario,
-		recurso: "produto",
-		idrecurso: produtoId,
-		idempresa: registro.idempresa,
-		criadoem: new Date().toISOString(),
-		metadados: {
-			nome: registro.nome,
-			codigo: registro.codigo,
-		},
-	});
-
-	if (!auditoria || !auditoria.success) {
-		return httpErroInterno();
+	try {
+		const auditoria = await criarAuditoriaService({
+			id: auditoriaId,
+			acao: "excluir_produto",
+			idusuario,
+			recurso: "produto",
+			idrecurso: produtoId,
+			idempresa: registro.idempresa,
+			criadoem: new Date().toISOString(),
+			metadados: {
+				nome: registro.nome,
+				codigo: registro.codigo,
+			},
+		});
+		if (!auditoria?.success) {
+			console.error(
+				"Auditoria de exclusão de produto não confirmada; exclusão seguirá:",
+				produtoId,
+			);
+		}
+	} catch (erroAuditoria) {
+		console.error("Falha ao auditar exclusão de produto:", erroAuditoria);
 	}
 
 	await excluirProduto(produtoId);

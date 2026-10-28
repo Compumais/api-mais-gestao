@@ -80,17 +80,17 @@ export async function atualizarProdutoComHistorico(
 	dados: Partial<NovoProduto>,
 	contexto: ContextoHistorico,
 ): Promise<Produto | undefined> {
-	return db.transaction(async (tx) => {
-		const [antes] = await tx.select().from(produtos).where(eq(produtos.id, id));
-		if (!antes) return undefined;
-		const [depois] = await tx
-			.update(produtos)
-			.set(normalizarCamposNumericosProduto(dados))
-			.where(eq(produtos.id, id))
-			.returning();
-		if (!depois) return undefined;
-		const campos = Object.keys(dados);
-		await tx.insert(produtoHistorico).values({
+	const [antes] = await db.select().from(produtos).where(eq(produtos.id, id));
+	if (!antes) return undefined;
+	const [depois] = await db
+		.update(produtos)
+		.set(normalizarCamposNumericosProduto(dados))
+		.where(eq(produtos.id, id))
+		.returning();
+	if (!depois) return undefined;
+	const campos = Object.keys(dados);
+	try {
+		await db.insert(produtoHistorico).values({
 			id: uuidv4(),
 			idempresa: antes.idempresa,
 			idproduto: id,
@@ -106,8 +106,10 @@ export async function atualizarProdutoComHistorico(
 				campos,
 			),
 		});
-		return depois;
-	});
+	} catch (erro) {
+		console.error("Falha ao gravar produto_historico (atualizar):", erro);
+	}
+	return depois;
 }
 
 export async function atualizarProdutosEmMassaComHistorico(

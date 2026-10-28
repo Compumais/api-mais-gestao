@@ -87,11 +87,16 @@ export const produtoFormSchema = z.object({
 	tipo: z.enum(["P", "S"], { message: "Tipo de produto inválido" }),
 	iat: z.enum(["A", "T"]).optional().nullable(),
 	ippt: z.enum(["P", "T"], { message: "IPPT é obrigatório" }),
-	origem: z.number().int().min(0, "Origem inválida").max(8, "Origem inválida"),
+	origem: z
+		.number()
+		.int()
+		.min(0, "Origem inválida")
+		.max(8, "Origem inválida")
+		.optional(),
 	ncm: z
 		.string()
-		.min(1, "NCM é obrigatório")
-		.max(10, "NCM deve ter no máximo 10 caracteres"),
+		.max(10, "NCM deve ter no máximo 10 caracteres")
+		.optional(),
 	tipoproduto: z
 		.string()
 		.max(2, "Tipo de produto deve ter no máximo 2 caracteres")

@@ -89,8 +89,8 @@ function buildProdutoPayload(
 		preco: data.preco,
 		tipo: data.tipo,
 		ippt: data.ippt,
-		origem: data.origem,
-		ncm: data.ncm.trim(),
+		origem: data.origem ?? 0,
+		ncm: textoOuNulo(data.ncm),
 	};
 
 	if (data.ean != null && !Number.isNaN(data.ean)) {
