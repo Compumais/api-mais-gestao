@@ -14,6 +14,15 @@ function parseDateStr(valor: unknown): string {
 	return raw.includes("T") ? (raw.split("T")[0] ?? raw) : raw.slice(0, 10);
 }
 
+/** Drizzle/node-pg pode devolver `{ rows }` ou um array direto. */
+function rowsOf<T>(result: unknown): T[] {
+	if (result && typeof result === "object" && "rows" in result) {
+		const rows = (result as { rows?: unknown }).rows;
+		if (Array.isArray(rows)) return rows as T[];
+	}
+	return (Array.isArray(result) ? result : []) as T[];
+}
+
 export type PontoPrecoCusto = {
 	data: string;
 	precoVenda: number | null;
@@ -44,7 +53,7 @@ export async function buscarSeriePrecoCusto({
 	dataInicio: string;
 	dataFim: string;
 }): Promise<PontoPrecoCusto[]> {
-	const [custoAntes, custos, precoAntes, precos, produtoAtual] =
+	const [custoAntesRaw, custosRaw, precoAntesRaw, precosRaw, produtoAtualRaw] =
 		await Promise.all([
 			db.execute(sql`
 				SELECT COALESCE(custoaquisicao::numeric, customedio::numeric, custo::numeric, 0) AS custo,
@@ -75,8 +84,8 @@ export async function buscarSeriePrecoCusto({
 					AND idproduto = ${idproduto}
 					AND criadoem::date < ${dataInicio}::date
 					AND (
-						depois ? 'preco'
-						OR antes ? 'preco'
+						depois->>'preco' IS NOT NULL
+						OR antes->>'preco' IS NOT NULL
 					)
 				ORDER BY criadoem DESC
 				LIMIT 1
@@ -90,7 +99,7 @@ export async function buscarSeriePrecoCusto({
 					AND idproduto = ${idproduto}
 					AND criadoem::date >= ${dataInicio}::date
 					AND criadoem::date <= ${dataFim}::date
-					AND depois ? 'preco'
+					AND depois->>'preco' IS NOT NULL
 					AND COALESCE(depois->>'preco', '') IS DISTINCT FROM COALESCE(antes->>'preco', '')
 				ORDER BY criadoem ASC
 			`),
@@ -101,6 +110,12 @@ export async function buscarSeriePrecoCusto({
 				LIMIT 1
 			`),
 		]);
+
+	const custoAntes = rowsOf<Record<string, unknown>>(custoAntesRaw);
+	const custos = rowsOf<Record<string, unknown>>(custosRaw);
+	const precoAntes = rowsOf<Record<string, unknown>>(precoAntesRaw);
+	const precos = rowsOf<Record<string, unknown>>(precosRaw);
+	const produtoAtual = rowsOf<Record<string, unknown>>(produtoAtualRaw);
 
 	type Evento = { data: string; precoVenda?: number; custo?: number };
 	const eventos = new Map<string, Evento>();
@@ -113,29 +128,25 @@ export async function buscarSeriePrecoCusto({
 		return novo;
 	};
 
-	for (const row of custos.rows as Record<string, unknown>[]) {
+	for (const row of custos) {
 		const data = parseDateStr(row.data);
 		if (!data) continue;
 		garantir(data).custo = parseNum(row.custo);
 	}
 
-	for (const row of precos.rows as Record<string, unknown>[]) {
+	for (const row of precos) {
 		const data = parseDateStr(row.data);
 		if (!data) continue;
 		garantir(data).precoVenda = parseNum(row.preco);
 	}
 
 	let custoAtual: number | null =
-		(custoAntes.rows as Record<string, unknown>[]).length > 0
-			? parseNum((custoAntes.rows as Record<string, unknown>[])[0]?.custo)
-			: null;
+		custoAntes.length > 0 ? parseNum(custoAntes[0]?.custo) : null;
 	let precoAtual: number | null =
-		(precoAntes.rows as Record<string, unknown>[]).length > 0
-			? parseNum((precoAntes.rows as Record<string, unknown>[])[0]?.preco)
-			: null;
+		precoAntes.length > 0 ? parseNum(precoAntes[0]?.preco) : null;
 
 	if (precoAtual === null) {
-		const atual = (produtoAtual.rows as Record<string, unknown>[])[0];
+		const atual = produtoAtual[0];
 		if (atual) precoAtual = parseNum(atual.preco);
 	}
 
@@ -201,7 +212,7 @@ export async function buscarSerieCompraVenda({
 		ORDER BY 1 ASC
 	`);
 
-	return (resultado.rows as Record<string, unknown>[]).map((row) => ({
+	return rowsOf<Record<string, unknown>>(resultado).map((row) => ({
 		data: parseDateStr(row.data),
 		compra: parseNum(row.compra),
 		venda: parseNum(row.venda),
@@ -228,7 +239,7 @@ export async function buscarSerieEstoque({
 				? sql`AND me.tipoestoque IN (1, 2)`
 				: sql``;
 
-	const [abertura, movimentos] = await Promise.all([
+	const [aberturaRaw, movimentosRaw] = await Promise.all([
 		db.execute(sql`
 			SELECT COALESCE(
 				SUM(
@@ -260,12 +271,10 @@ export async function buscarSerieEstoque({
 		`),
 	]);
 
-	let saldo = parseNum(
-		(abertura.rows as Record<string, unknown>[])[0]?.saldo,
-	);
+	let saldo = parseNum(rowsOf<Record<string, unknown>>(aberturaRaw)[0]?.saldo);
 	const pontos: PontoEstoque[] = [];
 
-	for (const row of movimentos.rows as Record<string, unknown>[]) {
+	for (const row of rowsOf<Record<string, unknown>>(movimentosRaw)) {
 		const entrada = parseNum(row.entrada);
 		const saida = parseNum(row.saida);
 		saldo += entrada - saida;
