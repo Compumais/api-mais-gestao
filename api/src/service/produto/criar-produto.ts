@@ -11,7 +11,6 @@ import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/valida
 import {
 	httpBadRequest,
 	httpCriacao,
-	httpErro,
 	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
@@ -37,7 +36,9 @@ export async function criarProdutoService({
 	}
 
 	if (!dadosProduto.idunidademedida) {
-		return httpProibido();
+		return httpBadRequest("Unidade de medida é obrigatória", {
+			code: "VALIDATION_ERROR",
+		});
 	}
 
 	const unidadeValida = await validarUnidadeMedidaParaEmpresa(
@@ -46,7 +47,10 @@ export async function criarProdutoService({
 	);
 
 	if (!unidadeValida) {
-		return httpProibido();
+		return httpBadRequest(
+			"Unidade de medida inválida ou não pertence à empresa selecionada",
+			{ code: "INVALID_UNIDADE_MEDIDA" },
+		);
 	}
 
 	let dadosGravacao = dadosProduto;
@@ -76,7 +80,10 @@ export async function criarProdutoService({
 	);
 
 	if (!registro) {
-		return httpErro();
+		return httpBadRequest(
+			"Não foi possível gravar o produto (nenhum registro retornado pelo banco)",
+			{ code: "PRODUCT_INSERT_EMPTY" },
+		);
 	}
 
 	const auditoriaId = uuidv4();
