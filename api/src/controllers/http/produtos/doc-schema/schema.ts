@@ -374,7 +374,9 @@ export const criarProdutoSchema: FastifySchema = {
 				description:
 					"Produto pai, quando este cadastro é uma variação. A tributação é copiada do pai.",
 			},
-			preco: { type: "string" },
+			preco: {
+				anyOf: [{ type: "string" }, { type: "number" }],
+			},
 			custoaquisicao: {
 				anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
 			},
@@ -408,24 +410,8 @@ export const criarProdutoSchema: FastifySchema = {
 		},
 		required: ["idempresa", "codigo", "nome", "idunidademedida", "preco"],
 	},
-	response: {
-		201: {
-			type: "object",
-			description: "Produto criado com sucesso",
-			additionalProperties: true,
-		},
-		400: {
-			type: "object",
-			properties: {
-				error: { type: "string" },
-				code: { type: "string" },
-				details: { type: "array" },
-			},
-		},
-		401: respostaErro,
-		403: respostaErro,
-		500: respostaErro,
-	},
+	// Sem schema de response: evita 500 de serialização Fastify/AJV em payloads
+	// grandes do produto (nulls, campos extras do banco).
 };
 
 export const listarProdutosSchema: FastifySchema = {

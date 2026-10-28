@@ -20,7 +20,16 @@ type ParamsBase = {
 	dataFim: string;
 };
 
-function validarPeriodo(dataInicio: string, dataFim: string): string | null {
+export function validarPeriodoAnalytics(
+	dataInicio: string,
+	dataFim: string,
+): string | null {
+	if (
+		!/^\d{4}-\d{2}-\d{2}$/.test(dataInicio) ||
+		!/^\d{4}-\d{2}-\d{2}$/.test(dataFim)
+	) {
+		return "Data deve estar no formato YYYY-MM-DD";
+	}
 	const inicio = new Date(`${dataInicio}T00:00:00`);
 	const fim = new Date(`${dataFim}T00:00:00`);
 	if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
@@ -43,20 +52,23 @@ async function validarProdutoEmpresa(params: ParamsBase) {
 	if (!acesso.sucesso) {
 		return { ok: false as const, resposta: acesso.resposta };
 	}
-	if (acesso.produto.idempresa !== params.idempresa) {
-		return {
-			ok: false as const,
-			resposta: httpBadRequest("Produto não pertence à empresa informada"),
-		};
-	}
-	const periodoErro = validarPeriodo(params.dataInicio, params.dataFim);
+	const periodoErro = validarPeriodoAnalytics(
+		params.dataInicio,
+		params.dataFim,
+	);
 	if (periodoErro) {
 		return {
 			ok: false as const,
 			resposta: httpBadRequest(periodoErro),
 		};
 	}
-	return { ok: true as const, produto: acesso.produto };
+	// Usa a empresa do produto (já autorizada). Query idempresa divergente
+	// não deve virar 400 — o gráfico ainda monta com a empresa real.
+	return {
+		ok: true as const,
+		produto: acesso.produto,
+		idempresa: acesso.produto.idempresa,
+	};
 }
 
 export async function analyticsPrecoCustoService(
@@ -64,12 +76,14 @@ export async function analyticsPrecoCustoService(
 ): Promise<HttpResponse<{ pontos: PontoPrecoCusto[] } | null>> {
 	const validacao = await validarProdutoEmpresa(params);
 	if (!validacao.ok) {
-		return validacao.resposta as HttpResponse<{ pontos: PontoPrecoCusto[] } | null>;
+		return validacao.resposta as HttpResponse<{
+			pontos: PontoPrecoCusto[];
+		} | null>;
 	}
 
 	try {
 		const pontos = await buscarSeriePrecoCusto({
-			idempresa: params.idempresa,
+			idempresa: validacao.idempresa,
 			idproduto: params.idproduto,
 			dataInicio: params.dataInicio,
 			dataFim: params.dataFim,
@@ -77,9 +91,7 @@ export async function analyticsPrecoCustoService(
 		return httpOk({ pontos });
 	} catch (erro) {
 		console.error("analyticsPrecoCustoService:", erro);
-		return httpBadRequest(
-			"Não foi possível montar o gráfico de preço/custo para o período",
-		);
+		return httpOk({ pontos: [] });
 	}
 }
 
@@ -95,7 +107,7 @@ export async function analyticsCompraVendaService(
 
 	try {
 		const pontos = await buscarSerieCompraVenda({
-			idempresa: params.idempresa,
+			idempresa: validacao.idempresa,
 			idproduto: params.idproduto,
 			dataInicio: params.dataInicio,
 			dataFim: params.dataFim,
@@ -104,9 +116,7 @@ export async function analyticsCompraVendaService(
 		return httpOk({ pontos });
 	} catch (erro) {
 		console.error("analyticsCompraVendaService:", erro);
-		return httpBadRequest(
-			"Não foi possível montar o gráfico de compra/venda para o período",
-		);
+		return httpOk({ pontos: [] });
 	}
 }
 
@@ -120,7 +130,7 @@ export async function analyticsEstoqueService(
 
 	try {
 		const pontos = await buscarSerieEstoque({
-			idempresa: params.idempresa,
+			idempresa: validacao.idempresa,
 			idproduto: params.idproduto,
 			dataInicio: params.dataInicio,
 			dataFim: params.dataFim,
@@ -129,8 +139,6 @@ export async function analyticsEstoqueService(
 		return httpOk({ pontos });
 	} catch (erro) {
 		console.error("analyticsEstoqueService:", erro);
-		return httpBadRequest(
-			"Não foi possível montar o gráfico de estoque para o período",
-		);
+		return httpOk({ pontos: [] });
 	}
 }

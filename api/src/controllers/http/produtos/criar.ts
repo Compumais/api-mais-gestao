@@ -126,7 +126,7 @@ export async function criarProduto(
 		);
 
 		if (!usuarioPertenceEmpresa) {
-			return reply.status(httpProibido().status).send(httpProibido().success);
+			return reply.status(httpProibido().status).send(httpProibido());
 		}
 
 		const preco =
@@ -198,7 +198,10 @@ export async function criarProduto(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
+			return reply.status(resultado.status).send({
+				error: resultado.error ?? "Erro ao criar produto",
+				code: resultado.code ?? "BAD_REQUEST_ERROR",
+			});
 		}
 
 		if (!ehServico) {

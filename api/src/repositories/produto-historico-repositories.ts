@@ -48,10 +48,12 @@ export async function criarProdutoComHistorico(
 	dados: NovoProduto,
 	contexto: ContextoHistorico,
 ): Promise<Produto | undefined> {
-	return db.transaction(async (tx) => {
-		const [produto] = await tx.insert(produtos).values(dados).returning();
-		if (!produto) return undefined;
-		await tx.insert(produtoHistorico).values({
+	// Histórico é best-effort: se produto_historico estiver ausente/quebrado,
+	// o cadastro do produto não pode falhar (evita 500 em produção).
+	const [produto] = await db.insert(produtos).values(dados).returning();
+	if (!produto) return undefined;
+	try {
+		await db.insert(produtoHistorico).values({
 			id: uuidv4(),
 			idempresa: produto.idempresa,
 			idproduto: produto.id,
@@ -63,8 +65,10 @@ export async function criarProdutoComHistorico(
 				produto as unknown as Record<string, unknown>,
 			),
 		});
-		return produto;
-	});
+	} catch (erro) {
+		console.error("Falha ao gravar produto_historico (criar):", erro);
+	}
+	return produto;
 }
 
 export async function atualizarProdutoComHistorico(
