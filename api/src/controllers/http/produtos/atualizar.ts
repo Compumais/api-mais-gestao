@@ -6,17 +6,20 @@ import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { atualizarProdutoService } from "@/service/produto/atualizar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
-import { camposImpostosProdutoSchema, refinirCamposIbsCbsProduto } from "@/util/campos-impostos-produto.js";
+import {
+	camposImpostosProdutoSchema,
+	parseNumeroDecimal,
+	refinirCamposIbsCbsProduto,
+} from "@/util/campos-impostos-produto.js";
 import {
 	camposServicoProdutoSchema,
 	montarCamposServicoProduto,
 } from "@/util/campos-servico-produto.js";
 import {
-	httpErroInterno,
-	httpNaoAutorizado,
-	httpNaoEncontrado,
-	httpProibido,
-} from "@/util/http-util.js";
+	corpoErroHttp,
+	mapErrorToHttpResponse,
+} from "@/util/map-error-to-http.js";
+import { httpNaoAutorizado, httpNaoEncontrado, httpProibido } from "@/util/http-util.js";
 
 const atualizarProdutoParamsSchema = z.object({
 	id: z.string(),
@@ -122,19 +125,19 @@ export async function atualizarProduto(
 		) as Partial<NovoProduto>;
 
 		if (dadosValidados.preco !== undefined) {
+			const precoNumerico = parseNumeroDecimal(dadosValidados.preco);
 			dados.preco =
-				typeof dadosValidados.preco === "number"
-					? dadosValidados.preco.toFixed(2)
-					: dadosValidados.preco;
+				precoNumerico == null ? null : precoNumerico.toFixed(2);
 		}
 
 		if (dadosValidados.custoaquisicao !== undefined) {
+			const custoNumerico = parseNumeroDecimal(dadosValidados.custoaquisicao);
 			dados.custoaquisicao =
-				dadosValidados.custoaquisicao == null
-					? null
-					: typeof dadosValidados.custoaquisicao === "number"
-						? dadosValidados.custoaquisicao.toFixed(2)
-						: dadosValidados.custoaquisicao;
+				custoNumerico == null ? null : custoNumerico.toFixed(2);
+		}
+
+		if (dadosValidados.ncm !== undefined) {
+			dados.ncm = dadosValidados.ncm?.trim() || null;
 		}
 
 		if (dadosValidados.nome !== undefined) {
@@ -189,7 +192,10 @@ export async function atualizarProduto(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
+			return reply.status(resultado.status).send({
+				error: resultado.error ?? "Erro ao atualizar produto",
+				code: resultado.code ?? "BAD_REQUEST_ERROR",
+			});
 		}
 
 		if (!ehServico) {
@@ -197,24 +203,30 @@ export async function atualizarProduto(
 				dadosValidados.estoque ?? dadosValidados.quantidadepadrao;
 
 			if (quantidadeSaldo != null && resultado.body) {
-				await sincronizarSaldoEstoqueProduto({
-					idempresa,
-					produto: resultado.body,
-					quantidade: quantidadeSaldo,
-				});
+				try {
+					await sincronizarSaldoEstoqueProduto({
+						idempresa,
+						produto: resultado.body,
+						quantidade: quantidadeSaldo,
+					});
+				} catch (erroEstoque) {
+					console.error(
+						"Falha ao sincronizar saldo de estoque após atualizar produto:",
+						erroEstoque,
+					);
+					const mapped = mapErrorToHttpResponse(
+						erroEstoque,
+						"sincronização de estoque",
+					);
+					reply.header("X-Estoque-Sync-Warning", mapped.error.slice(0, 200));
+				}
 			}
 		}
 
 		return reply.status(resultado.status).send(resultado.body);
 	} catch (error) {
-		console.error(error);
-		if (error instanceof z.ZodError) {
-			return reply.status(400).send({
-				error: "Erro de validação",
-				code: "VALIDATION_ERROR",
-				details: error.issues,
-			});
-		}
-		return reply.status(httpErroInterno().status).send(httpErroInterno());
+		console.error("Erro ao atualizar produto:", error);
+		const mapped = mapErrorToHttpResponse(error, "atualização do produto");
+		return reply.status(mapped.status).send(corpoErroHttp(mapped));
 	}
 }

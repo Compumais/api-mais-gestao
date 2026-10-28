@@ -2,7 +2,11 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { inativarProdutoService } from "@/service/produto/inativar-produto.js";
-import { httpErroInterno, httpNaoAutorizado, httpProibido } from "@/util/http-util.js";
+import {
+	corpoErroHttp,
+	mapErrorToHttpResponse,
+} from "@/util/map-error-to-http.js";
+import { httpNaoAutorizado, httpProibido } from "@/util/http-util.js";
 
 const inativarProdutoParamsSchema = z.object({
 	id: z.string(),
@@ -43,19 +47,16 @@ export async function inativarProduto(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
+			return reply.status(resultado.status).send({
+				error: resultado.error ?? "Erro ao inativar produto",
+				code: resultado.code ?? "BAD_REQUEST_ERROR",
+			});
 		}
 
 		return reply.status(resultado.status).send(resultado.body);
 	} catch (error) {
-		console.error(error);
-		if (error instanceof z.ZodError) {
-			return reply.status(400).send({
-				error: "Erro de validação",
-				code: "VALIDATION_ERROR",
-				details: error.issues,
-			});
-		}
-		return reply.status(httpErroInterno().status).send(httpErroInterno());
+		console.error("Erro ao inativar produto:", error);
+		const mapped = mapErrorToHttpResponse(error, "inativação do produto");
+		return reply.status(mapped.status).send(corpoErroHttp(mapped));
 	}
 }

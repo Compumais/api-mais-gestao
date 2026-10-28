@@ -387,12 +387,14 @@ export const criarProdutoSchema: FastifySchema = {
 			},
 			ippt: { type: "string", enum: ["P", "T"] },
 			origem: {
-				type: "number",
-				minimum: 0,
-				maximum: 8,
-				description: "Origem da mercadoria (0 a 8, tabela NF-e)",
+				anyOf: [{ type: "number", minimum: 0, maximum: 8 }, { type: "null" }],
+				description:
+					"Origem da mercadoria (0 a 8, tabela NF-e). Omitido ou nulo grava 0 (Nacional).",
 			},
-			ncm: { type: "string" },
+			ncm: {
+				anyOf: [{ type: "string", maxLength: 10 }, { type: "null" }],
+				description: "NCM opcional no cadastro; obrigatório apenas na emissão fiscal.",
+			},
 			observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 			enviamobile: { type: "number", enum: [0, 1] },
 			exibircardapiodelivery: { type: "number", enum: [0, 1] },
@@ -570,8 +572,10 @@ export const atualizarProdutoSchema: FastifySchema = {
 				anyOf: [{ type: "string", enum: ["A", "T"] }, { type: "null" }],
 			},
 			ippt: { type: "string", enum: ["P", "T"] },
-			origem: { type: "number", minimum: 0, maximum: 8 },
-			ncm: { type: "string" },
+			origem: {
+				anyOf: [{ type: "number", minimum: 0, maximum: 8 }, { type: "null" }],
+			},
+			ncm: { anyOf: [{ type: "string", maxLength: 10 }, { type: "null" }] },
 			observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 			enviamobile: { type: "number", enum: [0, 1] },
 			exibircardapiodelivery: { type: "number", enum: [0, 1] },
@@ -588,17 +592,8 @@ export const atualizarProdutoSchema: FastifySchema = {
 			...propriedadesServicoProdutoBody,
 		},
 	},
-	response: {
-		200: {
-			type: "object",
-			description: "Produto atualizado com sucesso",
-			additionalProperties: true,
-		},
-		404: respostaErro,
-		401: respostaErro,
-		403: respostaErro,
-		500: respostaErro,
-	},
+	// Sem schema de response: evita 500 de serialização Fastify/AJV em payloads
+	// grandes do produto (nulls, campos extras do banco).
 };
 
 export const inativarProdutoSchema: FastifySchema = {
@@ -617,16 +612,11 @@ export const inativarProdutoSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			inativo: { type: "number", enum: [0, 1] },
+			idempresa: { type: "string", format: "uuid" },
 		},
-		required: ["inativo"],
+		required: ["inativo", "idempresa"],
 	},
-	response: {
-		200: { type: "object", additionalProperties: true },
-		404: respostaErro,
-		401: respostaErro,
-		403: respostaErro,
-		500: respostaErro,
-	},
+	// Sem schema de response (ver comentário em criarProdutoSchema).
 };
 
 export const tributacaoPorCfopSchema: FastifySchema = {
@@ -778,13 +768,14 @@ export const excluirProdutoSchema: FastifySchema = {
 		},
 		required: ["id"],
 	},
-	response: {
-		204: { type: "null" },
-		404: respostaErro,
-		401: respostaErro,
-		403: respostaErro,
-		500: respostaErro,
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+		},
+		required: ["idempresa"],
 	},
+	// Sem schema de response: 204 sem corpo não deve passar por validação de serialização.
 };
 
 const corpoImportacaoProdutos = {

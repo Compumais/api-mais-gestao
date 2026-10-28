@@ -93,21 +93,31 @@ export async function atualizarProdutoService({
 
 	const auditoriaId = uuidv4();
 
-	await criarAuditoriaService({
-		id: auditoriaId,
-		acao: "atualizar_produto",
-		idusuario,
-		recurso: "produto",
-		idrecurso: produtoId,
-		idempresa: registroExistente.idempresa,
-		criadoem: new Date().toISOString(),
-		metadados: {
-			camposAlterados: Object.keys(dados),
-			valores: resumirDadosHistorico(
-				dados as unknown as Record<string, unknown>,
-			),
-		},
-	});
+	try {
+		const auditoria = await criarAuditoriaService({
+			id: auditoriaId,
+			acao: "atualizar_produto",
+			idusuario,
+			recurso: "produto",
+			idrecurso: produtoId,
+			idempresa: registroExistente.idempresa,
+			criadoem: new Date().toISOString(),
+			metadados: {
+				camposAlterados: Object.keys(dados),
+				valores: resumirDadosHistorico(
+					dados as unknown as Record<string, unknown>,
+				),
+			},
+		});
+		if (!auditoria?.success) {
+			console.error(
+				"Auditoria de atualização de produto não confirmada; alteração mantida:",
+				produtoId,
+			);
+		}
+	} catch (erroAuditoria) {
+		console.error("Falha ao auditar atualização de produto:", erroAuditoria);
+	}
 
 	if (
 		!registroExistente.idprodutopai &&

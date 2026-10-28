@@ -3,10 +3,10 @@ import z from "zod";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { excluirProdutoService } from "@/service/produto/excluir-produto.js";
 import {
-	httpErroInterno,
-	httpNaoAutorizado,
-	httpProibido,
-} from "@/util/http-util.js";
+	corpoErroHttp,
+	mapErrorToHttpResponse,
+} from "@/util/map-error-to-http.js";
+import { httpNaoAutorizado, httpProibido } from "@/util/http-util.js";
 
 const excluirProdutoParamsSchema = z.object({
 	id: z.string(),
@@ -44,19 +44,16 @@ export async function excluirProduto(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
+			return reply.status(resultado.status).send({
+				error: resultado.error ?? "Erro ao excluir produto",
+				code: resultado.code ?? "BAD_REQUEST_ERROR",
+			});
 		}
 
 		return reply.status(resultado.status).send();
 	} catch (error) {
-		console.error(error);
-		if (error instanceof z.ZodError) {
-			return reply.status(400).send({
-				error: "Erro de validação",
-				code: "VALIDATION_ERROR",
-				details: error.issues,
-			});
-		}
-		return reply.status(httpErroInterno().status).send(httpErroInterno());
+		console.error("Erro ao excluir produto:", error);
+		const mapped = mapErrorToHttpResponse(error, "exclusão do produto");
+		return reply.status(mapped.status).send(corpoErroHttp(mapped));
 	}
 }
