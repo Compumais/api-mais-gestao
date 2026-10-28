@@ -3,6 +3,11 @@ import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { criarHandlerProximoCodigo } from "../shared/proximo-codigo-query.js";
 import { criarProximoCodigoSchema } from "../shared/proximo-codigo-schema.js";
 import { alterarProdutosEmMassa } from "./alterar-em-massa.js";
+import {
+	analyticsCompraVenda,
+	analyticsEstoque,
+	analyticsPrecoCusto,
+} from "./analytics.js";
 import { atualizarProduto } from "./atualizar.js";
 import { buscarProduto } from "./buscar.js";
 import { listarCatalogoPdv } from "./catalogo-pdv.js";
@@ -101,6 +106,15 @@ export async function produtosRotas(app: FastifyInstance) {
 	});
 	app.get(`/produtos/${ID_UUID_PARAM}/lotes`, {
 		handler: listarLotesProduto,
+	});
+	app.get(`/produtos/${ID_UUID_PARAM}/analytics/preco-custo`, {
+		handler: analyticsPrecoCusto,
+	});
+	app.get(`/produtos/${ID_UUID_PARAM}/analytics/compra-venda`, {
+		handler: analyticsCompraVenda,
+	});
+	app.get(`/produtos/${ID_UUID_PARAM}/analytics/estoque`, {
+		handler: analyticsEstoque,
 	});
 	app.get(`/produtos/${ID_UUID_PARAM}`, {
 		schema: schema.buscarProdutoSchema,

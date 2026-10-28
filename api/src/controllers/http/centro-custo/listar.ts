@@ -8,7 +8,7 @@ const listarCentroCustosQuerySchema = z.object({
 	nome: z.string().optional(),
 	inativo: z.coerce.number().int().optional(),
 	page: z.coerce.number().min(1).optional().default(1),
-	limit: z.coerce.number().min(1).max(100).optional().default(10),
+	limit: z.coerce.number().min(1).max(500).optional().default(10),
 	formato: z.enum(["lista", "arvore"]).optional().default("lista"),
 });
 

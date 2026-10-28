@@ -186,7 +186,9 @@ export async function criarProduto(
 				Object.entries(camposServico).filter(([, valor]) => valor != null),
 			),
 			inativo: camposServico.inativo ?? 0,
-			idprodutopai: dadosValidados.idprodutopai ?? null,
+			...(dadosValidados.idprodutopai
+				? { idprodutopai: dadosValidados.idprodutopai }
+				: {}),
 		};
 
 		const resultado = await criarProdutoService({
@@ -204,11 +206,18 @@ export async function criarProduto(
 				dadosValidados.estoque ?? dadosValidados.quantidadepadrao;
 
 			if (quantidadeSaldo != null && resultado.body) {
-				await sincronizarSaldoEstoqueProduto({
-					idempresa: dadosValidados.idempresa,
-					produto: resultado.body,
-					quantidade: quantidadeSaldo,
-				});
+				try {
+					await sincronizarSaldoEstoqueProduto({
+						idempresa: dadosValidados.idempresa,
+						produto: resultado.body,
+						quantidade: quantidadeSaldo,
+					});
+				} catch (erroEstoque) {
+					console.error(
+						"Falha ao sincronizar saldo de estoque após criar produto:",
+						erroEstoque,
+					);
+				}
 			}
 		}
 
@@ -222,6 +231,79 @@ export async function criarProduto(
 				details: error.issues,
 			});
 		}
+
+		const pg = erroPostgres(error);
+		if (pg) {
+			return reply.status(pg.status).send({
+				success: false,
+				error: pg.message,
+				code: pg.code,
+			});
+		}
+
 		return reply.status(httpErroInterno().status).send(httpErroInterno());
 	}
+}
+
+function erroPostgres(error: unknown): {
+	status: number;
+	message: string;
+	code: string;
+} | null {
+	if (!error || typeof error !== "object" || !("code" in error)) {
+		return null;
+	}
+
+	const code = String((error as { code: unknown }).code);
+	const message =
+		"message" in error ? String((error as { message: unknown }).message) : "";
+
+	if (code === "23503") {
+		return {
+			status: 400,
+			message:
+				"Referência inválida ao criar produto (grupo, unidade, CFOP, CEST, marca ou produto pai).",
+			code: "FOREIGN_KEY_VIOLATION",
+		};
+	}
+	if (code === "23505") {
+		return {
+			status: 409,
+			message: "Já existe um produto com esses dados.",
+			code: "UNIQUE_VIOLATION",
+		};
+	}
+	if (code === "23502") {
+		return {
+			status: 400,
+			message: "Campo obrigatório ausente ao gravar o produto.",
+			code: "NOT_NULL_VIOLATION",
+		};
+	}
+	if (code === "42703") {
+		return {
+			status: 500,
+			message:
+				"Banco desatualizado (coluna ausente). Execute as migrations pendentes.",
+			code: "UNDEFINED_COLUMN",
+		};
+	}
+	if (code === "42P01") {
+		return {
+			status: 500,
+			message:
+				"Banco desatualizado (tabela ausente). Execute as migrations pendentes.",
+			code: "UNDEFINED_TABLE",
+		};
+	}
+	if (message.includes("idprodutopai")) {
+		return {
+			status: 500,
+			message:
+				"Coluna idprodutopai ausente. Execute a migration 0111_produto_idprodutopai.",
+			code: "MISSING_IDPRODUTOPAI",
+		};
+	}
+
+	return null;
 }

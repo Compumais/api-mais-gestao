@@ -81,6 +81,26 @@ describe("queries do relatório de inventário", () => {
 	});
 });
 
+describe("queries do relatório de estoque", () => {
+	beforeEach(() => {
+		executar.mockReset();
+		executar.mockResolvedValue({ rows: [] });
+	});
+
+	it("projeta mínimo e máximo a partir do cadastro do produto", async () => {
+		await consultarRelatorioProdutos("estoque", filtros);
+
+		expect(executar).toHaveBeenCalledTimes(1);
+		const texto = obterSql(executar.mock.calls[0][0] as SQL);
+
+		expect(texto).toContain("p.quantidademinima");
+		expect(texto).toContain("p.quantidademaxima");
+		expect(texto).toContain("b.quantidademinima minimo");
+		expect(texto).toContain("b.quantidademaxima maximo");
+		expect(texto).not.toContain("p.*");
+	});
+});
+
 describe("queries do relatório de cadastro", () => {
 	beforeEach(() => {
 		executar.mockReset();

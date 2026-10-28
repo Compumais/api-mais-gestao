@@ -48,7 +48,7 @@ export const criarFinanceiroSchema = z
 			.max(60, "Documento deve ter no máximo 60 caracteres")
 			.nullable()
 			.optional(),
-		pagamentoRecorrente: z.boolean().optional().default(false),
+		pagamentoRecorrente: z.boolean(),
 		idtipodocumentofinanceiro: z
 			.string()
 			.uuid("Tipo de documento é obrigatório"),
@@ -102,7 +102,7 @@ export const criarFinanceiroSchema = z
 export const atualizarFinanceiroSchema = z
 	.object({
 		documento: z.string().max(60).nullable().optional(),
-		pagamentoRecorrente: z.boolean().optional(),
+		pagamentoRecorrente: z.boolean(),
 		idtipodocumentofinanceiro: z.string().uuid().nullable().optional(),
 		meses: numeroOpcional,
 		tipoCobranca: z.string().uuid().nullable().optional(),

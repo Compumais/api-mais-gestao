@@ -3,6 +3,7 @@
 import {
 	IconBan,
 	IconCalculator,
+	IconChartLine,
 	IconCheck,
 	IconCopy,
 	IconDotsVertical,
@@ -27,10 +28,12 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AjusteEstoqueDialog } from "@/app/(auth)/produtos/components/ajuste-estoque-dialog";
 import { AlterarProdutosEmMassaDialog } from "@/app/(auth)/produtos/components/alterar-produtos-em-massa-dialog";
+import { GraficosProdutoModal } from "@/app/(auth)/produtos/components/graficos-produto-modal";
 import { HistoricoProdutoModal } from "@/app/(auth)/produtos/components/historico-produto-modal";
 import { ImportarProdutosDialog } from "@/app/(auth)/produtos/components/importar-produtos-dialog";
 import { ModalComposicaoPrecoProduto } from "@/app/(auth)/produtos/components/modal-composicao-preco-produto";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
+import { PersonalizarColunasDropdown } from "@/components/personalizar-colunas-dropdown";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -73,7 +76,6 @@ import {
 	produtosService,
 } from "@/services/produtos.service";
 import { PageContainer } from "../components/page-container";
-import { PersonalizarColunasDropdown } from "@/components/personalizar-colunas-dropdown";
 import {
 	campoFiltroColunaProduto,
 	criarColunasProdutos,
@@ -153,6 +155,7 @@ export default function ProdutosPage() {
 	const [produtoMovimentos, setProdutoMovimentos] = useState<Produto | null>(
 		null,
 	);
+	const [produtoGraficos, setProdutoGraficos] = useState<Produto | null>(null);
 	const [ajusteAberto, setAjusteAberto] = useState(false);
 	const [filtrosColuna, setFiltrosColuna] =
 		useState<FiltrosColunaProdutosState>({});
@@ -438,6 +441,12 @@ export default function ProdutosPage() {
 									>
 										<IconHistory className="size-4" />
 										Histórico
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => setProdutoGraficos(produto)}
+									>
+										<IconChartLine className="size-4" />
+										Gráficos
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										onClick={() => setProdutoComposicao(produto)}
@@ -860,6 +869,11 @@ export default function ProdutosPage() {
 						produto={produtoMovimentos}
 						idempresa={localStorageEmpresa.id}
 						onFechar={() => setProdutoMovimentos(null)}
+					/>
+					<GraficosProdutoModal
+						produto={produtoGraficos}
+						idempresa={localStorageEmpresa.id}
+						onFechar={() => setProdutoGraficos(null)}
 					/>
 					<AjusteEstoqueDialog
 						aberto={ajusteAberto}

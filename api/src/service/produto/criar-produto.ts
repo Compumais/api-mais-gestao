@@ -85,21 +85,27 @@ export async function criarProdutoService({
 
 	const auditoriaId = uuidv4();
 
-	const auditoria = await criarAuditoriaService({
-		id: auditoriaId,
-		acao: "criar_produto",
-		idusuario,
-		recurso: "produto",
-		idrecurso: registro.id,
-		idempresa: dadosProduto.idempresa,
-		criadoem: new Date().toISOString(),
-		metadados: {
-			nome: registro.nome,
-			codigo: registro.codigo,
-		},
-	});
+	try {
+		const auditoria = await criarAuditoriaService({
+			id: auditoriaId,
+			acao: "criar_produto",
+			idusuario,
+			recurso: "produto",
+			idrecurso: registro.id,
+			idempresa: dadosProduto.idempresa,
+			criadoem: new Date().toISOString(),
+			metadados: {
+				nome: registro.nome,
+				codigo: registro.codigo,
+			},
+		});
 
-	if (!auditoria || !auditoria.success) {
+		if (!auditoria || !auditoria.success) {
+			await excluirProduto(registro.id);
+			return httpErroInterno();
+		}
+	} catch (erroAuditoria) {
+		console.error("Falha ao auditar criação de produto:", erroAuditoria);
 		await excluirProduto(registro.id);
 		return httpErroInterno();
 	}
