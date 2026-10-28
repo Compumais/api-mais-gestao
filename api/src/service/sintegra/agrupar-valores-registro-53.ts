@@ -41,6 +41,7 @@ export function agruparValoresRegistro53(
 
 		for (let indice = 0; indice < grupos.length; indice++) {
 			const grupo = grupos[indice];
+			if (!grupo) continue;
 			const ultimo = indice === grupos.length - 1;
 			let baseSt: number;
 			let valorSt: number;
