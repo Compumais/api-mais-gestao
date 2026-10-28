@@ -15,6 +15,8 @@ describe("resolverNumeroEndereco", () => {
 		expect(ehSemNumeroEndereco("S/N")).toBe(true);
 		expect(ehSemNumeroEndereco("s.n.")).toBe(true);
 		expect(ehSemNumeroEndereco("sem número")).toBe(true);
+		expect(ehSemNumeroEndereco("sem")).toBe(true);
+		expect(resolverNumeroEndereco("sem")).toBe("SN");
 		expect(resolverNumeroEndereco("SN")).toBe("SN");
 		expect(resolverNumeroEndereco("S/N")).toBe("SN");
 		expect(resolverNumeroEndereco("")).toBe("SN");

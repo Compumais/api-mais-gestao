@@ -136,4 +136,90 @@ describe("gerarArquivoSintegra", () => {
 		expect(resultado.conteudo).toContain("20250710");
 		expect(resultado.conteudo).not.toContain("20250615");
 	});
+
+	it("gera registro 53 por CFOP do registro 50 quando há ST no cabeçalho", async () => {
+		const notaEntrada = {
+			id: "nota-st-1",
+			emissao: "2026-09-28",
+			dataCompetencia: "2026-09-28",
+			modelo: "55",
+			serie: "1",
+			numero: "363146",
+			numeronotafiscal: "363146",
+			cnpjCpf: "77595395004800",
+			inscricaoEstadual: "023219980058",
+			uf: "MG",
+			cfopCodigo: "1101",
+			valorTotal: "5440.00",
+			baseIcms: "0",
+			valorIcms: "0",
+			valorIpi: "0",
+			baseIcmsSt: "2058.60",
+			valorIcmsSt: "96.00",
+			emitente: "T" as const,
+			situacao: "N" as const,
+			tipoorigem: 0,
+			cancelada: false,
+		};
+
+		vi.mocked(buscarDadosContribuinteSintegra).mockResolvedValue({
+			cnpj: "56259933000152",
+			inscricaoEstadual: "0049598610020",
+			razaosocial: "VINICIUS EDUARDO DA COSTA LTDA",
+			municipio: "SACRAMENTO",
+			uf: "MG",
+			fax: "",
+			logradouro: "PRACA ZELIA JERONIMO",
+			numero: "111",
+			complemento: "",
+			bairro: "MARIA ROSA",
+			cep: "38190000",
+			contato: "PASTELARIA",
+			telefone: "3484033490",
+			crt: 3,
+			codigoMunicipioIbge: "3156909",
+		});
+		vi.mocked(listarNotasSintegra).mockResolvedValue([notaEntrada]);
+		vi.mocked(listarItensNotasSintegra).mockResolvedValue([]);
+		vi.mocked(listarInventarioFiscalSintegra).mockResolvedValue([]);
+		vi.mocked(listarResumoNfceDiarioSintegra).mockResolvedValue([]);
+		vi.mocked(listarProdutosSintegra).mockResolvedValue([]);
+		vi.mocked(agruparItensRegistro50).mockReturnValue([
+			{
+				nota: notaEntrada,
+				cfop: "1401",
+				aliquota: "18.00",
+				valorTotal: 2287.2,
+				baseIcms: 152.49,
+				valorIcms: 27.45,
+				valorIsento: 0,
+				valorOutras: 0,
+			},
+			{
+				nota: notaEntrada,
+				cfop: "1102",
+				aliquota: "0",
+				valorTotal: 3158.0,
+				baseIcms: 0,
+				valorIcms: 0,
+				valorIsento: 0,
+				valorOutras: 3158.0,
+			},
+		]);
+		vi.mocked(somarIpiPorNota).mockReturnValue(new Map());
+
+		const resultado = await gerarArquivoSintegra({
+			idempresa: "00000000-0000-0000-0000-000000000001",
+			dataInicio: "2026-09-01",
+			dataFim: "2026-09-30",
+		});
+
+		const linhas53 = resultado.conteudo
+			.split(/\r?\n/)
+			.filter((linha) => linha.startsWith("53"));
+		expect(linhas53).toHaveLength(2);
+		expect(linhas53.some((linha) => linha.includes("1401"))).toBe(true);
+		expect(linhas53.some((linha) => linha.includes("1102"))).toBe(true);
+		expect(linhas53.some((linha) => linha.includes("1101"))).toBe(false);
+	});
 });

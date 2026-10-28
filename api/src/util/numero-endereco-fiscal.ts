@@ -1,4 +1,4 @@
-const SEM_NUMERO = new Set(["SN", "SEMNUMERO", "SEMN"]);
+const SEM_NUMERO = new Set(["SN", "SEMNUMERO", "SEMN", "SEM", "SEMNUM"]);
 
 function chaveNumero(valor: string): string {
 	return valor
