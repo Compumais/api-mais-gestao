@@ -23,6 +23,27 @@ function rowsOf<T>(result: unknown): T[] {
 	return (Array.isArray(result) ? result : []) as T[];
 }
 
+async function safeRows<T>(
+	label: string,
+	executar: () => Promise<unknown>,
+): Promise<T[]> {
+	try {
+		return rowsOf<T>(await executar());
+	} catch (erro) {
+		console.error(`produto-analytics [${label}]:`, erro);
+		return [];
+	}
+}
+
+/** Cast seguro: evita 400/500 quando jsonb tem preco vazio ou não numérico. */
+const precoJsonNumerico = (alias: "depois" | "antes") => sql.raw(`
+	CASE
+		WHEN NULLIF(TRIM(BOTH FROM ${alias}->>'preco'), '') ~ '^-?[0-9]+(\\.[0-9]+)?$'
+		THEN (NULLIF(TRIM(BOTH FROM ${alias}->>'preco'), ''))::numeric
+		ELSE NULL
+	END
+`);
+
 export type PontoPrecoCusto = {
 	data: string;
 	precoVenda: number | null;
@@ -53,69 +74,73 @@ export async function buscarSeriePrecoCusto({
 	dataInicio: string;
 	dataFim: string;
 }): Promise<PontoPrecoCusto[]> {
-	const [custoAntesRaw, custosRaw, precoAntesRaw, precosRaw, produtoAtualRaw] =
+	const [custoAntes, custos, precoAntes, precos, produtoAtual] =
 		await Promise.all([
-			db.execute(sql`
-				SELECT COALESCE(custoaquisicao::numeric, customedio::numeric, custo::numeric, 0) AS custo,
-					datahora::date::text AS data
-				FROM custoproduto
-				WHERE idproduto = ${idproduto}
-					AND datahora::date < ${dataInicio}::date
-				ORDER BY datahora DESC
-				LIMIT 1
-			`),
-			db.execute(sql`
-				SELECT COALESCE(custoaquisicao::numeric, customedio::numeric, custo::numeric, 0) AS custo,
-					datahora::date::text AS data
-				FROM custoproduto
-				WHERE idproduto = ${idproduto}
-					AND datahora::date >= ${dataInicio}::date
-					AND datahora::date <= ${dataFim}::date
-				ORDER BY datahora ASC
-			`),
-			db.execute(sql`
-				SELECT COALESCE(
-					(depois->>'preco')::numeric,
-					(antes->>'preco')::numeric
-				) AS preco,
-					criadoem::date::text AS data
-				FROM produto_historico
-				WHERE idempresa = ${idempresa}
-					AND idproduto = ${idproduto}
-					AND criadoem::date < ${dataInicio}::date
-					AND (
-						depois->>'preco' IS NOT NULL
-						OR antes->>'preco' IS NOT NULL
-					)
-				ORDER BY criadoem DESC
-				LIMIT 1
-			`),
-			db.execute(sql`
-				SELECT
-					(depois->>'preco')::numeric AS preco,
-					criadoem::date::text AS data
-				FROM produto_historico
-				WHERE idempresa = ${idempresa}
-					AND idproduto = ${idproduto}
-					AND criadoem::date >= ${dataInicio}::date
-					AND criadoem::date <= ${dataFim}::date
-					AND depois->>'preco' IS NOT NULL
-					AND COALESCE(depois->>'preco', '') IS DISTINCT FROM COALESCE(antes->>'preco', '')
-				ORDER BY criadoem ASC
-			`),
-			db.execute(sql`
-				SELECT COALESCE(preco::numeric, 0) AS preco
-				FROM produtos
-				WHERE id = ${idproduto} AND idempresa = ${idempresa}
-				LIMIT 1
-			`),
+			safeRows<Record<string, unknown>>("custoAntes", () =>
+				db.execute(sql`
+					SELECT COALESCE(custoaquisicao::numeric, customedio::numeric, custo::numeric, 0) AS custo,
+						datahora::date::text AS data
+					FROM custoproduto
+					WHERE idproduto = ${idproduto}
+						AND datahora::date < ${dataInicio}::date
+					ORDER BY datahora DESC
+					LIMIT 1
+				`),
+			),
+			safeRows<Record<string, unknown>>("custos", () =>
+				db.execute(sql`
+					SELECT COALESCE(custoaquisicao::numeric, customedio::numeric, custo::numeric, 0) AS custo,
+						datahora::date::text AS data
+					FROM custoproduto
+					WHERE idproduto = ${idproduto}
+						AND datahora::date >= ${dataInicio}::date
+						AND datahora::date <= ${dataFim}::date
+					ORDER BY datahora ASC
+				`),
+			),
+			safeRows<Record<string, unknown>>("precoAntes", () =>
+				db.execute(sql`
+					SELECT COALESCE(
+						${precoJsonNumerico("depois")},
+						${precoJsonNumerico("antes")}
+					) AS preco,
+						criadoem::date::text AS data
+					FROM produto_historico
+					WHERE idempresa = ${idempresa}
+						AND idproduto = ${idproduto}
+						AND criadoem::date < ${dataInicio}::date
+						AND (
+							${precoJsonNumerico("depois")} IS NOT NULL
+							OR ${precoJsonNumerico("antes")} IS NOT NULL
+						)
+					ORDER BY criadoem DESC
+					LIMIT 1
+				`),
+			),
+			safeRows<Record<string, unknown>>("precos", () =>
+				db.execute(sql`
+					SELECT
+						${precoJsonNumerico("depois")} AS preco,
+						criadoem::date::text AS data
+					FROM produto_historico
+					WHERE idempresa = ${idempresa}
+						AND idproduto = ${idproduto}
+						AND criadoem::date >= ${dataInicio}::date
+						AND criadoem::date <= ${dataFim}::date
+						AND ${precoJsonNumerico("depois")} IS NOT NULL
+						AND COALESCE(depois->>'preco', '') IS DISTINCT FROM COALESCE(antes->>'preco', '')
+					ORDER BY criadoem ASC
+				`),
+			),
+			safeRows<Record<string, unknown>>("produtoAtual", () =>
+				db.execute(sql`
+					SELECT COALESCE(preco::numeric, 0) AS preco
+					FROM produtos
+					WHERE id = ${idproduto} AND idempresa = ${idempresa}
+					LIMIT 1
+				`),
+			),
 		]);
-
-	const custoAntes = rowsOf<Record<string, unknown>>(custoAntesRaw);
-	const custos = rowsOf<Record<string, unknown>>(custosRaw);
-	const precoAntes = rowsOf<Record<string, unknown>>(precoAntesRaw);
-	const precos = rowsOf<Record<string, unknown>>(precosRaw);
-	const produtoAtual = rowsOf<Record<string, unknown>>(produtoAtualRaw);
 
 	type Evento = { data: string; precoVenda?: number; custo?: number };
 	const eventos = new Map<string, Evento>();
@@ -198,21 +223,23 @@ export async function buscarSerieCompraVenda({
 				? sql`date_trunc('month', COALESCE(me.datahora, me.data::timestamp))`
 				: sql`date_trunc('day', COALESCE(me.datahora, me.data::timestamp))`;
 
-	const resultado = await db.execute(sql`
-		SELECT ${bucket}::date::text AS data,
-			COALESCE(SUM(me.quantidadeentrada::numeric), 0) AS compra,
-			COALESCE(SUM(me.quantidadesaida::numeric), 0) AS venda
-		FROM movimentoestoque me
-		WHERE me.idempresa = ${idempresa}
-			AND me.idproduto = ${idproduto}
-			AND COALESCE(me.cancelado, 0) = 0
-			AND COALESCE(me.datahora, me.data::timestamp)::date >= ${dataInicio}::date
-			AND COALESCE(me.datahora, me.data::timestamp)::date <= ${dataFim}::date
-		GROUP BY 1
-		ORDER BY 1 ASC
-	`);
+	const rows = await safeRows<Record<string, unknown>>("compraVenda", () =>
+		db.execute(sql`
+			SELECT ${bucket}::date::text AS data,
+				COALESCE(SUM(me.quantidadeentrada::numeric), 0) AS compra,
+				COALESCE(SUM(me.quantidadesaida::numeric), 0) AS venda
+			FROM movimentoestoque me
+			WHERE me.idempresa = ${idempresa}
+				AND me.idproduto = ${idproduto}
+				AND COALESCE(me.cancelado, 0) = 0
+				AND COALESCE(me.datahora, me.data::timestamp)::date >= ${dataInicio}::date
+				AND COALESCE(me.datahora, me.data::timestamp)::date <= ${dataFim}::date
+			GROUP BY 1
+			ORDER BY 1 ASC
+		`),
+	);
 
-	return rowsOf<Record<string, unknown>>(resultado).map((row) => ({
+	return rows.map((row) => ({
 		data: parseDateStr(row.data),
 		compra: parseNum(row.compra),
 		venda: parseNum(row.venda),
@@ -239,42 +266,46 @@ export async function buscarSerieEstoque({
 				? sql`AND me.tipoestoque IN (1, 2)`
 				: sql``;
 
-	const [aberturaRaw, movimentosRaw] = await Promise.all([
-		db.execute(sql`
-			SELECT COALESCE(
-				SUM(
-					COALESCE(me.quantidadeentrada::numeric, 0)
-					- COALESCE(me.quantidadesaida::numeric, 0)
-				),
-				0
-			) AS saldo
-			FROM movimentoestoque me
-			WHERE me.idempresa = ${idempresa}
-				AND me.idproduto = ${idproduto}
-				AND COALESCE(me.cancelado, 0) = 0
-				AND COALESCE(me.datahora, me.data::timestamp)::date < ${dataInicio}::date
-				${filtroTipo}
-		`),
-		db.execute(sql`
-			SELECT COALESCE(me.datahora, me.data::timestamp)::date::text AS data,
-				COALESCE(SUM(me.quantidadeentrada::numeric), 0) AS entrada,
-				COALESCE(SUM(me.quantidadesaida::numeric), 0) AS saida
-			FROM movimentoestoque me
-			WHERE me.idempresa = ${idempresa}
-				AND me.idproduto = ${idproduto}
-				AND COALESCE(me.cancelado, 0) = 0
-				AND COALESCE(me.datahora, me.data::timestamp)::date >= ${dataInicio}::date
-				AND COALESCE(me.datahora, me.data::timestamp)::date <= ${dataFim}::date
-				${filtroTipo}
-			GROUP BY 1
-			ORDER BY 1 ASC
-		`),
+	const [abertura, movimentos] = await Promise.all([
+		safeRows<Record<string, unknown>>("estoqueAbertura", () =>
+			db.execute(sql`
+				SELECT COALESCE(
+					SUM(
+						COALESCE(me.quantidadeentrada::numeric, 0)
+						- COALESCE(me.quantidadesaida::numeric, 0)
+					),
+					0
+				) AS saldo
+				FROM movimentoestoque me
+				WHERE me.idempresa = ${idempresa}
+					AND me.idproduto = ${idproduto}
+					AND COALESCE(me.cancelado, 0) = 0
+					AND COALESCE(me.datahora, me.data::timestamp)::date < ${dataInicio}::date
+					${filtroTipo}
+			`),
+		),
+		safeRows<Record<string, unknown>>("estoqueMovimentos", () =>
+			db.execute(sql`
+				SELECT COALESCE(me.datahora, me.data::timestamp)::date::text AS data,
+					COALESCE(SUM(me.quantidadeentrada::numeric), 0) AS entrada,
+					COALESCE(SUM(me.quantidadesaida::numeric), 0) AS saida
+				FROM movimentoestoque me
+				WHERE me.idempresa = ${idempresa}
+					AND me.idproduto = ${idproduto}
+					AND COALESCE(me.cancelado, 0) = 0
+					AND COALESCE(me.datahora, me.data::timestamp)::date >= ${dataInicio}::date
+					AND COALESCE(me.datahora, me.data::timestamp)::date <= ${dataFim}::date
+					${filtroTipo}
+				GROUP BY 1
+				ORDER BY 1 ASC
+			`),
+		),
 	]);
 
-	let saldo = parseNum(rowsOf<Record<string, unknown>>(aberturaRaw)[0]?.saldo);
+	let saldo = parseNum(abertura[0]?.saldo);
 	const pontos: PontoEstoque[] = [];
 
-	for (const row of rowsOf<Record<string, unknown>>(movimentosRaw)) {
+	for (const row of movimentos) {
 		const entrada = parseNum(row.entrada);
 		const saida = parseNum(row.saida);
 		saldo += entrada - saida;

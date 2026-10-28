@@ -5,14 +5,22 @@ import {
 	analyticsEstoqueService,
 	analyticsPrecoCustoService,
 } from "@/service/produto/analytics-produto.js";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
+
+const uuidFlexivel = z
+	.string()
+	.min(1)
+	.regex(
+		/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+		"UUID inválido",
+	);
 
 const paramsSchema = z.object({
-	id: z.string().uuid(),
+	id: uuidFlexivel,
 });
 
 const queryBaseSchema = z.object({
-	idempresa: z.string().uuid(),
+	idempresa: uuidFlexivel,
 	dataInicio: z
 		.string()
 		.regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
@@ -42,7 +50,8 @@ async function responderErro(
 			details: error.issues,
 		});
 	}
-	return reply.status(httpErroInterno().status).send(httpErroInterno());
+	// Preferir série vazia a derrubar o modal/API (ex.: tabela historico ausente).
+	return reply.status(200).send({ pontos: [] });
 }
 
 export async function analyticsPrecoCusto(
@@ -66,10 +75,13 @@ export async function analyticsPrecoCusto(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
+			return reply.status(resultado.status).send({
+				error: resultado.error ?? "Erro de validação",
+				code: resultado.code ?? "VALIDATION_ERROR",
+			});
 		}
 
-		return reply.status(resultado.status).send(resultado.body);
+		return reply.status(200).send(resultado.body ?? { pontos: [] });
 	} catch (error) {
 		return responderErro(reply, error, "Erro analytics preco-custo:");
 	}
@@ -97,10 +109,13 @@ export async function analyticsCompraVenda(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
+			return reply.status(resultado.status).send({
+				error: resultado.error ?? "Erro de validação",
+				code: resultado.code ?? "VALIDATION_ERROR",
+			});
 		}
 
-		return reply.status(resultado.status).send(resultado.body);
+		return reply.status(200).send(resultado.body ?? { pontos: [] });
 	} catch (error) {
 		return responderErro(reply, error, "Erro analytics compra-venda:");
 	}
@@ -128,10 +143,13 @@ export async function analyticsEstoque(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
+			return reply.status(resultado.status).send({
+				error: resultado.error ?? "Erro de validação",
+				code: resultado.code ?? "VALIDATION_ERROR",
+			});
 		}
 
-		return reply.status(resultado.status).send(resultado.body);
+		return reply.status(200).send(resultado.body ?? { pontos: [] });
 	} catch (error) {
 		return responderErro(reply, error, "Erro analytics estoque:");
 	}

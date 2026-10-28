@@ -3,10 +3,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoProduto, Produto } from "@/model/produto-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarProdutoComHistorico } from "@/repositories/produto-historico-repositories.js";
-import {
-	buscarProdutoPorId,
-	excluirProduto,
-} from "@/repositories/produtos-repositories.js";
+import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { aplicarHerancaVariacao } from "@/service/produto/aplicar-heranca-variacao.js";
 import { comCodigoUnidadeGravado } from "@/service/produto/preencher-sigla-unidade.js";
@@ -15,7 +12,6 @@ import {
 	httpBadRequest,
 	httpCriacao,
 	httpErro,
-	httpErroInterno,
 	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
@@ -101,13 +97,14 @@ export async function criarProdutoService({
 		});
 
 		if (!auditoria || !auditoria.success) {
-			await excluirProduto(registro.id);
-			return httpErroInterno();
+			console.error(
+				"Auditoria de criação de produto não confirmada; produto mantido:",
+				registro.id,
+			);
 		}
 	} catch (erroAuditoria) {
+		// Não desfaz o produto criado: falha de auditoria não deve virar 500 no POST.
 		console.error("Falha ao auditar criação de produto:", erroAuditoria);
-		await excluirProduto(registro.id);
-		return httpErroInterno();
 	}
 
 	return httpCriacao<Produto>(registro);
