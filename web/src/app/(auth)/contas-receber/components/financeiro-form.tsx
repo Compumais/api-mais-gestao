@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
 	ApropriacaoCentroCustoField,
@@ -90,7 +90,7 @@ export function FinanceiroForm({
 	const form = useForm<CriarFinanceiroFormData | AtualizarFinanceiroFormData>({
 		resolver: zodResolver(
 			isEdicao ? atualizarFinanceiroSchema : criarFinanceiroSchema,
-		),
+		) as Resolver<CriarFinanceiroFormData | AtualizarFinanceiroFormData>,
 		defaultValues: {
 			idempresa: empresa?.id || "",
 			documento: "",

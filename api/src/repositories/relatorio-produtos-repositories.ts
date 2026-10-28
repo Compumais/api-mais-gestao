@@ -297,7 +297,8 @@ function colunasProdutoRelatorio(): SQL {
 		p.situacaotributariasn, p.cstpis, p.aliquotapis, p.cstcofins, p.aliquotacofins,
 		p.percentualipisaida, p.cstibs, p.classtributariaibs, p.aliquotaiibs, p.aliquotacbs,
 		p.idbeneficiofiscalnf, p.idbeneficiofiscaloperacao,
-		p.idgrupo, p.idfornecedor, p.fornecedor, p.idncm, p.idcest, p.idcfopsaida
+		p.idgrupo, p.idfornecedor, p.fornecedor, p.idncm, p.idcest, p.idcfopsaida,
+		p.quantidademinima, p.quantidademaxima
 	`;
 }
 

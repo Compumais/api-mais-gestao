@@ -283,7 +283,9 @@ const propriedadesProdutoResposta = {
 		anyOf: [{ type: "string", enum: ["A", "T"] }, { type: "null" }],
 	},
 	ippt: { type: "string", enum: ["P", "T"], nullable: true },
-	origem: { type: "number", minimum: 0, maximum: 8 },
+	origem: {
+		anyOf: [{ type: "number", minimum: 0, maximum: 8 }, { type: "null" }],
+	},
 	ncm: { type: "string", nullable: true },
 	observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 	enviamobile: { type: "number", enum: [0, 1], nullable: true },
@@ -332,6 +334,7 @@ const propriedadesProdutoResposta = {
 		description: "Código CEST (7 dígitos) resolvido a partir de idcest",
 	},
 	unidademedida: { anyOf: [{ type: "string" }, { type: "null" }] },
+	idprodutopai: { anyOf: [{ type: "string" }, { type: "null" }] },
 	...propriedadesImpostosProdutoResposta,
 	...propriedadesServicoProdutoBody,
 };
@@ -346,7 +349,13 @@ export const criarProdutoSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string" },
 			codigo: { type: "number" },
-			ean: { anyOf: [{ type: "number" }, { type: "null" }] },
+			ean: {
+				anyOf: [
+					{ type: "string" },
+					{ type: "number" },
+					{ type: "null" },
+				],
+			},
 			referencia: { anyOf: [{ type: "string" }, { type: "null" }] },
 			nome: { type: "string" },
 			idunidademedida: { type: "string" },
