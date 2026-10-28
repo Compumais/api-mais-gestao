@@ -67,14 +67,20 @@ export async function analyticsPrecoCustoService(
 		return validacao.resposta as HttpResponse<{ pontos: PontoPrecoCusto[] } | null>;
 	}
 
-	const pontos = await buscarSeriePrecoCusto({
-		idempresa: params.idempresa,
-		idproduto: params.idproduto,
-		dataInicio: params.dataInicio,
-		dataFim: params.dataFim,
-	});
-
-	return httpOk({ pontos });
+	try {
+		const pontos = await buscarSeriePrecoCusto({
+			idempresa: params.idempresa,
+			idproduto: params.idproduto,
+			dataInicio: params.dataInicio,
+			dataFim: params.dataFim,
+		});
+		return httpOk({ pontos });
+	} catch (erro) {
+		console.error("analyticsPrecoCustoService:", erro);
+		return httpBadRequest(
+			"Não foi possível montar o gráfico de preço/custo para o período",
+		);
+	}
 }
 
 export async function analyticsCompraVendaService(
@@ -87,15 +93,21 @@ export async function analyticsCompraVendaService(
 		} | null>;
 	}
 
-	const pontos = await buscarSerieCompraVenda({
-		idempresa: params.idempresa,
-		idproduto: params.idproduto,
-		dataInicio: params.dataInicio,
-		dataFim: params.dataFim,
-		granularidade: params.granularidade ?? "dia",
-	});
-
-	return httpOk({ pontos });
+	try {
+		const pontos = await buscarSerieCompraVenda({
+			idempresa: params.idempresa,
+			idproduto: params.idproduto,
+			dataInicio: params.dataInicio,
+			dataFim: params.dataFim,
+			granularidade: params.granularidade ?? "dia",
+		});
+		return httpOk({ pontos });
+	} catch (erro) {
+		console.error("analyticsCompraVendaService:", erro);
+		return httpBadRequest(
+			"Não foi possível montar o gráfico de compra/venda para o período",
+		);
+	}
 }
 
 export async function analyticsEstoqueService(
@@ -106,13 +118,19 @@ export async function analyticsEstoqueService(
 		return validacao.resposta as HttpResponse<{ pontos: PontoEstoque[] } | null>;
 	}
 
-	const pontos = await buscarSerieEstoque({
-		idempresa: params.idempresa,
-		idproduto: params.idproduto,
-		dataInicio: params.dataInicio,
-		dataFim: params.dataFim,
-		tipoEstoque: params.tipoEstoque ?? 0,
-	});
-
-	return httpOk({ pontos });
+	try {
+		const pontos = await buscarSerieEstoque({
+			idempresa: params.idempresa,
+			idproduto: params.idproduto,
+			dataInicio: params.dataInicio,
+			dataFim: params.dataFim,
+			tipoEstoque: params.tipoEstoque ?? 0,
+		});
+		return httpOk({ pontos });
+	} catch (erro) {
+		console.error("analyticsEstoqueService:", erro);
+		return httpBadRequest(
+			"Não foi possível montar o gráfico de estoque para o período",
+		);
+	}
 }

@@ -270,11 +270,15 @@ const propriedadesProdutoResposta = {
 	referencia: { anyOf: [{ type: "string" }, { type: "null" }] },
 	nome: { type: "string" },
 	descricao: { type: "string" },
-	idunidademedida: { type: "string", format: "uuid", nullable: true },
+	idunidademedida: {
+		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+	},
 	fornecedor: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
-	idgrupo: { type: "string", format: "uuid", nullable: true },
-	idmarca: { type: "string", format: "uuid", nullable: true },
-	idgrupogourmet: { type: "string", format: "uuid", nullable: true },
+	idgrupo: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
+	idmarca: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
+	idgrupogourmet: {
+		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+	},
 	preco: { type: "string", nullable: true },
 	custoaquisicao: { type: "string", nullable: true },
 	tipoproduto: { type: "string", nullable: true },
@@ -408,7 +412,7 @@ export const criarProdutoSchema: FastifySchema = {
 		201: {
 			type: "object",
 			description: "Produto criado com sucesso",
-			properties: propriedadesProdutoResposta,
+			additionalProperties: true,
 		},
 		400: {
 			type: "object",
@@ -521,7 +525,7 @@ export const buscarProdutoSchema: FastifySchema = {
 		200: {
 			type: "object",
 			description: "Dados do produto",
-			properties: propriedadesProdutoResposta,
+			additionalProperties: true,
 		},
 		404: respostaErro,
 		401: respostaErro,
@@ -602,7 +606,7 @@ export const atualizarProdutoSchema: FastifySchema = {
 		200: {
 			type: "object",
 			description: "Produto atualizado com sucesso",
-			properties: propriedadesProdutoResposta,
+			additionalProperties: true,
 		},
 		404: respostaErro,
 		401: respostaErro,
