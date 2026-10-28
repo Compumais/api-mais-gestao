@@ -9,7 +9,9 @@ import {
 	somarIpiPorNota,
 } from "@/repositories/sintegra-repositories.js";
 import { resolverNomeMunicipioIbge } from "@/util/resolver-nome-municipio-ibge.js";
+import { agruparValoresRegistro53 } from "./agrupar-valores-registro-53.js";
 import { ContadorRegistrosSintegra } from "./contador-registros.js";
+import { validarParidadeRegistros50e53 } from "./validar-paridade-50-53.js";
 import { montarRegistro10, montarRegistro11 } from "./registros/registro-10.js";
 import { montarRegistro50 } from "./registros/registro-50.js";
 import { montarRegistro51 } from "./registros/registro-51.js";
@@ -105,11 +107,24 @@ export async function gerarArquivoSintegra(
 		}
 	}
 
-	for (const nota of notasReg50) {
-		if (parseNumero(nota.baseIcmsSt) > 0 || parseNumero(nota.valorIcmsSt) > 0) {
-			linhas.push(montarRegistro53(nota));
-			contador.incrementar("53");
-		}
+	const registros53 = agruparValoresRegistro53(agrupamentos50);
+	const errosParidade53 = validarParidadeRegistros50e53(
+		agrupamentos50,
+		registros53,
+	);
+	if (errosParidade53.length > 0) {
+		throw new Error(errosParidade53.join(" "));
+	}
+	for (const registro53 of registros53) {
+		const { nota, cfop } = registro53.agrupamento;
+		linhas.push(
+			montarRegistro53(nota, {
+				cfop,
+				baseIcmsSt: registro53.baseIcmsSt,
+				valorIcmsSt: registro53.valorIcmsSt,
+			}),
+		);
+		contador.incrementar("53");
 	}
 
 	const itensReg54 = itens.filter(

@@ -1,3 +1,5 @@
+import { resolverNumeroEndereco } from "@/util/numero-endereco-fiscal.js";
+import { formatarNumerico } from "./formatador-campo.js";
 import type {
 	DadosContribuinteSintegra,
 	InventarioSintegra,
@@ -40,6 +42,25 @@ export function validarDadosSintegra({
 
 	if (!contribuinte.inscricaoEstadual?.trim()) {
 		erros.push("Inscrição estadual do contribuinte não informada.");
+	}
+
+	const numeroImovel = resolverNumeroEndereco(contribuinte.numero);
+	const municipio = contribuinte.municipio?.trim() ?? "";
+	const municipioEhCodigo = /^\d{7}$/.test(municipio);
+	const complementoEfetivo =
+		numeroImovel === "SN" &&
+		!contribuinte.complemento?.trim() &&
+		!municipioEhCodigo
+			? municipio
+			: (contribuinte.complemento?.trim() ?? "");
+	const numeroRegistro11 =
+		numeroImovel === "SN"
+			? "SN"
+			: formatarNumerico(numeroImovel, 5);
+	if (numeroRegistro11 === "00000" && !complementoEfetivo) {
+		erros.push(
+			"Endereço fiscal: informe número do imóvel ou complemento (registro 11).",
+		);
 	}
 
 	if (contribuinte.uf && contribuinte.uf.toUpperCase() !== UF_ESPERADA) {

@@ -12,7 +12,20 @@ import {
 } from "../formatador-campo.js";
 import type { NotaSintegra } from "../tipos-sintegra.js";
 
-export function montarRegistro53(nota: NotaSintegra): string {
+export type MontarRegistro53Overrides = {
+	cfop?: string;
+	baseIcmsSt?: number | string | null;
+	valorIcmsSt?: number | string | null;
+};
+
+export function montarRegistro53(
+	nota: NotaSintegra,
+	overrides?: MontarRegistro53Overrides,
+): string {
+	const cfop = overrides?.cfop ?? nota.cfopCodigo;
+	const baseIcmsSt = overrides?.baseIcmsSt ?? nota.baseIcmsSt;
+	const valorIcmsSt = overrides?.valorIcmsSt ?? nota.valorIcmsSt;
+
 	return montarLinha([
 		"53",
 		formatarCnpjCpf(nota.cnpjCpf),
@@ -22,10 +35,10 @@ export function montarRegistro53(nota: NotaSintegra): string {
 		formatarNumerico(nota.modelo, 2),
 		formatarSerie(nota.serie),
 		formatarNumeroDocumento(nota.numero ?? nota.numeronotafiscal),
-		formatarCfop(nota.cfopCodigo),
+		formatarCfop(cfop),
 		nota.emitente,
-		formatarDecimal(nota.baseIcmsSt, 13, 2),
-		formatarDecimal(nota.valorIcmsSt, 13, 2),
+		formatarDecimal(baseIcmsSt, 13, 2),
+		formatarDecimal(valorIcmsSt, 13, 2),
 		formatarDecimal("0", 13, 2),
 		nota.situacao,
 		" ",
