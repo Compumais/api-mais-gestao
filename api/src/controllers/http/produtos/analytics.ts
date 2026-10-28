@@ -5,28 +5,37 @@ import {
 	analyticsEstoqueService,
 	analyticsPrecoCustoService,
 } from "@/service/produto/analytics-produto.js";
+import {
+	corpoErroHttp,
+	mapErrorToHttpResponse,
+} from "@/util/map-error-to-http.js";
 import { httpNaoAutorizado } from "@/util/http-util.js";
 
-const uuidFlexivel = z
-	.string()
-	.min(1)
-	.regex(
-		/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
-		"UUID inválido",
-	);
+const uuidFlexivel = (campo: string) =>
+	z
+		.string({ error: `${campo} é obrigatório` })
+		.min(1, `${campo} é obrigatório`)
+		.regex(
+			/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+			`${campo} deve ser um UUID válido`,
+		);
+
+const dataIso = (campo: string) =>
+	z
+		.string({ error: `${campo} é obrigatória` })
+		.regex(
+			/^\d{4}-\d{2}-\d{2}$/,
+			`${campo} deve estar no formato YYYY-MM-DD`,
+		);
 
 const paramsSchema = z.object({
-	id: uuidFlexivel,
+	id: uuidFlexivel("ID do produto"),
 });
 
 const queryBaseSchema = z.object({
-	idempresa: uuidFlexivel,
-	dataInicio: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
-	dataFim: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
+	idempresa: uuidFlexivel("Empresa"),
+	dataInicio: dataIso("Data inicial"),
+	dataFim: dataIso("Data final"),
 });
 
 const queryCompraVendaSchema = queryBaseSchema.extend({
@@ -43,15 +52,24 @@ async function responderErro(
 	contexto: string,
 ) {
 	console.error(contexto, error);
-	if (error instanceof z.ZodError) {
-		return reply.status(400).send({
-			error: "Erro de validação",
-			code: "VALIDATION_ERROR",
-			details: error.issues,
-		});
+	const mapped = mapErrorToHttpResponse(error, contexto);
+	// Validação: 400 claro. Erros de banco/migration: mensagem segura.
+	// Demais falhas de runtime: série vazia para não quebrar o modal.
+	if (
+		mapped.code === "VALIDATION_ERROR" ||
+		mapped.code === "UNDEFINED_COLUMN" ||
+		mapped.code === "UNDEFINED_TABLE" ||
+		mapped.code === "MISSING_IDPRODUTOPAI" ||
+		mapped.code === "FOREIGN_KEY_VIOLATION" ||
+		mapped.code === "INVALID_TEXT_REPRESENTATION"
+	) {
+		return reply.status(mapped.status).send(corpoErroHttp(mapped));
 	}
-	// Preferir série vazia a derrubar o modal/API (ex.: tabela historico ausente).
-	return reply.status(200).send({ pontos: [] });
+	return reply.status(200).send({
+		pontos: [],
+		aviso: mapped.error,
+		code: mapped.code,
+	});
 }
 
 export async function analyticsPrecoCusto(
@@ -60,7 +78,10 @@ export async function analyticsPrecoCusto(
 ) {
 	try {
 		if (!request.user) {
-			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+			return reply.status(httpNaoAutorizado().status).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED_ERROR",
+			});
 		}
 
 		const { id } = paramsSchema.parse(request.params);
@@ -83,7 +104,7 @@ export async function analyticsPrecoCusto(
 
 		return reply.status(200).send(resultado.body ?? { pontos: [] });
 	} catch (error) {
-		return responderErro(reply, error, "Erro analytics preco-custo:");
+		return responderErro(reply, error, "analytics preço/custo");
 	}
 }
 
@@ -93,7 +114,10 @@ export async function analyticsCompraVenda(
 ) {
 	try {
 		if (!request.user) {
-			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+			return reply.status(httpNaoAutorizado().status).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED_ERROR",
+			});
 		}
 
 		const { id } = paramsSchema.parse(request.params);
@@ -117,7 +141,7 @@ export async function analyticsCompraVenda(
 
 		return reply.status(200).send(resultado.body ?? { pontos: [] });
 	} catch (error) {
-		return responderErro(reply, error, "Erro analytics compra-venda:");
+		return responderErro(reply, error, "analytics compra/venda");
 	}
 }
 
@@ -127,7 +151,10 @@ export async function analyticsEstoque(
 ) {
 	try {
 		if (!request.user) {
-			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+			return reply.status(httpNaoAutorizado().status).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED_ERROR",
+			});
 		}
 
 		const { id } = paramsSchema.parse(request.params);
@@ -151,6 +178,6 @@ export async function analyticsEstoque(
 
 		return reply.status(200).send(resultado.body ?? { pontos: [] });
 	} catch (error) {
-		return responderErro(reply, error, "Erro analytics estoque:");
+		return responderErro(reply, error, "analytics estoque");
 	}
 }

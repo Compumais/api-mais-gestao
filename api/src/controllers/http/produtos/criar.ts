@@ -5,21 +5,24 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { criarProdutoService } from "@/service/produto/criar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
-import { camposImpostosProdutoSchema, refinirCamposIbsCbsProduto } from "@/util/campos-impostos-produto.js";
+import {
+	camposImpostosProdutoSchema,
+	refinirCamposIbsCbsProduto,
+} from "@/util/campos-impostos-produto.js";
 import {
 	camposServicoProdutoSchema,
 	montarCamposServicoProduto,
 } from "@/util/campos-servico-produto.js";
 import {
-	httpErroInterno,
-	httpNaoAutorizado,
-	httpProibido,
-} from "@/util/http-util.js";
+	corpoErroHttp,
+	mapErrorToHttpResponse,
+} from "@/util/map-error-to-http.js";
+import { httpNaoAutorizado, httpProibido } from "@/util/http-util.js";
 
 const criarProdutoBodySchema = z
 	.object({
-		idempresa: z.string(),
-		codigo: z.number().int().positive(),
+		idempresa: z.string().min(1, "Empresa é obrigatória"),
+		codigo: z.number().int().positive("Código deve ser positivo"),
 		ean: z
 			.union([z.string(), z.number()])
 			.optional()
@@ -30,8 +33,8 @@ const criarProdutoBodySchema = z
 				return digitos.length > 0 ? digitos : null;
 			}),
 		referencia: z.string().max(60).optional().nullable(),
-		nome: z.string().min(1).max(120),
-		idunidademedida: z.string(),
+		nome: z.string().min(1, "Nome é obrigatório").max(120),
+		idunidademedida: z.string().min(1, "Unidade de medida é obrigatória"),
 		fornecedor: z.string().optional().nullable(),
 		idgrupo: z.string().optional().nullable(),
 		idmarca: z.string().optional().nullable(),
@@ -43,7 +46,9 @@ const criarProdutoBodySchema = z
 				if (!valor || valor === "none") return null;
 				return valor;
 			}),
-		preco: z.union([z.string(), z.number()]),
+		preco: z.union([z.string(), z.number()], {
+			error: "Preço é obrigatório",
+		}),
 		tipo: z.enum(["P", "S"]).default("P"),
 		iat: z.enum(["A", "T"]).optional().nullable(),
 		ippt: z.enum(["P", "T"]).optional().nullable(),
@@ -115,7 +120,10 @@ export async function criarProduto(
 ) {
 	try {
 		if (!request.user) {
-			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+			return reply.status(httpNaoAutorizado().status).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED_ERROR",
+			});
 		}
 
 		const dadosValidados = criarProdutoBodySchema.parse(request.body);
@@ -126,7 +134,10 @@ export async function criarProduto(
 		);
 
 		if (!usuarioPertenceEmpresa) {
-			return reply.status(httpProibido().status).send(httpProibido());
+			return reply.status(httpProibido().status).send({
+				error: "Acesso proibido",
+				code: "FORBIDDEN_ERROR",
+			});
 		}
 
 		const preco =
@@ -204,6 +215,7 @@ export async function criarProduto(
 			});
 		}
 
+		let avisoEstoque: string | undefined;
 		if (!ehServico) {
 			const quantidadeSaldo =
 				dadosValidados.estoque ?? dadosValidados.quantidadepadrao;
@@ -220,93 +232,23 @@ export async function criarProduto(
 						"Falha ao sincronizar saldo de estoque após criar produto:",
 						erroEstoque,
 					);
+					const mapped = mapErrorToHttpResponse(
+						erroEstoque,
+						"sincronização de estoque",
+					);
+					avisoEstoque = mapped.error;
 				}
 			}
 		}
 
+		if (avisoEstoque) {
+			reply.header("X-Estoque-Sync-Warning", avisoEstoque.slice(0, 200));
+		}
+
 		return reply.status(resultado.status).send(resultado.body);
 	} catch (error) {
-		console.error(error);
-		if (error instanceof z.ZodError) {
-			return reply.status(400).send({
-				error: "Erro de validação",
-				code: "VALIDATION_ERROR",
-				details: error.issues,
-			});
-		}
-
-		const pg = erroPostgres(error);
-		if (pg) {
-			return reply.status(pg.status).send({
-				success: false,
-				error: pg.message,
-				code: pg.code,
-			});
-		}
-
-		return reply.status(httpErroInterno().status).send(httpErroInterno());
+		console.error("Erro ao criar produto:", error);
+		const mapped = mapErrorToHttpResponse(error, "criação do produto");
+		return reply.status(mapped.status).send(corpoErroHttp(mapped));
 	}
-}
-
-function erroPostgres(error: unknown): {
-	status: number;
-	message: string;
-	code: string;
-} | null {
-	if (!error || typeof error !== "object" || !("code" in error)) {
-		return null;
-	}
-
-	const code = String((error as { code: unknown }).code);
-	const message =
-		"message" in error ? String((error as { message: unknown }).message) : "";
-
-	if (code === "23503") {
-		return {
-			status: 400,
-			message:
-				"Referência inválida ao criar produto (grupo, unidade, CFOP, CEST, marca ou produto pai).",
-			code: "FOREIGN_KEY_VIOLATION",
-		};
-	}
-	if (code === "23505") {
-		return {
-			status: 409,
-			message: "Já existe um produto com esses dados.",
-			code: "UNIQUE_VIOLATION",
-		};
-	}
-	if (code === "23502") {
-		return {
-			status: 400,
-			message: "Campo obrigatório ausente ao gravar o produto.",
-			code: "NOT_NULL_VIOLATION",
-		};
-	}
-	if (code === "42703") {
-		return {
-			status: 500,
-			message:
-				"Banco desatualizado (coluna ausente). Execute as migrations pendentes.",
-			code: "UNDEFINED_COLUMN",
-		};
-	}
-	if (code === "42P01") {
-		return {
-			status: 500,
-			message:
-				"Banco desatualizado (tabela ausente). Execute as migrations pendentes.",
-			code: "UNDEFINED_TABLE",
-		};
-	}
-	if (message.includes("idprodutopai")) {
-		return {
-			status: 500,
-			message:
-				"Coluna idprodutopai ausente. Execute a migration 0111_produto_idprodutopai.",
-			code: "MISSING_IDPRODUTOPAI",
-		};
-	}
-
-	return null;
 }

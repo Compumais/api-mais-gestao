@@ -59,7 +59,7 @@ async function validarProdutoEmpresa(params: ParamsBase) {
 	if (periodoErro) {
 		return {
 			ok: false as const,
-			resposta: httpBadRequest(periodoErro),
+			resposta: httpBadRequest(periodoErro, { code: "PERIOD_INVALID" }),
 		};
 	}
 	// Usa a empresa do produto (já autorizada). Query idempresa divergente
