@@ -130,14 +130,23 @@ export function NavAbasAbertasProvider({
 
 	const fecharAba = React.useCallback(
 		(id: string) => {
-			const resultado = fecharAbaAberta(abas, id, pathname);
 			rascunhosRef.current.delete(id);
-			persistir(resultado.abas);
-			if (resultado.navegarPara) {
-				router.push(resultado.navegarPara);
+			let navegarPara: string | null = null;
+			setAbas((atuais) => {
+				const resultado = fecharAbaAberta(atuais, id, pathname);
+				navegarPara = resultado.navegarPara;
+				if (storageKey) {
+					localStorage.setItem(storageKey, JSON.stringify(resultado.abas));
+				}
+				return resultado.abas;
+			});
+			if (navegarPara) {
+				React.startTransition(() => {
+					router.push(navegarPara!);
+				});
 			}
 		},
-		[abas, pathname, persistir, router],
+		[pathname, storageKey, router],
 	);
 
 	const value = React.useMemo(

@@ -4,6 +4,12 @@ import {
 } from "@/lib/nav-aba-titulos";
 import { rotaNavEstaAtiva } from "@/lib/nav-rota-ativa";
 
+function fallbackRotaAposFecharAba(pathnameFechado: string): string {
+	const { pathnamePai } = classificarRotaAba(pathnameFechado);
+	if (pathnamePai && pathnamePai !== "/") return pathnamePai;
+	return "/dashboard";
+}
+
 export const NAV_ABAS_STORAGE_PREFIX = "mais-gestao:nav-abas-abertas";
 export const NAV_ABAS_MAX = 15;
 
@@ -167,6 +173,9 @@ export function fecharAbaAberta(
 		return { abas: proximas, navegarPara: null };
 	}
 
-	const vizinha = proximas[indice] ?? proximas[indice - 1] ?? null;
-	return { abas: proximas, navegarPara: vizinha?.href ?? "/dashboard" };
+	const vizinha = proximas[indice - 1] ?? proximas[indice] ?? null;
+	return {
+		abas: proximas,
+		navegarPara: vizinha?.href ?? fallbackRotaAposFecharAba(id),
+	};
 }
