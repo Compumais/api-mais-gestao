@@ -39,10 +39,15 @@ export async function criarDepartamento(request: FastifyRequest, reply: FastifyR
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {
+			const details = error.issues.map((issue) => ({
+				path: issue.path.map(String),
+				message: issue.message,
+			}));
 			return reply.status(400).send({
 				error: "Erro de validação",
 				code: "VALIDATION_ERROR",
-				details: error.issues,
+				message: details.map((d) => d.message).join("; "),
+				details,
 			});
 		}
 		return reply.status(httpErroInterno().status).send(httpErroInterno());
