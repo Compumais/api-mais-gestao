@@ -51,9 +51,20 @@ describe("nav-abas-abertas", () => {
 				{ id: "/a", href: "/a", title: "A" },
 				{ id: "/c", href: "/c", title: "C" },
 			],
-			navegarPara: "/c",
+			navegarPara: "/a",
 		});
 		expect(fecharAbaAberta(abas, "/a", "/b").navegarPara).toBeNull();
+	});
+
+	it("ao fechar única aba de criação vai para a listagem pai", () => {
+		const abas = [
+			{ id: "/centros-custo/novo", href: "/centros-custo/novo", title: "Novo" },
+		];
+		expect(fecharAbaAberta(abas, "/centros-custo/novo", "/centros-custo/novo"))
+			.toMatchObject({
+				abas: [],
+				navegarPara: "/centros-custo",
+			});
 	});
 
 	it("resolve título pelo item de nav mais específico", () => {
