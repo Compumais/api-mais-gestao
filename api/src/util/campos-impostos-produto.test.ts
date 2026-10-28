@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
 	camposAliquotaProdutoSchema,
 	camposImpostosProdutoSchema,
+	montarCamposImpostosProduto,
 	refinirCamposIbsCbsProduto,
 } from "./campos-impostos-produto.js";
 
@@ -27,6 +28,20 @@ describe("alíquotas IBS/CBS do produto", () => {
 
 		expect(resultado.aliquotaiibs).toBeNull();
 		expect(resultado.aliquotacbs).toBeNull();
+	});
+});
+
+describe("montarCamposImpostosProduto", () => {
+	it("converte string vazia em null nos campos numéricos", () => {
+		const resultado = montarCamposImpostosProduto({
+			percentualmva: "",
+			aliquotaicmsinterna: "",
+			aliquotacbs: "1.5",
+		});
+
+		expect(resultado.percentualmva).toBeNull();
+		expect(resultado.aliquotaicmsinterna).toBeNull();
+		expect(resultado.aliquotacbs).toBe("1.5");
 	});
 });
 

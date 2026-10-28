@@ -7,6 +7,7 @@ import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-ca
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
 import {
 	camposImpostosProdutoSchema,
+	parseNumeroDecimal,
 	refinirCamposIbsCbsProduto,
 } from "@/util/campos-impostos-produto.js";
 import {
@@ -140,17 +141,12 @@ export async function criarProduto(
 			});
 		}
 
-		const preco =
-			typeof dadosValidados.preco === "number"
-				? dadosValidados.preco.toFixed(2)
-				: dadosValidados.preco;
+		const precoNumerico = parseNumeroDecimal(dadosValidados.preco);
+		const preco = precoNumerico == null ? null : precoNumerico.toFixed(2);
 
+		const custoNumerico = parseNumeroDecimal(dadosValidados.custoaquisicao);
 		const custoaquisicao =
-			dadosValidados.custoaquisicao == null
-				? null
-				: typeof dadosValidados.custoaquisicao === "number"
-					? dadosValidados.custoaquisicao.toFixed(2)
-					: dadosValidados.custoaquisicao;
+			custoNumerico == null ? null : custoNumerico.toFixed(2);
 
 		const impostos = await enriquecerCamposImpostosProduto(dadosValidados);
 		const camposServico = montarCamposServicoProduto(dadosValidados);
@@ -194,7 +190,10 @@ export async function criarProduto(
 			custoaquisicao,
 			...impostos,
 			...Object.fromEntries(
-				Object.entries(camposServico).filter(([, valor]) => valor != null),
+				Object.entries(camposServico).filter(
+					([, valor]) =>
+						valor != null && !(typeof valor === "string" && valor.trim() === ""),
+				),
 			),
 			inativo: camposServico.inativo ?? 0,
 			...(dadosValidados.idprodutopai
