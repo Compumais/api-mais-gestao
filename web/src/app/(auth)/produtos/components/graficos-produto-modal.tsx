@@ -84,6 +84,13 @@ function formatarQtd(valor: number) {
 	return valor.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 }
 
+function mensagemErroConsulta(erro: unknown, padrao: string): string {
+	if (erro instanceof Error && erro.message.trim()) {
+		return erro.message;
+	}
+	return padrao;
+}
+
 function EmptyState({ mensagem }: { mensagem: string }) {
 	return (
 		<div className="flex h-[320px] items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
@@ -324,7 +331,12 @@ export function GraficosProdutoModal({
 						{precoCustoQuery.isLoading ? (
 							<LoadingState />
 						) : precoCustoQuery.isError ? (
-							<EmptyState mensagem="Não foi possível carregar o gráfico de preço × custo." />
+							<EmptyState
+								mensagem={mensagemErroConsulta(
+									precoCustoQuery.error,
+									"Não foi possível carregar o gráfico de preço × custo.",
+								)}
+							/>
 						) : pontosPrecoCusto.length === 0 ? (
 							<EmptyState mensagem="Sem dados de preço ou custo no período." />
 						) : (
@@ -381,7 +393,12 @@ export function GraficosProdutoModal({
 						{compraVendaQuery.isLoading ? (
 							<LoadingState />
 						) : compraVendaQuery.isError ? (
-							<EmptyState mensagem="Não foi possível carregar o gráfico de compra × vendas." />
+							<EmptyState
+								mensagem={mensagemErroConsulta(
+									compraVendaQuery.error,
+									"Não foi possível carregar o gráfico de compra × vendas.",
+								)}
+							/>
 						) : pontosCompraVenda.length === 0 ? (
 							<EmptyState mensagem="Sem movimentações de compra ou venda no período." />
 						) : (
@@ -436,7 +453,12 @@ export function GraficosProdutoModal({
 						{estoqueQuery.isLoading ? (
 							<LoadingState />
 						) : estoqueQuery.isError ? (
-							<EmptyState mensagem="Não foi possível carregar o gráfico de estoque." />
+							<EmptyState
+								mensagem={mensagemErroConsulta(
+									estoqueQuery.error,
+									"Não foi possível carregar o gráfico de estoque.",
+								)}
+							/>
 						) : pontosEstoque.length === 0 ? (
 							<EmptyState mensagem="Sem posição de estoque no período." />
 						) : (
