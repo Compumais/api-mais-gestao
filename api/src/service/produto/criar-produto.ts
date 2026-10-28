@@ -14,6 +14,7 @@ import {
 	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
+import { normalizarCamposNumericosProduto } from "@/util/normalizar-campos-numericos-produto.js";
 
 type CriarProdutoParametros = {
 	dadosProduto: NovoProduto;
@@ -72,7 +73,9 @@ export async function criarProdutoService({
 	}
 
 	const registro = await criarProdutoComHistorico(
-		await comCodigoUnidadeGravado(dadosGravacao),
+		normalizarCamposNumericosProduto(
+			await comCodigoUnidadeGravado(dadosGravacao),
+		),
 		{
 			idusuario,
 			ip,

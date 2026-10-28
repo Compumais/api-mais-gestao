@@ -843,7 +843,7 @@ export async function atualizarProduto(
 ) {
 	const [produto] = await db
 		.update(produtos)
-		.set(dadosProduto)
+		.set(normalizarCamposNumericosProduto(dadosProduto))
 		.where(eq(produtos.id, id))
 		.returning();
 
@@ -868,7 +868,7 @@ export async function atualizarProdutosEmMassa(
 
 	return db
 		.update(produtos)
-		.set(dadosProduto)
+		.set(normalizarCamposNumericosProduto(dadosProduto))
 		.where(inArray(produtos.id, ids))
 		.returning();
 }
@@ -893,7 +893,10 @@ export async function persistirImportacaoProdutos(parametros: {
 		const atualizados: Produto[] = [];
 
 		for (const dados of parametros.criar) {
-			const [produto] = await tx.insert(produtos).values(dados).returning();
+			const [produto] = await tx
+				.insert(produtos)
+				.values(normalizarCamposNumericosProduto(dados))
+				.returning();
 			if (produto) {
 				criados.push(produto);
 			}
@@ -902,7 +905,7 @@ export async function persistirImportacaoProdutos(parametros: {
 		for (const item of parametros.atualizar) {
 			const [produto] = await tx
 				.update(produtos)
-				.set(item.dados)
+				.set(normalizarCamposNumericosProduto(item.dados))
 				.where(eq(produtos.id, item.id))
 				.returning();
 			if (produto) {

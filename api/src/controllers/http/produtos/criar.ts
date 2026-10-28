@@ -18,6 +18,7 @@ import {
 	corpoErroHttp,
 	mapErrorToHttpResponse,
 } from "@/util/map-error-to-http.js";
+import { normalizarCamposNumericosProduto } from "@/util/normalizar-campos-numericos-produto.js";
 import { httpNaoAutorizado, httpProibido } from "@/util/http-util.js";
 
 const criarProdutoBodySchema = z
@@ -202,7 +203,7 @@ export async function criarProduto(
 		};
 
 		const resultado = await criarProdutoService({
-			dadosProduto,
+			dadosProduto: normalizarCamposNumericosProduto(dadosProduto),
 			idusuario: request.user.id,
 			ip: request.ip,
 		});

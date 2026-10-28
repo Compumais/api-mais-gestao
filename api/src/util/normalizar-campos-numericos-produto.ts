@@ -3,9 +3,11 @@ import type { NovoProduto } from "@/model/produto-model.js";
 import { produtos } from "@/repositories/schema.js";
 import { normalizarValorNumericoGravacao } from "@/util/campos-impostos-produto.js";
 
+const TIPOS_NUMERICOS_PRODUTO = new Set(["PgNumeric"]);
+
 const COLUNAS_NUMERICAS_PRODUTO = new Set(
 	Object.entries(getTableColumns(produtos))
-		.filter(([, coluna]) => coluna.columnType === "PgNumeric")
+		.filter(([, coluna]) => TIPOS_NUMERICOS_PRODUTO.has(coluna.columnType))
 		.map(([nome]) => nome),
 );
 
@@ -25,3 +27,6 @@ export function normalizarCamposNumericosProduto<T extends Partial<NovoProduto>>
 	}
 	return resultado;
 }
+
+/** Alias explícito para gravação (insert/update) de `NovoProduto`. */
+export const sanitizarDadosProdutoParaGravacao = normalizarCamposNumericosProduto;

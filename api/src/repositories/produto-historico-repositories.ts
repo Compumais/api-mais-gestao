@@ -85,7 +85,7 @@ export async function atualizarProdutoComHistorico(
 		if (!antes) return undefined;
 		const [depois] = await tx
 			.update(produtos)
-			.set(dados)
+			.set(normalizarCamposNumericosProduto(dados))
 			.where(eq(produtos.id, id))
 			.returning();
 		if (!depois) return undefined;
@@ -123,7 +123,7 @@ export async function atualizarProdutosEmMassaComHistorico(
 			.where(inArray(produtos.id, ids));
 		const atualizados = await tx
 			.update(produtos)
-			.set(dados)
+			.set(normalizarCamposNumericosProduto(dados))
 			.where(inArray(produtos.id, ids))
 			.returning();
 		const campos = Object.keys(dados);
@@ -166,7 +166,10 @@ export async function persistirImportacaoProdutosComHistorico(
 		const criados: Produto[] = [];
 		const atualizados: Produto[] = [];
 		for (const dados of parametros.criar) {
-			const [produto] = await tx.insert(produtos).values(dados).returning();
+			const [produto] = await tx
+				.insert(produtos)
+				.values(normalizarCamposNumericosProduto(dados))
+				.returning();
 			if (produto) criados.push(produto);
 		}
 		const idsAtualizacao = parametros.atualizar.map((item) => item.id);
@@ -184,7 +187,7 @@ export async function persistirImportacaoProdutosComHistorico(
 		for (const item of parametros.atualizar) {
 			const [produto] = await tx
 				.update(produtos)
-				.set(item.dados)
+				.set(normalizarCamposNumericosProduto(item.dados))
 				.where(eq(produtos.id, item.id))
 				.returning();
 			if (produto) {
