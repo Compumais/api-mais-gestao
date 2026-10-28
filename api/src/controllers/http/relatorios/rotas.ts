@@ -11,6 +11,9 @@ import { gerarRelatorioFiscalComprasController } from "./fiscal-compras.js";
 import { gerarRelatorioFiscalContabilidadeController } from "./fiscal-contabilidade.js";
 import { gerarRelatorioFiscalVendasController } from "./fiscal-vendas.js";
 import { gerarRelatorioFluxoCaixaController } from "./fluxo-caixa.js";
+import { gerarRelatorioFormasDePagamentoController } from "./formas-de-pagamento.js";
+import { gerarRelatorioInadimplenciaController } from "./inadimplencia.js";
+import { gerarRelatorioReceitasPorCategoriaController } from "./receitas-por-categoria.js";
 import { gerarRelatorioCentroCustosController } from "./centro-custos.js";
 import {
 	centroCustosComparativoController,
@@ -391,6 +394,42 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			requireFeature(FEATURES_SAAS.NOTAS_FISCAIS),
 		],
 		handler: gerarRelatorioFiscalContabilidadeController,
+	});
+
+	app.post("/relatorios/receitas-por-categoria", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório de receitas por categoria",
+			description:
+				"Gera relatório de receitas agrupadas por plano de contas no período (PDF, TXT ou HTML)",
+			body: relatorioBodySchema,
+			response: relatorioResponseSchema,
+		},
+		handler: gerarRelatorioReceitasPorCategoriaController,
+	});
+
+	app.post("/relatorios/inadimplencia", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório de inadimplência",
+			description:
+				"Gera relatório de títulos em aberto vencidos no período (PDF, TXT ou HTML)",
+			body: relatorioBodySchema,
+			response: relatorioResponseSchema,
+		},
+		handler: gerarRelatorioInadimplenciaController,
+	});
+
+	app.post("/relatorios/formas-de-pagamento", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório de formas de pagamento",
+			description:
+				"Gera relatório de receitas e despesas por forma de pagamento no período (PDF, TXT ou HTML)",
+			body: relatorioBodySchema,
+			response: relatorioResponseSchema,
+		},
+		handler: gerarRelatorioFormasDePagamentoController,
 	});
 
 	app.post("/relatorios/centro-custos", {

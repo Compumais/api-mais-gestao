@@ -10,9 +10,20 @@ export const criarCentroCustoSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			nome: { type: "string" },
-			inativo: { type: "string" }
+			codigoextenso: { type: "string" },
+			codigoreduzido: { type: "string" },
+			inativo: { type: "number", description: "0 = ativo, 1 = inativo" },
+			obrigatorio: { type: "number" },
+			idcentrocustopai: { type: "string" },
+			descricao: { type: "string", nullable: true },
+			iddepartamento: { type: "string", nullable: true },
+			idresponsavel: { type: "string", nullable: true },
+			datainiciovigencia: { type: "string", nullable: true },
+			datafimvigencia: { type: "string", nullable: true },
+			tipogestao: { type: "string", nullable: true },
+			observacao: { type: "string", nullable: true },
 		},
-		required: ["idempresa"],
+		required: ["idempresa", "nome"],
 	},
 	response: {
 		201: { type: "object", additionalProperties: true },

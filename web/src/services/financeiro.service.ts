@@ -56,14 +56,15 @@ export interface Financeiro {
 	entrada: string | null;
 	registro: string | null;
 	baixa2: string | null;
-	idportador: number | null;
+	idportador: string | null;
 	idcarteirageradauboleto: number | null;
 	tiporateiocentrocusto: number | null;
 	nomeadministradora: string | null;
-	iddependente: number | null;
+	iddependente: string | null;
 	dvnossonumero: string | null;
-	idadministradora: number | null;
-	idbandeira: number | null;
+	idadministradora: string | null;
+	idbandeira: string | null;
+	idplanocontas?: string | null;
 	ultimaocorrenciabancaria: string | null;
 	idusuariosupervisor: string | null;
 	dataliberacaousuariosupervisor: string | null;
@@ -179,12 +180,12 @@ export interface CriarFinanceiroData {
 	idtipocobranca?: string | null;
 	entrada?: string | null;
 	datareferencia?: string | null;
-	idportador?: number | null;
-	iddependente?: number | null;
+	idportador?: string | null;
+	iddependente?: string | null;
 	nomeadministradora?: string | null;
-	idadministradora?: number | null;
+	idadministradora?: string | null;
 	nomebandeira?: string | null;
-	idbandeira?: number | null;
+	idbandeira?: string | null;
 	idplanocontas?: string | null;
 	apropriacoesCentroCusto?: Array<{
 		idcentrocusto: string;
@@ -235,12 +236,12 @@ export interface AtualizarFinanceiroData {
 	idtipocobranca?: string | null;
 	entrada?: string | null;
 	datareferencia?: string | null;
-	idportador?: number | null;
-	iddependente?: number | null;
+	idportador?: string | null;
+	iddependente?: string | null;
 	nomeadministradora?: string | null;
-	idadministradora?: number | null;
+	idadministradora?: string | null;
 	nomebandeira?: string | null;
-	idbandeira?: number | null;
+	idbandeira?: string | null;
 	idplanocontas?: string | null;
 	apropriacoesCentroCusto?: Array<{
 		idcentrocusto: string;

@@ -12,12 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -40,8 +35,9 @@ export function FluxoCaixaReportDialog({
 	onOpenChange,
 }: FluxoCaixaReportDialogProps) {
 	const { empresa } = useEmpresa();
-	const [dataInicio, setDataInicio] = useState("");
-	const [dataFim, setDataFim] = useState("");
+	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
+	const [dataInicio, setDataInicio] = useState(dataInicioPadrao);
+	const [dataFim, setDataFim] = useState(dataFimPadrao);
 	const [formato, setFormato] = useState<"pdf" | "txt" | "html">("txt");
 
 	const gerarRelatorioMutation = useMutation({
@@ -64,9 +60,8 @@ export function FluxoCaixaReportDialog({
 		onSuccess: () => {
 			toast.success("Relatório gerado com sucesso!");
 			onOpenChange(false);
-			// Resetar campos
-			setDataInicio("");
-			setDataFim("");
+			setDataInicio(dataInicioPadrao);
+			setDataFim(dataFimPadrao);
 			setFormato("txt");
 		},
 		onError: (error: Error) => {
@@ -101,9 +96,6 @@ export function FluxoCaixaReportDialog({
 		gerarRelatorioMutation.mutate();
 	};
 
-	// Definir datas padrão (mês atual)
-	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
-
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[500px]">
@@ -120,7 +112,7 @@ export function FluxoCaixaReportDialog({
 						<Input
 							id="dataInicio"
 							type="date"
-							value={dataInicio || dataInicioPadrao}
+							value={dataInicio}
 							onChange={(e) => setDataInicio(e.target.value)}
 							required
 						/>
@@ -131,7 +123,7 @@ export function FluxoCaixaReportDialog({
 						<Input
 							id="dataFim"
 							type="date"
-							value={dataFim || dataFimPadrao}
+							value={dataFim}
 							onChange={(e) => setDataFim(e.target.value)}
 							required
 						/>

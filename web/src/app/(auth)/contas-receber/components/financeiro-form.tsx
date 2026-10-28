@@ -4,13 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import {
 	ApropriacaoCentroCustoField,
 	type ApropriacaoCentroCustoFieldValue,
 	mapApropriacaoParaApi,
 } from "@/components/apropriacao-centro-custo-field";
-import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/ui/combobox";
@@ -30,6 +30,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ADMINISTRADORAS_CARTAO } from "@/constants/administradoras-cartao";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { extractDateOnly } from "@/lib/date";
@@ -38,18 +39,21 @@ import {
 	atualizarFinanceiroSchema,
 	type CriarFinanceiroFormData,
 	criarFinanceiroSchema,
-	TIPO_DOCUMENTO_OPTIONS,
+	isTipoDocumentoCartao,
+	isTipoDocumentoCheque,
 } from "@/schemas/financeiro.schema";
+import { apropriacaoCentroCustoService } from "@/services/apropriacao-centro-custo.service";
 import { bancosService } from "@/services/bancos.service";
+import { bandeiraCartaoService } from "@/services/bandeira-cartao.service";
 import { entidadesService } from "@/services/entidades.service";
 import {
 	type AtualizarFinanceiroData,
 	type CriarFinanceiroData,
 	financeiroService,
 } from "@/services/financeiro.service";
-import { apropriacaoCentroCustoService } from "@/services/apropriacao-centro-custo.service";
 import { planoContasService } from "@/services/plano-contas.service";
 import { tipoCobrancaService } from "@/services/tipo-cobranca.service";
+import { tipoDocumentoFinanceiroService } from "@/services/tipo-documento-financeiro.service";
 
 const apropriacaoCentroCustoInicial: ApropriacaoCentroCustoFieldValue = {
 	modo: "unico",
@@ -59,35 +63,6 @@ const apropriacaoCentroCustoInicial: ApropriacaoCentroCustoFieldValue = {
 
 const formatDateForInput = (date?: string | null): string =>
 	extractDateOnly(date) ?? "";
-
-// Função auxiliar para mapear tipo documento string para idtipodocumentofinanceiro
-// Por enquanto, vamos usar um mapeamento simples. Isso pode ser ajustado conforme necessário
-const mapTipoDocumentoToId = (tipoDocumento: string): string | null => {
-	// Mapeamento básico - pode ser ajustado conforme a tabela tipodocumentofinanceiro
-	const mapping: Record<string, string> = {
-		"Cartão crédito": "1",
-		"Cartão débito": "2",
-		Cheque: "3",
-		"Cheque 3o": "4",
-		"Cheque a vista": "5",
-		Crediario: "6",
-		Duplicata: "7",
-		"Duplicata 3o": "8",
-	};
-	return mapping[tipoDocumento] || null;
-};
-
-// Função auxiliar para verificar se é tipo cheque
-const isTipoCheque = (tipoDocumento: string | undefined): boolean => {
-	if (!tipoDocumento) return false;
-	return ["Cheque", "Cheque 3o", "Cheque a vista"].includes(tipoDocumento);
-};
-
-// Função auxiliar para verificar se é tipo cartão
-const isTipoCartao = (tipoDocumento: string | undefined): boolean => {
-	if (!tipoDocumento) return false;
-	return ["Cartão crédito", "Cartão débito"].includes(tipoDocumento);
-};
 
 interface FinanceiroFormProps {
 	modo?: "criar" | "editar";
@@ -120,7 +95,7 @@ export function FinanceiroForm({
 			idempresa: empresa?.id || "",
 			documento: "",
 			pagamentoRecorrente: false,
-			tipoDocumento: undefined,
+			idtipodocumentofinanceiro: undefined,
 			meses: null,
 			tipoCobranca: null,
 			entrada: null,
@@ -155,10 +130,12 @@ export function FinanceiroForm({
 		formState: { errors },
 	} = form;
 
-	const tipoDocumento = watch("tipoDocumento");
+	const idtipodocumentofinanceiro = watch("idtipodocumentofinanceiro");
 	const valorTitulo = watch("valor");
-	const showCamposCheque = isTipoCheque(tipoDocumento);
-	const showCamposCartao = isTipoCartao(tipoDocumento);
+	const idadministradoraAtual = watch("idadministradora");
+	const nomeadministradoraAtual = watch("nomeadministradora");
+	const idbandeiraAtual = watch("idbandeira");
+	const nomebandeiraAtual = watch("nomebandeira");
 
 	const valorTotalNumerico = useMemo(() => {
 		const n = Number(valorTitulo);
@@ -254,6 +231,34 @@ export function FinanceiroForm({
 		enabled: !!empresa?.id,
 	});
 
+	const { data: tiposDocumento = [] } = useQuery({
+		queryKey: ["tipos-documento-financeiro", empresa?.id, "form-financeiro"],
+		queryFn: async () => {
+			if (!empresa?.id) {
+				throw new Error("Empresa não selecionada");
+			}
+			return tipoDocumentoFinanceiroService.listarTodos({
+				idempresa: empresa.id,
+				inativo: 0,
+			});
+		},
+		enabled: !!empresa?.id,
+	});
+
+	const { data: bandeirasCartao = [] } = useQuery({
+		queryKey: ["bandeiras-cartao", empresa?.id, "form-financeiro"],
+		queryFn: async () => {
+			if (!empresa?.id) {
+				throw new Error("Empresa não selecionada");
+			}
+			return bandeiraCartaoService.listarTodos({
+				idempresa: empresa.id,
+				inativo: 0,
+			});
+		},
+		enabled: !!empresa?.id,
+	});
+
 	const opcoesTipoCobranca = useMemo(
 		() =>
 			tiposCobranca.map((tipoCobranca) => ({
@@ -263,6 +268,90 @@ export function FinanceiroForm({
 		[tiposCobranca],
 	);
 
+	const opcoesTipoDocumento = useMemo(
+		() =>
+			tiposDocumento.map((tipoDoc) => ({
+				value: tipoDoc.id,
+				label: tipoDoc.descricao,
+			})),
+		[tiposDocumento],
+	);
+
+	const opcoesBandeira = useMemo(() => {
+		const opcoes = bandeirasCartao.map((bandeira) => ({
+			value: bandeira.id,
+			label: bandeira.codigo
+				? `${bandeira.descricao} (${bandeira.codigo})`
+				: bandeira.descricao,
+		}));
+		if (
+			idbandeiraAtual &&
+			!opcoes.some((opcao) => opcao.value === idbandeiraAtual)
+		) {
+			opcoes.unshift({
+				value: idbandeiraAtual,
+				label: nomebandeiraAtual || idbandeiraAtual,
+			});
+		}
+		return opcoes;
+	}, [bandeirasCartao, idbandeiraAtual, nomebandeiraAtual]);
+
+	const opcoesAdministradora = useMemo(() => {
+		const opcoes = ADMINISTRADORAS_CARTAO.map((admin) => ({
+			value: admin.id,
+			label: admin.nome,
+		}));
+		if (
+			idadministradoraAtual &&
+			!opcoes.some((opcao) => opcao.value === idadministradoraAtual)
+		) {
+			opcoes.unshift({
+				value: idadministradoraAtual,
+				label: nomeadministradoraAtual || idadministradoraAtual,
+			});
+		}
+		return opcoes;
+	}, [idadministradoraAtual, nomeadministradoraAtual]);
+
+	const tipoDocumentoSelecionado = useMemo(
+		() =>
+			tiposDocumento.find((item) => item.id === idtipodocumentofinanceiro) ??
+			null,
+		[tiposDocumento, idtipodocumentofinanceiro],
+	);
+
+	const showCamposCheque = isTipoDocumentoCheque(
+		tipoDocumentoSelecionado?.descricao,
+		tipoDocumentoSelecionado?.formapagamentonfe,
+	);
+	const showCamposCartao = isTipoDocumentoCartao(
+		tipoDocumentoSelecionado?.descricao,
+		tipoDocumentoSelecionado?.formapagamentonfe,
+	);
+
+	useEffect(() => {
+		// Só limpa depois que o tipo selecionado estiver resolvido na lista.
+		if (!idtipodocumentofinanceiro || !tipoDocumentoSelecionado) return;
+		if (!showCamposCartao) {
+			setValue("idadministradora", null);
+			setValue("nomeadministradora", null);
+			setValue("idbandeira", null);
+			setValue("nomebandeira", null);
+		}
+		if (!showCamposCheque) {
+			setValue("agencia", null);
+			setValue("conta", null);
+			setValue("emitente", null);
+			setValue("cnpjcpfemitente", null);
+		}
+	}, [
+		idtipodocumentofinanceiro,
+		tipoDocumentoSelecionado,
+		showCamposCartao,
+		showCamposCheque,
+		setValue,
+	]);
+
 	// Preencher formulário com dados existentes na edição
 	useEffect(() => {
 		if (isEdicao && financeiroData) {
@@ -270,8 +359,9 @@ export function FinanceiroForm({
 			// Por enquanto, vamos deixar null e o usuário pode selecionar novamente
 			form.reset({
 				documento: financeiroData.documento || "",
-				pagamentoRecorrente: false, // Não temos esse campo no banco ainda
-				tipoDocumento: undefined, // Precisa mapear de idtipodocumentofinanceiro
+				pagamentoRecorrente: false,
+				idtipodocumentofinanceiro:
+					financeiroData.idtipodocumentofinanceiro || undefined,
 				meses: null,
 				tipoCobranca: financeiroData.idtipocobranca || null,
 				entrada: formatDateForInput(financeiroData.entrada),
@@ -280,7 +370,10 @@ export function FinanceiroForm({
 				vencimento: formatDateForInput(financeiroData.vencimento),
 				idbanco: financeiroData.idbanco || undefined,
 				identidade: financeiroData.identidade || undefined,
-				idplanocontas: financeiroData.idcodigocontabil?.toString() || undefined,
+				idplanocontas:
+					financeiroData.idplanocontas ||
+					financeiroData.idcodigocontabil?.toString() ||
+					undefined,
 				valor: financeiroData.valor || "",
 				observacoes: financeiroData.historico || null,
 				iddependente: financeiroData.iddependente || null,
@@ -291,8 +384,12 @@ export function FinanceiroForm({
 				cnpjcpfemitente: financeiroData.cnpjcpfemitente || null,
 				nomeadministradora: financeiroData.nomeadministradora || null,
 				nomebandeira: financeiroData.nomebandeira || null,
-				idadministradora: financeiroData.idadministradora || null,
-				idbandeira: financeiroData.idbandeira || null,
+				idadministradora: financeiroData.idadministradora
+					? String(financeiroData.idadministradora)
+					: null,
+				idbandeira: financeiroData.idbandeira
+					? String(financeiroData.idbandeira)
+					: null,
 			});
 		} else if (valoresIniciais) {
 			form.reset({
@@ -374,17 +471,12 @@ export function FinanceiroForm({
 				identidade: data.identidade || null,
 				tipo: data.tipo || tipo,
 				documento: data.documento || null,
-				idtipodocumentofinanceiro: data.tipoDocumento
-					? mapTipoDocumentoToId(data.tipoDocumento)
-					: null,
+				idtipodocumentofinanceiro: data.idtipodocumentofinanceiro || null,
 				emissao: data.emissao || null,
 				vencimento: data.vencimento || null,
 				entrada: data.entrada || null,
 				datareferencia: data.referencia || null,
 				idbanco: data.idbanco ?? null,
-				idcodigocontabil: data.idplanocontas
-					? Number(data.idplanocontas)
-					: null,
 				idplanocontas: data.idplanocontas || null,
 				valor: data.valor || "0.00",
 				saldo: data.valor || "0.00",
@@ -392,13 +484,11 @@ export function FinanceiroForm({
 				idtipocobranca: data.tipoCobranca || null,
 				idportador: data.idportador || null,
 				iddependente: data.iddependente || null,
-				status: "A", // Aberto por padrão
-				// Campos condicionais para cheque
+				status: "A",
 				agencia: showCamposCheque ? data.agencia || null : null,
 				numerocontacorrente: showCamposCheque ? data.conta || null : null,
 				emitente: showCamposCheque ? data.emitente || null : null,
 				cnpjcpfemitente: showCamposCheque ? data.cnpjcpfemitente || null : null,
-				// Campos condicionais para cartão
 				nomeadministradora: showCamposCartao
 					? data.nomeadministradora || null
 					: null,
@@ -445,17 +535,12 @@ export function FinanceiroForm({
 			const payload: AtualizarFinanceiroData = {
 				identidade: data.identidade || null,
 				documento: data.documento || null,
-				idtipodocumentofinanceiro: data.tipoDocumento
-					? mapTipoDocumentoToId(data.tipoDocumento)
-					: null,
+				idtipodocumentofinanceiro: data.idtipodocumentofinanceiro || null,
 				emissao: data.emissao || null,
 				vencimento: data.vencimento || null,
 				entrada: data.entrada || null,
 				datareferencia: data.referencia || null,
 				idbanco: data.idbanco ?? null,
-				idcodigocontabil: data.idplanocontas
-					? Number(data.idplanocontas)
-					: null,
 				idplanocontas: data.idplanocontas || null,
 				valor: data.valor || undefined,
 				saldo: data.valor || undefined,
@@ -463,12 +548,10 @@ export function FinanceiroForm({
 				idtipocobranca: data.tipoCobranca || null,
 				idportador: data.idportador || null,
 				iddependente: data.iddependente || null,
-				// Campos condicionais para cheque
 				agencia: showCamposCheque ? data.agencia || null : null,
 				numerocontacorrente: showCamposCheque ? data.conta || null : null,
 				emitente: showCamposCheque ? data.emitente || null : null,
 				cnpjcpfemitente: showCamposCheque ? data.cnpjcpfemitente || null : null,
-				// Campos condicionais para cartão
 				nomeadministradora: showCamposCartao
 					? data.nomeadministradora || null
 					: null,
@@ -563,35 +646,39 @@ export function FinanceiroForm({
 							/>
 						</Field>
 
-						<Field data-invalid={!!errors.tipoDocumento}>
-							<FieldLabel htmlFor="tipoDocumento">
+						<Field data-invalid={!!errors.idtipodocumentofinanceiro}>
+							<FieldLabel htmlFor="idtipodocumentofinanceiro">
 								Tipo de Documento *
 							</FieldLabel>
-							<Select
-								value={tipoDocumento || undefined}
-								onValueChange={(value) =>
-									setValue("tipoDocumento", value as any)
-								}
-							>
-								<SelectTrigger
-									id="tipoDocumento"
-									aria-invalid={!!errors.tipoDocumento}
-									aria-describedby={
-										errors.tipoDocumento ? "tipoDocumento-error" : undefined
-									}
-								>
-									<SelectValue placeholder="Selecione o tipo de documento" />
-								</SelectTrigger>
-								<SelectContent>
-									{TIPO_DOCUMENTO_OPTIONS.map((tipo) => (
-										<SelectItem key={tipo} value={tipo}>
-											{tipo}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+							<Controller
+								control={control}
+								name="idtipodocumentofinanceiro"
+								render={({ field }) => (
+									<Combobox
+										options={opcoesTipoDocumento}
+										value={field.value ?? ""}
+										onChange={(value) => {
+											field.onChange(value || undefined);
+											if (!value) {
+												setValue("idadministradora", null);
+												setValue("nomeadministradora", null);
+												setValue("idbandeira", null);
+												setValue("nomebandeira", null);
+											}
+										}}
+										placeholder="Selecione o tipo de documento"
+										searchPlaceholder="Buscar tipo de documento..."
+										emptyMessage="Nenhum tipo de documento encontrado."
+										disabled={!empresa?.id}
+									/>
+								)}
+							/>
 							<FieldError
-								errors={errors.tipoDocumento ? [errors.tipoDocumento] : []}
+								errors={
+									errors.idtipodocumentofinanceiro
+										? [errors.idtipodocumentofinanceiro]
+										: []
+								}
 							/>
 						</Field>
 
@@ -871,66 +958,46 @@ export function FinanceiroForm({
 					</div>
 				)}
 
-				{/* Campos condicionais para Cartão */}
 				{showCamposCartao && (
 					<div className="space-y-4">
 						<h2 className="text-lg font-semibold">Dados do Cartão</h2>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<Field data-invalid={!!errors.nomeadministradora}>
-								<FieldLabel htmlFor="nomeadministradora">
-									Administradora
-								</FieldLabel>
-								<Input
-									id="nomeadministradora"
-									placeholder="Nome da administradora"
-									maxLength={50}
-									aria-invalid={!!errors.nomeadministradora}
-									aria-describedby={
-										errors.nomeadministradora
-											? "nomeadministradora-error"
-											: undefined
-									}
-									{...register("nomeadministradora")}
-								/>
-								<FieldError
-									errors={
-										errors.nomeadministradora ? [errors.nomeadministradora] : []
-									}
-								/>
-							</Field>
-
-							<Field data-invalid={!!errors.nomebandeira}>
-								<FieldLabel htmlFor="nomebandeira">Bandeira</FieldLabel>
-								<Input
-									id="nomebandeira"
-									placeholder="Nome da bandeira"
-									maxLength={50}
-									aria-invalid={!!errors.nomebandeira}
-									aria-describedby={
-										errors.nomebandeira ? "nomebandeira-error" : undefined
-									}
-									{...register("nomebandeira")}
-								/>
-								<FieldError
-									errors={errors.nomebandeira ? [errors.nomebandeira] : []}
-								/>
-							</Field>
-
 							<Field data-invalid={!!errors.idadministradora}>
 								<FieldLabel htmlFor="idadministradora">
-									ID Administradora
+									Administradora
 								</FieldLabel>
-								<Input
-									id="idadministradora"
-									type="number"
-									placeholder="ID da administradora"
-									aria-invalid={!!errors.idadministradora}
-									aria-describedby={
-										errors.idadministradora
-											? "idadministradora-error"
-											: undefined
-									}
-									{...register("idadministradora", { valueAsNumber: true })}
+								<Controller
+									control={control}
+									name="idadministradora"
+									render={({ field }) => (
+										<Select
+											value={field.value ?? undefined}
+											onValueChange={(value) => {
+												const admin = opcoesAdministradora.find(
+													(item) => item.value === value,
+												);
+												field.onChange(value);
+												setValue(
+													"nomeadministradora",
+													admin?.label ?? null,
+												);
+											}}
+										>
+											<SelectTrigger
+												id="idadministradora"
+												aria-invalid={!!errors.idadministradora}
+											>
+												<SelectValue placeholder="Selecione a administradora" />
+											</SelectTrigger>
+											<SelectContent>
+												{opcoesAdministradora.map((admin) => (
+													<SelectItem key={admin.value} value={admin.value}>
+														{admin.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
 								/>
 								<FieldError
 									errors={
@@ -940,16 +1007,42 @@ export function FinanceiroForm({
 							</Field>
 
 							<Field data-invalid={!!errors.idbandeira}>
-								<FieldLabel htmlFor="idbandeira">ID Bandeira</FieldLabel>
-								<Input
-									id="idbandeira"
-									type="number"
-									placeholder="ID da bandeira"
-									aria-invalid={!!errors.idbandeira}
-									aria-describedby={
-										errors.idbandeira ? "idbandeira-error" : undefined
-									}
-									{...register("idbandeira", { valueAsNumber: true })}
+								<FieldLabel htmlFor="idbandeira">Bandeira</FieldLabel>
+								<Controller
+									control={control}
+									name="idbandeira"
+									render={({ field }) => (
+										<Select
+											value={field.value ?? undefined}
+											onValueChange={(value) => {
+												const bandeira = bandeirasCartao.find(
+													(item) => item.id === value,
+												);
+												field.onChange(value);
+												setValue(
+													"nomebandeira",
+													bandeira?.descricao ?? null,
+												);
+											}}
+										>
+											<SelectTrigger
+												id="idbandeira"
+												aria-invalid={!!errors.idbandeira}
+											>
+												<SelectValue placeholder="Selecione a bandeira" />
+											</SelectTrigger>
+											<SelectContent>
+												{opcoesBandeira.map((bandeira) => (
+													<SelectItem
+														key={bandeira.value}
+														value={bandeira.value}
+													>
+														{bandeira.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
 								/>
 								<FieldError
 									errors={errors.idbandeira ? [errors.idbandeira] : []}

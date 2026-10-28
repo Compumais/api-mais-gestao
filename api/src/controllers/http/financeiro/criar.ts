@@ -58,6 +58,42 @@ const criarFinanceiroBodySchema = z.object({
 	currenttimemillis: z.number().optional().nullable(),
 	idtipocobranca: z.string().uuid().optional().nullable(),
 	idplanocontas: z.string().uuid().optional().nullable(),
+	entrada: z.string().optional().nullable(),
+	datareferencia: z.string().optional().nullable(),
+	idportador: z
+		.union([z.string(), z.number()])
+		.optional()
+		.nullable()
+		.transform((valor) =>
+			valor === null || valor === undefined ? valor : String(valor),
+		),
+	iddependente: z
+		.union([z.string(), z.number()])
+		.optional()
+		.nullable()
+		.transform((valor) =>
+			valor === null || valor === undefined ? valor : String(valor),
+		),
+	nomeadministradora: z.string().max(50).optional().nullable(),
+	idadministradora: z
+		.union([z.string(), z.number()])
+		.optional()
+		.nullable()
+		.transform((valor) =>
+			valor === null || valor === undefined || valor === ""
+				? null
+				: String(valor),
+		),
+	nomebandeira: z.string().max(50).optional().nullable(),
+	idbandeira: z
+		.union([z.string(), z.number()])
+		.optional()
+		.nullable()
+		.transform((valor) =>
+			valor === null || valor === undefined || valor === ""
+				? null
+				: String(valor),
+		),
 	apropriacoesCentroCusto: z
 		.array(
 			z.object({
