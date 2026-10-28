@@ -28,6 +28,7 @@ import {
 import { LIMITE_EXPORTACAO_CSV } from "@/util/csv.js";
 import { resolverImagemVariacao } from "@/service/produto/resolver-imagem-variacao.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
+import { normalizarCamposNumericosProduto } from "@/util/normalizar-campos-numericos-produto.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 import { db } from "./connection";
@@ -241,7 +242,10 @@ function aplicarFiltroColunaProduto(
 }
 
 export async function criarProduto(dadosProduto: NovoProduto) {
-	const [produto] = await db.insert(produtos).values(dadosProduto).returning();
+	const [produto] = await db
+		.insert(produtos)
+		.values(normalizarCamposNumericosProduto(dadosProduto))
+		.returning();
 
 	return produto;
 }

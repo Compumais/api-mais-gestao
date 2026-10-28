@@ -2,6 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import type { NovoProduto, Produto } from "@/model/produto-model.js";
 import { produtoHistorico, produtos } from "@/repositories/schema.js";
+import { normalizarCamposNumericosProduto } from "@/util/normalizar-campos-numericos-produto.js";
 import { db } from "./connection.js";
 
 const CAMPOS_IGNORADOS = new Set([
@@ -50,7 +51,10 @@ export async function criarProdutoComHistorico(
 ): Promise<Produto | undefined> {
 	// Histórico é best-effort: se produto_historico estiver ausente/quebrado,
 	// o cadastro do produto não pode falhar (evita 500 em produção).
-	const [produto] = await db.insert(produtos).values(dados).returning();
+	const [produto] = await db
+		.insert(produtos)
+		.values(normalizarCamposNumericosProduto(dados))
+		.returning();
 	if (!produto) return undefined;
 	try {
 		await db.insert(produtoHistorico).values({

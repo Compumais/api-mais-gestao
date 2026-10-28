@@ -238,6 +238,21 @@ export function refinirCamposIbsCbsProduto(
 	}
 }
 
+const CHAVES_NUMERICAS_IMPOSTOS = new Set<string>([
+	"percentualmva",
+	...Object.keys(camposAliquotaProdutoSchema),
+]);
+
+/** Evita `invalid input syntax for type numeric: ""` no insert/update. */
+export function normalizarValorNumericoGravacao(
+	valor: unknown,
+): string | number | null | undefined {
+	if (valor === undefined) return undefined;
+	if (valor === null) return null;
+	if (typeof valor === "string" && valor.trim() === "") return null;
+	return valor as string | number;
+}
+
 export type CamposImpostosProduto = {
 	idcfopentrada?: string | null | undefined;
 	idcfopsaida?: string | null | undefined;
@@ -288,7 +303,11 @@ export function montarCamposImpostosProduto(
 		if (!(chave in dados) || dados[chave] === undefined) {
 			continue;
 		}
-		(resultado as Record<string, unknown>)[chave] = dados[chave] ?? null;
+		let valor: unknown = dados[chave] ?? null;
+		if (CHAVES_NUMERICAS_IMPOSTOS.has(chave)) {
+			valor = normalizarValorNumericoGravacao(valor);
+		}
+		(resultado as Record<string, unknown>)[chave] = valor;
 	}
 
 	if ("cfopvendaecf" in dados && dados.cfopvendaecf !== undefined) {

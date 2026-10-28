@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizarValorNumericoGravacao } from "@/util/campos-impostos-produto.js";
 
 const percentualOpcional = z
 	.union([z.string(), z.number()])
@@ -108,6 +109,15 @@ export type CamposServicoProduto = {
 	aliquotacofins?: string | null | undefined;
 };
 
+function percentualServico(
+	valor: string | null | undefined,
+): string | null | undefined {
+	return normalizarValorNumericoGravacao(valor) as
+		| string
+		| null
+		| undefined;
+}
+
 export function montarCamposServicoProduto(
 	dados: CamposServicoProduto,
 ): CamposServicoProduto {
@@ -122,19 +132,20 @@ export function montarCamposServicoProduto(
 		codigonbs: dados.codigonbs ?? null,
 		cicloposvenda: dados.cicloposvenda ?? null,
 		idplanocontas: dados.idplanocontas ?? null,
-		comissao: dados.comissao ?? null,
-		comissaoavista: dados.comissaoavista ?? null,
-		comissaoprazo: dados.comissaoprazo ?? null,
-		percentualcomissaoquitacao: dados.percentualcomissaoquitacao ?? null,
+		comissao: percentualServico(dados.comissao) ?? null,
+		comissaoavista: percentualServico(dados.comissaoavista) ?? null,
+		comissaoprazo: percentualServico(dados.comissaoprazo) ?? null,
+		percentualcomissaoquitacao:
+			percentualServico(dados.percentualcomissaoquitacao) ?? null,
 		situacaoiss: dados.situacaoiss?.trim() || null,
-		aliquotaiss: dados.aliquotaiss ?? null,
+		aliquotaiss: percentualServico(dados.aliquotaiss) ?? null,
 		exigibilidadeiss: dados.exigibilidadeiss?.trim() || null,
 		processoisencaoiss: dados.processoisencaoiss?.trim() || null,
 		incentivofiscal: dados.incentivofiscal ?? null,
 		codigomunicipalservico: dados.codigomunicipalservico?.trim() || null,
 		tipoimpressaogourmet: dados.tipoimpressaogourmet?.trim() || null,
 		idcfopsaidaexterna: dados.idcfopsaidaexterna ?? null,
-		aliquotapis: dados.aliquotapis ?? null,
-		aliquotacofins: dados.aliquotacofins ?? null,
+		aliquotapis: percentualServico(dados.aliquotapis) ?? null,
+		aliquotacofins: percentualServico(dados.aliquotacofins) ?? null,
 	};
 }
