@@ -119,8 +119,11 @@ import { verifyJwt } from "./controllers/middleware/verify-jwt.js";
 import { getApiBaseUrl } from "./util/base-url.js";
 import { corsOptions } from "./util/cors-origins.js";
 import { registrarAgendador } from "./worker/registrar-agendador.js";
+import { registrarErroValidacaoFastify } from "./util/registrar-erro-validacao-fastify.js";
 
 export const app = Fastify({ logger: true, trustProxy: true });
+
+registrarErroValidacaoFastify(app);
 
 app.register(cors, corsOptions);
 

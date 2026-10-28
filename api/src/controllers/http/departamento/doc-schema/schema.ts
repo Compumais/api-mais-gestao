@@ -9,11 +9,11 @@ export const criarDepartamentoSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-			codigo: { type: "string" },
-			descricao: { type: "string" },
-			inativo: { type: "string" }
+			codigo: { type: "string", maxLength: 20 },
+			descricao: { type: "string", maxLength: 12 },
+			inativo: { type: "number", description: "0 = ativo, 1 = inativo" },
 		},
-		required: ["idempresa"],
+		required: ["idempresa", "codigo", "descricao"],
 	},
 	response: {
 		201: { type: "object", additionalProperties: true },
