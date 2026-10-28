@@ -8,7 +8,12 @@ export const criarCentroCustoSchema = z.object({
 	descricao: z.string().nullable().optional(),
 	tipogestao: tipogestaoSchema.optional(),
 	iddepartamento: z.string().nullable().optional(),
-	inativo: z.union([z.literal(0), z.literal(1)]).default(0),
+	inativo: z.coerce
+		.number()
+		.int()
+		.min(0)
+		.max(1)
+		.default(0),
 	idcentrocustopai: z.string().optional(),
 	codigoextenso: z.string().max(85).optional(),
 	codigoreduzido: z.string().max(20).optional(),

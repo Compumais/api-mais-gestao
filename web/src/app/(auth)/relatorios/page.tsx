@@ -20,11 +20,15 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { CentroCustosReportDialog } from "@/components/centro-custos-report-dialog";
 import { ContasPagarReportDialog } from "@/components/contas-pagar-report-dialog";
 import { ContasReceberReportDialog } from "@/components/contas-receber-report-dialog";
 import { DespesasPorCategoriaReportDialog } from "@/components/despesas-por-categoria-report-dialog";
 import { DreGerencialReportDialog } from "@/components/dre-gerencial-report-dialog";
 import { FluxoCaixaReportDialog } from "@/components/fluxo-caixa-report-dialog";
+import { FormasDePagamentoReportDialog } from "@/components/formas-de-pagamento-report-dialog";
+import { InadimplenciaReportDialog } from "@/components/inadimplencia-report-dialog";
+import { ReceitasPorCategoriaReportDialog } from "@/components/receitas-por-categoria-report-dialog";
 import {
 	Card,
 	CardDescription,
@@ -36,6 +40,10 @@ import { Separator } from "@/components/ui/separator";
 type DialogoRelatorio =
 	| "dre"
 	| "despesas"
+	| "receitas"
+	| "inadimplencia"
+	| "centro-custos"
+	| "formas-de-pagamento"
 	| "fluxo-caixa"
 	| "contas-pagar"
 	| "contas-receber";
@@ -49,7 +57,6 @@ type RelatorioHub = {
 	icon: typeof IconFileAnalytics;
 	href: string;
 	color: string;
-	premium?: boolean;
 	dialogo?: DialogoRelatorio;
 };
 
@@ -118,36 +125,36 @@ const reports: RelatorioHub[] = [
 		title: "Receita por Categoria",
 		description: "Análise gráfica das receitas categorizadas.",
 		icon: IconChartDonut,
-		href: "#",
+		href: "/relatorios?abrir=receitas",
 		color: "text-emerald-500",
-		premium: true,
+		dialogo: "receitas",
 	},
 	{
 		modulo: "Financeiro",
 		title: "Inadimplência",
 		description: "Controle de clientes inadimplentes e atrasos.",
 		icon: IconAlertTriangle,
-		href: "#",
+		href: "/relatorios?abrir=inadimplencia",
 		color: "text-rose-500",
-		premium: true,
+		dialogo: "inadimplencia",
 	},
 	{
 		modulo: "Financeiro",
 		title: "Centro de Custos",
 		description: "Relatórios segregados por centros de custo.",
 		icon: IconBuildingBank,
-		href: "#",
+		href: "/relatorios?abrir=centro-custos",
 		color: "text-indigo-500",
-		premium: true,
+		dialogo: "centro-custos",
 	},
 	{
 		modulo: "Financeiro",
 		title: "Formas de Pagamento",
 		description: "Análise de lucratividade por forma de pagamento.",
 		icon: IconCreditCard,
-		href: "#",
+		href: "/relatorios?abrir=formas-de-pagamento",
 		color: "text-cyan-500",
-		premium: true,
+		dialogo: "formas-de-pagamento",
 	},
 	{
 		modulo: "Financeiro",
@@ -218,6 +225,10 @@ function abrirDialogo(valor: string | null): DialogoRelatorio | null {
 	if (
 		valor === "dre" ||
 		valor === "despesas" ||
+		valor === "receitas" ||
+		valor === "inadimplencia" ||
+		valor === "centro-custos" ||
+		valor === "formas-de-pagamento" ||
 		valor === "fluxo-caixa" ||
 		valor === "contas-pagar" ||
 		valor === "contas-receber"
@@ -308,14 +319,6 @@ export default function RelatoriosPage() {
 								);
 							}
 
-							if (report.href === "#") {
-								return (
-									<div key={report.title} className="opacity-70">
-										{CardContent}
-									</div>
-								);
-							}
-
 							return (
 								<Link href={report.href} key={report.title} className="group">
 									{CardContent}
@@ -344,6 +347,34 @@ export default function RelatoriosPage() {
 				open={dialogoAberto === "contas-receber"}
 				onOpenChange={(open) => {
 					if (open) abrir("contas-receber");
+					else fechar();
+				}}
+			/>
+			<ReceitasPorCategoriaReportDialog
+				open={dialogoAberto === "receitas"}
+				onOpenChange={(open) => {
+					if (open) abrir("receitas");
+					else fechar();
+				}}
+			/>
+			<InadimplenciaReportDialog
+				open={dialogoAberto === "inadimplencia"}
+				onOpenChange={(open) => {
+					if (open) abrir("inadimplencia");
+					else fechar();
+				}}
+			/>
+			<CentroCustosReportDialog
+				open={dialogoAberto === "centro-custos"}
+				onOpenChange={(open) => {
+					if (open) abrir("centro-custos");
+					else fechar();
+				}}
+			/>
+			<FormasDePagamentoReportDialog
+				open={dialogoAberto === "formas-de-pagamento"}
+				onOpenChange={(open) => {
+					if (open) abrir("formas-de-pagamento");
 					else fechar();
 				}}
 			/>

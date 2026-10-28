@@ -35,8 +35,9 @@ export function ReceitasPorCategoriaReportDialog({
 	onOpenChange,
 }: ReceitasPorCategoriaReportDialogProps) {
 	const { empresa } = useEmpresa();
-	const [dataInicio, setDataInicio] = useState("");
-	const [dataFim, setDataFim] = useState("");
+	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
+	const [dataInicio, setDataInicio] = useState(dataInicioPadrao);
+	const [dataFim, setDataFim] = useState(dataFimPadrao);
 	const [formato, setFormato] = useState<"pdf" | "txt" | "html">("txt");
 
 	const gerarRelatorioMutation = useMutation({
@@ -53,8 +54,8 @@ export function ReceitasPorCategoriaReportDialog({
 		onSuccess: () => {
 			toast.success("Relatório gerado com sucesso!");
 			onOpenChange(false);
-			setDataInicio("");
-			setDataFim("");
+			setDataInicio(dataInicioPadrao);
+			setDataFim(dataFimPadrao);
 			setFormato("txt");
 		},
 		onError: (error: Error) => {
@@ -82,8 +83,6 @@ export function ReceitasPorCategoriaReportDialog({
 		gerarRelatorioMutation.mutate();
 	};
 
-	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
-
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[500px]">
@@ -100,7 +99,7 @@ export function ReceitasPorCategoriaReportDialog({
 						<Input
 							id="rpc-dataInicio"
 							type="date"
-							value={dataInicio || dataInicioPadrao}
+							value={dataInicio}
 							onChange={(e) => setDataInicio(e.target.value)}
 							required
 						/>
@@ -110,7 +109,7 @@ export function ReceitasPorCategoriaReportDialog({
 						<Input
 							id="rpc-dataFim"
 							type="date"
-							value={dataFim || dataFimPadrao}
+							value={dataFim}
 							onChange={(e) => setDataFim(e.target.value)}
 							required
 						/>

@@ -1,30 +1,45 @@
 import { z } from "zod";
 
-// Tipos de documento disponíveis
-export const TIPO_DOCUMENTO_OPTIONS = [
-	"Cartão crédito",
-	"Cartão débito",
-	"Cheque",
-	"Cheque 3o",
-	"Cheque a vista",
-	"Crediario",
-	"Duplicata",
-	"Duplicata 3o",
-] as const;
+const idTextoOpcional = z.preprocess((valor) => {
+	if (valor === "" || valor === null || valor === undefined) return null;
+	return String(valor);
+}, z.string().nullable().optional());
 
-export type TipoDocumento = (typeof TIPO_DOCUMENTO_OPTIONS)[number];
+const numeroOpcional = z.preprocess((valor) => {
+	if (valor === "" || valor === null || valor === undefined) return null;
+	if (typeof valor === "number" && Number.isNaN(valor)) return null;
+	const num = typeof valor === "string" ? Number(valor) : valor;
+	if (typeof num === "number" && Number.isNaN(num)) return null;
+	return num;
+}, z.number().int().nullable().optional());
 
-// Tipos de documento que requerem campos de cheque
-const TIPOS_DOCUMENTO_CHEQUE = [
-	"Cheque",
-	"Cheque 3o",
-	"Cheque a vista",
-] as const;
+function descricaoNormalizada(texto: string): string {
+	return texto
+		.toLowerCase()
+		.normalize("NFD")
+		.replace(/\p{M}/gu, "");
+}
 
-// Tipos de documento que requerem campos de cartão
-const TIPOS_DOCUMENTO_CARTAO = ["Cartão crédito", "Cartão débito"] as const;
+/** Detecta título de cheque a partir da descrição ou código NF-e. */
+export function isTipoDocumentoCheque(
+	descricao?: string | null,
+	formapagamentonfe?: string | null,
+): boolean {
+	if (formapagamentonfe === "02") return true;
+	const d = descricaoNormalizada(descricao ?? "");
+	return d.includes("cheque");
+}
 
-// Schema base para criar financeiro
+/** Detecta título de cartão a partir da descrição ou código NF-e. */
+export function isTipoDocumentoCartao(
+	descricao?: string | null,
+	formapagamentonfe?: string | null,
+): boolean {
+	if (formapagamentonfe === "03" || formapagamentonfe === "04") return true;
+	const d = descricaoNormalizada(descricao ?? "");
+	return d.includes("cartao");
+}
+
 export const criarFinanceiroSchema = z
 	.object({
 		idempresa: z.string().uuid("ID da empresa inválido"),
@@ -34,10 +49,10 @@ export const criarFinanceiroSchema = z
 			.nullable()
 			.optional(),
 		pagamentoRecorrente: z.boolean().optional().default(false),
-		tipoDocumento: z.enum([...TIPO_DOCUMENTO_OPTIONS], {
-			message: "Tipo de documento é obrigatório",
-		}),
-		meses: z.number().int().min(0).nullable().optional(),
+		idtipodocumentofinanceiro: z
+			.string()
+			.uuid("Tipo de documento é obrigatório"),
+		meses: numeroOpcional,
 		tipoCobranca: z.string().uuid().nullable().optional(),
 		entrada: z.string().nullable().optional(),
 		referencia: z.string().nullable().optional(),
@@ -57,40 +72,19 @@ export const criarFinanceiroSchema = z
 				{ message: "Valor deve ser um número maior que zero" },
 			),
 		observacoes: z.string().nullable().optional(),
-		iddependente: z.number().int().nullable().optional(),
-		idportador: z.number().int().nullable().optional(),
-		// Campos condicionais para cheque
+		iddependente: idTextoOpcional,
+		idportador: idTextoOpcional,
 		agencia: z.string().max(15).nullable().optional(),
 		conta: z.string().max(40).nullable().optional(),
 		emitente: z.string().max(60).nullable().optional(),
 		cnpjcpfemitente: z.string().max(30).nullable().optional(),
-		// Campos condicionais para cartão
 		nomeadministradora: z.string().max(50).nullable().optional(),
 		nomebandeira: z.string().max(50).nullable().optional(),
-		idadministradora: z.number().int().nullable().optional(),
-		idbandeira: z.number().int().nullable().optional(),
-		tipo: z.enum(["P", "R"]).optional(), // P = Pagar, R = Receber
+		idadministradora: idTextoOpcional,
+		idbandeira: idTextoOpcional,
+		tipo: z.enum(["P", "R"]).optional(),
 	})
 	.superRefine((data, ctx) => {
-		// Validação para campos de cheque
-		if (TIPOS_DOCUMENTO_CHEQUE.includes(data.tipoDocumento as any)) {
-			if (!data.agencia || data.agencia.trim() === "") {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "Agência é obrigatória para cheques",
-					path: ["agencia"],
-				});
-			}
-			if (!data.conta || data.conta.trim() === "") {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "Conta é obrigatória para cheques",
-					path: ["conta"],
-				});
-			}
-		}
-
-		// Validação de datas
 		if (data.emissao && data.vencimento) {
 			const dataEmissao = new Date(data.emissao);
 			const dataVencimento = new Date(data.vencimento);
@@ -105,13 +99,12 @@ export const criarFinanceiroSchema = z
 		}
 	});
 
-// Schema para atualizar financeiro (todos os campos opcionais exceto os que não podem ser alterados)
 export const atualizarFinanceiroSchema = z
 	.object({
 		documento: z.string().max(60).nullable().optional(),
 		pagamentoRecorrente: z.boolean().optional(),
-		tipoDocumento: z.enum([...TIPO_DOCUMENTO_OPTIONS]).optional(),
-		meses: z.number().int().min(0).nullable().optional(),
+		idtipodocumentofinanceiro: z.string().uuid().nullable().optional(),
+		meses: numeroOpcional,
 		tipoCobranca: z.string().uuid().nullable().optional(),
 		entrada: z.string().nullable().optional(),
 		referencia: z.string().nullable().optional(),
@@ -132,48 +125,18 @@ export const atualizarFinanceiroSchema = z
 				{ message: "Valor deve ser um número maior que zero" },
 			),
 		observacoes: z.string().nullable().optional(),
-		iddependente: z.number().int().nullable().optional(),
-		idportador: z.number().int().nullable().optional(),
-		// Campos condicionais para cheque
+		iddependente: idTextoOpcional,
+		idportador: idTextoOpcional,
 		agencia: z.string().max(15).nullable().optional(),
 		conta: z.string().max(40).nullable().optional(),
 		emitente: z.string().max(60).nullable().optional(),
 		cnpjcpfemitente: z.string().max(30).nullable().optional(),
-		// Campos condicionais para cartão
 		nomeadministradora: z.string().max(50).nullable().optional(),
 		nomebandeira: z.string().max(50).nullable().optional(),
-		idadministradora: z.number().int().nullable().optional(),
-		idbandeira: z.number().int().nullable().optional(),
+		idadministradora: idTextoOpcional,
+		idbandeira: idTextoOpcional,
 	})
 	.superRefine((data, ctx) => {
-		// Validação para campos de cheque (se tipoDocumento estiver presente)
-		if (
-			data.tipoDocumento &&
-			TIPOS_DOCUMENTO_CHEQUE.includes(data.tipoDocumento as any)
-		) {
-			if (
-				data.agencia !== undefined &&
-				(!data.agencia || data.agencia.trim() === "")
-			) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "Agência é obrigatória para cheques",
-					path: ["agencia"],
-				});
-			}
-			if (
-				data.conta !== undefined &&
-				(!data.conta || data.conta.trim() === "")
-			) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "Conta é obrigatória para cheques",
-					path: ["conta"],
-				});
-			}
-		}
-
-		// Validação de datas
 		if (data.emissao && data.vencimento) {
 			const dataEmissao = new Date(data.emissao);
 			const dataVencimento = new Date(data.vencimento);

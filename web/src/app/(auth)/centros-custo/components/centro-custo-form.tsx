@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { CampoDepartamento } from "@/components/campo-departamento";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CampoDepartamento } from "@/components/campo-departamento";
 import { Combobox } from "@/components/ui/combobox";
 import {
 	Field,
@@ -119,7 +119,7 @@ export function CentroCustoForm({
 				descricao: centroAtual.descricao,
 				tipogestao: (centroAtual.tipogestao as CriarCentroCustoFormData["tipogestao"]) ?? null,
 				iddepartamento: centroAtual.iddepartamento,
-				inativo: (centroAtual.inativo === 1 ? 1 : 0) as 0 | 1,
+				inativo: centroAtual.inativo === 1 ? 1 : 0,
 				idcentrocustopai: centroAtual.idcentrocustopai ?? undefined,
 				codigoextenso: centroAtual.codigoextenso ?? "",
 				codigoreduzido: centroAtual.codigoreduzido ?? "",
@@ -166,7 +166,7 @@ export function CentroCustoForm({
 			descricao: data.descricao ?? null,
 			tipogestao: data.tipogestao ?? null,
 			iddepartamento: data.iddepartamento ?? null,
-			inativo: (data.inativo === 1 ? 1 : 0) as 0 | 1,
+			inativo: data.inativo === 1 ? 1 : 0,
 			idcentrocustopai: data.idcentrocustopai || undefined,
 			codigoextenso: data.codigoextenso || undefined,
 			codigoreduzido: data.codigoreduzido || undefined,
@@ -285,9 +285,10 @@ export function CentroCustoForm({
 					</Field>
 				) : null}
 
-				<Field className="flex flex-row items-center gap-2">
+				<Field orientation="horizontal">
 					<Checkbox
 						id="inativo"
+						className="size-4 shrink-0"
 						checked={inativo === 1}
 						onCheckedChange={(checked) =>
 							setValue("inativo", checked ? 1 : 0)

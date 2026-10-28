@@ -459,6 +459,22 @@ export const DATA = {
 					title: "Contas a receber",
 					url: "/relatorios?abrir=contas-receber",
 				},
+				{
+					title: "Receita por categoria",
+					url: "/relatorios?abrir=receitas",
+				},
+				{
+					title: "Inadimplência",
+					url: "/relatorios?abrir=inadimplencia",
+				},
+				{
+					title: "Centro de custos",
+					url: "/relatorios?abrir=centro-custos",
+				},
+				{
+					title: "Formas de pagamento",
+					url: "/relatorios?abrir=formas-de-pagamento",
+				},
 			],
 		},
 		{

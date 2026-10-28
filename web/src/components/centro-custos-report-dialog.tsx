@@ -3,9 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { REGIME_APROPRIACAO_OPTIONS } from "@/constants/centro-custo-constants";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	Dialog,
 	DialogContent,
@@ -15,6 +13,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -22,6 +21,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { REGIME_APROPRIACAO_OPTIONS } from "@/constants/centro-custo-constants";
+import { inicioFimMesBrasilia } from "@/lib/date";
 import { useEmpresa } from "@/provider/empresa-provider";
 import { gerarRelatorioCentroCustos } from "@/services/relatorios.service";
 
@@ -35,9 +36,10 @@ export function CentroCustosReportDialog({
 	onOpenChange,
 }: CentroCustosReportDialogProps) {
 	const { empresa } = useEmpresa();
+	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
 	const [formato, setFormato] = useState<"pdf" | "txt" | "html">("txt");
-	const [dataInicio, setDataInicio] = useState("");
-	const [dataFim, setDataFim] = useState("");
+	const [dataInicio, setDataInicio] = useState(dataInicioPadrao);
+	const [dataFim, setDataFim] = useState(dataFimPadrao);
 	const [regime, setRegime] = useState<"competencia" | "caixa">("competencia");
 
 	const gerarRelatorioMutation = useMutation({
@@ -55,8 +57,8 @@ export function CentroCustosReportDialog({
 			toast.success("Relatório gerado com sucesso!");
 			onOpenChange(false);
 			setFormato("txt");
-			setDataInicio("");
-			setDataFim("");
+			setDataInicio(dataInicioPadrao);
+			setDataFim(dataFimPadrao);
 			setRegime("competencia");
 		},
 		onError: (error: Error) => {
