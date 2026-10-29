@@ -41,7 +41,9 @@ Nenhuma env específica deste módulo no código lido. Jobs que leem financeiro:
 ## Invariantes
 
 - Registros carregam `idempresa`. Services checam `verificarUsuarioPertenceEmpresa` antes de gravar.
-- Lançamento financeiro referencia título (`financeiro`) e pode movimentar conta corrente. Apagar o CRUD de lançamento sem o título deixa baixa órfã.
+- Baixa de título **somente** via `POST /financeiro-lancamentos` (não via `PUT /financeiro` de status). Quitação total grava `status = P`; parcial mantém `A` com `saldo` reduzido. Estorno: `POST /financeiro-lancamentos/:id/estornar`.
+- Título legado `status = P` com `saldo ≈ valor` e `valorpagorecebido` vazio = pago sem rastreio (atalho antigo); não reprocessar automaticamente.
+- Lançamento financeiro referencia título (`financeiro`) e movimenta conta corrente (crédito em receber, débito em pagar). Apagar o CRUD de lançamento sem o título deixa baixa órfã.
 - Condição de pagamento é usada para parcelar contas a receber da nota (`src/service/nota-fiscal/gerar-contas-receber-nf.ts`).
 - Tipos de documento padrão não devem ser removidos da população inicial: a geração de financeiro da nota procura esses tipos.
 - Zod nos controllers (params UUID e body). Auditoria após operações bem-sucedidas quando o service chama `criarAuditoriaService`.

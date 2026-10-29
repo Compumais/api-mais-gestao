@@ -185,6 +185,17 @@ export async function buscarUltimoLancamentoContaCorrente({
 	return ultimoLancamento;
 }
 
+export async function listarContaCorrenteLancamentoPorEvento(evento: number) {
+	return db
+		.select()
+		.from(schema.contacorrentelancamento)
+		.where(eq(schema.contacorrentelancamento.evento, evento))
+		.orderBy(
+			asc(schema.contacorrentelancamento.datahora),
+			asc(schema.contacorrentelancamento.currenttimemillis),
+		);
+}
+
 export interface LancamentoComRelacionamentos {
 	id: string;
 	idcontacorrente: string;

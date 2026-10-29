@@ -74,7 +74,7 @@ export const criarFinanceiroLancamentoSchema: FastifySchema = {
 				description: "Observações sobre o lançamento",
 			},
 		},
-		required: ["idfinanceiro", "evento"],
+		required: ["idfinanceiro"],
 	},
 	response: {
 		201: {
@@ -426,6 +426,66 @@ export const atualizarFinanceiroLancamentoSchema: FastifySchema = {
 			},
 		},
 		403: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		404: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		500: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+	},
+};
+
+export const estornarFinanceiroLancamentoSchema: FastifySchema = {
+	tags: ["financeiro-lancamentos"],
+	summary: "Estornar baixa financeira",
+	description:
+		"Estorna um lançamento de baixa: marca como cancelado, devolve saldo ao título e gera movimentos inversos na conta corrente.",
+	security: [{ bearerAuth: [] }],
+	params: {
+		type: "object",
+		properties: {
+			id: {
+				type: "string",
+				format: "uuid",
+				description: "ID do lançamento a estornar",
+			},
+		},
+		required: ["id"],
+	},
+	response: {
+		200: {
+			type: "object",
+			description: "Lançamento estornado",
+			properties: {
+				id: { type: "string" },
+				idfinanceiro: { type: "string" },
+				cancelado: { type: "number", nullable: true },
+				datahoracancelado: { type: "string", nullable: true },
+				evento: { type: "number" },
+			},
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		401: {
 			type: "object",
 			properties: {
 				error: { type: "string" },

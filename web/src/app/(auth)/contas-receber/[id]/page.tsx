@@ -4,15 +4,11 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { getStatusBadge } from "@/app/(auth)/components/financeiro-lista-colunas";
 import { PageContainer } from "@/app/(auth)/components/page-container";
+import { ModalHistoricoBaixasFinanceiro } from "@/components/modal-historico-baixas-financeiro";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { financeiroService } from "@/services/financeiro.service";
 
@@ -34,6 +30,7 @@ export default function DetalhesContaReceberPage() {
 	const params = useParams();
 	const router = useRouter();
 	const id = params?.id as string;
+	const [historicoAberto, setHistoricoAberto] = useState(false);
 
 	const { data: financeiro, isLoading } = useQuery({
 		queryKey: ["financeiro", id],
@@ -75,9 +72,14 @@ export default function DetalhesContaReceberPage() {
 						</Button>
 						<h1 className="text-2xl font-bold">Detalhes da Conta a Receber</h1>
 					</div>
-					<Button onClick={() => router.push(`/contas-receber/${id}/editar`)}>
-						Editar
-					</Button>
+					<div className="flex gap-2">
+						<Button variant="outline" onClick={() => setHistoricoAberto(true)}>
+							Ver baixas
+						</Button>
+						<Button onClick={() => router.push(`/contas-receber/${id}/editar`)}>
+							Editar
+						</Button>
+					</div>
 				</div>
 				<div className="rounded-lg border bg-card p-6 mx-4">
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -91,21 +93,9 @@ export default function DetalhesContaReceberPage() {
 							<label className="text-sm font-medium text-muted-foreground">
 								Status
 							</label>
-							<p className="mt-1 text-sm">
-								{financeiro.status === "A"
-									? "Aberto"
-									: financeiro.status === "P"
-										? "Pago"
-										: financeiro.status === "Q"
-											? "Quitado"
-											: financeiro.status === "S"
-												? "Substituído"
-												: financeiro.status === "C"
-													? "Cancelado"
-													: financeiro.status === "V"
-														? "Vencido"
-														: financeiro.status || "-"}
-							</p>
+							<div className="mt-1">
+								{getStatusBadge(financeiro.status, financeiro)}
+							</div>
 						</div>
 						<div>
 							<label className="text-sm font-medium text-muted-foreground">
@@ -135,6 +125,14 @@ export default function DetalhesContaReceberPage() {
 							</label>
 							<p className="mt-1 text-sm font-medium">
 								{formatCurrency(financeiro.saldo)}
+							</p>
+						</div>
+						<div>
+							<label className="text-sm font-medium text-muted-foreground">
+								Valor pago/recebido
+							</label>
+							<p className="mt-1 text-sm font-medium">
+								{formatCurrency(financeiro.valorpagorecebido)}
 							</p>
 						</div>
 						{financeiro.entrada && (
@@ -176,6 +174,11 @@ export default function DetalhesContaReceberPage() {
 					</div>
 				</div>
 			</div>
+			<ModalHistoricoBaixasFinanceiro
+				open={historicoAberto}
+				onOpenChange={setHistoricoAberto}
+				idfinanceiro={id}
+			/>
 		</PageContainer>
 	);
 }

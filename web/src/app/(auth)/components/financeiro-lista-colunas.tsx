@@ -15,7 +15,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { formatDataCivilBrasilia } from "@/lib/date";
-import type { Financeiro } from "@/services/financeiro.service";
+import {
+	ehTituloPagoSemRastreio,
+	ehTituloParcial,
+	type Financeiro,
+} from "@/services/financeiro.service";
 
 export type VarianteFinanceiroLista = "pagar" | "receber";
 
@@ -190,8 +194,19 @@ export function formatNome(
 	return financeiro.emitente?.trim() || financeiro.historico?.trim() || "-";
 }
 
-export function getStatusBadge(status: string | null | undefined) {
+export function getStatusBadge(
+	status: string | null | undefined,
+	financeiro?: Financeiro,
+) {
 	if (!status) return <Badge variant="outline">-</Badge>;
+
+	if (financeiro && ehTituloParcial(financeiro)) {
+		return <Badge variant="outline">Parcial</Badge>;
+	}
+
+	if (financeiro && ehTituloPagoSemRastreio(financeiro)) {
+		return <Badge variant="outline">Pago (sem rastreio)</Badge>;
+	}
 
 	const statusMap: Record<
 		string,
@@ -202,6 +217,7 @@ export function getStatusBadge(status: string | null | undefined) {
 	> = {
 		A: { label: "Aberto", variant: "default" },
 		P: { label: "Pago", variant: "secondary" },
+		B: { label: "Pago", variant: "secondary" },
 		Q: { label: "Quitado", variant: "secondary" },
 		S: { label: "Substituído", variant: "outline" },
 		C: { label: "Cancelado", variant: "destructive" },
@@ -224,7 +240,8 @@ export function calculateSaldoSemJurosMulta(financeiro: Financeiro) {
 }
 
 export function podeDarBaixa(financeiro: Financeiro) {
-	return financeiro.status === "A" && !financeiro.baixa;
+	const saldo = Number.parseFloat(financeiro.saldo || "0") || 0;
+	return financeiro.status === "A" && saldo > 0.009;
 }
 
 export type OpcoesColunasFinanceiro = {
@@ -458,7 +475,8 @@ export function criarColunasFinanceiro(
 					accessorKey: "status",
 					header,
 					meta,
-					cell: ({ row }) => getStatusBadge(row.original.status),
+					cell: ({ row }) =>
+						getStatusBadge(row.original.status, row.original),
 				});
 				break;
 			case "emissao":
