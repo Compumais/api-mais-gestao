@@ -13,7 +13,10 @@ import {
 	criarContaCorrenteCaixaPadrao,
 } from "@/repositories/conta-corrente-repositories.js";
 import { criarFinanceiroLancamento } from "@/repositories/financeiro-lancamento-repositories.js";
-import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
+import {
+	atualizarFinanceiro,
+	buscarFinanceiroPorId,
+} from "@/repositories/financeiro-repositories.js";
 import { httpCriacao, httpErro } from "@/util/http-util.js";
 import {
 	formatarDataIso,
@@ -21,9 +24,63 @@ import {
 	parseValorMonetario,
 } from "@/util/recebimentos-venda-util.js";
 
+export type MetodoPagamentoFinanceiro = {
+	valor?: string | number | null | undefined;
+	metodo?: string | null | undefined;
+	conta?: string | null | undefined;
+	observacao?: string | null | undefined;
+};
+
+export type FinanceiroLancamentoComPagamentos = NovoFinanceiroLancamento & {
+	pagamentos?: MetodoPagamentoFinanceiro[] | undefined;
+};
+
 interface CriarFinanceiroLancamentoParametros {
-	dadosFinanceiroLancamento: NovoFinanceiroLancamento;
+	dadosFinanceiroLancamento: FinanceiroLancamentoComPagamentos;
 	idusuario?: string | undefined;
+}
+
+export function resolverValorBaixaFinanceiro({
+	valor,
+	valorbaixa,
+	pagamentos,
+}: {
+	valor?: string | number | null | undefined;
+	valorbaixa?: string | number | null | undefined;
+	pagamentos?: MetodoPagamentoFinanceiro[] | undefined;
+}) {
+	if (Array.isArray(pagamentos) && pagamentos.length > 0) {
+		return pagamentos.reduce((total, pagamento) => {
+			return total + parseValorMonetario(String(pagamento?.valor ?? "0"));
+		}, 0);
+	}
+
+	return parseValorMonetario(
+		valorbaixa ?? valor ?? 0,
+	);
+}
+
+export function resolverHistoricoBaixaFinanceiro({
+	historico,
+	pagamentos,
+}: {
+	historico?: string | null | undefined;
+	pagamentos?: MetodoPagamentoFinanceiro[] | undefined;
+}) {
+	if (!Array.isArray(pagamentos) || pagamentos.length === 0) {
+		return historico ?? null;
+	}
+
+	const resumo = pagamentos
+		.filter((pagamento) => pagamento && String(pagamento.valor ?? "").trim())
+		.map((pagamento) => {
+			const metodo = pagamento.metodo ?? "Pagamento";
+			const valor = parseValorMonetario(String(pagamento.valor ?? "0"));
+			return `${metodo}: ${formatarValorMonetario(valor)}`;
+		})
+		.join("; ");
+
+	return resumo || historico || null;
 }
 
 async function registrarEntradaCaixaPorBaixa({
@@ -97,15 +154,40 @@ export async function criarFinanceiroLancamentoService({
 		dadosFinanceiroLancamento.idfinanceiro,
 	);
 
+	if (financeiro) {
+		const valorBaixa = resolverValorBaixaFinanceiro(dadosFinanceiroLancamento);
+
+		if (valorBaixa > 0) {
+			const saldoAtual = Number(financeiro.saldo ?? 0);
+			const valorPagoAnterior = parseValorMonetario(financeiro.valorpagorecebido);
+			const saldoNovo = Math.max(0, saldoAtual - valorBaixa);
+			const statusNovo = saldoNovo > 0 ? "A" : "B";
+			const pagamento =
+				dadosFinanceiroLancamento.pagamento ??
+				financeiro.pagamento ??
+				formatarDataIso(new Date());
+			const baixa =
+				dadosFinanceiroLancamento.baixa ?? financeiro.baixa ?? pagamento;
+
+			await atualizarFinanceiro(financeiro.id, {
+				saldo: formatarValorMonetario(saldoNovo),
+				status: statusNovo,
+				pagamento,
+				baixa,
+				valorpagorecebido: formatarValorMonetario(
+					valorPagoAnterior + valorBaixa,
+				),
+			});
+		}
+	}
+
 	if (
 		financeiro?.tipo === "R" &&
 		financeiro.idplanocontas &&
 		idusuario &&
 		dadosFinanceiroLancamento.evento
 	) {
-		const valorBaixa = parseValorMonetario(
-			dadosFinanceiroLancamento.valorbaixa ?? dadosFinanceiroLancamento.valor,
-		);
+		const valorBaixa = resolverValorBaixaFinanceiro(dadosFinanceiroLancamento);
 
 		if (valorBaixa > 0) {
 			try {
@@ -115,9 +197,13 @@ export async function criarFinanceiroLancamentoService({
 					idplanocontas: financeiro.idplanocontas,
 					valor: valorBaixa,
 					historico:
-						dadosFinanceiroLancamento.historico ??
-						financeiro.historico ??
-						"Baixa de título a receber",
+						resolverHistoricoBaixaFinanceiro({
+							historico:
+								dadosFinanceiroLancamento.historico ??
+								financeiro.historico ??
+								"Baixa de título a receber",
+							pagamentos: dadosFinanceiroLancamento.pagamentos,
+						}) ?? "Baixa de título a receber",
 					documento: financeiro.documento ?? financeiro.id,
 					evento: dadosFinanceiroLancamento.evento,
 				});
