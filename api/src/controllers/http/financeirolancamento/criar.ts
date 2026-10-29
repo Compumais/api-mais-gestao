@@ -60,6 +60,10 @@ export async function criarFinanceiroLancamento(
 			pagamentos: dadosValidados.pagamentos,
 		});
 
+		const nomeUsuario =
+			dadosValidados.usuario ??
+			(request.user.name ? request.user.name.slice(0, 10) : undefined);
+
 		const dadosFinanceiroLancamento = {
 			id: uuidv4(),
 			idfinanceiro: dadosValidados.idfinanceiro,
@@ -71,7 +75,7 @@ export async function criarFinanceiroLancamento(
 			baixa: dadosValidados.baixa,
 			juros: dadosValidados.juros,
 			multa: dadosValidados.multa,
-			usuario: dadosValidados.usuario,
+			usuario: nomeUsuario,
 			cancelado: dadosValidados.cancelado,
 			datahoracancelado: dadosValidados.datahoracancelado,
 			evento: dadosValidados.evento ?? Date.now(),
