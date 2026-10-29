@@ -12,13 +12,14 @@ export async function inserirLancamentoCaixa(
 	parametros: {
 		idcontacorrente: string;
 		idusuario: string;
-		idplanocontas: string;
+		idplanocontas?: string | null;
 		valor: number;
 		historico: string;
 		documento: string;
 		datahora: string;
-		/** C = crédito/entrada (default), D = débito/saída (estorno). */
+		/** C = crédito/entrada (default), D = débito/saída. */
 		tipo?: "C" | "D";
+		evento?: number | null;
 	},
 ): Promise<void> {
 	const tipo = parametros.tipo ?? "C";
@@ -55,8 +56,9 @@ export async function inserirLancamentoCaixa(
 		saldoatual: formatarValorMonetario(saldoAtual),
 		historico: parametros.historico,
 		idusuario: parametros.idusuario,
-		idplanocontas: parametros.idplanocontas,
+		idplanocontas: parametros.idplanocontas ?? null,
 		documento: parametros.documento,
+		evento: parametros.evento ?? null,
 		currenttimemillis: Date.now(),
 	});
 }

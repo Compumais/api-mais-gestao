@@ -4,6 +4,7 @@ import { atualizarFinanceiroLancamento } from "./atualizar.js";
 import { buscarFinanceiroLancamento } from "./buscar.js";
 import { criarFinanceiroLancamento } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
+import { estornarFinanceiroLancamento } from "./estornar.js";
 import { excluirFinanceiroLancamento } from "./excluir.js";
 import { listarFinanceiroLancamento } from "./listar.js";
 
@@ -25,6 +26,10 @@ export async function financeiroLancamentoRotas(app: FastifyInstance) {
 	app.put("/financeiro-lancamentos/:id", {
 		schema: schema.atualizarFinanceiroLancamentoSchema,
 		handler: atualizarFinanceiroLancamento,
+	});
+	app.post("/financeiro-lancamentos/:id/estornar", {
+		schema: schema.estornarFinanceiroLancamentoSchema,
+		handler: estornarFinanceiroLancamento,
 	});
 	app.delete("/financeiro-lancamentos/:id", {
 		schema: schema.excluirFinanceiroLancamentoSchema,

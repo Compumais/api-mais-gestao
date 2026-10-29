@@ -283,11 +283,24 @@ export const financeiroService = {
 		await api.delete(`/financeiro/${id}`);
 	},
 
-	async darBaixa(id: string, dataBaixa: string): Promise<Financeiro> {
-		const { data } = await api.put<Financeiro>(`/financeiro/${id}`, {
-			status: "P",
-			baixa: dataBaixa,
-		});
-		return data;
-	},
 };
+
+/** Título marcado como pago pelo atalho antigo, sem lançamento de baixa. */
+export function ehTituloPagoSemRastreio(financeiro: Financeiro): boolean {
+	if (financeiro.status !== "P" && financeiro.status !== "B") {
+		return false;
+	}
+	const valor = Number.parseFloat(financeiro.valor || "0") || 0;
+	const saldo = Number.parseFloat(financeiro.saldo || "0") || 0;
+	const pago = Number.parseFloat(financeiro.valorpagorecebido || "0") || 0;
+	return saldo >= valor - 0.009 && pago <= 0.009;
+}
+
+export function ehTituloParcial(financeiro: Financeiro): boolean {
+	if (financeiro.status !== "A") return false;
+	const saldo = Number.parseFloat(financeiro.saldo || "0") || 0;
+	const valor = Number.parseFloat(financeiro.valor || "0") || 0;
+	const pago = Number.parseFloat(financeiro.valorpagorecebido || "0") || 0;
+	return saldo > 0.009 && (pago > 0.009 || saldo < valor - 0.009);
+}
+

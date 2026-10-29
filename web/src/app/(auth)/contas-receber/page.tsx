@@ -21,7 +21,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
-import { ModalBaixaFinanceiro } from "@/components/modal-baixa-financeiro";
+import {
+	type DadosConfirmacaoBaixa,
+	ModalBaixaFinanceiro,
+} from "@/components/modal-baixa-financeiro";
+import { ModalHistoricoBaixasFinanceiro } from "@/components/modal-historico-baixas-financeiro";
 import { TableSkeleton } from "@/components/table-skeleton";
 import {
 	AlertDialog,
@@ -64,12 +68,15 @@ import {
 	TABELA_CONTAS_RECEBER,
 	useColunasTabelaPersistidas,
 } from "@/hooks/use-preferencias-ui-usuario";
+import { contasCorrentesService } from "@/services/contas-correntes.service";
+import { financeiroLancamentoService } from "@/services/financeiro-lancamento.service";
 import {
 	type Financeiro,
 	financeiroService,
 	type ListarFinanceirosResponse,
 } from "@/services/financeiro.service";
 import { tipoCobrancaService } from "@/services/tipo-cobranca.service";
+import { tipoDocumentoFinanceiroService } from "@/services/tipo-documento-financeiro.service";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO,
 	type ConfigFiltroColunaFinanceiro,
@@ -121,6 +128,9 @@ export default function ContasAReceberPage() {
 	const [baixaDialogOpen, setBaixaDialogOpen] = useState(false);
 	const [idsParaBaixa, setIdsParaBaixa] = useState<string[]>([]);
 	const [baixando, setBaixando] = useState(false);
+	const [historicoBaixasId, setHistoricoBaixasId] = useState<string | null>(
+		null,
+	);
 
 	const visibilidadePadrao = useMemo(
 		() => visibilidadePadraoColunasFinanceiro("receber"),
@@ -330,14 +340,63 @@ export default function ContasAReceberPage() {
 		handleAbrirBaixa([id]);
 	}, []);
 
-	const handleConfirmBaixa = async (dataBaixa: string) => {
+	const { data: contasBaixa } = useQuery({
+		queryKey: ["contas-correntes", empresa?.id, "baixa-modal"],
+		queryFn: () =>
+			contasCorrentesService.listar({
+				idempresa: empresa?.id as string,
+				page: 1,
+				limit: 100,
+			}),
+		enabled: baixaDialogOpen && !!empresa?.id,
+	});
+
+	const { data: meiosBaixa } = useQuery({
+		queryKey: ["tipos-documento-financeiro", empresa?.id, "baixa-modal"],
+		queryFn: () =>
+			tipoDocumentoFinanceiroService.listarTodos({
+				idempresa: empresa?.id as string,
+				inativo: 0,
+			}),
+		enabled: baixaDialogOpen && !!empresa?.id,
+	});
+
+	const titulosParaBaixa = useMemo(() => {
+		const mapa = new Map((data?.data ?? []).map((t) => [t.id, t]));
+		return idsParaBaixa
+			.map((id) => mapa.get(id))
+			.filter((t): t is Financeiro => Boolean(t));
+	}, [data?.data, idsParaBaixa]);
+
+	const handleConfirmBaixa = async (dados: DadosConfirmacaoBaixa) => {
 		setBaixando(true);
 		let ok = 0;
 		let falhas = 0;
+		const lote = titulosParaBaixa.length > 1;
 
-		for (const id of idsParaBaixa) {
+		for (const titulo of titulosParaBaixa) {
 			try {
-				await financeiroService.darBaixa(id, dataBaixa);
+				const saldo = Number.parseFloat(titulo.saldo || "0") || 0;
+				await financeiroLancamentoService.criar({
+					idfinanceiro: titulo.id,
+					valor: lote ? saldo.toFixed(2) : dados.valor,
+					pagamento: dados.dataPagamento,
+					baixa: dados.dataBaixa,
+					juros: lote ? "0" : dados.juros,
+					multa: lote ? "0" : dados.multa,
+					desconto: lote ? "0" : dados.desconto,
+					historico: dados.historico || undefined,
+					evento: Date.now(),
+					pagamentos: lote
+						? [
+								{
+									valor: saldo.toFixed(2),
+									metodo: dados.meioLote,
+									conta: dados.contaLote,
+								},
+							]
+						: dados.pagamentos,
+				});
 				ok += 1;
 			} catch {
 				falhas += 1;
@@ -406,7 +465,8 @@ export default function ContasAReceberPage() {
 					/>
 				),
 				renderAcoes: (financeiro) => {
-					const podeExcluir = financeiro.status === "A" && !financeiro.baixa;
+					const saldo = Number.parseFloat(financeiro.saldo || "0") || 0;
+					const podeExcluir = financeiro.status === "A" && saldo >= Number.parseFloat(financeiro.valor || "0") - 0.009;
 					const podeBaixar = podeDarBaixa(financeiro);
 
 					return (
@@ -432,6 +492,11 @@ export default function ContasAReceberPage() {
 									<DropdownMenuItem onClick={() => handleEdit(financeiro)}>
 										<IconPencil className="size-4 mr-2" />
 										Editar
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => setHistoricoBaixasId(financeiro.id)}
+									>
+										Ver baixas
 									</DropdownMenuItem>
 									{podeBaixar && (
 										<>
@@ -733,9 +798,18 @@ export default function ContasAReceberPage() {
 			<ModalBaixaFinanceiro
 				open={baixaDialogOpen}
 				onOpenChange={setBaixaDialogOpen}
-				quantidade={idsParaBaixa.length}
+				titulos={titulosParaBaixa}
+				contas={contasBaixa?.data ?? []}
+				meiosPagamento={meiosBaixa ?? []}
 				onConfirm={handleConfirmBaixa}
 				isPending={baixando}
+			/>
+			<ModalHistoricoBaixasFinanceiro
+				open={!!historicoBaixasId}
+				onOpenChange={(open) => {
+					if (!open) setHistoricoBaixasId(null);
+				}}
+				idfinanceiro={historicoBaixasId}
 			/>
 		</PageContainer>
 	);
