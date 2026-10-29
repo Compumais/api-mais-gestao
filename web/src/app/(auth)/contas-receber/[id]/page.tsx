@@ -2,35 +2,18 @@
 
 import { IconArrowLeft } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
-import { getStatusBadge } from "@/app/(auth)/components/financeiro-lista-colunas";
+import { FinanceiroDetalheResumo } from "@/app/(auth)/components/financeiro-detalhe-resumo";
+import { FinanceiroDetalheTimeline } from "@/app/(auth)/components/financeiro-detalhe-timeline";
 import { PageContainer } from "@/app/(auth)/components/page-container";
-import { ModalHistoricoBaixasFinanceiro } from "@/components/modal-historico-baixas-financeiro";
 import { Button } from "@/components/ui/button";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { financeiroService } from "@/services/financeiro.service";
-
-const formatCurrency = (value: string | null | undefined) => {
-	if (!value) return "R$ 0,00";
-	const num = parseFloat(value);
-	return new Intl.NumberFormat("pt-BR", {
-		style: "currency",
-		currency: "BRL",
-	}).format(num);
-};
-
-const formatDate = (date: string | null | undefined) => {
-	if (!date) return "-";
-	return dayjs(date).format("DD/MM/YYYY");
-};
 
 export default function DetalhesContaReceberPage() {
 	const params = useParams();
 	const router = useRouter();
 	const id = params?.id as string;
-	const [historicoAberto, setHistoricoAberto] = useState(false);
 
 	const { data: financeiro, isLoading } = useQuery({
 		queryKey: ["financeiro", id],
@@ -72,113 +55,19 @@ export default function DetalhesContaReceberPage() {
 						</Button>
 						<h1 className="text-2xl font-bold">Detalhes da Conta a Receber</h1>
 					</div>
-					<div className="flex gap-2">
-						<Button variant="outline" onClick={() => setHistoricoAberto(true)}>
-							Ver baixas
-						</Button>
-						<Button onClick={() => router.push(`/contas-receber/${id}/editar`)}>
-							Editar
-						</Button>
-					</div>
+					<Button onClick={() => router.push(`/contas-receber/${id}/editar`)}>
+						Editar
+					</Button>
 				</div>
-				<div className="rounded-lg border bg-card p-6 mx-4">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<div>
-							<label className="text-sm font-medium text-muted-foreground">
-								Documento
-							</label>
-							<p className="mt-1 text-sm">{financeiro.documento || "-"}</p>
-						</div>
-						<div>
-							<label className="text-sm font-medium text-muted-foreground">
-								Status
-							</label>
-							<div className="mt-1">
-								{getStatusBadge(financeiro.status, financeiro)}
-							</div>
-						</div>
-						<div>
-							<label className="text-sm font-medium text-muted-foreground">
-								Emissão
-							</label>
-							<p className="mt-1 text-sm">{formatDate(financeiro.emissao)}</p>
-						</div>
-						<div>
-							<label className="text-sm font-medium text-muted-foreground">
-								Vencimento
-							</label>
-							<p className="mt-1 text-sm">
-								{formatDate(financeiro.vencimento)}
-							</p>
-						</div>
-						<div>
-							<label className="text-sm font-medium text-muted-foreground">
-								Valor
-							</label>
-							<p className="mt-1 text-sm font-medium">
-								{formatCurrency(financeiro.valor)}
-							</p>
-						</div>
-						<div>
-							<label className="text-sm font-medium text-muted-foreground">
-								Saldo
-							</label>
-							<p className="mt-1 text-sm font-medium">
-								{formatCurrency(financeiro.saldo)}
-							</p>
-						</div>
-						<div>
-							<label className="text-sm font-medium text-muted-foreground">
-								Valor pago/recebido
-							</label>
-							<p className="mt-1 text-sm font-medium">
-								{formatCurrency(financeiro.valorpagorecebido)}
-							</p>
-						</div>
-						{financeiro.entrada && (
-							<div>
-								<label className="text-sm font-medium text-muted-foreground">
-									Entrada
-								</label>
-								<p className="mt-1 text-sm">{formatDate(financeiro.entrada)}</p>
-							</div>
-						)}
-						{financeiro.datareferencia && (
-							<div>
-								<label className="text-sm font-medium text-muted-foreground">
-									Referência
-								</label>
-								<p className="mt-1 text-sm">
-									{formatDate(financeiro.datareferencia)}
-								</p>
-							</div>
-						)}
-						{financeiro.baixa && (
-							<div>
-								<label className="text-sm font-medium text-muted-foreground">
-									Data de Baixa
-								</label>
-								<p className="mt-1 text-sm">{formatDate(financeiro.baixa)}</p>
-							</div>
-						)}
-						{financeiro.historico && (
-							<div className="md:col-span-2">
-								<label className="text-sm font-medium text-muted-foreground">
-									Observações
-								</label>
-								<p className="mt-1 text-sm whitespace-pre-wrap">
-									{financeiro.historico}
-								</p>
-							</div>
-						)}
-					</div>
+
+				<div className="mx-4 flex flex-col gap-4">
+					<FinanceiroDetalheResumo
+						financeiro={financeiro}
+						variante="receber"
+					/>
+					<FinanceiroDetalheTimeline financeiro={financeiro} />
 				</div>
 			</div>
-			<ModalHistoricoBaixasFinanceiro
-				open={historicoAberto}
-				onOpenChange={setHistoricoAberto}
-				idfinanceiro={id}
-			/>
 		</PageContainer>
 	);
 }

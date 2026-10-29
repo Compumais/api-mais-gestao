@@ -2,27 +2,13 @@
 
 import { IconArrowLeft } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { useParams, useRouter } from "next/navigation";
+import { FinanceiroDetalheResumo } from "@/app/(auth)/components/financeiro-detalhe-resumo";
+import { FinanceiroDetalheTimeline } from "@/app/(auth)/components/financeiro-detalhe-timeline";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { financeiroService } from "@/services/financeiro.service";
-
-const formatCurrency = (value: string | null | undefined) => {
-	if (!value) return "R$ 0,00";
-	const num = parseFloat(value);
-	return new Intl.NumberFormat("pt-BR", {
-		style: "currency",
-		currency: "BRL",
-	}).format(num);
-};
-
-const formatDate = (date: string | null | undefined) => {
-	if (!date) return "-";
-	return dayjs(date).format("DD/MM/YYYY");
-};
 
 export default function DetalhesContaPagarPage() {
 	const params = useParams();
@@ -71,157 +57,10 @@ export default function DetalhesContaPagarPage() {
 						Editar
 					</Button>
 				</div>
-				<div className="rounded-lg border bg-card p-6 mx-4">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<div>
-							<Label
-								htmlFor="documento"
-								className="text-sm font-medium text-muted-foreground"
-							>
-								Documento
-							</Label>
-							<p className="mt-1 text-sm">{financeiro.documento || "-"}</p>
-						</div>
-						<div>
-							<Label
-								htmlFor="emitente"
-								className="text-sm font-medium text-muted-foreground"
-							>
-								Nome
-							</Label>
-							<p className="mt-1 text-sm">{financeiro.emitente || "-"}</p>
-						</div>
-						<div>
-							<Label
-								htmlFor="parcela"
-								className="text-sm font-medium text-muted-foreground"
-							>
-								Parcela
-							</Label>
-							<p className="mt-1 text-sm">
-								{financeiro.parcela
-									? financeiro.totalparcelas && financeiro.totalparcelas > 1
-										? `${financeiro.parcela}/${financeiro.totalparcelas}`
-										: financeiro.parcela
-									: "-"}
-							</p>
-						</div>
-						<div>
-							<Label
-								htmlFor="status"
-								className="text-sm font-medium text-muted-foreground"
-							>
-								Status
-							</Label>
-							<p className="mt-1 text-sm">
-								{financeiro.status === "A"
-									? "Aberto"
-									: financeiro.status === "P"
-										? "Pago"
-										: financeiro.status === "Q"
-											? "Quitado"
-											: financeiro.status === "S"
-												? "Substituído"
-												: financeiro.status === "C"
-													? "Cancelado"
-													: financeiro.status === "V"
-														? "Vencido"
-														: financeiro.status || "-"}
-							</p>
-						</div>
-						<div>
-							<Label
-								htmlFor="emissao"
-								className="text-sm font-medium text-muted-foreground"
-							>
-								Emissão
-							</Label>
-							<p className="mt-1 text-sm">{formatDate(financeiro.emissao)}</p>
-						</div>
-						<div>
-							<Label
-								htmlFor="vencimento"
-								className="text-sm font-medium text-muted-foreground"
-							>
-								Vencimento
-							</Label>
-							<p className="mt-1 text-sm">
-								{formatDate(financeiro.vencimento)}
-							</p>
-						</div>
-						<div>
-							<Label
-								htmlFor="valor"
-								className="text-sm font-medium text-muted-foreground"
-							>
-								Valor
-							</Label>
-							<p className="mt-1 text-sm font-medium">
-								{formatCurrency(financeiro.valor)}
-							</p>
-						</div>
-						<div>
-							<Label
-								htmlFor="saldo"
-								className="text-sm font-medium text-muted-foreground"
-							>
-								Saldo
-							</Label>
-							<p className="mt-1 text-sm font-medium">
-								{formatCurrency(financeiro.saldo)}
-							</p>
-						</div>
-						{financeiro.entrada && (
-							<div>
-								<Label
-									htmlFor="entrada"
-									className="text-sm font-medium text-muted-foreground"
-								>
-									Entrada
-								</Label>
-								<p className="mt-1 text-sm">{formatDate(financeiro.entrada)}</p>
-							</div>
-						)}
-						{financeiro.datareferencia && (
-							<div>
-								<Label
-									htmlFor="referencia"
-									className="text-sm font-medium text-muted-foreground"
-								>
-									Referência
-								</Label>
-								<p className="mt-1 text-sm">
-									{formatDate(financeiro.datareferencia)}
-								</p>
-							</div>
-						)}
-						{financeiro.pagamento && (
-							<div>
-								<Label
-									htmlFor="pagamento"
-									className="text-sm font-medium text-muted-foreground"
-								>
-									Data de Pagamento
-								</Label>
-								<p className="mt-1 text-sm">
-									{formatDate(financeiro.pagamento)}
-								</p>
-							</div>
-						)}
-						{financeiro.historico && (
-							<div className="md:col-span-2">
-								<Label
-									htmlFor="historico"
-									className="text-sm font-medium text-muted-foreground"
-								>
-									Observações
-								</Label>
-								<p className="mt-1 text-sm whitespace-pre-wrap">
-									{financeiro.historico}
-								</p>
-							</div>
-						)}
-					</div>
+
+				<div className="mx-4 flex flex-col gap-4">
+					<FinanceiroDetalheResumo financeiro={financeiro} variante="pagar" />
+					<FinanceiroDetalheTimeline financeiro={financeiro} />
 				</div>
 			</div>
 		</PageContainer>
