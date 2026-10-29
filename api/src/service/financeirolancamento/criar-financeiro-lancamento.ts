@@ -55,9 +55,7 @@ export function resolverValorBaixaFinanceiro({
 		}, 0);
 	}
 
-	return parseValorMonetario(
-		valorbaixa ?? valor ?? 0,
-	);
+	return parseValorMonetario(String(valorbaixa ?? valor ?? 0));
 }
 
 export function resolverHistoricoBaixaFinanceiro({
