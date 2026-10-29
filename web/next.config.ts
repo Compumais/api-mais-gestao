@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = path.resolve(root, "..");
 
 const origensDevPermitidas = process.env.NEXT_ALLOWED_DEV_ORIGINS?.split(",")
 	.map((origem) => origem.trim())
@@ -17,6 +18,7 @@ const nextConfig: NextConfig = {
 		NEXT_PUBLIC_BUILD_ID: versaoWeb,
 	},
 	generateBuildId: async () => versaoWeb,
+	transpilePackages: ["@mais-gestao/nfe-emissao-shared"],
 	experimental: {
 		staleTimes: {
 			dynamic: 0,
@@ -24,7 +26,7 @@ const nextConfig: NextConfig = {
 		},
 	},
 	turbopack: {
-		root,
+		root: monorepoRoot,
 	},
 	allowedDevOrigins: origensDevPermitidas,
 	async headers() {
