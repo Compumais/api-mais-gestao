@@ -102,6 +102,10 @@ describe("criarFinanceiroLancamentoService", () => {
 		expect(valorTotal).toBe(400);
 	});
 
+	it("deve aceitar valor numérico na baixa do documento", () => {
+		expect(resolverValorBaixaFinanceiro({ valorbaixa: 127.5 })).toBe(127.5);
+	});
+
 	it("deve marcar a conta como baixada quando o saldo for quitado totalmente", async () => {
 		const financeiroOriginal = {
 			id: "financeiro-2",
