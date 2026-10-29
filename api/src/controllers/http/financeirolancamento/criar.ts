@@ -3,9 +3,20 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
 import { aplicarApropriacaoBaixaFinanceiroCaixa } from "@/service/apropriacao-centro-custo/aplicar-apropriacao-origem.js";
-import { criarFinanceiroLancamentoService } from "@/service/financeirolancamento/criar-financeiro-lancamento.js";
+import {
+	criarFinanceiroLancamentoService,
+	resolverHistoricoBaixaFinanceiro,
+	resolverValorBaixaFinanceiro,
+} from "@/service/financeirolancamento/criar-financeiro-lancamento.js";
 import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+
+const pagamentoFinanceiroSchema = z.object({
+	valor: z.union([z.string(), z.number()]).optional(),
+	metodo: z.string().optional().nullable(),
+	conta: z.string().optional().nullable(),
+	observacao: z.string().optional().nullable(),
+});
 
 const criarFinanceiroLancamentoBodySchema = z.object({
 	idfinanceiro: z.string(),
@@ -23,6 +34,7 @@ const criarFinanceiroLancamentoBodySchema = z.object({
 	historico: z.string().optional(),
 	reabertura: z.string().optional(),
 	observacao: z.string().optional(),
+	pagamentos: z.array(pagamentoFinanceiroSchema).optional(),
 });
 
 export async function criarFinanceiroLancamento(
@@ -38,12 +50,23 @@ export async function criarFinanceiroLancamento(
 			request.body,
 		);
 
+		const valorBaixaFinanceiro = resolverValorBaixaFinanceiro({
+			valor: dadosValidados.valor,
+			valorbaixa: undefined,
+			pagamentos: dadosValidados.pagamentos,
+		});
+		const historicoFinal = resolverHistoricoBaixaFinanceiro({
+			historico: dadosValidados.historico,
+			pagamentos: dadosValidados.pagamentos,
+		});
+
 		const dadosFinanceiroLancamento = {
 			id: uuidv4(),
 			idfinanceiro: dadosValidados.idfinanceiro,
 			valoranterior: dadosValidados.valoranterior,
 			desconto: dadosValidados.desconto,
-			valor: dadosValidados.valor,
+			valor: dadosValidados.valor ?? String(valorBaixaFinanceiro),
+			valorbaixa: String(valorBaixaFinanceiro),
 			pagamento: dadosValidados.pagamento,
 			baixa: dadosValidados.baixa,
 			juros: dadosValidados.juros,
@@ -52,9 +75,10 @@ export async function criarFinanceiroLancamento(
 			cancelado: dadosValidados.cancelado,
 			datahoracancelado: dadosValidados.datahoracancelado,
 			evento: dadosValidados.evento,
-			historico: dadosValidados.historico,
+			historico: historicoFinal ?? dadosValidados.historico,
 			reabertura: dadosValidados.reabertura,
 			observacao: dadosValidados.observacao,
+			pagamentos: dadosValidados.pagamentos,
 		};
 
 		const resultado = await criarFinanceiroLancamentoService({
