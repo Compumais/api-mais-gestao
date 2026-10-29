@@ -32,8 +32,8 @@ export const criarFinanceiroLancamentoSchema: FastifySchema = {
 			},
 			baixa: {
 				type: "string",
-				format: "date-time",
-				description: "Data e hora da baixa",
+				format: "date",
+				description: "Data da baixa (YYYY-MM-DD)",
 			},
 			juros: {
 				type: "string",
@@ -343,8 +343,8 @@ export const atualizarFinanceiroLancamentoSchema: FastifySchema = {
 			},
 			baixa: {
 				type: "string",
-				format: "date-time",
-				description: "Data e hora da baixa",
+				format: "date",
+				description: "Data da baixa (YYYY-MM-DD)",
 			},
 			juros: {
 				type: "string",
