@@ -5,6 +5,7 @@ import {
 	IconCreditCard,
 	IconInfoCircle,
 	IconNews,
+	IconPhoto,
 	IconUserPlus,
 	IconUsers,
 } from "@tabler/icons-react";
@@ -35,6 +36,11 @@ export const SUPER_NAV = {
 			title: "Cadastro",
 			url: "/super/cadastro",
 			icon: IconUserPlus,
+		},
+		{
+			title: "Banco de imagens",
+			url: "/super/banco-imagens",
+			icon: IconPhoto,
 		},
 		{
 			title: "Informativos",

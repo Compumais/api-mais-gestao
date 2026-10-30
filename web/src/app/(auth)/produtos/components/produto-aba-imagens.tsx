@@ -11,12 +11,18 @@ import {
 	type ProdutoImagem,
 	produtosService,
 } from "@/services/produtos.service";
+import { BancoImagemProdutoPainel } from "./banco-imagem-produto-painel";
 
 type ProdutoAbaImagensProps = {
 	produtoId?: string;
 	nomeProduto: string;
+	ean?: number | string | null;
 	arquivosPendentes: File[];
 	onArquivosPendentesChange: (arquivos: File[]) => void;
+	bancoSelecionadoId: string | null;
+	ignorarBanco: boolean;
+	onBancoSelecionado: (id: string | null) => void;
+	onIgnorarBanco: (ignorar: boolean) => void;
 };
 
 function ImagemPendente({
@@ -178,8 +184,13 @@ function ImagemGaleria({
 export function ProdutoAbaImagens({
 	produtoId,
 	nomeProduto,
+	ean,
 	arquivosPendentes,
 	onArquivosPendentesChange,
+	bancoSelecionadoId,
+	ignorarBanco,
+	onBancoSelecionado,
+	onIgnorarBanco,
 }: ProdutoAbaImagensProps) {
 	const queryClient = useQueryClient();
 	const [erro, setErro] = useState<string | null>(null);
@@ -259,6 +270,15 @@ export function ProdutoAbaImagens({
 					</p>
 				) : null}
 			</div>
+			<BancoImagemProdutoPainel
+				produtoId={produtoId}
+				ean={ean}
+				temFotoPropria={imagens.length > 0 || arquivosPendentes.length > 0}
+				bancoSelecionadoId={bancoSelecionadoId}
+				ignorarBanco={ignorarBanco}
+				onBancoSelecionado={onBancoSelecionado}
+				onIgnorarBanco={onIgnorarBanco}
+			/>
 			<div className="rounded-lg border border-dashed p-4">
 				<label
 					htmlFor="imagens-produto"
@@ -326,7 +346,7 @@ export function ProdutoAbaImagens({
 			</ul>
 			{!isLoading && imagens.length === 0 && arquivosPendentes.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
-					Nenhuma imagem cadastrada.
+					Nenhuma foto própria. A capa pode vir do banco de imagens.
 				</p>
 			) : null}
 		</section>

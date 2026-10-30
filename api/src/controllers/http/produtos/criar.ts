@@ -79,6 +79,7 @@ const criarProdutoBodySchema = z
 		custoaquisicao: z.union([z.string(), z.number()]).optional().nullable(),
 		estoque: z.number().min(0).optional(),
 		idprodutopai: z.string().min(1).optional().nullable(),
+		idbancoimagem: z.uuid().nullable().optional(),
 		...camposImpostosProdutoSchema,
 		...camposServicoProdutoSchema,
 	})
@@ -185,6 +186,9 @@ export async function criarProduto(
 			inativo: camposServico.inativo ?? 0,
 			...(dadosValidados.idprodutopai
 				? { idprodutopai: dadosValidados.idprodutopai }
+				: {}),
+			...(dadosValidados.idbancoimagem !== undefined
+				? { idbancoimagem: dadosValidados.idbancoimagem }
 				: {}),
 		};
 
