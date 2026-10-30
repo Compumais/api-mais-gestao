@@ -3,6 +3,7 @@ import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { criarHandlerProximoCodigo } from "../shared/proximo-codigo-query.js";
 import { criarProximoCodigoSchema } from "../shared/proximo-codigo-schema.js";
 import { alterarProdutosEmMassa } from "./alterar-em-massa.js";
+import { vincularBancoImagemProduto } from "./banco-imagem.js";
 import {
 	analyticsCompraVenda,
 	analyticsEstoque,
@@ -119,6 +120,9 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.get(`/produtos/${ID_UUID_PARAM}`, {
 		schema: schema.buscarProdutoSchema,
 		handler: buscarProduto,
+	});
+	app.put(`/produtos/${ID_UUID_PARAM}/banco-imagem`, {
+		handler: vincularBancoImagemProduto,
 	});
 	app.get(`/produtos/${ID_UUID_PARAM}/imagem`, {
 		handler: downloadImagemProduto,

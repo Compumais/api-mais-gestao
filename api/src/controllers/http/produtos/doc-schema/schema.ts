@@ -374,6 +374,11 @@ export const criarProdutoSchema: FastifySchema = {
 				description:
 					"Produto pai, quando este cadastro é uma variação. A tributação é copiada do pai.",
 			},
+			idbancoimagem: {
+				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+				description:
+					"Item do banco de imagens. Nulo recusa o vínculo automático pelo código de barras.",
+			},
 			preco: {
 				anyOf: [{ type: "string" }, { type: "number" }],
 			},

@@ -11,6 +11,7 @@ export const SUPER_ALLOWED_ROUTES = [
 	"/super/empresas",
 	"/super/planos",
 	"/super/cadastro",
+	"/super/banco-imagens",
 	"/super/informativos",
 	"/super/cms",
 ] as const;

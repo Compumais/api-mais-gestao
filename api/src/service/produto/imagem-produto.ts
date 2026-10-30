@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { v4 as uuidv4 } from "uuid";
+import { limparPonteiroBancoProduto } from "@/repositories/banco-imagem-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarImagemProdutoPorId,
@@ -11,6 +12,7 @@ import {
 	proximaOrdemImagemProduto,
 } from "@/repositories/produto-imagem-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
+import { lerArquivoProdutoBanco } from "@/service/banco-imagem/ler-arquivo-banco.js";
 
 export const TAMANHO_MAXIMO_IMAGEM_PRODUTO = 5 * 1024 * 1024;
 export const TIPOS_IMAGEM_PRODUTO = [
@@ -265,6 +267,9 @@ export async function salvarImagemProduto(params: {
 			"IMAGEM_NAO_VINCULADA",
 		);
 	}
+	if (produto.idbancoimagem) {
+		await limparPonteiroBancoProduto(params.idproduto);
+	}
 	return criada;
 }
 
@@ -417,6 +422,10 @@ export async function lerImagemProduto(params: {
 		produto.caminhoimagem,
 	);
 	if (legado) return legado;
+	if (produto.idbancoimagem) {
+		const doBanco = await lerArquivoProdutoBanco(produto.idbancoimagem);
+		if (doBanco) return doBanco;
+	}
 	if (
 		produto.idprodutopai &&
 		produto.idprodutopai !== produto.id &&
@@ -466,6 +475,10 @@ export async function lerImagemProdutoDaEmpresa(params: {
 		principal?.referencia ?? produto.caminhoimagem,
 	);
 	if (legado) return legado;
+	if (produto.idbancoimagem) {
+		const doBanco = await lerArquivoProdutoBanco(produto.idbancoimagem);
+		if (doBanco) return doBanco;
+	}
 	if (
 		produto.idprodutopai &&
 		produto.idprodutopai !== produto.id &&

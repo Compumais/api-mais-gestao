@@ -96,6 +96,7 @@ export interface Produto {
 	possuiSaldo?: boolean;
 	imagem?: string | null;
 	caminhoimagem?: string | null;
+	idbancoimagem?: string | null;
 	idprodutopai?: string | null;
 	nomepai?: string | null;
 }
@@ -174,6 +175,7 @@ export interface CriarProdutoData
 		CamposAliquotaProduto {
 	idempresa: string;
 	idprodutopai?: string | null;
+	idbancoimagem?: string | null;
 	codigo: number;
 	ean?: number | null;
 	referencia?: string | null;
@@ -433,6 +435,16 @@ export const produtosService = {
 	async enviarImagem(id: string, arquivo: File): Promise<Produto> {
 		const { data } = await api.put<Produto>(`/produtos/${id}/imagem`, arquivo, {
 			headers: { "Content-Type": arquivo.type },
+		});
+		return data;
+	},
+
+	async vincularBancoImagem(
+		id: string,
+		idbancoimagem: string | null,
+	): Promise<Produto> {
+		const { data } = await api.put<Produto>(`/produtos/${id}/banco-imagem`, {
+			idbancoimagem,
 		});
 		return data;
 	},

@@ -185,6 +185,10 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const isEdicao = modo === "editar";
 	const ehVariacao = Boolean(props.idprodutopai);
 	const [arquivosImagem, setArquivosImagem] = useState<File[]>([]);
+	const [bancoSelecionadoId, setBancoSelecionadoId] = useState<string | null>(
+		null,
+	);
+	const [ignorarBanco, setIgnorarBanco] = useState(false);
 	const { data: produtoPai } = useQuery({
 		queryKey: ["produto", props.idprodutopai, "pai-variacao"],
 		queryFn: () => produtosService.buscar(props.idprodutopai ?? ""),
@@ -467,12 +471,19 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		const payloadBase = buildProdutoPayload(getValues());
 
 		if (!isEdicao) {
+			const semFotoPendente = arquivosImagem.length === 0;
 			criarProduto({
 				dados: {
 					idempresa: empresa.id,
 					...payloadBase,
 					...(ehVariacao && props.idprodutopai
 						? { idprodutopai: props.idprodutopai }
+						: {}),
+					...(semFotoPendente && ignorarBanco
+						? { idbancoimagem: null }
+						: {}),
+					...(semFotoPendente && !ignorarBanco && bancoSelecionadoId
+						? { idbancoimagem: bancoSelecionadoId }
 						: {}),
 				},
 				imagens: arquivosImagem,
@@ -962,8 +973,13 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					<ProdutoAbaImagens
 						produtoId={props.produtoId}
 						nomeProduto={watch("nome")}
+						ean={watch("ean")}
 						arquivosPendentes={arquivosImagem}
 						onArquivosPendentesChange={setArquivosImagem}
+						bancoSelecionadoId={bancoSelecionadoId}
+						ignorarBanco={ignorarBanco}
+						onBancoSelecionado={setBancoSelecionadoId}
+						onIgnorarBanco={setIgnorarBanco}
 					/>
 				</TabsContent>
 
