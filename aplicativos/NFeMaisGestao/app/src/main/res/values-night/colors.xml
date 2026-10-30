@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <!-- Tokens alinhados ao tema escuro do PDV (pdv/src/globals.css .dark). -->
+    <color name="primary">#193CB8</color>
+    <color name="primary_dark">#2B7FFF</color>
+    <color name="primary_foreground">#EFF6FF</color>
+    <color name="foreground">#FBFBF9</color>
+    <color name="background">#0C0C09</color>
+    <color name="surface">#2B2B22</color>
+    <color name="muted_foreground">#ABAB9C</color>
+    <color name="accent">#2B2B22</color>
+    <color name="border">#1AFFFFFF</color>
+    <color name="card">#1D1D16</color>
+    <color name="danger">#FF6467</color>
+    <color name="dinheiro">#36B362</color>
+    <!-- Status ociosa: dark:bg-amber-400, texto amber-950, anel amber-300 a 50%. -->
+    <color name="mesa_ociosa">#FBBF24</color>
+    <color name="mesa_ociosa_foreground">#451A03</color>
+    <color name="mesa_ociosa_stroke">#80FCD34D</color>
+    <color name="pix">#38BDF8</color>
+    <color name="cartao">#A78BFA</color>
+    <color name="ic_launcher_background">#006CF1</color>
+</resources>

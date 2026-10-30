@@ -70,11 +70,15 @@ function parseMoedaInput(valor: string) {
 	return Number.isFinite(numero) ? numero : 0;
 }
 
-function novaLinha(valor = ""): LinhaPagamento {
+function arredondar(valor: number) {
+	return Math.round(valor * 100) / 100;
+}
+
+function novaLinha(valor = "", conta = "", metodo = ""): LinhaPagamento {
 	return {
 		id: crypto.randomUUID(),
-		metodo: "",
-		conta: "",
+		metodo,
+		conta,
 		valor,
 	};
 }
@@ -103,7 +107,6 @@ export function ModalBaixaFinanceiro({
 
 	const [dataBaixa, setDataBaixa] = useState(hojeBrasiliaIsoDate);
 	const [dataPagamento, setDataPagamento] = useState(hojeBrasiliaIsoDate);
-	const [valor, setValor] = useState("");
 	const [juros, setJuros] = useState("0");
 	const [multa, setMulta] = useState("0");
 	const [desconto, setDesconto] = useState("0");
@@ -123,26 +126,42 @@ export function ModalBaixaFinanceiro({
 		setHistorico("");
 		setMeioLote("");
 		setContaLote("");
-		const saldoStr = saldoAberto.toFixed(2);
-		setValor(saldoStr);
-		setLinhas([novaLinha(saldoStr)]);
+		setLinhas([
+			novaLinha(
+				saldoAberto.toFixed(2),
+				contas[0]?.id ?? "",
+				meiosPagamento[0]?.id ?? "",
+			),
+		]);
+		// Reset só ao abrir / mudar saldo do título; contas/meios preenchem default na abertura.
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- evita reset ao refetch das listas
 	}, [open, saldoAberto]);
 
 	const somaLinhas = useMemo(
-		() => linhas.reduce((acc, linha) => acc + parseMoedaInput(linha.valor), 0),
+		() => arredondar(linhas.reduce((acc, linha) => acc + parseMoedaInput(linha.valor), 0)),
 		[linhas],
 	);
 
-	const valorBaixaNum = parseMoedaInput(valor);
+	const restanteParaSaldo = arredondar(saldoAberto - somaLinhas);
+
+	const adicionarLinha = () => {
+		const contaPadrao = contas[0]?.id ?? "";
+		const meioPadrao = meiosPagamento[0]?.id ?? "";
+		const restante = Math.max(0, restanteParaSaldo);
+		setLinhas((prev) => [
+			...prev,
+			novaLinha(restante > 0 ? restante.toFixed(2) : "", contaPadrao, meioPadrao),
+		]);
+	};
+
 	const podeConfirmar = Boolean(
 		dataBaixa &&
 			dataPagamento &&
 			titulos.length > 0 &&
 			(modoLote
 				? meioLote && contaLote
-				: valorBaixaNum > 0 &&
-					valorBaixaNum <= saldoAberto + 0.009 &&
-					Math.abs(somaLinhas - valorBaixaNum) < 0.02 &&
+				: somaLinhas > 0 &&
+					somaLinhas <= saldoAberto + 0.009 &&
 					linhas.every(
 						(l) => l.metodo && l.conta && parseMoedaInput(l.valor) > 0,
 					)),
@@ -172,7 +191,7 @@ export function ModalBaixaFinanceiro({
 		onConfirm({
 			dataBaixa,
 			dataPagamento,
-			valor: valorBaixaNum.toFixed(2),
+			valor: somaLinhas.toFixed(2),
 			juros: parseMoedaInput(juros).toFixed(2),
 			multa: parseMoedaInput(multa).toFixed(2),
 			desconto: parseMoedaInput(desconto).toFixed(2),
@@ -195,7 +214,7 @@ export function ModalBaixaFinanceiro({
 					<DialogDescription>
 						{modoLote
 							? `Quitação total de ${titulos.length} títulos (mesmo meio e conta). Saldo total: ${formatarMoeda(saldoAberto)}.`
-							: `Informe valor, meios de pagamento e conta. Saldo em aberto: ${formatarMoeda(saldoAberto)}.`}
+							: `Use um ou mais meios de pagamento. O valor da baixa é a soma das linhas. Saldo: ${formatarMoeda(saldoAberto)}.`}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -268,21 +287,11 @@ export function ModalBaixaFinanceiro({
 						<>
 							<div className="grid grid-cols-2 gap-3">
 								<div className="grid gap-2">
-									<Label htmlFor="valor-baixa">Valor a baixar</Label>
-									<Input
-										id="valor-baixa"
-										value={valor}
-										onChange={(e) => {
-											setValor(e.target.value);
-											if (linhas.length === 1) {
-												setLinhas([{ ...linhas[0], valor: e.target.value }]);
-											}
-										}}
-										disabled={isPending}
-									/>
+									<Label>Valor da baixa (soma)</Label>
+									<Input value={formatarMoeda(somaLinhas)} disabled />
 								</div>
 								<div className="grid gap-2">
-									<Label>Saldo</Label>
+									<Label>Saldo em aberto</Label>
 									<Input value={formatarMoeda(saldoAberto)} disabled />
 								</div>
 							</div>
@@ -317,26 +326,31 @@ export function ModalBaixaFinanceiro({
 							</div>
 
 							<div className="space-y-3">
-								<div className="flex items-center justify-between">
-									<Label>Meios de pagamento</Label>
+								<div className="flex items-center justify-between gap-2">
+									<div>
+										<Label>Meios de pagamento</Label>
+										<p className="text-xs text-muted-foreground">
+											Ex.: R$ 50 PIX + R$ 50 cartão no mesmo lançamento.
+										</p>
+									</div>
 									<Button
 										type="button"
 										variant="outline"
 										size="sm"
 										disabled={isPending}
-										onClick={() => setLinhas((prev) => [...prev, novaLinha()])}
+										onClick={adicionarLinha}
 									>
 										<IconPlus className="size-4 mr-1" />
-										Adicionar
+										Adicionar meio
 									</Button>
 								</div>
-								{linhas.map((linha) => (
+								{linhas.map((linha, index) => (
 									<div
 										key={linha.id}
-										className="grid grid-cols-[1fr_1fr_100px_auto] gap-2 items-end"
+										className="grid grid-cols-[1fr_1fr_100px_auto] gap-2 items-end rounded-md border p-2"
 									>
 										<div className="grid gap-1">
-											<Label className="text-xs">Meio</Label>
+											<Label className="text-xs">Meio {index + 1}</Label>
 											<Select
 												value={linha.metodo}
 												onValueChange={(metodo) =>
@@ -416,10 +430,16 @@ export function ModalBaixaFinanceiro({
 										</Button>
 									</div>
 								))}
-								{Math.abs(somaLinhas - valorBaixaNum) >= 0.02 && (
+								{restanteParaSaldo < -0.009 && (
 									<p className="text-xs text-destructive">
-										Soma dos meios ({formatarMoeda(somaLinhas)}) deve igualar o
-										valor a baixar ({formatarMoeda(valorBaixaNum)}).
+										Soma dos meios ({formatarMoeda(somaLinhas)}) excede o saldo
+										({formatarMoeda(saldoAberto)}).
+									</p>
+								)}
+								{restanteParaSaldo > 0.009 && (
+									<p className="text-xs text-muted-foreground">
+										Restante do saldo: {formatarMoeda(restanteParaSaldo)} (baixa
+										parcial).
 									</p>
 								)}
 							</div>
@@ -434,7 +454,7 @@ export function ModalBaixaFinanceiro({
 							onChange={(e) => setHistorico(e.target.value)}
 							disabled={isPending}
 							rows={2}
-							placeholder="Opcional"
+							placeholder="Opcional — se vazio, usa o resumo dos meios"
 						/>
 					</div>
 				</div>

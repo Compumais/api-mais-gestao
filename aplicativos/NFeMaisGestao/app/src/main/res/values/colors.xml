@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <!-- Paleta NFe (header navy + folha branca, inspirada em apps financeiros). -->
+    <color name="navy_primary">#0B3A82</color>
+    <color name="navy_primary_dark">#082E69</color>
+    <color name="page_background">#EEF1F6</color>
+    <color name="surface_white">#FFFFFF</color>
+    <color name="primary">@color/navy_primary</color>
+    <color name="primary_dark">@color/navy_primary_dark</color>
+    <color name="primary_foreground">#FFFFFF</color>
+    <color name="foreground">#0C0C09</color>
+    <color name="background">@color/page_background</color>
+    <color name="surface">@color/surface_white</color>
+    <color name="muted_foreground">#4E4E3F</color>
+    <color name="accent">#EBEBE7</color>
+    <color name="border">#B8B8AF</color>
+    <color name="card">#FFFFFF</color>
+    <color name="danger">#E7000B</color>
+    <color name="dinheiro">#009540</color>
+    <!-- Status ociosa: mesmas classes do PDV (amber-300 / amber-950 / amber-600 a 50%). -->
+    <color name="mesa_ociosa">#FCD34D</color>
+    <color name="mesa_ociosa_foreground">#451A03</color>
+    <color name="mesa_ociosa_stroke">#80D97706</color>
+    <!-- Sem token equivalente no PDV; mantidos como cores de meio de pagamento. -->
+    <color name="pix">#0284C7</color>
+    <color name="cartao">#7C3AED</color>
+    <color name="ic_launcher_background">@color/navy_primary</color>
+    <color name="header_on_primary">#FFFFFF</color>
+    <color name="header_on_primary_muted">#B8C9E6</color>
+</resources>

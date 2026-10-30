@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_padding_horizontal">20dp</dimen>
+    <dimen name="screen_padding_vertical">16dp</dimen>
+    <dimen name="content_sheet_radius">24dp</dimen>
+    <dimen name="card_radius">12dp</dimen>
+    <dimen name="field_spacing">12dp</dimen>
+    <dimen name="header_padding_bottom">16dp</dimen>
+    <dimen name="bottom_bar_padding">16dp</dimen>
+</resources>
