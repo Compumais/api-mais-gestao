@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_inicio"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:title="@string/nav_inicio" />
+    <item
+        android:id="@+id/nav_nfe"
+        android:icon="@drawable/ic_add"
+        android:title="@string/nav_nfe" />
+    <item
+        android:id="@+id/nav_produtos"
+        android:icon="@drawable/ic_produto_placeholder"
+        android:title="@string/nav_produtos" />
+    <item
+        android:id="@+id/nav_clientes"
+        android:icon="@drawable/ic_c_plus"
+        android:title="@string/nav_clientes" />
+    <item
+        android:id="@+id/nav_mais"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/nav_mais" />
+</menu>

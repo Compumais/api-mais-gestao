@@ -38,6 +38,26 @@ function parseValor(valor: string | null | undefined) {
 	return Number.parseFloat(String(valor ?? "0").replace(",", ".")) || 0;
 }
 
+type PagamentoPersistido = {
+	valor?: string | number | null;
+	metodo?: string | null;
+	conta?: string | null;
+};
+
+function extrairPagamentosObservacao(
+	observacao: string | null | undefined,
+): PagamentoPersistido[] {
+	if (!observacao?.trim().startsWith("{")) return [];
+	try {
+		const parsed = JSON.parse(observacao) as {
+			pagamentos?: PagamentoPersistido[];
+		};
+		return Array.isArray(parsed.pagamentos) ? parsed.pagamentos : [];
+	} catch {
+		return [];
+	}
+}
+
 function ordenarLancamentos(lancamentos: FinanceiroLancamento[]) {
 	return [...lancamentos].sort((a, b) => {
 		const ta =
@@ -94,11 +114,19 @@ function montarEventosTimeline(
 		);
 		const data =
 			lancamento.pagamento ?? lancamento.baixa ?? lancamento.datahoracancelado;
-		const meios =
-			lancamento.historico?.trim() &&
-			!lancamento.historico.toLowerCase().startsWith("baixa de título")
-				? lancamento.historico.trim()
-				: null;
+		const pagamentosPersistidos = extrairPagamentosObservacao(
+			lancamento.observacao,
+		);
+		const linhasMeio =
+			pagamentosPersistidos.length > 0
+				? pagamentosPersistidos.map((pagamento) => {
+						const metodo = pagamento.metodo?.trim() || "Meio";
+						return `${metodo}: ${formatarMoeda(pagamento.valor)}`;
+					})
+				: lancamento.historico?.trim() &&
+					  !lancamento.historico.toLowerCase().startsWith("baixa de título")
+					? [lancamento.historico.trim()]
+					: [];
 
 		saldoRestante = Math.max(
 			0,
@@ -109,8 +137,8 @@ function montarEventosTimeline(
 
 		const detalhesBaixa = [
 			lancamento.usuario ? `Usuário: ${lancamento.usuario}` : "",
-			`Valor: ${formatarMoeda(valorBaixa)}`,
-			meios ? `Meio(s): ${meios}` : "",
+			`Valor total: ${formatarMoeda(valorBaixa)}`,
+			...linhasMeio.map((linha) => `Meio: ${linha}`),
 			juros > 0 ? `Juros: ${formatarMoeda(juros)}` : "",
 			multa > 0 ? `Multa: ${formatarMoeda(multa)}` : "",
 			desconto > 0 ? `Desconto: ${formatarMoeda(desconto)}` : "",

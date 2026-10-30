@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+      color: #0C0C09;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+    .wrap { padding: 4px 2px 24px; }
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .metric {
+      background: #ffffff;
+      border: 1px solid #E2E6ED;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .metric-label {
+      font-size: 11px;
+      color: #4E4E3F;
+      margin-bottom: 4px;
+    }
+    .metric-value {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0B3A82;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0C0C09;
+      margin: 8px 0 8px;
+    }
+    .highlight {
+      background: linear-gradient(135deg, #0B3A82 0%, #082E69 100%);
+      color: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .highlight-label { font-size: 12px; opacity: 0.9; }
+    .highlight-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+    .highlight-sub { font-size: 12px; opacity: 0.85; margin-top: 6px; }
+    .chart-card {
+      background: #ffffff;
+      border: 1px solid #E2E6ED;
+      border-radius: 12px;
+      padding: 12px 10px 8px;
+      margin-bottom: 14px;
+    }
+    .chart-box { position: relative; height: 200px; width: 100%; }
+    .chart-box.tall { height: 220px; }
+    .chart-box.doughnut { height: 240px; }
+    #stateMessage {
+      text-align: center;
+      color: #4E4E3F;
+      padding: 24px 12px;
+    }
+    .hidden { display: none !important; }
+  </style>
+  <script src="chart.umd.min.js" onerror="loadChartCdn()"></script>
+  <script>
+    function loadChartCdn() {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js';
+      document.head.appendChild(s);
+    }
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <p id="stateMessage">Carregando indicadores…</p>
+    <div id="dashboardRoot" class="hidden">
+      <div class="metrics" id="metricsRow"></div>
+
+      <div class="highlight" id="faturamentoHighlight">
+        <div class="highlight-label">Faturamento do mês</div>
+        <div class="highlight-value" id="fatValor">—</div>
+        <div class="highlight-sub" id="fatVendas">—</div>
+      </div>
+
+      <div class="section-title">Contas a pagar x receber</div>
+      <div class="chart-card">
+        <div class="chart-box doughnut"><canvas id="chartContas"></canvas></div>
+      </div>
+
+      <div class="section-title">Faturamento (mês atual)</div>
+      <div class="chart-card">
+        <div class="chart-box"><canvas id="chartFaturamento"></canvas></div>
+      </div>
+
+      <div class="section-title">Caixa: saldo atual x projetado</div>
+      <div class="chart-card">
+        <div class="chart-box tall"><canvas id="chartCaixa"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <script src="dashboard.js"></script>
+</body>
+</html>

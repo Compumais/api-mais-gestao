@@ -1,0 +1,57 @@
+<resources>
+    <style name="Base.Theme.NFeMaisGestao" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/navy_primary</item>
+        <item name="colorPrimaryDark">@color/navy_primary_dark</item>
+        <item name="colorSecondary">@color/navy_primary</item>
+        <item name="colorOnPrimary">@color/primary_foreground</item>
+        <item name="colorOnSurface">@color/foreground</item>
+        <item name="colorOnBackground">@color/foreground</item>
+        <item name="colorSurface">@color/surface_white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/page_background</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+        <item name="android:windowBackground">@color/page_background</item>
+        <item name="android:colorBackground">@color/page_background</item>
+        <item name="android:textColorPrimary">@color/foreground</item>
+        <item name="android:textColorSecondary">@color/muted_foreground</item>
+        <item name="android:textColor">@color/foreground</item>
+        <item name="android:textColorHint">@color/muted_foreground</item>
+        <item name="materialButtonStyle">@style/Widget.NFe.Button.Primary</item>
+        <item name="textInputStyle">@style/Widget.NFe.TextInput.Outlined</item>
+    </style>
+
+    <style name="Theme.NFeMaisGestao" parent="Base.Theme.NFeMaisGestao" />
+
+    <style name="Widget.NFe.TextInput.Outlined" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/navy_primary</item>
+        <item name="hintTextColor">@color/muted_foreground</item>
+    </style>
+
+    <style name="Widget.NFe.Button.Primary" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/navy_primary</item>
+        <item name="android:textColor">@color/primary_foreground</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <style name="Widget.NFe.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/navy_primary</item>
+        <item name="android:textColor">@color/navy_primary</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <style name="TextAppearance.NFe.HeaderTitle" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/header_on_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.NFe.HeaderSubtitle" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/header_on_primary_muted</item>
+    </style>
+
+    <style name="TextAppearance.NFe.FieldLabel" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textColor">@color/muted_foreground</item>
+    </style>
+</resources>
