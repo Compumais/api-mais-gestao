@@ -86,75 +86,82 @@
                     android:orientation="vertical"
                     android:padding="@dimen/screen_padding_horizontal">
 
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutAmbiente"
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Ambiente SEFAZ" />
+                        android:hint="Ambiente SEFAZ">
 
-                    <TextView
-                        android:id="@+id/textAmbiente"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                        android:textStyle="bold" />
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputAmbiente"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/field_spacing"
-                        android:text="@string/natureza_operacao" />
-
-                    <Spinner
-                        android:id="@+id/spinnerNatureza"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
-
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutNatureza"
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/field_spacing"
-                        android:text="Série" />
+                        android:hint="@string/natureza_operacao">
 
-                    <Spinner
-                        android:id="@+id/spinnerSerie"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputNatureza"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/field_spacing"
-                        android:text="Presença do comprador" />
-
-                    <Spinner
-                        android:id="@+id/spinnerIndPres"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
-
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutSerie"
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/field_spacing"
-                        android:text="Destino da operação" />
+                        android:hint="Série">
 
-                    <Spinner
-                        android:id="@+id/spinnerIdDest"
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputSerie"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/field_spacing"
+                        android:hint="Presença do comprador">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputIndPres"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.NFe.Dropdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/field_spacing"
+                        android:hint="Destino da operação">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputIdDest"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
             </ScrollView>
 
@@ -183,9 +190,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/field_spacing"
-                    android:background="@drawable/bg_card_item"
-                    android:padding="12dp"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                    android:background="@drawable/bg_cliente_card"
+                    android:padding="14dp"
+                    android:textColor="@color/navy_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
                     android:visibility="gone" />
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -204,17 +213,10 @@
                 android:orientation="vertical"
                 android:padding="@dimen/screen_padding_horizontal">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/buscar_produto_hint"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
-
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.NFe.TextInput.Outlined"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/field_spacing"
                     android:hint="@string/buscar_produto">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -326,60 +328,77 @@
                     android:orientation="vertical"
                     android:padding="@dimen/screen_padding_horizontal">
 
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/forma_nfe" />
+                        android:hint="@string/forma_nfe">
 
-                    <Spinner
-                        android:id="@+id/spinnerPagamento"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputFormaPagamento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/field_spacing"
-                        android:text="@string/meio_pagamento_erp" />
-
-                    <Spinner
-                        android:id="@+id/spinnerTipoDocumento"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
-
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutMeioPagamento"
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/field_spacing"
-                        android:text="@string/condicao_pagamento" />
+                        android:hint="@string/meio_pagamento_erp">
 
-                    <Spinner
-                        android:id="@+id/spinnerCondicaoPagamento"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputMeioPagamento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutCondicaoPagamento"
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/field_spacing"
-                        android:text="@string/plano_contas" />
+                        android:hint="@string/condicao_pagamento">
 
-                    <Spinner
-                        android:id="@+id/spinnerPlanoContas"
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputCondicaoPagamento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutPlanoContas"
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/field_spacing"
+                        android:hint="@string/plano_contas">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputPlanoContas"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:id="@+id/textResumoPagamento"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_cliente_card"
+                        android:padding="14dp"
+                        android:textColor="@color/foreground"
+                        android:textSize="14sp" />
                 </LinearLayout>
             </ScrollView>
 
@@ -394,18 +413,19 @@
                     android:orientation="vertical"
                     android:padding="@dimen/screen_padding_horizontal">
 
-                    <TextView
-                        style="@style/TextAppearance.NFe.FieldLabel"
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.NFe.Dropdown"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Modalidade do frete" />
+                        android:hint="Modalidade do frete">
 
-                    <Spinner
-                        android:id="@+id/spinnerModFrete"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/bg_card_item" />
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/inputModFrete"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/foreground" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.NFe.TextInput.Outlined"

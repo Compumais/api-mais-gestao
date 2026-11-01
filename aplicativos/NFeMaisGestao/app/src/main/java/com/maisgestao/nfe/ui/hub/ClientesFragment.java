@@ -19,6 +19,7 @@ import com.maisgestao.nfe.R;
 import com.maisgestao.nfe.data.api.ApiClient;
 import com.maisgestao.nfe.data.api.dto.EntidadeDto;
 import com.maisgestao.nfe.data.local.PrefsStore;
+import com.maisgestao.nfe.ui.clientes.ClienteCardBinder;
 import com.maisgestao.nfe.ui.clientes.ClienteFormActivity;
 import java.util.ArrayList;
 import java.util.List;
@@ -126,7 +127,7 @@ public class ClientesFragment extends Fragment {
         @NonNull
         @Override
         public ClienteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_simples, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_cliente_card, parent, false);
             return new ClienteViewHolder(view);
         }
 
@@ -143,18 +144,12 @@ public class ClientesFragment extends Fragment {
     }
 
     static final class ClienteViewHolder extends RecyclerView.ViewHolder {
-        private final android.widget.TextView title;
-        private final android.widget.TextView subtitle;
-
         ClienteViewHolder(@NonNull View itemView) {
             super(itemView);
-            title = itemView.findViewById(R.id.textTitle);
-            subtitle = itemView.findViewById(R.id.textSubtitle);
         }
 
         void bind(EntidadeDto cliente, Runnable click) {
-            title.setText(cliente.nome);
-            subtitle.setText(cliente.cnpjcpf == null ? "" : cliente.cnpjcpf);
+            ClienteCardBinder.bind(itemView, cliente);
             itemView.setOnClickListener(v -> click.run());
         }
     }

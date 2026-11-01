@@ -36,6 +36,7 @@ import {
 	criarUsuarioAdminService,
 	inativarUsuarioAdminService,
 } from "@/service/admin/gerenciar-usuarios.js";
+import { limparBaseEmpresaService } from "@/service/admin/limpar-base-empresa.js";
 import { listarUsuariosAdminService } from "@/service/admin/listar-usuarios.js";
 import { httpErroInterno } from "@/util/http-util.js";
 import { perfilUsuarioSchema } from "@/util/usuario-perfil.js";
@@ -255,6 +256,29 @@ export async function adminRotas(app: FastifyInstance) {
 			reply,
 			await ativarEmpresaAdminService({ id: params.id }),
 		);
+	});
+
+	app.post("/admin/empresas/:id/limpar-base", async (request, reply) => {
+		if (!request.user) {
+			return reply.status(401).send({ error: "Não autorizado" });
+		}
+		const params = z.object({ id: z.string().min(1) }).parse(request.params);
+		const body = z
+			.object({
+				grupos: z.array(z.string().min(1)).min(1).max(10),
+				confirmacao: z.string().min(1),
+			})
+			.parse(request.body);
+		const resultado = await limparBaseEmpresaService({
+			idempresa: params.id,
+			grupos: body.grupos,
+			confirmacao: body.confirmacao,
+			idusuario: request.user.id,
+		});
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+		return reply.status(resultado.status).send(resultado.body);
 	});
 
 	app.post("/admin/empresas", async (request: FastifyRequest, reply) => {

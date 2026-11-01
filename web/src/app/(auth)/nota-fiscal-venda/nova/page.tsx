@@ -267,6 +267,7 @@ export default function NovaEmissaoNfePage() {
 		null,
 	);
 	const [formaPagamento, setFormaPagamento] = useState("01");
+	const [revisaoCarga, setRevisaoCarga] = useState(0);
 	const [cfopSaida, setCfopSaida] = useState("");
 	const [cfopDialogAberto, setCfopDialogAberto] = useState(false);
 	const [cfopPendente, setCfopPendente] = useState<string | null>(null);
@@ -411,6 +412,7 @@ export default function NovaEmissaoNfePage() {
 	});
 
 	const {
+		fields: itensFields,
 		append: appendItem,
 		remove: removeItem,
 		update: updateItem,
@@ -431,14 +433,47 @@ export default function NovaEmissaoNfePage() {
 			itens: EmissaoNfeFormData["itens"];
 		},
 	) {
+		const itens = valores.itens ?? [];
 		form.reset(valores);
-		replaceItens(valores.itens ?? []);
+		replaceItens(itens);
+	}
+
+	function concluirCargaItens(
+		ref: { current: string | null },
+		chave: string,
+		quantidadeFonte: number,
+		itens: EmissaoNfeFormData["itens"],
+	) {
+		const temItens = () => (form.getValues("itens") ?? []).length > 0;
+		ref.current = chave;
+		if (quantidadeFonte > 0 && !temItens()) {
+			replaceItens(itens);
+		}
+		if (quantidadeFonte === 0 || temItens()) return;
+
+		queueMicrotask(() => {
+			if ((form.getValues("itens") ?? []).length === 0 && itens.length > 0) {
+				replaceItens(itens);
+			}
+			if ((form.getValues("itens") ?? []).length > 0) return;
+			ref.current = null;
+			setRevisaoCarga((atual) => (atual < 2 ? atual + 1 : atual));
+		});
 	}
 
 	const {
 		formState: { errors },
 	} = form;
-	const itensValue = form.watch("itens");
+	const itensObservados = form.watch("itens") ?? [];
+	const itensValue = useMemo(
+		() =>
+			itensVisiveisParaEmissao(
+				itensObservados.length > 0
+					? itensObservados
+					: (itensFields as EmissaoNfeFormData["itens"]),
+			),
+		[itensFields, itensObservados],
+	);
 	const itensEmissaoRef = useRef<EmissaoNfeFormData["itens"]>([]);
 	itensEmissaoRef.current = itensVisiveisParaEmissao(
 		form.getValues("itens"),
@@ -632,6 +667,7 @@ export default function NovaEmissaoNfePage() {
 		if (
 			reemitirId ||
 			clonarId ||
+			rascunhoId ||
 			pedidoId ||
 			isLotePedidos ||
 			devolverEntradaId ||
@@ -689,6 +725,8 @@ export default function NovaEmissaoNfePage() {
 		}
 	}, [
 		reemitirId,
+		clonarId,
+		rascunhoId,
 		pedidoId,
 		isLotePedidos,
 		devolverEntradaId,
@@ -844,6 +882,7 @@ export default function NovaEmissaoNfePage() {
 			dadosReemitir.notaFiscal.frete ?? "",
 			dadosReemitir.notaFiscal.tipofrete ?? "",
 			JSON.stringify(dadosReemitir.notaFiscal.dadosimportacao ?? null),
+			dadosReemitir.itens.length,
 		].join(":");
 	}, [
 		reemitirId,
@@ -855,6 +894,7 @@ export default function NovaEmissaoNfePage() {
 		dadosReemitir?.notaFiscal?.frete,
 		dadosReemitir?.notaFiscal?.tipofrete,
 		dadosReemitir?.notaFiscal?.dadosimportacao,
+		dadosReemitir?.itens.length,
 		empresa?.id,
 		empresaFiscal,
 		seriesData,
@@ -924,8 +964,6 @@ export default function NovaEmissaoNfePage() {
 				);
 			});
 
-		reemitirAplicadoRef.current = reemitirProntoKey;
-
 		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			idnotafiscal: notaFiscal.id,
@@ -964,9 +1002,15 @@ export default function NovaEmissaoNfePage() {
 				contextoReemissao.dataFaturamento ?? hojeBrasiliaIsoDate(),
 			diasPagamento: contextoReemissao.diasPagamento,
 		});
+		concluirCargaItens(
+			reemitirAplicadoRef,
+			reemitirProntoKey,
+			itens.length,
+			itensForm,
+		);
 		// Executa uma vez quando todos os dados da reemissão estiverem prontos.
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
-	}, [reemitirProntoKey]);
+	}, [reemitirProntoKey, revisaoCarga]);
 
 	const notaClonar = dadosClonar?.notaFiscal;
 
@@ -1080,8 +1124,6 @@ export default function NovaEmissaoNfePage() {
 				: infoBase
 		).slice(0, 2000);
 
-		clonarAplicadoRef.current = clonarProntoKey;
-
 		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddestinatario: notaFiscal.identidade ?? undefined,
@@ -1115,8 +1157,14 @@ export default function NovaEmissaoNfePage() {
 			dataFaturamento: contextoClone.dataFaturamento ?? hojeBrasiliaIsoDate(),
 			diasPagamento: contextoClone.diasPagamento,
 		});
+		concluirCargaItens(
+			clonarAplicadoRef,
+			clonarProntoKey,
+			itens.length,
+			itensForm,
+		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
-	}, [clonarProntoKey]);
+	}, [clonarProntoKey, revisaoCarga]);
 
 	const notaRascunho = dadosRascunho?.notaFiscal;
 
@@ -1191,8 +1239,6 @@ export default function NovaEmissaoNfePage() {
 			(primeiroCfop ? `Venda CFOP ${primeiroCfop}` : "Rascunho NF-e")
 		).slice(0, 60);
 
-		rascunhoAplicadoRef.current = rascunhoProntoKey;
-
 		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			idnotafiscal: notaFiscal.id,
@@ -1227,8 +1273,14 @@ export default function NovaEmissaoNfePage() {
 			dataFaturamento: contexto.dataFaturamento ?? hojeBrasiliaIsoDate(),
 			diasPagamento: contexto.diasPagamento,
 		});
+		concluirCargaItens(
+			rascunhoAplicadoRef,
+			rascunhoProntoKey,
+			itens.length,
+			itensForm,
+		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
-	}, [rascunhoProntoKey]);
+	}, [rascunhoProntoKey, revisaoCarga]);
 
 	const pedidoProntoKey = useMemo(() => {
 		if (
@@ -1310,8 +1362,6 @@ export default function NovaEmissaoNfePage() {
 			setFormaPagamento(contextoPedido.formaPagamentoNfe);
 		}
 
-		pedidoAplicadoRef.current = pedidoProntoKey;
-
 		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddav: contextoPedido.iddav,
@@ -1338,13 +1388,19 @@ export default function NovaEmissaoNfePage() {
 			gerarFinanceiro: contextoPedido.gerarFinanceiro,
 			gerarEstoque: contextoPedido.gerarEstoque,
 		});
+		concluirCargaItens(
+			pedidoAplicadoRef,
+			pedidoProntoKey,
+			contextoPedido.itens.length,
+			itensForm,
+		);
 		form.setValue(
 			"informacoesAdicionais",
 			contextoPedido.informacoesAdicionais ?? "",
 			{ shouldDirty: false },
 		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
-	}, [pedidoProntoKey]);
+	}, [pedidoProntoKey, revisaoCarga]);
 
 	const loteProntoKey = useMemo(() => {
 		if (
@@ -1431,8 +1487,6 @@ export default function NovaEmissaoNfePage() {
 			setFormaPagamento(contextoLote.formaPagamentoNfe);
 		}
 
-		pedidoAplicadoRef.current = loteProntoKey;
-
 		resetarFormularioEmissao({
 			idempresa: empresa.id,
 			iddav: contextoLote.iddavs[0],
@@ -1460,13 +1514,19 @@ export default function NovaEmissaoNfePage() {
 			gerarFinanceiro: contextoLote.gerarFinanceiro,
 			gerarEstoque: contextoLote.gerarEstoque,
 		});
+		concluirCargaItens(
+			pedidoAplicadoRef,
+			loteProntoKey,
+			contextoLote.itens.length,
+			itensForm,
+		);
 		form.setValue(
 			"informacoesAdicionais",
 			contextoLote.informacoesAdicionais ?? "",
 			{ shouldDirty: false },
 		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
-	}, [loteProntoKey]);
+	}, [loteProntoKey, revisaoCarga]);
 
 	const cfopsOperacao = isDevolucaoVenda ? cfopsEntrada : cfopsSaida;
 

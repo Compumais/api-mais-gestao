@@ -186,17 +186,21 @@ export function codigoCfopPorId(
 	return referencias.find((cfop) => cfop.id === idcfop)?.codigo;
 }
 
+/**
+ * Entre as fontes do formulário, fica a última lista preenchida.
+ * A ordem dos argumentos vai da mais antiga para a que está na tela,
+ * para uma edição ou exclusão não perder para um snapshot anterior
+ * só porque ele tinha mais itens.
+ */
 export function escolherItensFormularioEmissao(
 	...listas: Array<ItemNfe[] | null | undefined>
 ): ItemNfe[] {
-	let melhor: ItemNfe[] = [];
+	let escolhida: ItemNfe[] = [];
 	for (const lista of listas) {
-		if (!Array.isArray(lista)) continue;
-		if (lista.length > melhor.length) {
-			melhor = lista;
-		}
+		if (!Array.isArray(lista) || lista.length === 0) continue;
+		escolhida = lista;
 	}
-	return melhor;
+	return escolhida;
 }
 
 /** Remove o id interno do useFieldArray antes de validar/enviar a NF-e. */

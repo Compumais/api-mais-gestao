@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	cachePaginasVazio,
 	deveAtualizarNodePagina,
+	deveTrocarNodePagina,
 	evictPaginasFechadas,
 	ordenarPaginasParaExibicao,
 	registrarVisitaPagina,
@@ -39,6 +40,26 @@ describe("nav-abas-keep-alive", () => {
 			false,
 		);
 		expect(deveAtualizarNodePagina(estado.congeladas, "/clientes")).toBe(true);
+	});
+
+	it("troca o tree congelado quando a query da mesma rota muda", () => {
+		const congeladas = ["/nota-fiscal-venda/nova"];
+		expect(
+			deveTrocarNodePagina(
+				congeladas,
+				"/nota-fiscal-venda/nova",
+				"reemitir=nota-1",
+				"",
+			),
+		).toBe(true);
+		expect(
+			deveTrocarNodePagina(
+				congeladas,
+				"/nota-fiscal-venda/nova",
+				"reemitir=nota-1",
+				"reemitir=nota-1",
+			),
+		).toBe(false);
 	});
 
 	it("ao voltar para a aba congelada não descongela", () => {

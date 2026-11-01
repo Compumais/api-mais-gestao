@@ -121,7 +121,7 @@ describe("itemPrecisaAliquotaIcmsParaSt", () => {
 });
 
 describe("escolherItensFormularioEmissao", () => {
-	it("usa a lista com mais itens entre as fontes do formulário", () => {
+	it("usa a última lista preenchida entre as fontes do formulário", () => {
 		const item: ItemNfe = {
 			descricao: "Produto",
 			ncm: "22084000",
@@ -130,9 +130,13 @@ describe("escolherItensFormularioEmissao", () => {
 			quantidade: 1,
 			valorUnitario: 10,
 		};
+		const editado: ItemNfe = { ...item, quantidade: 4 };
 
 		expect(escolherItensFormularioEmissao([], [item], undefined)).toEqual([
 			item,
+		]);
+		expect(escolherItensFormularioEmissao([item, item], [editado])).toEqual([
+			editado,
 		]);
 	});
 

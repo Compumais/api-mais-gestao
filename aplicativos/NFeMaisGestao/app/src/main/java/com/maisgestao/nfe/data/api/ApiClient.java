@@ -292,36 +292,63 @@ public class ApiClient {
     }
 
     public List<CfopDto> listarCfopsSaida(String idempresa) throws ApiException {
-        String path = "/cfops?idempresa="
-                + encode(idempresa)
-                + "&tipomovimento=S&page=1&limit=200";
-        JsonObject response = getJson(path);
-        return parseLista(response, CfopDto.class);
+        List<CfopDto> todos = new ArrayList<>();
+        int page = 1;
+        int totalPages = 1;
+        while (page <= totalPages && page <= 30) {
+            String path = "/cfops?idempresa="
+                    + encode(idempresa)
+                    + "&tipomovimento=S&page="
+                    + page
+                    + "&limit=100";
+            JsonObject response = getJson(path);
+            todos.addAll(parseLista(response, CfopDto.class));
+            if (response.has("paginacao") && response.get("paginacao").isJsonObject()) {
+                JsonObject pag = response.getAsJsonObject("paginacao");
+                if (pag.has("totalPages") && !pag.get("totalPages").isJsonNull()) {
+                    totalPages = pag.get("totalPages").getAsInt();
+                }
+            }
+            page++;
+        }
+        return todos;
     }
 
     public List<CondicaoPagamentoDto> listarCondicoesPagamento(String idempresa) throws ApiException {
-        String path = "/condicoes-pagamento?idempresa="
-                + encode(idempresa)
-                + "&inativo=0&page=1&limit=200";
-        JsonObject response = getJson(path);
-        return parseLista(response, CondicaoPagamentoDto.class);
+        return listarPaginado(
+                "/condicoes-pagamento?idempresa=" + encode(idempresa) + "&inativo=0",
+                CondicaoPagamentoDto.class);
     }
 
     public List<PlanoContasDto> listarPlanoContasReceita(String idempresa) throws ApiException {
-        String path = "/plano-contas?idempresa="
-                + encode(idempresa)
-                + "&tipomovimento=E&listarTudo=true&page=1&limit=200";
-        JsonObject response = getJson(path);
-        return parseLista(response, PlanoContasDto.class);
+        return listarPaginado(
+                "/plano-contas?idempresa=" + encode(idempresa) + "&tipomovimento=E&listarTudo=true",
+                PlanoContasDto.class);
     }
 
     public List<TipoDocumentoFinanceiroDto> listarTiposDocumentoFinanceiro(String idempresa)
             throws ApiException {
-        String path = "/tipos-documento-financeiro?idempresa="
-                + encode(idempresa)
-                + "&inativo=0&page=1&limit=200";
-        JsonObject response = getJson(path);
-        return parseLista(response, TipoDocumentoFinanceiroDto.class);
+        return listarPaginado(
+                "/tipos-documento-financeiro?idempresa=" + encode(idempresa) + "&inativo=0",
+                TipoDocumentoFinanceiroDto.class);
+    }
+
+    private <T> List<T> listarPaginado(String pathBase, Class<T> type) throws ApiException {
+        List<T> todos = new ArrayList<>();
+        int page = 1;
+        int totalPages = 1;
+        while (page <= totalPages && page <= 20) {
+            JsonObject response = getJson(pathBase + "&page=" + page + "&limit=100");
+            todos.addAll(parseLista(response, type));
+            if (response.has("paginacao") && response.get("paginacao").isJsonObject()) {
+                JsonObject pag = response.getAsJsonObject("paginacao");
+                if (pag.has("totalPages") && !pag.get("totalPages").isJsonNull()) {
+                    totalPages = pag.get("totalPages").getAsInt();
+                }
+            }
+            page++;
+        }
+        return todos;
     }
 
     private <T> List<T> parseLista(JsonObject response, Class<T> type) {
@@ -457,16 +484,135 @@ public class ApiClient {
 
     private String extrairErro(String raw) {
         try {
-            JsonObject obj = JsonParser.parseString(raw).getAsJsonObject();
-            if (obj.has("error") && !obj.get("error").isJsonNull()) {
-                return obj.get("error").getAsString();
+            JsonElement parsed = JsonParser.parseString(raw);
+            if (!parsed.isJsonObject()) {
+                return raw == null || raw.isEmpty() ? "Erro na API" : raw;
             }
-            if (obj.has("message") && !obj.get("message").isJsonNull()) {
-                return obj.get("message").getAsString();
+            JsonObject obj = parsed.getAsJsonObject();
+            String base = texto(obj, "error");
+            if (base == null) {
+                base = texto(obj, "message");
+            }
+            String detalhes = formatarDetalhes(obj.has("details") ? obj.get("details") : obj.get("issues"));
+            if (detalhes != null && !detalhes.isEmpty()) {
+                if (base == null || base.isEmpty()) {
+                    return detalhes;
+                }
+                return base + "\n" + detalhes;
+            }
+            if (base != null && !base.isEmpty()) {
+                return base;
             }
         } catch (Exception ignored) {
         }
         return raw == null || raw.isEmpty() ? "Erro na API" : raw;
+    }
+
+    private static String formatarDetalhes(JsonElement details) {
+        if (details == null || !details.isJsonArray()) {
+            return null;
+        }
+        JsonArray lista = details.getAsJsonArray();
+        StringBuilder sb = new StringBuilder();
+        int limite = Math.min(lista.size(), 8);
+        for (int i = 0; i < limite; i++) {
+            if (!lista.get(i).isJsonObject()) {
+                continue;
+            }
+            JsonObject issue = lista.get(i).getAsJsonObject();
+            String mensagem = texto(issue, "message");
+            if (mensagem == null || mensagem.isEmpty()) {
+                continue;
+            }
+            String caminho = formatarCaminho(issue.get("path"));
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append("• ");
+            if (!caminho.isEmpty()) {
+                sb.append(caminho).append(": ");
+            }
+            sb.append(mensagem);
+        }
+        if (lista.size() > limite) {
+            sb.append("\n• e mais ").append(lista.size() - limite).append(" campos");
+        }
+        return sb.length() == 0 ? null : sb.toString();
+    }
+
+    private static String formatarCaminho(JsonElement path) {
+        if (path == null || !path.isJsonArray()) {
+            return "";
+        }
+        JsonArray partes = path.getAsJsonArray();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < partes.size(); i++) {
+            String parte = partes.get(i).isJsonPrimitive() ? partes.get(i).getAsString() : "";
+            if ("itens".equals(parte) && i + 1 < partes.size() && partes.get(i + 1).isJsonPrimitive()) {
+                String indice = partes.get(i + 1).getAsString();
+                if (indice.matches("\\d+")) {
+                    if (sb.length() > 0) {
+                        sb.append(" · ");
+                    }
+                    sb.append("Item ").append(Integer.parseInt(indice) + 1);
+                    i++;
+                    continue;
+                }
+            }
+            if (parte.isEmpty() || parte.matches("\\d+")) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append(" · ");
+            }
+            sb.append(rotuloCampo(parte));
+        }
+        return sb.toString();
+    }
+
+    private static String rotuloCampo(String campo) {
+        switch (campo) {
+            case "natOp":
+                return "Natureza da operação";
+            case "ncm":
+                return "NCM";
+            case "cfop":
+                return "CFOP";
+            case "unidade":
+                return "Unidade";
+            case "quantidade":
+                return "Quantidade";
+            case "valorUnitario":
+                return "Valor unitário";
+            case "descricao":
+                return "Descrição";
+            case "cest":
+                return "CEST";
+            case "iddestinatario":
+                return "Cliente";
+            case "idserienfe":
+                return "Série";
+            case "idplanocontas":
+                return "Plano de contas";
+            case "idcondicaopagto":
+                return "Condição de pagamento";
+            case "idtipodocumento":
+                return "Meio de pagamento";
+            case "idempresa":
+                return "Empresa";
+            case "indPres":
+                return "Presença do comprador";
+            case "idDest":
+                return "Destino da operação";
+            case "vPag":
+                return "Valor do pagamento";
+            case "tPag":
+                return "Forma de pagamento";
+            case "modFrete":
+                return "Frete";
+            default:
+                return campo;
+        }
     }
 
     private void aplicarAuth(Request.Builder builder) {

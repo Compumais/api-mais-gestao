@@ -24,6 +24,7 @@ import {
 	MENSAGEM_NFCE_NO_FLUXO_NFE,
 	notaEhModeloNfe55,
 } from "@/util/modelo-documento-fiscal-fluxo.js";
+import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 
@@ -89,10 +90,11 @@ export async function transmitirNfeVendaService({
 
 	if (
 		nota.status !== NFE_STATUS.PENDENTE &&
-		nota.status !== NFE_STATUS.REJEITADA
+		nota.status !== NFE_STATUS.REJEITADA &&
+		nota.status !== STATUS_RASCUNHO_IMPORTACAO
 	) {
 		return httpBadRequest(
-			"Somente NF-e pendentes ou rejeitadas podem ser transmitidas",
+			"Somente NF-e em rascunho, pendentes ou rejeitadas podem ser transmitidas",
 		);
 	}
 

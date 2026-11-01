@@ -19,6 +19,7 @@ import com.maisgestao.nfe.R;
 import com.maisgestao.nfe.data.api.ApiClient;
 import com.maisgestao.nfe.data.api.dto.ProdutoDto;
 import com.maisgestao.nfe.data.local.PrefsStore;
+import com.maisgestao.nfe.ui.produtos.ProdutoCardBinder;
 import com.maisgestao.nfe.ui.produtos.ProdutoFormActivity;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +126,7 @@ public class ProdutosFragment extends Fragment {
         @NonNull
         @Override
         public ProdutoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_simples, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_cliente_card, parent, false);
             return new ProdutoViewHolder(view);
         }
 
@@ -142,18 +143,12 @@ public class ProdutosFragment extends Fragment {
     }
 
     static final class ProdutoViewHolder extends RecyclerView.ViewHolder {
-        private final android.widget.TextView title;
-        private final android.widget.TextView subtitle;
-
         ProdutoViewHolder(@NonNull View itemView) {
             super(itemView);
-            title = itemView.findViewById(R.id.textTitle);
-            subtitle = itemView.findViewById(R.id.textSubtitle);
         }
 
         void bind(ProdutoDto produto, Runnable click) {
-            title.setText(produto.nome);
-            subtitle.setText(produto.preco == null ? "" : "R$ " + produto.preco);
+            ProdutoCardBinder.bind(itemView, produto);
             itemView.setOnClickListener(v -> click.run());
         }
     }
