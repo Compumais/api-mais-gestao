@@ -27,6 +27,13 @@
         <item name="hintTextColor">@color/muted_foreground</item>
     </style>
 
+    <style name="Widget.NFe.Dropdown" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxStrokeColor">@color/navy_primary</item>
+        <item name="hintTextColor">@color/navy_primary</item>
+        <item name="endIconTint">@color/navy_primary</item>
+        <item name="boxBackgroundColor">@color/surface_white</item>
+    </style>
+
     <style name="Widget.NFe.Button.Primary" parent="Widget.Material3.Button">
         <item name="backgroundTint">@color/navy_primary</item>
         <item name="android:textColor">@color/primary_foreground</item>

@@ -45,8 +45,7 @@ export const contacorrentelancamento = pgTable(
 		dataconciliacao: date(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idusuarioconciliacao: text(),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idlancamentoestornado: bigint({ mode: "number" }),
+		idlancamentoestornado: text(),
 	},
 	(table) => [
 		index("idx_contacorrentelanc_evento").using(

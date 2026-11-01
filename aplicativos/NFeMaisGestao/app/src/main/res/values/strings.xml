@@ -86,6 +86,15 @@
     <string name="nao_informado">Não informado</string>
     <string name="adicionar_item">Adicionar item</string>
     <string name="abrir_danfe">Abrir DANFE</string>
+    <string name="nota_emitida">Nota emitida</string>
+    <string name="nota_emitida_whatsapp">A nota foi emitida. Envie o DANFE direto no WhatsApp.</string>
+    <string name="nota_emitida_whatsapp_cliente">A nota de %1$s foi emitida. O DANFE pode ir para o WhatsApp desse cliente.</string>
+    <string name="enviar_whatsapp">Enviar no WhatsApp</string>
+    <string name="ver_nota">Ver nota</string>
+    <string name="whatsapp_ausente">O WhatsApp não está instalado neste aparelho.</string>
+    <string name="danfe_legenda">Segue o DANFE.</string>
+    <string name="danfe_legenda_cliente">Segue o DANFE de %1$s.</string>
+    <string name="tentar_novamente">Tentar de novo</string>
     <string name="transmitir">Transmitir</string>
     <string name="cancelar_nfe">Cancelar</string>
     <string name="inutilizar">Inutilizar</string>

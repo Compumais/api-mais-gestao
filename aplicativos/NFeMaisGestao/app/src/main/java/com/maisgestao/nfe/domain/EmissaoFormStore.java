@@ -15,6 +15,7 @@ public class EmissaoFormStore {
     private String defaultCfop = "5102";
     private String destinatarioNome;
     private String destinatarioDoc;
+    private String destinatarioTelefone;
 
     public static synchronized EmissaoFormStore get() {
         if (instance == null) {
@@ -44,6 +45,7 @@ public class EmissaoFormStore {
         defaultCfop = "5102";
         destinatarioNome = null;
         destinatarioDoc = null;
+        destinatarioTelefone = null;
     }
 
     public JsonObject getDados() {
@@ -71,8 +73,22 @@ public class EmissaoFormStore {
     }
 
     public void setDefaultCfop(String cfop) {
-        if (cfop != null && !cfop.isEmpty()) {
-            defaultCfop = cfop;
+        if (cfop == null || cfop.isEmpty()) {
+            return;
+        }
+        String codigo = EmissaoPayloadBuilder.cfopCodigo(cfop);
+        if (codigo.equals(defaultCfop)) {
+            return;
+        }
+        defaultCfop = codigo;
+        JsonArray itens = getItens();
+        for (int i = 0; i < itens.size(); i++) {
+            if (itens.get(i).isJsonObject()) {
+                itens.get(i).getAsJsonObject().addProperty("cfop", codigo);
+            }
+        }
+        if (itens.size() > 0) {
+            invalidarTributos();
         }
     }
 
@@ -84,16 +100,26 @@ public class EmissaoFormStore {
         return destinatarioDoc;
     }
 
+    public String getDestinatarioTelefone() {
+        return destinatarioTelefone;
+    }
+
     public void setDestinatario(EntidadeDto cliente) {
         if (cliente == null) {
             dados.remove("iddestinatario");
             destinatarioNome = null;
             destinatarioDoc = null;
+            destinatarioTelefone = null;
             return;
         }
-        dados.addProperty("iddestinatario", cliente.id);
+        if (cliente.id == null || cliente.id.trim().isEmpty()) {
+            dados.remove("iddestinatario");
+        } else {
+            dados.addProperty("iddestinatario", cliente.id.trim());
+        }
         destinatarioNome = cliente.nome != null ? cliente.nome : cliente.razaosocial;
         destinatarioDoc = cliente.cnpjcpf;
+        destinatarioTelefone = cliente.telefone;
     }
 
     public void setCampo(String key, String value) {
@@ -141,14 +167,12 @@ public class EmissaoFormStore {
         if (produto.codigo != null) {
             item.addProperty("codigoProduto", String.valueOf(produto.codigo));
         }
-        item.addProperty("descricao", produto.nome);
-        item.addProperty("ncm", produto.ncm == null ? "" : produto.ncm);
-        item.addProperty("cfop", defaultCfop);
-        String unidade = produto.unidademedida == null ? "UN" : produto.unidademedida.trim();
-        if (unidade.length() > 6) {
-            unidade = unidade.substring(0, 6);
-        }
-        item.addProperty("unidade", unidade.isEmpty() ? "UN" : unidade);
+        String descricao = produto.nome == null ? "" : produto.nome.trim();
+        item.addProperty("descricao", descricao.isEmpty() ? "Produto" : descricao);
+        String ncm = produto.ncm == null ? "" : produto.ncm.replaceAll("\\D", "");
+        item.addProperty("ncm", ncm);
+        item.addProperty("cfop", EmissaoPayloadBuilder.cfopCodigo(defaultCfop));
+        item.addProperty("unidade", EmissaoPayloadBuilder.unidadeCodigo(produto.unidademedida));
         double qtd = quantidade > 0 ? quantidade : 1;
         double preco = valorUnitario > 0 ? valorUnitario : 0.01;
         item.addProperty("quantidade", qtd);
@@ -165,9 +189,6 @@ public class EmissaoFormStore {
         }
         if (produto.cstcofins != null) {
             item.addProperty("cstCofins", String.valueOf(produto.cstcofins));
-        }
-        if (produto.controlalote != null && produto.controlalote == 1) {
-            item.addProperty("controlaLote", true);
         }
         getItens().add(item);
         invalidarTributos();

@@ -8,13 +8,15 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.maisgestao.nfe.ui.NfeAppCompatActivity;
-import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.maisgestao.nfe.NfeApplication;
 import com.maisgestao.nfe.R;
 import com.maisgestao.nfe.data.api.ApiClient;
 import com.maisgestao.nfe.data.api.dto.NotaFiscalDto;
+import com.maisgestao.nfe.domain.RascunhoEmissaoPayload;
 import com.maisgestao.nfe.util.UiExecutor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -103,12 +105,56 @@ public class NfeDetailActivity extends NfeAppCompatActivity {
 
     private void transmitir() {
         boolean confirmar = checkConfirmarProducao.isChecked();
-        UiExecutor.run(
-                this,
-                executor,
-                () -> api.transmitir(notaId, confirmar),
-                () -> Toast.makeText(this, R.string.transmissao_solicitada, Toast.LENGTH_SHORT).show(),
-                error -> Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show());
+        progress.setVisibility(View.VISIBLE);
+        executor.execute(() -> {
+            try {
+                JsonObject detalhe = api.buscarNota(notaId);
+                JsonObject nota = detalhe.has("notaFiscal") && detalhe.get("notaFiscal").isJsonObject()
+                        ? detalhe.getAsJsonObject("notaFiscal")
+                        : null;
+                JsonObject resultado;
+                if (RascunhoEmissaoPayload.ehRascunho(nota)) {
+                    JsonArray itens = detalhe.has("itens") && detalhe.get("itens").isJsonArray()
+                            ? detalhe.getAsJsonArray("itens")
+                            : new JsonArray();
+                    JsonObject payload = RascunhoEmissaoPayload.montar(nota, itens, confirmar);
+                    resultado = api.emitir(payload);
+                } else {
+                    resultado = api.transmitir(notaId, confirmar);
+                }
+                String motivo = resultado != null && resultado.has("xMotivo") && !resultado.get("xMotivo").isJsonNull()
+                        ? resultado.get("xMotivo").getAsString()
+                        : null;
+                runOnUiThread(() -> {
+                    progress.setVisibility(View.GONE);
+                    if (motivo != null && !motivo.trim().isEmpty()) {
+                        mostrarAviso(getString(R.string.transmissao_solicitada), motivo.trim());
+                    } else {
+                        Toast.makeText(this, R.string.transmissao_solicitada, Toast.LENGTH_SHORT).show();
+                    }
+                    carregar();
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    progress.setVisibility(View.GONE);
+                    mostrarAviso(getString(R.string.transmitir), error.getMessage());
+                });
+            }
+        });
+    }
+
+    private void mostrarAviso(String titulo, String mensagem) {
+        if (isFinishing()) {
+            return;
+        }
+        String texto = mensagem == null || mensagem.trim().isEmpty()
+                ? "Não foi possível transmitir a nota."
+                : mensagem.trim();
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(titulo)
+                .setMessage(texto)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
     }
 
     private void cancelar() {

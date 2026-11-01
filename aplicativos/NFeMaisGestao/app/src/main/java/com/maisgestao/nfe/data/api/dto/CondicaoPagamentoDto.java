@@ -6,4 +6,6 @@ public class CondicaoPagamentoDto {
     public String descricao;
     public Integer escopo;
     public Integer inativo;
+    public Integer parcelas;
+    public String prazos;
 }

@@ -300,6 +300,19 @@ export const adminService = {
 		return data;
 	},
 
+	async limparBaseEmpresa(
+		id: string,
+		body: { grupos: string[]; confirmacao: string },
+	) {
+		const { data } = await api.post<{
+			total: number;
+			removidos: Array<{ tabela: string; quantidade: number }>;
+			padroesRepostos: boolean;
+			aviso?: string;
+		}>(`/admin/empresas/${id}/limpar-base`, body);
+		return data;
+	},
+
 	async criarEmpresa(body: {
 		nome: string;
 		cnpj: string;

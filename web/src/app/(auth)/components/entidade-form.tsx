@@ -190,10 +190,23 @@ export function EntidadeForm({
 		}
 	}, [indiedest, getValues, setValue]);
 
+	const assinaturaValoresIniciais = useMemo(
+		() =>
+			isEdicao && valoresIniciais ? JSON.stringify(valoresFormulario) : null,
+		[isEdicao, valoresIniciais, valoresFormulario],
+	);
+	const valoresAplicadosRef = useRef<string | null>(null);
+	const estadoSincronizadoRef = useRef<string | null>(null);
+	const cidadeSincronizadaRef = useRef<string | null>(null);
+
 	useEffect(() => {
-		if (!isEdicao || !valoresIniciais) return;
+		if (!assinaturaValoresIniciais) return;
+		// A aba escondida desmonta os effects. Sem esta trava, ao voltar
+		// para o cadastro o reset reaplica o servidor e apaga a edição.
+		if (valoresAplicadosRef.current === assinaturaValoresIniciais) return;
+		valoresAplicadosRef.current = assinaturaValoresIniciais;
 		reset(valoresFormulario);
-	}, [isEdicao, valoresIniciais, valoresFormulario, reset]);
+	}, [assinaturaValoresIniciais, reset, valoresFormulario]);
 
 	const { data: estadosData, isLoading: carregandoEstados } = useQuery({
 		queryKey: ["localidades", "estados"],
@@ -208,12 +221,15 @@ export function EntidadeForm({
 
 		const estadoSalvo = valoresFormulario.idestado;
 		if (!estadoSalvo) return;
+		if (estadoSincronizadoRef.current === estadoSalvo) return;
 
 		const estadoExiste = estadosData.data.some(
 			(estado) => estado.idestado === estadoSalvo,
 		);
+		if (!estadoExiste) return;
 
-		if (estadoExiste && getValues("idestado") !== estadoSalvo) {
+		estadoSincronizadoRef.current = estadoSalvo;
+		if (getValues("idestado") !== estadoSalvo) {
 			setValue("idestado", estadoSalvo, { shouldValidate: true });
 		}
 	}, [
@@ -239,12 +255,15 @@ export function EntidadeForm({
 
 		const cidadeSalva = valoresFormulario.idcidade;
 		if (!cidadeSalva) return;
+		if (cidadeSincronizadaRef.current === cidadeSalva) return;
 
 		const cidadeExiste = municipiosData.data.some(
 			(municipio) => municipio.idcidade === cidadeSalva,
 		);
+		if (!cidadeExiste) return;
 
-		if (cidadeExiste && getValues("idcidade") !== cidadeSalva) {
+		cidadeSincronizadaRef.current = cidadeSalva;
+		if (getValues("idcidade") !== cidadeSalva) {
 			setValue("idcidade", cidadeSalva, { shouldValidate: true });
 		}
 	}, [

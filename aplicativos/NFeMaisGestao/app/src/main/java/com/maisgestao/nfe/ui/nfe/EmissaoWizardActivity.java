@@ -1,6 +1,7 @@
 package com.maisgestao.nfe.ui.nfe;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,7 +14,6 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.GridLayout;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
@@ -23,7 +23,9 @@ import com.maisgestao.nfe.ui.NfeAppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.maisgestao.nfe.NfeApplication;
@@ -38,7 +40,10 @@ import com.maisgestao.nfe.data.api.dto.SerieDto;
 import com.maisgestao.nfe.data.api.dto.TipoDocumentoFinanceiroDto;
 import com.maisgestao.nfe.data.local.PrefsStore;
 import com.maisgestao.nfe.domain.EmissaoFormStore;
+import com.maisgestao.nfe.ui.clientes.ClienteCardBinder;
+import com.maisgestao.nfe.ui.produtos.ProdutoCardBinder;
 import com.maisgestao.nfe.domain.EmissaoPayloadBuilder;
+import com.maisgestao.nfe.util.DanfeShare;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,11 +89,19 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
     private LinearProgressIndicator wizardProgress;
     private ProgressBar progress;
 
-    private Spinner spinnerNatureza;
-    private Spinner spinnerSerie;
-    private TextView textAmbiente;
-    private Spinner spinnerIndPres;
-    private Spinner spinnerIdDest;
+    private TextInputLayout layoutAmbiente;
+    private TextInputLayout layoutNatureza;
+    private TextInputLayout layoutSerie;
+    private MaterialAutoCompleteTextView inputAmbiente;
+    private MaterialAutoCompleteTextView inputNatureza;
+    private MaterialAutoCompleteTextView inputSerie;
+    private MaterialAutoCompleteTextView inputIndPres;
+    private MaterialAutoCompleteTextView inputIdDest;
+    private final String[] ambienteOpcoes = {"2 - Homologação", "1 - Produção"};
+    private final String[] indPresOpcoes = {"1 - Presencial", "2 - Internet", "9 - Outros"};
+    private final String[] idDestOpcoes = {"1 - Operação interna", "2 - Interestadual", "3 - Exterior"};
+    private int ambienteSelecionado = 2;
+    private boolean carregandoSeries;
 
     private TextInputEditText inputBuscaCliente;
     private TextView textDestinatarioSelecionado;
@@ -111,12 +124,30 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
     private TributoItemAdapter tributoItemAdapter;
     private boolean tributosCalculando;
 
-    private Spinner spinnerPagamento;
-    private Spinner spinnerTipoDocumento;
-    private Spinner spinnerCondicaoPagamento;
-    private Spinner spinnerPlanoContas;
+    private MaterialAutoCompleteTextView inputFormaPagamento;
+    private MaterialAutoCompleteTextView inputMeioPagamento;
+    private MaterialAutoCompleteTextView inputCondicaoPagamento;
+    private MaterialAutoCompleteTextView inputPlanoContas;
+    private TextInputLayout layoutMeioPagamento;
+    private TextInputLayout layoutCondicaoPagamento;
+    private TextInputLayout layoutPlanoContas;
+    private TextView textResumoPagamento;
+    private final String[] formaPagamentoOpcoes = {
+        "01 - Dinheiro",
+        "03 - Cartão de crédito",
+        "04 - Cartão de débito",
+        "15 - Boleto",
+        "17 - PIX",
+        "90 - Sem pagamento"
+    };
 
-    private Spinner spinnerModFrete;
+    private MaterialAutoCompleteTextView inputModFrete;
+    private final String[] modFreteOpcoes = {
+        "0 - Contratação por conta do emitente",
+        "1 - Contratação por conta do destinatário",
+        "2 - Contratação por conta de terceiros",
+        "9 - Sem frete"
+    };
     private TextInputEditText inputValorFrete;
     private TextInputEditText inputValorSeguro;
     private TextInputEditText inputOutrasDespesas;
@@ -174,24 +205,48 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         carregarConfigNfe();
         carregarListasPagamento();
         buscarClientes("");
+        buscarProdutos("");
         atualizarStepUi();
     }
 
     private void bindContextoStep() {
-        spinnerNatureza = findViewById(R.id.spinnerNatureza);
-        spinnerSerie = findViewById(R.id.spinnerSerie);
-        textAmbiente = findViewById(R.id.textAmbiente);
-        spinnerIndPres = findViewById(R.id.spinnerIndPres);
-        spinnerIdDest = findViewById(R.id.spinnerIdDest);
+        layoutAmbiente = findViewById(R.id.layoutAmbiente);
+        layoutNatureza = findViewById(R.id.layoutNatureza);
+        layoutSerie = findViewById(R.id.layoutSerie);
+        inputAmbiente = findViewById(R.id.inputAmbiente);
+        inputNatureza = findViewById(R.id.inputNatureza);
+        inputSerie = findViewById(R.id.inputSerie);
+        inputIndPres = findViewById(R.id.inputIndPres);
+        inputIdDest = findViewById(R.id.inputIdDest);
 
-        ArrayAdapter<String> indPres = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"1 - Presencial", "2 - Internet", "9 - Outros"});
-        spinnerIndPres.setAdapter(indPres);
-        ArrayAdapter<String> idDest = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"1 - Operação interna", "2 - Interestadual", "3 - Exterior"});
-        spinnerIdDest.setAdapter(idDest);
+        ligarSelect(inputAmbiente, ambienteOpcoes);
+        ligarSelect(inputIndPres, indPresOpcoes);
+        ligarSelect(inputIdDest, idDestOpcoes);
+        selecionarTexto(inputAmbiente, ambienteOpcoes[0]);
+        selecionarTexto(inputIndPres, indPresOpcoes[0]);
+        selecionarTexto(inputIdDest, idDestOpcoes[0]);
+
+        inputAmbiente.setOnItemClickListener((parent, view, position, id) -> {
+            int novo = position == 1 ? 1 : 2;
+            if (novo == ambienteSelecionado || carregandoSeries) {
+                return;
+            }
+            ambienteSelecionado = novo;
+            recarregarSeries(null);
+        });
+    }
+
+    private void ligarSelect(MaterialAutoCompleteTextView campo, List<String> opcoes) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.item_dropdown, opcoes);
+        campo.setAdapter(adapter);
+    }
+
+    private void ligarSelect(MaterialAutoCompleteTextView campo, String[] opcoes) {
+        ligarSelect(campo, java.util.Arrays.asList(opcoes));
+    }
+
+    private void selecionarTexto(MaterialAutoCompleteTextView campo, String texto) {
+        campo.setText(texto == null ? "" : texto, false);
     }
 
     private void bindDestinatarioStep() {
@@ -236,6 +291,7 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
                 String q = s == null ? "" : s.toString().trim();
                 buscaProdutoRunnable = () -> buscarProdutos(q);
                 debounceHandler.postDelayed(buscaProdutoRunnable, 400);
+                produtoAdapter.setFiltro(q);
             }
         });
     }
@@ -262,51 +318,43 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
     }
 
     private void bindPagamentoStep() {
-        spinnerPagamento = findViewById(R.id.spinnerPagamento);
-        spinnerTipoDocumento = findViewById(R.id.spinnerTipoDocumento);
-        spinnerCondicaoPagamento = findViewById(R.id.spinnerCondicaoPagamento);
-        spinnerPlanoContas = findViewById(R.id.spinnerPlanoContas);
+        inputFormaPagamento = findViewById(R.id.inputFormaPagamento);
+        inputMeioPagamento = findViewById(R.id.inputMeioPagamento);
+        inputCondicaoPagamento = findViewById(R.id.inputCondicaoPagamento);
+        inputPlanoContas = findViewById(R.id.inputPlanoContas);
+        layoutMeioPagamento = findViewById(R.id.layoutMeioPagamento);
+        layoutCondicaoPagamento = findViewById(R.id.layoutCondicaoPagamento);
+        layoutPlanoContas = findViewById(R.id.layoutPlanoContas);
+        textResumoPagamento = findViewById(R.id.textResumoPagamento);
 
-        ArrayAdapter<String> formas = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                new String[]{
-                    "01 - Dinheiro",
-                    "03 - Cartão crédito",
-                    "04 - Cartão débito",
-                    "15 - Boleto",
-                    "17 - PIX",
-                    "90 - Sem pagamento"
-                });
-        spinnerPagamento.setAdapter(formas);
-
-        spinnerTipoDocumento.setOnItemSelectedListener(new SimpleSpinnerListener() {
-            @Override
-            public void onItemSelected(int position) {
-                if (position <= 0 || position > tiposDocumento.size()) {
-                    return;
-                }
-                TipoDocumentoFinanceiroDto tipo = tiposDocumento.get(position - 1);
-                if (tipo.formapagamentonfe != null && !tipo.formapagamentonfe.trim().isEmpty()) {
-                    selecionarFormaPagamentoCodigo(tipo.formapagamentonfe.trim());
-                }
-                if (tipo.idplanocontas != null) {
-                    selecionarPlanoContas(tipo.idplanocontas);
-                }
+        ligarSelect(inputFormaPagamento, formaPagamentoOpcoes);
+        selecionarTexto(inputFormaPagamento, formaPagamentoOpcoes[0]);
+        inputFormaPagamento.setOnItemClickListener((parent, view, position, id) -> atualizarResumoPagamento());
+        inputMeioPagamento.setOnItemClickListener((parent, view, position, id) -> {
+            if (position <= 0 || position > tiposDocumento.size()) {
+                atualizarResumoPagamento();
+                return;
             }
+            TipoDocumentoFinanceiroDto tipo = tiposDocumento.get(position - 1);
+            if (tipo.formapagamentonfe != null && !tipo.formapagamentonfe.trim().isEmpty()) {
+                selecionarFormaPagamentoCodigo(tipo.formapagamentonfe.trim());
+            }
+            if (tipo.idplanocontas != null) {
+                selecionarPlanoContas(tipo.idplanocontas);
+            }
+            atualizarResumoPagamento();
         });
+        inputCondicaoPagamento.setOnItemClickListener((parent, view, position, id) -> atualizarResumoPagamento());
+        inputPlanoContas.setOnItemClickListener((parent, view, position, id) -> atualizarResumoPagamento());
     }
 
     private void bindTransporteStep() {
-        spinnerModFrete = findViewById(R.id.spinnerModFrete);
+        inputModFrete = findViewById(R.id.inputModFrete);
         inputValorFrete = findViewById(R.id.inputValorFrete);
         inputValorSeguro = findViewById(R.id.inputValorSeguro);
         inputOutrasDespesas = findViewById(R.id.inputOutrasDespesas);
-        ArrayAdapter<String> mod = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"0 - Emitente", "1 - Destinatário", "2 - Terceiros", "9 - Sem frete"});
-        spinnerModFrete.setAdapter(mod);
+        ligarSelect(inputModFrete, modFreteOpcoes);
+        selecionarTexto(inputModFrete, modFreteOpcoes[3]);
     }
 
     private void bindRevisaoStep() {
@@ -325,9 +373,21 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         executor.execute(() -> {
             try {
                 JsonObject config = api.buscarNfeConfig(idempresa);
-                Integer ambiente = config.has("ambiente") ? config.get("ambiente").getAsInt() : null;
+                Integer ambiente = config.has("ambiente") && !config.get("ambiente").isJsonNull()
+                        ? config.get("ambiente").getAsInt()
+                        : 2;
+                if (ambiente != 1) {
+                    ambiente = 2;
+                }
                 List<SerieDto> listaSeries = api.listarSeries(idempresa, ambiente);
-                List<CfopDto> listaCfops = api.listarCfopsSaida(idempresa);
+                List<CfopDto> listaCfops;
+                String erroCfop = null;
+                try {
+                    listaCfops = api.listarCfopsSaida(idempresa);
+                } catch (Exception cfopError) {
+                    listaCfops = new ArrayList<>();
+                    erroCfop = cfopError.getMessage();
+                }
                 String ultimaSerie = config.has("ultimaidserie") && !config.get("ultimaidserie").isJsonNull()
                         ? config.get("ultimaidserie").getAsString()
                         : null;
@@ -337,54 +397,17 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
                 String ultimoCfop = config.has("ultimacfopsaida") && !config.get("ultimacfopsaida").isJsonNull()
                         ? config.get("ultimacfopsaida").getAsString()
                         : null;
+                int ambienteFinal = ambiente;
+                List<CfopDto> cfopsFinais = listaCfops;
+                String erroCfopFinal = erroCfop;
                 runOnUiThread(() -> {
                     progress.setVisibility(View.GONE);
-                    if (ambiente != null) {
-                        textAmbiente.setText(getString(
-                                ambiente == 1 ? R.string.ambiente_producao : R.string.ambiente_homologacao));
-                    }
-                    series.clear();
-                    seriesLabels.clear();
-                    series.addAll(listaSeries);
-                    for (SerieDto s : listaSeries) {
-                        seriesLabels.add(s.numero + (s.ambiente != null && s.ambiente == 1 ? " (Prod)" : " (Hom)"));
-                    }
-                    spinnerSerie.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, seriesLabels));
-                    if (ultimaSerie != null) {
-                        for (int i = 0; i < series.size(); i++) {
-                            if (ultimaSerie.equals(series.get(i).id)) {
-                                spinnerSerie.setSelection(i);
-                                break;
-                            }
-                        }
-                    }
-
-                    cfops.clear();
-                    cfopLabels.clear();
-                    cfopLabels.add("Selecione…");
-                    cfops.addAll(listaCfops);
-                    for (CfopDto c : listaCfops) {
-                        String cod = c.codigo == null ? "" : c.codigo;
-                        String desc = c.descricao == null ? cod : c.descricao;
-                        cfopLabels.add(cod + " — " + desc);
-                    }
-                    spinnerNatureza.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, cfopLabels));
-                    int cfopIdx = 0;
-                    if (ultimoCfop != null) {
-                        for (int i = 0; i < cfops.size(); i++) {
-                            if (ultimoCfop.equals(cfops.get(i).codigo)) {
-                                cfopIdx = i + 1;
-                                break;
-                            }
-                        }
-                    } else if (!cfops.isEmpty()) {
-                        cfopIdx = 1;
-                    }
-                    if (cfopIdx > 0) {
-                        spinnerNatureza.setSelection(cfopIdx);
-                        aplicarCfopSelecionado(cfopIdx);
-                    } else if (ultimaNatOp != null) {
-                        store.setCampo("natOp", ultimaNatOp);
+                    ambienteSelecionado = ambienteFinal;
+                    selecionarTexto(inputAmbiente, ambienteFinal == 1 ? ambienteOpcoes[1] : ambienteOpcoes[0]);
+                    aplicarSeries(listaSeries, ultimaSerie);
+                    aplicarCfops(cfopsFinais, ultimoCfop, ultimaNatOp);
+                    if (erroCfopFinal != null) {
+                        layoutNatureza.setError(erroCfopFinal);
                     }
                 });
             } catch (Exception error) {
@@ -403,13 +426,16 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         }
         executor.execute(() -> {
             try {
-                List<TipoDocumentoFinanceiroDto> tipos = api.listarTiposDocumentoFinanceiro(idempresa);
-                List<CondicaoPagamentoDto> condicoes = api.listarCondicoesPagamento(idempresa);
-                List<PlanoContasDto> planos = api.listarPlanoContasReceita(idempresa);
+                List<TipoDocumentoFinanceiroDto> tipos = carregarListaSegura(
+                        () -> api.listarTiposDocumentoFinanceiro(idempresa));
+                List<CondicaoPagamentoDto> condicoes = carregarListaSegura(
+                        () -> api.listarCondicoesPagamento(idempresa));
+                List<PlanoContasDto> planos = carregarListaSegura(
+                        () -> api.listarPlanoContasReceita(idempresa));
                 runOnUiThread(() -> {
                     tiposDocumento.clear();
                     tiposDocumentoLabels.clear();
-                    tiposDocumentoLabels.add("Opcional…");
+                    tiposDocumentoLabels.add("Opcional");
                     for (TipoDocumentoFinanceiroDto t : tipos) {
                         if (t.inativo != null && t.inativo == 1) {
                             continue;
@@ -417,11 +443,13 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
                         tiposDocumento.add(t);
                         tiposDocumentoLabels.add(t.descricao == null ? t.id : t.descricao);
                     }
-                    spinnerTipoDocumento.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, tiposDocumentoLabels));
+                    ligarSelect(inputMeioPagamento, tiposDocumentoLabels);
+                    selecionarTexto(inputMeioPagamento, tiposDocumentoLabels.get(0));
+                    layoutMeioPagamento.setError(tiposDocumento.isEmpty() ? "Nenhum meio de pagamento" : null);
 
                     condicoesPagamento.clear();
                     condicoesLabels.clear();
-                    condicoesLabels.add("Opcional…");
+                    condicoesLabels.add("Opcional");
                     for (CondicaoPagamentoDto c : condicoes) {
                         if (c.inativo != null && c.inativo == 1) {
                             continue;
@@ -432,13 +460,16 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
                         condicoesPagamento.add(c);
                         String cod = c.codigo == null ? "" : c.codigo;
                         String desc = c.descricao == null ? cod : c.descricao;
-                        condicoesLabels.add((cod.isEmpty() ? "" : cod + " - ") + desc);
+                        int parcelas = c.parcelas == null || c.parcelas < 1 ? 1 : c.parcelas;
+                        condicoesLabels.add((cod.isEmpty() ? "" : cod + " — ") + desc + " (" + parcelas + "x)");
                     }
-                    spinnerCondicaoPagamento.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, condicoesLabels));
+                    ligarSelect(inputCondicaoPagamento, condicoesLabels);
+                    selecionarTexto(inputCondicaoPagamento, condicoesLabels.get(0));
+                    layoutCondicaoPagamento.setError(condicoesPagamento.isEmpty() ? "Nenhuma condição de pagamento" : null);
 
                     planosContas.clear();
                     planosLabels.clear();
-                    planosLabels.add("Opcional…");
+                    planosLabels.add("Opcional");
                     for (PlanoContasDto p : planos) {
                         if (p.inativo != null && p.inativo == 1) {
                             continue;
@@ -449,9 +480,12 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
                         planosContas.add(p);
                         String cod = p.codigo == null ? "" : p.codigo;
                         String nome = p.nome == null ? "" : p.nome;
-                        planosLabels.add((cod.isEmpty() ? "" : cod + " - ") + nome);
+                        planosLabels.add((cod.isEmpty() ? "" : cod + " — ") + nome);
                     }
-                    spinnerPlanoContas.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, planosLabels));
+                    ligarSelect(inputPlanoContas, planosLabels);
+                    selecionarTexto(inputPlanoContas, planosLabels.get(0));
+                    layoutPlanoContas.setError(planosContas.isEmpty() ? "Nenhum plano de contas" : null);
+                    atualizarResumoPagamento();
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show());
@@ -459,46 +493,140 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         });
     }
 
-    private void aplicarCfopSelecionado(int position) {
-        if (position <= 0 || position > cfops.size()) {
+    private void recarregarSeries(String seriePreferida) {
+        String idempresa = prefs.getEmpresaId();
+        if (idempresa == null) {
             return;
         }
-        CfopDto cfop = cfops.get(position - 1);
+        carregandoSeries = true;
+        progress.setVisibility(View.VISIBLE);
+        int ambiente = ambienteSelecionado;
+        executor.execute(() -> {
+            try {
+                List<SerieDto> listaSeries = api.listarSeries(idempresa, ambiente);
+                runOnUiThread(() -> {
+                    carregandoSeries = false;
+                    progress.setVisibility(View.GONE);
+                    aplicarSeries(listaSeries, seriePreferida);
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    carregandoSeries = false;
+                    progress.setVisibility(View.GONE);
+                    layoutSerie.setError(error.getMessage());
+                });
+            }
+        });
+    }
+
+    private void aplicarSeries(List<SerieDto> listaSeries, String seriePreferida) {
+        series.clear();
+        seriesLabels.clear();
+        for (SerieDto serie : listaSeries) {
+            if (serie == null || serie.inativa()) {
+                continue;
+            }
+            series.add(serie);
+            seriesLabels.add(serie.rotulo());
+        }
+        ligarSelect(inputSerie, seriesLabels);
+        layoutSerie.setError(series.isEmpty() ? "Nenhuma série neste ambiente" : null);
+        int indice = 0;
+        if (seriePreferida != null) {
+            for (int i = 0; i < series.size(); i++) {
+                if (seriePreferida.equals(series.get(i).id)) {
+                    indice = i;
+                    break;
+                }
+            }
+        }
+        if (!seriesLabels.isEmpty()) {
+            selecionarTexto(inputSerie, seriesLabels.get(indice));
+        } else {
+            selecionarTexto(inputSerie, "");
+        }
+    }
+
+    private void aplicarCfops(List<CfopDto> listaCfops, String ultimoCfop, String ultimaNatOp) {
+        cfops.clear();
+        cfopLabels.clear();
+        for (CfopDto cfop : listaCfops) {
+            if (cfop == null) {
+                continue;
+            }
+            cfops.add(cfop);
+            String cod = cfop.codigo == null ? "" : cfop.codigo;
+            String desc = cfop.descricao == null ? cod : cfop.descricao;
+            cfopLabels.add(cod.isEmpty() ? desc : cod + " — " + desc);
+        }
+        ligarSelect(inputNatureza, cfopLabels);
+        layoutNatureza.setError(cfops.isEmpty() ? "Nenhuma natureza de saída" : null);
+        int indice = -1;
+        if (ultimoCfop != null) {
+            for (int i = 0; i < cfops.size(); i++) {
+                if (ultimoCfop.equals(cfops.get(i).codigo)) {
+                    indice = i;
+                    break;
+                }
+            }
+        }
+        if (indice < 0 && !cfops.isEmpty()) {
+            indice = 0;
+        }
+        if (indice >= 0) {
+            selecionarTexto(inputNatureza, cfopLabels.get(indice));
+            aplicarCfopSelecionado(indice);
+        } else if (ultimaNatOp != null) {
+            store.setCampo("natOp", EmissaoPayloadBuilder.natOp(ultimaNatOp));
+        }
+    }
+
+    private void aplicarCfopSelecionado(int position) {
+        if (position < 0 || position >= cfops.size()) {
+            return;
+        }
+        CfopDto cfop = cfops.get(position);
         if (cfop.codigo != null) {
             store.setDefaultCfop(cfop.codigo);
         }
         String natOp = cfop.descricao != null && !cfop.descricao.isEmpty()
                 ? cfop.descricao
                 : (cfop.codigo != null ? cfop.codigo : "Venda");
-        store.setCampo("natOp", natOp);
+        store.setCampo("natOp", EmissaoPayloadBuilder.natOp(natOp));
     }
 
     private void salvarContexto() {
-        int cfopIdx = spinnerNatureza.getSelectedItemPosition();
+        int cfopIdx = indiceSelecionado(inputNatureza, cfopLabels);
         aplicarCfopSelecionado(cfopIdx);
-        int serieIdx = spinnerSerie.getSelectedItemPosition();
+        int serieIdx = indiceSelecionado(inputSerie, seriesLabels);
         if (serieIdx >= 0 && serieIdx < series.size()) {
             store.setCampo("idserienfe", series.get(serieIdx).id);
         }
-        store.setCampoInt("indPres", indPresValue(spinnerIndPres.getSelectedItemPosition()));
-        store.setCampoInt("idDest", idDestValue(spinnerIdDest.getSelectedItemPosition()));
+        store.setCampoInt("indPres", indPresValue(indiceSelecionado(inputIndPres, java.util.Arrays.asList(indPresOpcoes))));
+        store.setCampoInt("idDest", idDestValue(indiceSelecionado(inputIdDest, java.util.Arrays.asList(idDestOpcoes))));
+    }
+
+    private int indiceSelecionado(MaterialAutoCompleteTextView campo, List<String> opcoes) {
+        String texto = campo.getText() == null ? "" : campo.getText().toString();
+        return opcoes.indexOf(texto);
     }
 
     private void salvarPagamento() {
-        store.setFormaPagamentoCodigo(formaPagamentoCodigo(spinnerPagamento.getSelectedItemPosition()));
-        int tipoIdx = spinnerTipoDocumento.getSelectedItemPosition();
+        store.setFormaPagamentoCodigo(formaPagamentoCodigo(indiceSelecionado(
+                inputFormaPagamento, java.util.Arrays.asList(formaPagamentoOpcoes))));
+        int tipoIdx = indiceSelecionado(inputMeioPagamento, tiposDocumentoLabels);
         if (tipoIdx > 0 && tipoIdx <= tiposDocumento.size()) {
             store.setCampo("idtipodocumento", tiposDocumento.get(tipoIdx - 1).id);
         } else {
             store.getDados().remove("idtipodocumento");
         }
-        int condIdx = spinnerCondicaoPagamento.getSelectedItemPosition();
+        int condIdx = indiceSelecionado(inputCondicaoPagamento, condicoesLabels);
         if (condIdx > 0 && condIdx <= condicoesPagamento.size()) {
             store.setCampo("idcondicaopagto", condicoesPagamento.get(condIdx - 1).id);
         } else {
             store.getDados().remove("idcondicaopagto");
         }
-        int planoIdx = spinnerPlanoContas.getSelectedItemPosition();
+        int planoIdx = indiceSelecionado(inputPlanoContas, planosLabels);
         if (planoIdx > 0 && planoIdx <= planosContas.size()) {
             store.setCampo("idplanocontas", planosContas.get(planoIdx - 1).id);
         } else {
@@ -507,7 +635,8 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
     }
 
     private void salvarTransporte() {
-        store.setTransporteModFrete(modFreteValue(spinnerModFrete.getSelectedItemPosition()));
+        store.setTransporteModFrete(modFreteValue(indiceSelecionado(
+                inputModFrete, java.util.Arrays.asList(modFreteOpcoes))));
         store.setTotaisNumero("frete", parseNumero(inputValorFrete));
         store.setTotaisNumero("seguro", parseNumero(inputValorSeguro));
         store.setTotaisNumero("outrasDespesas", parseNumero(inputOutrasDespesas));
@@ -526,6 +655,16 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
     private void avancar() {
         int step = flipper.getDisplayedChild();
         if (step == STEP_CONTEXTO) {
+            if (indiceSelecionado(inputNatureza, cfopLabels) < 0) {
+                layoutNatureza.setError("Selecione a natureza da operação");
+                return;
+            }
+            if (indiceSelecionado(inputSerie, seriesLabels) < 0) {
+                layoutSerie.setError("Selecione a série");
+                return;
+            }
+            layoutNatureza.setError(null);
+            layoutSerie.setError(null);
             salvarContexto();
         } else if (step == STEP_ITENS_CONF && store.getItens().size() == 0) {
             Toast.makeText(this, R.string.informe_itens, Toast.LENGTH_SHORT).show();
@@ -559,9 +698,9 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
     }
 
     private void addRevisaoSecao(LayoutInflater inflater, String titulo, String conteudo) {
-        View block = inflater.inflate(R.layout.item_simples, revisaoContainer, false);
-        TextView title = block.findViewById(R.id.textTitle);
-        TextView subtitle = block.findViewById(R.id.textSubtitle);
+        View block = inflater.inflate(R.layout.item_revisao_card, revisaoContainer, false);
+        TextView title = block.findViewById(R.id.textTitulo);
+        TextView subtitle = block.findViewById(R.id.textCorpo);
         title.setText(titulo);
         subtitle.setText(conteudo);
         ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) block.getLayoutParams();
@@ -601,40 +740,115 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
     }
 
     private String formatarTotaisResumo() {
+        double produtos = somarItens(store.getItens());
+        double frete = parseNumero(inputValorFrete);
+        double seguro = parseNumero(inputValorSeguro);
+        double outras = parseNumero(inputOutrasDespesas);
         JsonObject totais = store.getTotaisFiscais();
-        if (totais == null) {
-            return getString(R.string.nao_informado);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Produtos: ").append(moeda.format(valorTotal(totais, "totalProdutos", produtos)));
+        sb.append("\nFrete: ").append(moeda.format(valorTotal(totais, "frete", frete)));
+        sb.append("\nSeguro: ").append(moeda.format(valorTotal(totais, "seguro", seguro)));
+        sb.append("\nOutras despesas: ").append(moeda.format(valorTotal(totais, "outrasDespesas", outras)));
+        if (totais != null) {
+            appendTotal(sb, "BC ICMS", totais, "baseIcms");
+            appendTotal(sb, "ICMS", totais, "valorIcms");
+            appendTotal(sb, "PIS", totais, "valorPis");
+            appendTotal(sb, "COFINS", totais, "valorCofins");
         }
-        double total = totais.has("totalNota") ? totais.get("totalNota").getAsDouble() : 0;
-        return getString(R.string.total_nota) + ": " + moeda.format(total);
-    }
-
-    private String formatarPagamentoResumo() {
-        int idx = spinnerPagamento.getSelectedItemPosition();
-        String forma = idx >= 0 && idx < spinnerPagamento.getCount()
-                ? spinnerPagamento.getSelectedItem().toString()
-                : store.getFormaPagamentoCodigo();
-        StringBuilder sb = new StringBuilder(forma);
-        int tipoIdx = spinnerTipoDocumento.getSelectedItemPosition();
-        if (tipoIdx > 0 && tipoIdx <= tiposDocumento.size()) {
-            sb.append("\nERP: ").append(tiposDocumentoLabels.get(tipoIdx));
-        }
-        int condIdx = spinnerCondicaoPagamento.getSelectedItemPosition();
-        if (condIdx > 0 && condIdx <= condicoesLabels.size() - 1) {
-            sb.append("\n").append(getString(R.string.condicao_pagamento)).append(": ").append(condicoesLabels.get(condIdx));
-        }
-        int planoIdx = spinnerPlanoContas.getSelectedItemPosition();
-        if (planoIdx > 0 && planoIdx <= planosLabels.size() - 1) {
-            sb.append("\n").append(getString(R.string.plano_contas)).append(": ").append(planosLabels.get(planoIdx));
-        }
+        sb.append("\nTotal da nota: ").append(moeda.format(totalNotaAtual()));
+        sb.append("\nItens: ").append(store.getItens().size());
         return sb.toString();
     }
 
+    private void appendTotal(StringBuilder sb, String label, JsonObject totais, String key) {
+        if (totais != null && totais.has(key) && !totais.get(key).isJsonNull()) {
+            sb.append("\n").append(label).append(": ").append(moeda.format(totais.get(key).getAsDouble()));
+        }
+    }
+
+    private double valorTotal(JsonObject totais, String key, double fallback) {
+        if (totais != null && totais.has(key) && !totais.get(key).isJsonNull()) {
+            return totais.get(key).getAsDouble();
+        }
+        return fallback;
+    }
+
+    private double totalNotaAtual() {
+        JsonObject totais = store.getTotaisFiscais();
+        if (totais != null && totais.has("totalNota") && !totais.get("totalNota").isJsonNull()) {
+            double fiscal = totais.get("totalNota").getAsDouble();
+            if (fiscal > 0) {
+                return fiscal;
+            }
+        }
+        return somarItens(store.getItens())
+                + parseNumero(inputValorFrete)
+                + parseNumero(inputValorSeguro)
+                + parseNumero(inputOutrasDespesas);
+    }
+
+    private static double somarItens(JsonArray itens) {
+        double total = 0;
+        if (itens == null) {
+            return 0;
+        }
+        for (int i = 0; i < itens.size(); i++) {
+            JsonObject item = itens.get(i).getAsJsonObject();
+            double qtd = item.has("quantidade") ? item.get("quantidade").getAsDouble() : 0;
+            double unit = item.has("valorUnitario") ? item.get("valorUnitario").getAsDouble() : 0;
+            total += qtd * unit;
+        }
+        return total;
+    }
+
+    private void atualizarResumoPagamento() {
+        if (textResumoPagamento == null) {
+            return;
+        }
+        double total = totalNotaAtual();
+        int condIdx = indiceSelecionado(inputCondicaoPagamento, condicoesLabels);
+        int parcelas = 1;
+        String condicao = "À vista";
+        if (condIdx > 0 && condIdx <= condicoesPagamento.size()) {
+            CondicaoPagamentoDto cond = condicoesPagamento.get(condIdx - 1);
+            parcelas = cond.parcelas == null || cond.parcelas < 1 ? 1 : cond.parcelas;
+            condicao = condicoesLabels.get(condIdx);
+        }
+        double valorParcela = parcelas > 0 ? total / parcelas : total;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Total da nota: ").append(moeda.format(total));
+        sb.append("\nForma: ").append(textoSelecionado(inputFormaPagamento));
+        int tipoIdx = indiceSelecionado(inputMeioPagamento, tiposDocumentoLabels);
+        if (tipoIdx > 0) {
+            sb.append("\nMeio ERP: ").append(tiposDocumentoLabels.get(tipoIdx));
+        }
+        sb.append("\nCondição: ").append(condicao);
+        sb.append("\nParcelas: ").append(parcelas).append(" × ").append(moeda.format(valorParcela));
+        int planoIdx = indiceSelecionado(inputPlanoContas, planosLabels);
+        if (planoIdx > 0) {
+            sb.append("\nPlano de contas: ").append(planosLabels.get(planoIdx));
+        }
+        textResumoPagamento.setText(sb.toString());
+    }
+
+    private String textoSelecionado(MaterialAutoCompleteTextView campo) {
+        return campo.getText() == null ? "" : campo.getText().toString();
+    }
+
+    private String formatarPagamentoResumo() {
+        atualizarResumoPagamento();
+        return textResumoPagamento.getText() == null
+                ? ""
+                : textResumoPagamento.getText().toString();
+    }
+
     private String formatarTransporteResumo() {
-        int idx = spinnerModFrete.getSelectedItemPosition();
-        String mod = idx >= 0 ? spinnerModFrete.getSelectedItem().toString() : "";
-        double frete = parseNumero(inputValorFrete);
-        return mod + "\nFrete: " + moeda.format(frete);
+        String mod = textoSelecionado(inputModFrete);
+        return mod
+                + "\nFrete: " + moeda.format(parseNumero(inputValorFrete))
+                + "\nSeguro: " + moeda.format(parseNumero(inputValorSeguro))
+                + "\nOutras despesas: " + moeda.format(parseNumero(inputOutrasDespesas));
     }
 
     private void buscarClientes(String q) {
@@ -669,7 +883,7 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         progress.setVisibility(View.VISIBLE);
         executor.execute(() -> {
             try {
-                ApiClient.Pagina<ProdutoDto> pagina = api.listarProdutos(idempresa, 1, 30, q.isEmpty() ? null : q);
+                ApiClient.Pagina<ProdutoDto> pagina = api.listarProdutos(idempresa, 1, 50, q.isEmpty() ? null : q);
                 runOnUiThread(() -> {
                     progress.setVisibility(View.GONE);
                     produtoAdapter.setItems(pagina.data);
@@ -725,9 +939,16 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
             return;
         }
         String idempresa = prefs.getEmpresaId();
+        final JsonArray itensNota;
+        try {
+            itensNota = EmissaoPayloadBuilder.prepararItens(store.getItens());
+        } catch (IllegalArgumentException error) {
+            mostrarErro(error.getMessage());
+            return;
+        }
         JsonObject params = new JsonObject();
         params.addProperty("idempresa", idempresa);
-        params.add("itens", store.getItens());
+        params.add("itens", itensNota);
         if (store.getDados().has("totais")) {
             params.add("totais", store.getDados().get("totais"));
         }
@@ -751,7 +972,7 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
                     tributosCalculando = false;
                     progress.setVisibility(View.GONE);
                     textTributosStatus.setText(error.getMessage());
-                    Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
+                    mostrarErro(error.getMessage());
                 });
             }
         });
@@ -781,6 +1002,7 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         }
         TextView cell = new TextView(this);
         double valor = totais.get(key).getAsDouble();
+        cell.setTextColor(getColor(R.color.foreground));
         cell.setText(label + "\n" + moeda.format(valor));
         cell.setPadding(8, 8, 8, 8);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
@@ -794,7 +1016,13 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
 
     private void salvarRascunho() {
         store.setCampoBool("confirmarProducao", checkConfirmarProducao.isChecked());
-        JsonObject payload = EmissaoPayloadBuilder.build(store, checkConfirmarProducao.isChecked());
+        final JsonObject payload;
+        try {
+            payload = EmissaoPayloadBuilder.build(store, checkConfirmarProducao.isChecked());
+        } catch (RuntimeException error) {
+            mostrarErro(error.getMessage());
+            return;
+        }
         progress.setVisibility(View.VISIBLE);
         executor.execute(() -> {
             try {
@@ -807,7 +1035,7 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
             } catch (Exception error) {
                 runOnUiThread(() -> {
                     progress.setVisibility(View.GONE);
-                    Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
+                    mostrarErro(error.getMessage());
                 });
             }
         });
@@ -815,7 +1043,13 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
 
     private void emitir() {
         store.setCampoBool("confirmarProducao", checkConfirmarProducao.isChecked());
-        JsonObject payload = EmissaoPayloadBuilder.build(store, checkConfirmarProducao.isChecked());
+        final JsonObject payload;
+        try {
+            payload = EmissaoPayloadBuilder.build(store, checkConfirmarProducao.isChecked());
+        } catch (RuntimeException error) {
+            mostrarErro(error.getMessage());
+            return;
+        }
         progress.setVisibility(View.VISIBLE);
         executor.execute(() -> {
             try {
@@ -823,20 +1057,107 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
                 String id = res.has("idnotafiscal") ? res.get("idnotafiscal").getAsString() : null;
                 runOnUiThread(() -> {
                     progress.setVisibility(View.GONE);
-                    if (id != null) {
-                        Intent intent = new Intent(this, NfeDetailActivity.class);
-                        intent.putExtra(NfeDetailActivity.EXTRA_NOTA_ID, id);
-                        startActivity(intent);
+                    if (id == null || id.trim().isEmpty()) {
+                        mostrarErro("A nota foi emitida, mas o identificador não voltou.");
+                        return;
                     }
-                    finish();
+                    mostrarNotaEmitida(id);
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
                     progress.setVisibility(View.GONE);
-                    Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
+                    mostrarErro(error.getMessage());
                 });
             }
         });
+    }
+
+    private void mostrarNotaEmitida(String notaId) {
+        if (isFinishing()) {
+            return;
+        }
+        String nome = store.getDestinatarioNome();
+        String mensagem = nome == null || nome.trim().isEmpty()
+                ? getString(R.string.nota_emitida_whatsapp)
+                : getString(R.string.nota_emitida_whatsapp_cliente, nome.trim());
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.nota_emitida)
+                .setMessage(mensagem)
+                .setPositiveButton(R.string.enviar_whatsapp, (dialog, which) -> compartilharDanfeWhatsApp(notaId))
+                .setNegativeButton(R.string.ver_nota, (dialog, which) -> abrirDetalhe(notaId))
+                .setCancelable(false)
+                .show();
+    }
+
+    private void compartilharDanfeWhatsApp(String notaId) {
+        String telefone = store.getDestinatarioTelefone();
+        String nome = store.getDestinatarioNome();
+        String legenda = nome == null || nome.trim().isEmpty()
+                ? getString(R.string.danfe_legenda)
+                : getString(R.string.danfe_legenda_cliente, nome.trim());
+        progress.setVisibility(View.VISIBLE);
+        executor.execute(() -> {
+            try {
+                byte[] pdf = api.downloadDanfe(notaId);
+                Uri uri = DanfeShare.salvar(this, notaId, pdf);
+                runOnUiThread(() -> {
+                    progress.setVisibility(View.GONE);
+                    Intent envio = DanfeShare.intentWhatsApp(this, uri, telefone, legenda);
+                    if (envio == null) {
+                        falhaEnvioDanfe(notaId, getString(R.string.whatsapp_ausente));
+                        return;
+                    }
+                    try {
+                        startActivity(envio);
+                        abrirDetalhe(notaId);
+                    } catch (Exception error) {
+                        falhaEnvioDanfe(notaId, error.getMessage());
+                    }
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    progress.setVisibility(View.GONE);
+                    falhaEnvioDanfe(notaId, error.getMessage());
+                });
+            }
+        });
+    }
+
+    private void falhaEnvioDanfe(String notaId, String mensagem) {
+        if (isFinishing()) {
+            return;
+        }
+        String texto = mensagem == null || mensagem.trim().isEmpty()
+                ? getString(R.string.whatsapp_ausente)
+                : mensagem.trim();
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.nota_emitida)
+                .setMessage(texto)
+                .setPositiveButton(R.string.tentar_novamente, (dialog, which) -> compartilharDanfeWhatsApp(notaId))
+                .setNegativeButton(R.string.ver_nota, (dialog, which) -> abrirDetalhe(notaId))
+                .setCancelable(false)
+                .show();
+    }
+
+    private void abrirDetalhe(String notaId) {
+        Intent intent = new Intent(this, NfeDetailActivity.class);
+        intent.putExtra(NfeDetailActivity.EXTRA_NOTA_ID, notaId);
+        startActivity(intent);
+        finish();
+    }
+
+    private void mostrarErro(String mensagem) {
+        if (isFinishing()) {
+            return;
+        }
+        String texto = mensagem == null || mensagem.trim().isEmpty()
+                ? "Não foi possível concluir a emissão."
+                : mensagem.trim();
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Não foi possível emitir")
+                .setMessage(texto)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
     }
 
     @Override
@@ -855,6 +1176,9 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         MaterialButton btnAvancar = findViewById(R.id.btnWizardAvancar);
         btnAvancar.setText(step == STEP_REVISAO ? R.string.concluir : R.string.avancar);
 
+        if (step == STEP_PAGAMENTO) {
+            atualizarResumoPagamento();
+        }
         if (step == STEP_DESTINATARIO) {
             atualizarDestinatarioUi();
         }
@@ -892,7 +1216,7 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         String[] map = {"01", "03", "04", "15", "17", "90"};
         for (int i = 0; i < map.length; i++) {
             if (map[i].equals(codigo)) {
-                spinnerPagamento.setSelection(i);
+                selecionarTexto(inputFormaPagamento, formaPagamentoOpcoes[i]);
                 return;
             }
         }
@@ -901,10 +1225,23 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
     private void selecionarPlanoContas(String id) {
         for (int i = 0; i < planosContas.size(); i++) {
             if (id.equals(planosContas.get(i).id)) {
-                spinnerPlanoContas.setSelection(i + 1);
+                selecionarTexto(inputPlanoContas, planosLabels.get(i + 1));
                 return;
             }
         }
+    }
+
+    private <T> List<T> carregarListaSegura(ListaApi<T> carga) {
+        try {
+            List<T> lista = carga.carregar();
+            return lista == null ? new ArrayList<>() : lista;
+        } catch (Exception error) {
+            return new ArrayList<>();
+        }
+    }
+
+    private interface ListaApi<T> {
+        List<T> carregar() throws Exception;
     }
 
     private static int indPresValue(int index) {
@@ -1049,15 +1386,14 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
         @Override
         public SimpleViewHolder onCreateViewHolder(android.view.ViewGroup parent, int viewType) {
             android.view.View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_simples, parent, false);
+                    .inflate(R.layout.item_cliente_card, parent, false);
             return new SimpleViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(SimpleViewHolder holder, int position) {
             EntidadeDto c = filtered.get(position);
-            holder.title.setText(c.nome);
-            holder.subtitle.setText(c.cnpjcpf);
+            ClienteCardBinder.bind(holder.itemView, c);
             holder.itemView.setOnClickListener(v -> onPick.onPick(c));
         }
 
@@ -1074,6 +1410,8 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
 
         private final OnPick onPick;
         private final List<ProdutoDto> items = new ArrayList<>();
+        private final List<ProdutoDto> filtered = new ArrayList<>();
+        private String filtro = "";
 
         ProdutoPickAdapter(OnPick onPick) {
             this.onPick = onPick;
@@ -1084,27 +1422,49 @@ public class EmissaoWizardActivity extends NfeAppCompatActivity {
             if (produtos != null) {
                 items.addAll(produtos);
             }
+            aplicarFiltro();
+        }
+
+        void setFiltro(String filtro) {
+            this.filtro = filtro == null ? "" : filtro.toLowerCase(Locale.ROOT);
+            aplicarFiltro();
+        }
+
+        private void aplicarFiltro() {
+            filtered.clear();
+            for (ProdutoDto produto : items) {
+                if (filtro.isEmpty() || matches(produto, filtro)) {
+                    filtered.add(produto);
+                }
+            }
             notifyDataSetChanged();
+        }
+
+        private static boolean matches(ProdutoDto produto, String filtro) {
+            String nome = produto.nome == null ? "" : produto.nome.toLowerCase(Locale.ROOT);
+            String codigo = produto.codigo == null ? "" : String.valueOf(produto.codigo);
+            String ean = produto.ean == null ? "" : String.valueOf(produto.ean).toLowerCase(Locale.ROOT);
+            String ncm = produto.ncm == null ? "" : produto.ncm.toLowerCase(Locale.ROOT);
+            return nome.contains(filtro) || codigo.contains(filtro) || ean.contains(filtro) || ncm.contains(filtro);
         }
 
         @Override
         public SimpleViewHolder onCreateViewHolder(android.view.ViewGroup parent, int viewType) {
             android.view.View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_simples, parent, false);
+                    .inflate(R.layout.item_cliente_card, parent, false);
             return new SimpleViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(SimpleViewHolder holder, int position) {
-            ProdutoDto p = items.get(position);
-            holder.title.setText(p.nome);
-            holder.subtitle.setText(p.preco == null ? "" : p.preco);
-            holder.itemView.setOnClickListener(v -> onPick.onPick(p));
+            ProdutoDto produto = filtered.get(position);
+            ProdutoCardBinder.bind(holder.itemView, produto);
+            holder.itemView.setOnClickListener(v -> onPick.onPick(produto));
         }
 
         @Override
         public int getItemCount() {
-            return items.size();
+            return filtered.size();
         }
     }
 
