@@ -88,6 +88,7 @@ export function validarCancelamentoNfe(
 	nota: NotaFiscalEventoNfe,
 	justificativa: string,
 	agora = new Date(),
+	opcoes?: { permitirForaDoPrazo?: boolean },
 ): { ok: true } | { ok: false; mensagem: string } {
 	if (nota.tipoorigem !== 1) {
 		return { ok: false, mensagem: "Somente NF-e de saída podem ser canceladas" };
@@ -112,7 +113,10 @@ export function validarCancelamentoNfe(
 		};
 	}
 
-	if (!notaEstaDentroPrazoCancelamentoNfe(nota, agora)) {
+	if (
+		!opcoes?.permitirForaDoPrazo &&
+		!notaEstaDentroPrazoCancelamentoNfe(nota, agora)
+	) {
 		return {
 			ok: false,
 			mensagem:

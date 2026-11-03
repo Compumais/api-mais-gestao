@@ -21,6 +21,7 @@ import {
 	obterMotivoRejeicaoNota,
 } from "@/util/nfe-rejeicao-util";
 import {
+	notaPodeEfetivarCancelamentoExtemporaneo,
 	notaPodeSerCancelada,
 	notaPodeSerInutilizada,
 } from "@/util/validar-eventos-nfe";
@@ -132,6 +133,7 @@ export type OpcoesColunasNotaFiscalProduto = {
 	onFiltrarColuna: (colunaId: string, valor: string) => void;
 	configFiltroPorColuna: Record<string, ConfigFiltroColunaNotaFiscalProduto>;
 	onCancelar: (nota: NotaFiscalEmitida) => void;
+	onEfetivarCancelamento?: (nota: NotaFiscalEmitida) => void;
 	onInutilizar: (nota: NotaFiscalEmitida) => void;
 	onConsultarSituacao?: (nota: NotaFiscalEmitida) => void;
 	consultandoId?: string | null;
@@ -196,6 +198,9 @@ function renderAcoesPadrao(
 		nota.status === NFE_STATUS.REJEITADA ||
 		nota.status === NFE_STATUS.PENDENTE;
 	const podeCancelar = notaPodeSerCancelada(nota).permitido;
+	const podeEfetivarCancelamento =
+		!!opcoes.onEfetivarCancelamento &&
+		notaPodeEfetivarCancelamentoExtemporaneo(nota).permitido;
 	const podeInutilizar = notaPodeSerInutilizada(nota).permitido;
 	const podeConsultarSituacao =
 		!!opcoes.onConsultarSituacao && notaPodeConsultarSituacao(nota);
@@ -216,6 +221,20 @@ function renderAcoesPadrao(
 				>
 					<Search className="mr-1 size-3" />
 					{consultando ? "Consultando..." : "Consultar situação"}
+				</Button>
+			)}
+			{podeEfetivarCancelamento && (
+				<Button
+					size="sm"
+					variant="outline"
+					className="h-7 px-2 text-xs text-destructive border-destructive/30"
+					onClick={(e) => {
+						e.stopPropagation();
+						opcoes.onEfetivarCancelamento?.(nota);
+					}}
+				>
+					<Ban className="mr-1 size-3" />
+					Efetivar cancelamento
 				</Button>
 			)}
 			{podeCancelar && (
