@@ -203,6 +203,25 @@ export async function cancelarNfe(
 	return data;
 }
 
+export interface ResultadoConsultaSituacaoNfe {
+	idnotafiscal: string;
+	status: number;
+	alterouStatus: boolean;
+	situacao: "autorizada" | "cancelada" | "inalterada";
+	cStat?: string;
+	xMotivo?: string;
+	avisos?: string[];
+}
+
+export async function consultarSituacaoNfe(
+	id: string,
+): Promise<ResultadoConsultaSituacaoNfe> {
+	const { data } = await api.post<ResultadoConsultaSituacaoNfe>(
+		`/nfe/emissao/${id}/consultar-situacao`,
+	);
+	return data;
+}
+
 export async function inutilizarNfe(
 	id: string,
 	justificativa: string,

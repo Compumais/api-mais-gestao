@@ -1,5 +1,5 @@
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
-import { Ban, Copy, FileX2, RotateCcw } from "lucide-react";
+import { Ban, Copy, FileX2, RotateCcw, Search } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -133,8 +133,20 @@ export type OpcoesColunasNotaFiscalProduto = {
 	configFiltroPorColuna: Record<string, ConfigFiltroColunaNotaFiscalProduto>;
 	onCancelar: (nota: NotaFiscalEmitida) => void;
 	onInutilizar: (nota: NotaFiscalEmitida) => void;
+	onConsultarSituacao?: (nota: NotaFiscalEmitida) => void;
+	consultandoId?: string | null;
 	renderAcoes?: (nota: NotaFiscalEmitida) => ReactNode;
 };
+
+function notaPodeConsultarSituacao(nota: NotaFiscalEmitida): boolean {
+	const chave = nota.chavenfe?.replace(/\D/g, "") ?? "";
+	const modelo = String(nota.modelo ?? "55").replace(/\D/g, "");
+	return (
+		nota.status === NFE_STATUS.AUTORIZADA &&
+		modelo === "55" &&
+		chave.length === 44
+	);
+}
 
 function criarHeaderColuna(
 	def: { id: string; label: string },
@@ -185,9 +197,27 @@ function renderAcoesPadrao(
 		nota.status === NFE_STATUS.PENDENTE;
 	const podeCancelar = notaPodeSerCancelada(nota).permitido;
 	const podeInutilizar = notaPodeSerInutilizada(nota).permitido;
+	const podeConsultarSituacao =
+		!!opcoes.onConsultarSituacao && notaPodeConsultarSituacao(nota);
+	const consultando = opcoes.consultandoId === nota.id;
 
 	return (
 		<div className="flex items-center gap-1">
+			{podeConsultarSituacao && (
+				<Button
+					size="sm"
+					variant="outline"
+					className="h-7 px-2 text-xs"
+					disabled={consultando}
+					onClick={(e) => {
+						e.stopPropagation();
+						opcoes.onConsultarSituacao?.(nota);
+					}}
+				>
+					<Search className="mr-1 size-3" />
+					{consultando ? "Consultando..." : "Consultar situação"}
+				</Button>
+			)}
 			{podeCancelar && (
 				<Button
 					size="sm"

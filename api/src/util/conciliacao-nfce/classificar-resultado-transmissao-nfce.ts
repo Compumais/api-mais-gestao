@@ -6,7 +6,7 @@ import type {
 } from "./tipos-conciliacao-nfce.js";
 
 const CSTAT_PROCESSANDO = new Set(["103", "104", "105", "108", "109"]);
-const CSTAT_CANCELADA = new Set(["101", "135", "155"]);
+const CSTAT_CANCELADA = new Set(["101", "135", "151", "155"]);
 const CSTAT_DENEGADA = new Set(["110", "301", "302", "303"]);
 
 function textoIndicaFalhaComunicacao(texto: string): boolean {

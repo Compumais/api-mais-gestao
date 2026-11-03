@@ -36,6 +36,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { obterLabelStatus } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
 import {
@@ -44,10 +45,12 @@ import {
 } from "@/hooks/use-preferencias-ui-usuario";
 import {
 	cancelarNfe,
+	consultarSituacaoNfe,
 	inutilizarNfe,
 	listarNfesEmitidas,
 	listarRascunhosEmissaoNfe,
 	type NotaFiscalEmitida,
+	type ResultadoConsultaSituacaoNfe,
 } from "@/services/nfe-emissao.service";
 import { PageContainer } from "../components/page-container";
 import { BotaoAlterarNumeracao } from "../configuracoes/components/dialog-alterar-numeracao";
@@ -93,6 +96,7 @@ export default function NotaFiscalVendaPage() {
 	const { nfeConfiguracao } = useNfeConfiguracao(empresa?.id);
 	const queryClient = useQueryClient();
 	const idPorPagina = useId();
+	const [consultandoId, setConsultandoId] = useState<string | null>(null);
 	const [eventoModal, setEventoModal] = useState<{
 		tipo: "cancelar" | "inutilizar";
 		nota: NotaFiscalEmitida;
@@ -202,6 +206,37 @@ export default function NotaFiscalVendaPage() {
 		enabled: !!empresa,
 	});
 
+	const descreverConsulta = (resultado: ResultadoConsultaSituacaoNfe) =>
+		[resultado.xMotivo, ...(resultado.avisos ?? [])].filter(Boolean).join("\n") ||
+		undefined;
+
+	const { mutate: consultarSituacao } = useMutation({
+		mutationFn: (id: string) => consultarSituacaoNfe(id),
+		onSuccess: (resultado) => {
+			void queryClient.invalidateQueries({ queryKey: ["nfe-emitidas"] });
+			void queryClient.invalidateQueries({ queryKey: ["nfe-detalhe"] });
+			if (resultado.alterouStatus) {
+				toast.success(
+					`Situação atualizada: ${obterLabelStatus(resultado.status)}`,
+					{ description: descreverConsulta(resultado) },
+				);
+				return;
+			}
+			toast.success(
+				resultado.situacao === "autorizada"
+					? "A SEFAZ confirma a NF-e autorizada"
+					: "A consulta não alterou o status da NF-e",
+				{ description: descreverConsulta(resultado) },
+			);
+		},
+		onError: (erro) => {
+			toast.error("Não foi possível consultar a situação da NF-e", {
+				description: erro instanceof Error ? erro.message : "Erro desconhecido",
+			});
+		},
+		onSettled: () => setConsultandoId(null),
+	});
+
 	const { mutate: executarEvento, isPending: processandoEvento } = useMutation({
 		mutationFn: async ({
 			tipo,
@@ -251,6 +286,11 @@ export default function NotaFiscalVendaPage() {
 				configFiltroPorColuna,
 				onCancelar: (nota) => setEventoModal({ tipo: "cancelar", nota }),
 				onInutilizar: (nota) => setEventoModal({ tipo: "inutilizar", nota }),
+				consultandoId,
+				onConsultarSituacao: (nota) => {
+					setConsultandoId(nota.id);
+					consultarSituacao(nota.id);
+				},
 			}),
 		[
 			filtrosColuna,
@@ -259,6 +299,8 @@ export default function NotaFiscalVendaPage() {
 			onOrdenarColuna,
 			onFiltrarColuna,
 			configFiltroPorColuna,
+			consultandoId,
+			consultarSituacao,
 		],
 	);
 
