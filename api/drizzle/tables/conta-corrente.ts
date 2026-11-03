@@ -117,8 +117,7 @@ export const contacorrente = pgTable(
 		numeroversaolayoutlote: varchar({ length: 3 }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idconveniado: bigint({ mode: "number" }),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idcontacontabilintegracao: bigint({ mode: "number" }),
+		idcontacontabilintegracao: text(),
 		valoracrescimo: numeric({ precision: 10, scale: 2 }),
 		codificacaoarquivoremessa: varchar({ length: 10 }),
 		jurosencargos: numeric({ precision: 12, scale: 2 }),
@@ -137,8 +136,7 @@ export const contacorrente = pgTable(
 		diasdesconsiderardesconto: smallint(),
 		receberpixpdv: smallint(),
 		chavepix: varchar({ length: 100 }),
-		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		identidade: bigint({ mode: "number" }),
+		identidade: text(),
 		tipointegracao: smallint(),
 		chaveapi: varchar({ length: 512 }),
 		tipoambienteintegracao: smallint(),

@@ -43,6 +43,7 @@ type CancelarNfeVendaParametros = {
 	idnotafiscal: string;
 	justificativa: string;
 	modeloEsperado?: "55" | "65";
+	extemporaneo?: boolean;
 };
 
 export async function cancelarNfeVendaService({
@@ -50,6 +51,7 @@ export async function cancelarNfeVendaService({
 	idnotafiscal,
 	justificativa,
 	modeloEsperado = "55",
+	extemporaneo = false,
 }: CancelarNfeVendaParametros): Promise<
 	HttpResponse<ResultadoCancelamentoNfe>
 > {
@@ -76,7 +78,15 @@ export async function cancelarNfeVendaService({
 		return httpBadRequest(MENSAGEM_NFE_NO_FLUXO_NFCE);
 	}
 
-	const validacao = validarCancelamentoNfe(nota, justificativa);
+	if (extemporaneo && modeloEsperado !== "55") {
+		return httpBadRequest(
+			"Cancelamento no prazo liberado pelo fisco está disponível apenas para NF-e (modelo 55)",
+		);
+	}
+
+	const validacao = validarCancelamentoNfe(nota, justificativa, new Date(), {
+		permitirForaDoPrazo: extemporaneo,
+	});
 	if (!validacao.ok) {
 		return httpBadRequest(validacao.mensagem);
 	}

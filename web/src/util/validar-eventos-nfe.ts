@@ -53,6 +53,46 @@ export function notaPodeSerCancelada(
 	return { permitido: true };
 }
 
+export function notaPodeEfetivarCancelamentoExtemporaneo(
+	nota: NotaFiscalEmitida,
+	agora = new Date(),
+): { permitido: boolean; motivo?: string } {
+	if (nota.status !== NFE_STATUS.AUTORIZADA) {
+		return {
+			permitido: false,
+			motivo: "Somente NF-e autorizadas podem ser canceladas",
+		};
+	}
+
+	if (!nota.chavenfe || nota.chavenfe.replace(/\D/g, "").length !== 44) {
+		return { permitido: false, motivo: "NF-e sem chave de acesso válida" };
+	}
+
+	if (!nota.protocolonfe?.trim()) {
+		return {
+			permitido: false,
+			motivo: "NF-e sem protocolo de autorização",
+		};
+	}
+
+	const dataAutorizacao = obterDataReferenciaAutorizacaoNfe(nota);
+	if (!dataAutorizacao) {
+		return {
+			permitido: false,
+			motivo: "Data de autorização não encontrada",
+		};
+	}
+
+	if (agora.getTime() - dataAutorizacao.getTime() <= PRAZO_CANCELAMENTO_NFE_MS) {
+		return {
+			permitido: false,
+			motivo: "A NF-e ainda está no prazo comum de 24 horas",
+		};
+	}
+
+	return { permitido: true };
+}
+
 export function notaPodeSerInutilizada(
 	nota: NotaFiscalEmitida,
 ): { permitido: boolean; motivo?: string } {

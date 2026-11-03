@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
+	classificarConsultaSituacaoNfe,
 	inutilizacaoJaEncerradaNaSefaz,
 	notaEstaDentroPrazoCancelamentoNfe,
 	resolverStatusCancelamentoNfe,
@@ -55,6 +56,26 @@ describe("validar-eventos-nfe", () => {
 		}
 	});
 
+	it("permite enviar o cancelamento fora das 24h quando o fisco liberou novo prazo", () => {
+		const agora = new Date("2026-06-24T11:00:00.000Z");
+		const nota = {
+			tipoorigem: 1,
+			status: NFE_STATUS.AUTORIZADA,
+			chavenfe: "3".repeat(44),
+			protocolonfe: "135150001686732",
+			datahoraemissao: "2026-06-23T10:00:00.000Z",
+		};
+
+		expect(
+			validarCancelamentoNfe(
+				nota,
+				"Cancelamento no prazo extemporâneo liberado pela SEFAZ",
+				agora,
+				{ permitirForaDoPrazo: true },
+			).ok,
+		).toBe(true);
+	});
+
 	it("permite inutilização de NF-e rejeitada", () => {
 		const resultado = validarInutilizacaoNfe(
 			{
@@ -106,12 +127,42 @@ describe("validar-eventos-nfe", () => {
 		);
 	});
 
-	it("mapeia cStat 135/101 como cancelada no prazo e 155 como fora do prazo", () => {
+	it("mapeia cStat 135/101 como cancelada no prazo e 151/155 como fora do prazo", () => {
 		expect(resolverStatusCancelamentoNfe("135")).toBe(NFE_STATUS.CANCELADA);
 		expect(resolverStatusCancelamentoNfe("101")).toBe(NFE_STATUS.CANCELADA);
+		expect(resolverStatusCancelamentoNfe("151")).toBe(
+			NFE_STATUS.CANCELADA_FORA_PRAZO,
+		);
 		expect(resolverStatusCancelamentoNfe("155")).toBe(
 			NFE_STATUS.CANCELADA_FORA_PRAZO,
 		);
 		expect(resolverStatusCancelamentoNfe(null)).toBe(NFE_STATUS.CANCELADA);
+	});
+
+	it("classifica a consulta de situação sem alterar status fora de 100, 101, 150, 151 e 155", () => {
+		expect(classificarConsultaSituacaoNfe("100")).toEqual({
+			situacao: "autorizada",
+		});
+		expect(classificarConsultaSituacaoNfe("150")).toEqual({
+			situacao: "autorizada",
+		});
+		expect(classificarConsultaSituacaoNfe("101")).toEqual({
+			situacao: "cancelada",
+			status: NFE_STATUS.CANCELADA,
+		});
+		expect(classificarConsultaSituacaoNfe("151")).toEqual({
+			situacao: "cancelada",
+			status: NFE_STATUS.CANCELADA_FORA_PRAZO,
+		});
+		expect(classificarConsultaSituacaoNfe("155")).toEqual({
+			situacao: "cancelada",
+			status: NFE_STATUS.CANCELADA_FORA_PRAZO,
+		});
+		expect(classificarConsultaSituacaoNfe("217")).toEqual({
+			situacao: "inalterada",
+		});
+		expect(classificarConsultaSituacaoNfe("110")).toEqual({
+			situacao: "inalterada",
+		});
 	});
 });

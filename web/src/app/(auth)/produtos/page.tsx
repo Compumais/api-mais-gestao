@@ -120,8 +120,16 @@ function montarParamsFiltroProdutos(params: {
 	filtrosColuna: FiltrosColunaProdutosState;
 	ordenarPor: string | null;
 	ordem: "asc" | "desc" | null;
+	mostrarInativos: boolean;
 }) {
-	const { idempresa, qAplicado, filtrosColuna, ordenarPor, ordem } = params;
+	const {
+		idempresa,
+		qAplicado,
+		filtrosColuna,
+		ordenarPor,
+		ordem,
+		mostrarInativos,
+	} = params;
 	const filtrosSerializados = serializarFiltrosColunaProdutos(filtrosColuna);
 	return {
 		idempresa,
@@ -130,6 +138,7 @@ function montarParamsFiltroProdutos(params: {
 		...(filtrosSerializados ? { filtrosColuna: filtrosSerializados } : {}),
 		...(ordenarPor ? { ordenarPor } : {}),
 		...(ordem ? { ordem } : {}),
+		...(mostrarInativos ? {} : { inativo: 0 }),
 	};
 }
 
@@ -139,7 +148,9 @@ export default function ProdutosPage() {
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa } = useEmpresa();
 	const idPorPagina = useId();
+	const idInativos = useId();
 	const qAplicado = searchParams.get("q")?.trim() ?? "";
+	const [mostrarInativos, setMostrarInativos] = useState(false);
 	const [qInput, setQInput] = useState(qAplicado);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
@@ -200,7 +211,7 @@ export default function ProdutosPage() {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: limpa a seleção ao mudar busca ou empresa
 	useEffect(() => {
 		setRowSelection({});
-	}, [qAplicado, empresaId, filtrosColuna, ordenarPor, ordem]);
+	}, [qAplicado, empresaId, filtrosColuna, ordenarPor, ordem, mostrarInativos]);
 
 	const handleBuscar = () => {
 		const termo = qInput.trim();
@@ -256,6 +267,7 @@ export default function ProdutosPage() {
 			filtrosColuna,
 			ordenarPor,
 			ordem,
+			mostrarInativos,
 		],
 		queryFn: async () => {
 			if (!localStorageEmpresa) {
@@ -268,6 +280,7 @@ export default function ProdutosPage() {
 					filtrosColuna,
 					ordenarPor,
 					ordem,
+					mostrarInativos,
 				}),
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
@@ -550,6 +563,7 @@ export default function ProdutosPage() {
 				filtrosColuna,
 				ordenarPor,
 				ordem,
+				mostrarInativos,
 			});
 			const blob = await produtosService.exportar(idempresa, formato, filtros);
 			return { blob, formato };
@@ -572,7 +586,26 @@ export default function ProdutosPage() {
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
-					<h1 className="text-2xl font-bold">Produtos</h1>
+					<div className="flex flex-wrap items-center gap-4">
+						<h1 className="text-2xl font-bold">Produtos</h1>
+						<div className="flex items-center gap-2">
+							<Checkbox
+								id={idInativos}
+								checked={mostrarInativos}
+								disabled={!localStorageEmpresa}
+								onCheckedChange={(marcado) => {
+									setMostrarInativos(marcado === true);
+									setPagination((p) => ({ ...p, pageIndex: 0 }));
+								}}
+							/>
+							<Label
+								htmlFor={idInativos}
+								className="cursor-pointer text-sm font-normal"
+							>
+								Inativos
+							</Label>
+						</div>
+					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>

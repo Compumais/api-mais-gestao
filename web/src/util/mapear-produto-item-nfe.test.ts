@@ -121,7 +121,7 @@ describe("itemPrecisaAliquotaIcmsParaSt", () => {
 });
 
 describe("escolherItensFormularioEmissao", () => {
-	it("usa a lista com mais itens entre as fontes do formulário", () => {
+	it("usa a última lista preenchida entre as fontes do formulário", () => {
 		const item: ItemNfe = {
 			descricao: "Produto",
 			ncm: "22084000",
@@ -130,9 +130,13 @@ describe("escolherItensFormularioEmissao", () => {
 			quantidade: 1,
 			valorUnitario: 10,
 		};
+		const editado: ItemNfe = { ...item, quantidade: 4 };
 
 		expect(escolherItensFormularioEmissao([], [item], undefined)).toEqual([
 			item,
+		]);
+		expect(escolherItensFormularioEmissao([item, item], [editado])).toEqual([
+			editado,
 		]);
 	});
 
@@ -174,6 +178,21 @@ describe("itensVisiveisParaEmissao", () => {
 				valorUnitario: 10,
 			},
 		]);
+	});
+
+	it("não deixa uma lista só com id interno apagar os produtos da tela", () => {
+		const visivel = {
+			descricao: "Cachaça",
+			ncm: "22084000",
+			cfop: "5102",
+			unidade: "UN",
+			quantidade: 2,
+			valorUnitario: 8,
+		};
+		const fantasma = { id: "rhf-interno" } as ItemNfe & { id: string };
+
+		expect(itensVisiveisParaEmissao([visivel], [fantasma])).toEqual([visivel]);
+		expect(itensVisiveisParaEmissao([visivel], [])).toEqual([visivel]);
 	});
 });
 

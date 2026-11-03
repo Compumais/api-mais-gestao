@@ -64,6 +64,15 @@ export async function criarFinanceiroLancamento(
 			dadosValidados.usuario ??
 			(request.user.name ? request.user.name.slice(0, 10) : undefined);
 
+		const observacaoPersistida =
+			Array.isArray(dadosValidados.pagamentos) &&
+			dadosValidados.pagamentos.length > 0
+				? JSON.stringify({
+						pagamentos: dadosValidados.pagamentos,
+						texto: dadosValidados.observacao ?? null,
+					})
+				: dadosValidados.observacao;
+
 		const dadosFinanceiroLancamento = {
 			id: uuidv4(),
 			idfinanceiro: dadosValidados.idfinanceiro,
@@ -81,7 +90,7 @@ export async function criarFinanceiroLancamento(
 			evento: dadosValidados.evento ?? Date.now(),
 			historico: historicoFinal ?? dadosValidados.historico,
 			reabertura: dadosValidados.reabertura,
-			observacao: dadosValidados.observacao,
+			observacao: observacaoPersistida,
 			pagamentos: dadosValidados.pagamentos,
 		};
 

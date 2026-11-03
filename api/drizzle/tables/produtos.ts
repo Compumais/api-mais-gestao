@@ -12,6 +12,7 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { bancoimagemproduto } from "./banco-imagem-produto.js";
 import { cest } from "./cest.js";
 import { cfop } from "./cfop.js";
 import { empresa } from "./empresas.js";
@@ -117,6 +118,7 @@ export const produtos = pgTable(
 		idunidademedida: text(),
 		idgrupo: text(),
 		idgrupogourmet: text(),
+		idbancoimagem: text(),
 		preco: numeric({ precision: 12, scale: 2 }),
 		iat: char({ length: 1 }), // A=Arredondamento, T=Truncamento
 		referencia: varchar({ length: 60 }),
@@ -397,5 +399,13 @@ export const produtos = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idbancoimagem],
+			foreignColumns: [bancoimagemproduto.id],
+			name: "produtos_idbancoimagem_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		index("produtos_idbancoimagem_idx").on(table.idbancoimagem),
 	],
 );

@@ -8,6 +8,7 @@ import {
 } from "@/repositories/produto-historico-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { sincronizarVinculoNaAtualizacao } from "@/service/banco-imagem/gerenciar-banco-imagem.js";
 import {
 	aplicarHerancaVariacao,
 	payloadAlteraTributacao,
@@ -79,6 +80,18 @@ export async function atualizarProdutoService({
 
 	if (dadosAtualizacao.nome && !dadosAtualizacao.descricao) {
 		dadosAtualizacao.descricao = dadosAtualizacao.nome;
+	}
+
+	if (Object.hasOwn(dadosAtualizacao, "ean")) {
+		const vinculo = await sincronizarVinculoNaAtualizacao({
+			produto: registroExistente,
+			eanInformado: true,
+			eanNovo: dadosAtualizacao.ean ?? null,
+		});
+		if (vinculo) {
+			dadosAtualizacao.idbancoimagem = vinculo.idbancoimagem;
+			dadosAtualizacao.caminhoimagem = vinculo.caminhoimagem;
+		}
 	}
 
 	const registroAtualizado = await atualizarProdutoComHistorico(

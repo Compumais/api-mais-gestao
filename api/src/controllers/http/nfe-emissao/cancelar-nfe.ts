@@ -9,6 +9,7 @@ const paramsSchema = z.object({
 
 const bodySchema = z.object({
 	justificativa: z.string().min(15).max(255),
+	extemporaneo: z.boolean().optional(),
 });
 
 export async function cancelarNfe(
@@ -21,12 +22,13 @@ export async function cancelarNfe(
 		}
 
 		const { id } = paramsSchema.parse(request.params);
-		const { justificativa } = bodySchema.parse(request.body ?? {});
+		const { justificativa, extemporaneo } = bodySchema.parse(request.body ?? {});
 
 		const resultado = await cancelarNfeVendaService({
 			idusuario: request.user.id,
 			idnotafiscal: id,
 			justificativa,
+			extemporaneo: extemporaneo === true,
 		});
 
 		if (!resultado.success) {

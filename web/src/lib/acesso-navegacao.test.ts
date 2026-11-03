@@ -108,4 +108,8 @@ describe("rotas super", () => {
 	it("permite /super/empresas", () => {
 		expect(isRouteAllowedForSuper("/super/empresas")).toBe(true);
 	});
+
+	it("permite /super/banco-imagens", () => {
+		expect(isRouteAllowedForSuper("/super/banco-imagens")).toBe(true);
+	});
 });

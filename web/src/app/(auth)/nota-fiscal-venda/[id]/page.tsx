@@ -9,6 +9,7 @@ import {
 	Download,
 	FileX2,
 	Printer,
+	Search,
 	Send,
 } from "lucide-react";
 import Link from "next/link";
@@ -30,6 +31,7 @@ import {
 	emissaoFoiAutorizada,
 	NFE_AMBIENTE_LABELS,
 	NFE_STATUS,
+	obterLabelStatus,
 } from "@/constants/nfe-status";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
@@ -41,15 +43,18 @@ import {
 	abrirDanfeNfe,
 	buscarNfeEmitidaPorId,
 	cancelarNfe,
+	consultarSituacaoNfe,
 	downloadXmlNfe,
 	inutilizarNfe,
 	transmitirNfe,
+	type ResultadoConsultaSituacaoNfe,
 } from "@/services/nfe-emissao.service";
 import {
 	obterCodigoRejeicaoNota,
 	obterMotivoRejeicaoNota,
 } from "@/util/nfe-rejeicao-util";
 import {
+	notaPodeEfetivarCancelamentoExtemporaneo,
 	notaPodeSerCancelada,
 	notaPodeSerInutilizada,
 } from "@/util/validar-eventos-nfe";
@@ -117,7 +122,7 @@ export default function DetalheNfePage({
 	const [relatorioFiscal, setRelatorioFiscal] =
 		useState<RelatorioAuditoriaFiscal | null>(null);
 	const [modalEvento, setModalEvento] = useState<
-		"cancelar" | "inutilizar" | null
+		"cancelar" | "cancelar-extemporaneo" | "inutilizar" | null
 	>(null);
 
 	const { data: nf, isLoading } = useQuery({
@@ -220,21 +225,69 @@ export default function DetalheNfePage({
 	}
 
 	const { mutate: cancelar, isPending: cancelando } = useMutation({
-		mutationFn: (justificativa: string) => cancelarNfe(id, justificativa),
-		onSuccess: (resultado) => {
+		mutationFn: ({
+			justificativa,
+			extemporaneo,
+		}: {
+			justificativa: string;
+			extemporaneo: boolean;
+		}) => cancelarNfe(id, justificativa, extemporaneo),
+		onSuccess: (resultado, variaveis) => {
 			void queryClient.invalidateQueries({ queryKey: ["nfe-detalhe", id] });
 			void queryClient.invalidateQueries({ queryKey: ["nfe-emitidas"] });
 			setModalEvento(null);
-			toast.success("NF-e cancelada com sucesso", {
-				description: resultado.xMotivo ?? undefined,
-			});
+			toast.success(
+				variaveis.extemporaneo
+					? "SEFAZ aceitou o cancelamento"
+					: "NF-e cancelada com sucesso",
+				{
+					description: resultado.xMotivo ?? undefined,
+				},
+			);
 		},
-		onError: (erro) => {
-			toast.error("Não foi possível cancelar a NF-e", {
-				description: erro instanceof Error ? erro.message : "Erro desconhecido",
-			});
+		onError: (erro, variaveis) => {
+			toast.error(
+				variaveis.extemporaneo
+					? "A SEFAZ não aceitou o cancelamento. A NF-e continua autorizada"
+					: "Não foi possível cancelar a NF-e",
+				{
+					description: erro instanceof Error ? erro.message : "Erro desconhecido",
+				},
+			);
 		},
 	});
+
+	const { mutate: consultarSituacao, isPending: consultandoSituacao } =
+		useMutation({
+			mutationFn: () => consultarSituacaoNfe(id),
+			onSuccess: (resultado: ResultadoConsultaSituacaoNfe) => {
+				void queryClient.invalidateQueries({ queryKey: ["nfe-detalhe", id] });
+				void queryClient.invalidateQueries({ queryKey: ["nfe-emitidas"] });
+				const descricao =
+					[resultado.xMotivo, ...(resultado.avisos ?? [])]
+						.filter(Boolean)
+						.join("\n") || undefined;
+				if (resultado.alterouStatus) {
+					toast.success(
+						`Situação atualizada: ${obterLabelStatus(resultado.status)}`,
+						{ description: descricao },
+					);
+					return;
+				}
+				toast.success(
+					resultado.situacao === "autorizada"
+						? "A SEFAZ confirma a NF-e autorizada"
+						: "A consulta não alterou o status da NF-e",
+					{ description: descricao },
+				);
+			},
+			onError: (erro) => {
+				toast.error("Não foi possível consultar a situação da NF-e", {
+					description:
+						erro instanceof Error ? erro.message : "Erro desconhecido",
+				});
+			},
+		});
 
 	const { mutate: inutilizar, isPending: inutilizando } = useMutation({
 		mutationFn: (justificativa: string) => inutilizarNfe(id, justificativa),
@@ -282,6 +335,7 @@ export default function DetalheNfePage({
 	const ehInutilizada = nf.status === NFE_STATUS.INUTILIZADA;
 	const podeTransmitir = ehPendente || ehRejeitada;
 	const regraCancelamento = notaPodeSerCancelada(nf);
+	const regraExtemporaneo = notaPodeEfetivarCancelamentoExtemporaneo(nf);
 	const regraInutilizacao = notaPodeSerInutilizada(nf);
 	const codigoRejeicao = obterCodigoRejeicaoNota(nf);
 	const motivoRejeicao = obterMotivoRejeicaoNota(nf);
@@ -349,8 +403,27 @@ export default function DetalheNfePage({
 					/>
 				)}
 
+				{ehAutorizada && regraExtemporaneo.permitido && (
+					<div className="rounded-lg border border-muted bg-muted/30 p-4 text-sm text-muted-foreground space-y-2">
+						<p>
+							<strong className="text-foreground">
+								Prazo comum de 24 horas encerrado.
+							</strong>{" "}
+							A NF-e continua autorizada. O pedido aprovado pelo fisco não
+							cancela a nota: ele só abre um novo prazo para enviar o evento.
+						</p>
+						<p>
+							Use <strong className="text-foreground">Efetivar cancelamento</strong>{" "}
+							somente depois dessa liberação. Se a SEFAZ recusar, o status local
+							permanece autorizado. A consulta de situação confirma se a nota
+							ainda está autorizada ou se o cancelamento já foi registrado.
+						</p>
+					</div>
+				)}
+
 				{ehAutorizada &&
 					!regraCancelamento.permitido &&
+					!regraExtemporaneo.permitido &&
 					regraCancelamento.motivo && (
 						<div className="rounded-lg border border-muted bg-muted/30 p-4 text-sm text-muted-foreground">
 							<strong className="text-foreground">Cancelamento:</strong>{" "}
@@ -548,6 +621,20 @@ export default function DetalheNfePage({
 							Imprimir DANFE
 						</Button>
 					)}
+					{ehAutorizada &&
+						(nf.chavenfe?.replace(/\D/g, "").length ?? 0) === 44 && (
+							<Button
+								variant="outline"
+								className="gap-2"
+								onClick={() => consultarSituacao()}
+								disabled={consultandoSituacao}
+							>
+								<Search className="h-4 w-4" />
+								{consultandoSituacao
+									? "Consultando..."
+									: "Consultar situação"}
+							</Button>
+						)}
 					{ehAutorizada && nf.chavenfe && (
 						<Button
 							variant="outline"
@@ -556,6 +643,17 @@ export default function DetalheNfePage({
 						>
 							<Download className="h-4 w-4" />
 							Download XML
+						</Button>
+					)}
+					{regraExtemporaneo.permitido && (
+						<Button
+							variant="destructive"
+							className="gap-2"
+							onClick={() => setModalEvento("cancelar-extemporaneo")}
+							disabled={cancelando}
+						>
+							<Ban className="h-4 w-4" />
+							Efetivar cancelamento
 						</Button>
 					)}
 					{regraCancelamento.permitido && (
@@ -594,13 +692,33 @@ export default function DetalheNfePage({
 				/>
 
 				<ModalEventoNfe
-					open={modalEvento === "cancelar"}
+					open={
+						modalEvento === "cancelar" ||
+						modalEvento === "cancelar-extemporaneo"
+					}
 					onClose={() => setModalEvento(null)}
-					onConfirmar={(justificativa) => cancelar(justificativa)}
+					onConfirmar={(justificativa) =>
+						cancelar({
+							justificativa,
+							extemporaneo: modalEvento === "cancelar-extemporaneo",
+						})
+					}
 					carregando={cancelando}
-					titulo="Cancelar NF-e"
-					descricao="O cancelamento só é permitido em até 24 horas após a autorização. Informe uma justificativa clara (mínimo 15 caracteres)."
-					rotuloConfirmar="Confirmar cancelamento"
+					titulo={
+						modalEvento === "cancelar-extemporaneo"
+							? "Efetivar cancelamento"
+							: "Cancelar NF-e"
+					}
+					descricao={
+						modalEvento === "cancelar-extemporaneo"
+							? "A NF-e continua autorizada até a SEFAZ aceitar o evento. Envie somente se o fisco já aprovou o pedido e liberou um novo prazo. Justificativa mínima de 15 caracteres."
+							: "O cancelamento só é permitido em até 24 horas após a autorização. Informe uma justificativa clara (mínimo 15 caracteres)."
+					}
+					rotuloConfirmar={
+						modalEvento === "cancelar-extemporaneo"
+							? "Enviar cancelamento à SEFAZ"
+							: "Confirmar cancelamento"
+					}
 				/>
 
 				<ModalEventoNfe
