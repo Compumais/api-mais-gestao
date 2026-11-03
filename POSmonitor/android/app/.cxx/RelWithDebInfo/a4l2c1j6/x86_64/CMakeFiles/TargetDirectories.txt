@@ -1,0 +1,2 @@
+D:/Projetos Base44/MaisGestao/api-mais-gestao/POSmonitor/android/app/.cxx/RelWithDebInfo/a4l2c1j6/x86_64/CMakeFiles/edit_cache.dir
+D:/Projetos Base44/MaisGestao/api-mais-gestao/POSmonitor/android/app/.cxx/RelWithDebInfo/a4l2c1j6/x86_64/CMakeFiles/rebuild_cache.dir
