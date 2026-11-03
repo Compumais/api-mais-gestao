@@ -187,18 +187,56 @@ export function validarInutilizacaoNfe(
 	return { ok: true };
 }
 
-/**
- * Mapeia o cStat do evento de cancelamento (SEFAZ) para o status interno da NF.
- * - 135: evento registrado e vinculado (cancelamento no prazo)
- * - 155: cancelamento homologado fora do prazo
- * - 101: NF-e cancelada (retorno legado/alternativo)
- */
-export function resolverStatusCancelamentoNfe(cStat?: string | null): number {
-	const codigo = String(cStat ?? "")
+function normalizarCStatConsulta(cStat?: string | number | null): string {
+	return String(cStat ?? "")
 		.trim()
 		.replace(/^0+/, "");
-	if (codigo === "155") {
+}
+
+/**
+ * Mapeia o cStat do evento ou da consulta de situação (SEFAZ) para o status interno da NF.
+ * - 135: evento registrado e vinculado (cancelamento no prazo)
+ * - 101: cancelamento homologado (consulta de situação)
+ * - 151: cancelamento homologado fora de prazo (consulta de situação)
+ * - 155: cancelamento homologado fora de prazo (retorno do evento)
+ */
+export function resolverStatusCancelamentoNfe(
+	cStat?: string | number | null,
+): number {
+	const codigo = normalizarCStatConsulta(cStat);
+	if (codigo === "155" || codigo === "151") {
 		return NFE_STATUS.CANCELADA_FORA_PRAZO;
 	}
 	return NFE_STATUS.CANCELADA;
+}
+
+export type ClassificacaoConsultaSituacaoNfe =
+	| { situacao: "autorizada" }
+	| { situacao: "cancelada"; status: number }
+	| { situacao: "inalterada" };
+
+/**
+ * Classifica o cStat de consSitNFe.
+ * 100 e 150 mantêm a nota autorizada. 101 cancela no prazo.
+ * 151 e 155 são cancelamento fora do prazo. Os demais não mudam o status local.
+ */
+export function classificarConsultaSituacaoNfe(
+	cStat?: string | number | null,
+): ClassificacaoConsultaSituacaoNfe {
+	const codigo = normalizarCStatConsulta(cStat);
+	if (codigo === "100" || codigo === "150") {
+		return { situacao: "autorizada" };
+	}
+	if (
+		codigo === "101" ||
+		codigo === "135" ||
+		codigo === "151" ||
+		codigo === "155"
+	) {
+		return {
+			situacao: "cancelada",
+			status: resolverStatusCancelamentoNfe(codigo),
+		};
+	}
+	return { situacao: "inalterada" };
 }

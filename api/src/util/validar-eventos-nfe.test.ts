@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
+	classificarConsultaSituacaoNfe,
 	inutilizacaoJaEncerradaNaSefaz,
 	notaEstaDentroPrazoCancelamentoNfe,
 	resolverStatusCancelamentoNfe,
@@ -106,12 +107,42 @@ describe("validar-eventos-nfe", () => {
 		);
 	});
 
-	it("mapeia cStat 135/101 como cancelada no prazo e 155 como fora do prazo", () => {
+	it("mapeia cStat 135/101 como cancelada no prazo e 151/155 como fora do prazo", () => {
 		expect(resolverStatusCancelamentoNfe("135")).toBe(NFE_STATUS.CANCELADA);
 		expect(resolverStatusCancelamentoNfe("101")).toBe(NFE_STATUS.CANCELADA);
+		expect(resolverStatusCancelamentoNfe("151")).toBe(
+			NFE_STATUS.CANCELADA_FORA_PRAZO,
+		);
 		expect(resolverStatusCancelamentoNfe("155")).toBe(
 			NFE_STATUS.CANCELADA_FORA_PRAZO,
 		);
 		expect(resolverStatusCancelamentoNfe(null)).toBe(NFE_STATUS.CANCELADA);
+	});
+
+	it("classifica a consulta de situação sem alterar status fora de 100, 101, 150, 151 e 155", () => {
+		expect(classificarConsultaSituacaoNfe("100")).toEqual({
+			situacao: "autorizada",
+		});
+		expect(classificarConsultaSituacaoNfe("150")).toEqual({
+			situacao: "autorizada",
+		});
+		expect(classificarConsultaSituacaoNfe("101")).toEqual({
+			situacao: "cancelada",
+			status: NFE_STATUS.CANCELADA,
+		});
+		expect(classificarConsultaSituacaoNfe("151")).toEqual({
+			situacao: "cancelada",
+			status: NFE_STATUS.CANCELADA_FORA_PRAZO,
+		});
+		expect(classificarConsultaSituacaoNfe("155")).toEqual({
+			situacao: "cancelada",
+			status: NFE_STATUS.CANCELADA_FORA_PRAZO,
+		});
+		expect(classificarConsultaSituacaoNfe("217")).toEqual({
+			situacao: "inalterada",
+		});
+		expect(classificarConsultaSituacaoNfe("110")).toEqual({
+			situacao: "inalterada",
+		});
 	});
 });

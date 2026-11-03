@@ -5,6 +5,7 @@ import { requireFeature } from "../../middleware/verify-plano.js";
 import { calcularObservacoesNfe } from "./calcular-observacoes.js";
 import { calcularTributosNfe } from "./calcular-tributos.js";
 import { cancelarNfe } from "./cancelar-nfe.js";
+import { consultarSituacaoNfe } from "./consultar-situacao-nfe.js";
 import { emitirNfe, listarNfesEmitidas } from "./emitir-nfe.js";
 import { inutilizarNfe } from "./inutilizar-nfe.js";
 import {
@@ -44,6 +45,9 @@ export async function nfeEmissaoRotas(app: FastifyInstance) {
 	app.post("/nfe/emissao", { handler: emitirNfe });
 	app.post("/nfe/emissao/:id/transmitir", { handler: transmitirNfe });
 	app.post("/nfe/emissao/:id/cancelar", { handler: cancelarNfe });
+	app.post("/nfe/emissao/:id/consultar-situacao", {
+		handler: consultarSituacaoNfe,
+	});
 	app.post("/nfe/emissao/:id/inutilizar", { handler: inutilizarNfe });
 	app.get("/nfe/emissao", { handler: listarNfesEmitidas });
 }

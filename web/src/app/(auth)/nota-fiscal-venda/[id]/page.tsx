@@ -9,6 +9,7 @@ import {
 	Download,
 	FileX2,
 	Printer,
+	Search,
 	Send,
 } from "lucide-react";
 import Link from "next/link";
@@ -30,6 +31,7 @@ import {
 	emissaoFoiAutorizada,
 	NFE_AMBIENTE_LABELS,
 	NFE_STATUS,
+	obterLabelStatus,
 } from "@/constants/nfe-status";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
@@ -41,9 +43,11 @@ import {
 	abrirDanfeNfe,
 	buscarNfeEmitidaPorId,
 	cancelarNfe,
+	consultarSituacaoNfe,
 	downloadXmlNfe,
 	inutilizarNfe,
 	transmitirNfe,
+	type ResultadoConsultaSituacaoNfe,
 } from "@/services/nfe-emissao.service";
 import {
 	obterCodigoRejeicaoNota,
@@ -235,6 +239,38 @@ export default function DetalheNfePage({
 			});
 		},
 	});
+
+	const { mutate: consultarSituacao, isPending: consultandoSituacao } =
+		useMutation({
+			mutationFn: () => consultarSituacaoNfe(id),
+			onSuccess: (resultado: ResultadoConsultaSituacaoNfe) => {
+				void queryClient.invalidateQueries({ queryKey: ["nfe-detalhe", id] });
+				void queryClient.invalidateQueries({ queryKey: ["nfe-emitidas"] });
+				const descricao =
+					[resultado.xMotivo, ...(resultado.avisos ?? [])]
+						.filter(Boolean)
+						.join("\n") || undefined;
+				if (resultado.alterouStatus) {
+					toast.success(
+						`Situação atualizada: ${obterLabelStatus(resultado.status)}`,
+						{ description: descricao },
+					);
+					return;
+				}
+				toast.success(
+					resultado.situacao === "autorizada"
+						? "A SEFAZ confirma a NF-e autorizada"
+						: "A consulta não alterou o status da NF-e",
+					{ description: descricao },
+				);
+			},
+			onError: (erro) => {
+				toast.error("Não foi possível consultar a situação da NF-e", {
+					description:
+						erro instanceof Error ? erro.message : "Erro desconhecido",
+				});
+			},
+		});
 
 	const { mutate: inutilizar, isPending: inutilizando } = useMutation({
 		mutationFn: (justificativa: string) => inutilizarNfe(id, justificativa),
@@ -548,6 +584,20 @@ export default function DetalheNfePage({
 							Imprimir DANFE
 						</Button>
 					)}
+					{ehAutorizada &&
+						(nf.chavenfe?.replace(/\D/g, "").length ?? 0) === 44 && (
+							<Button
+								variant="outline"
+								className="gap-2"
+								onClick={() => consultarSituacao()}
+								disabled={consultandoSituacao}
+							>
+								<Search className="h-4 w-4" />
+								{consultandoSituacao
+									? "Consultando..."
+									: "Consultar situação"}
+							</Button>
+						)}
 					{ehAutorizada && nf.chavenfe && (
 						<Button
 							variant="outline"
