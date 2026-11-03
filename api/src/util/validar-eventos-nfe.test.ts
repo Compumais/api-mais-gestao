@@ -56,6 +56,26 @@ describe("validar-eventos-nfe", () => {
 		}
 	});
 
+	it("permite enviar o cancelamento fora das 24h quando o fisco liberou novo prazo", () => {
+		const agora = new Date("2026-06-24T11:00:00.000Z");
+		const nota = {
+			tipoorigem: 1,
+			status: NFE_STATUS.AUTORIZADA,
+			chavenfe: "3".repeat(44),
+			protocolonfe: "135150001686732",
+			datahoraemissao: "2026-06-23T10:00:00.000Z",
+		};
+
+		expect(
+			validarCancelamentoNfe(
+				nota,
+				"Cancelamento no prazo extemporâneo liberado pela SEFAZ",
+				agora,
+				{ permitirForaDoPrazo: true },
+			).ok,
+		).toBe(true);
+	});
+
 	it("permite inutilização de NF-e rejeitada", () => {
 		const resultado = validarInutilizacaoNfe(
 			{

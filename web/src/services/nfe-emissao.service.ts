@@ -195,10 +195,11 @@ export interface ResultadoEventoNfe {
 export async function cancelarNfe(
 	id: string,
 	justificativa: string,
+	extemporaneo = false,
 ): Promise<ResultadoEventoNfe> {
 	const { data } = await api.post<ResultadoEventoNfe>(
 		`/nfe/emissao/${id}/cancelar`,
-		{ justificativa },
+		{ justificativa, ...(extemporaneo ? { extemporaneo: true } : {}) },
 	);
 	return data;
 }
