@@ -438,24 +438,39 @@ export default function NovaEmissaoNfePage() {
 		replaceItens(itens);
 	}
 
+	function lerItensGravados(): EmissaoNfeFormData["itens"] {
+		const control = form.control as unknown as {
+			_state?: { mount?: boolean };
+			_formValues?: { itens?: EmissaoNfeFormData["itens"] };
+		};
+		if (control._state?.mount !== true) return [];
+		const lista = control._formValues?.itens;
+		return Array.isArray(lista) ? lista : [];
+	}
+
 	function concluirCargaItens(
 		ref: { current: string | null },
 		chave: string,
 		quantidadeFonte: number,
 		itens: EmissaoNfeFormData["itens"],
 	) {
-		const temItens = () => (form.getValues("itens") ?? []).length > 0;
-		ref.current = chave;
-		if (quantidadeFonte > 0 && !temItens()) {
-			replaceItens(itens);
-		}
-		if (quantidadeFonte === 0 || temItens()) return;
-
-		queueMicrotask(() => {
-			if ((form.getValues("itens") ?? []).length === 0 && itens.length > 0) {
+		const aplicar = () => {
+			if (quantidadeFonte > 0 && lerItensGravados().length === 0) {
 				replaceItens(itens);
 			}
-			if ((form.getValues("itens") ?? []).length > 0) return;
+		};
+		aplicar();
+		if (quantidadeFonte === 0 || lerItensGravados().length > 0) {
+			ref.current = chave;
+			return;
+		}
+
+		queueMicrotask(() => {
+			aplicar();
+			if (lerItensGravados().length > 0) {
+				ref.current = chave;
+				return;
+			}
 			ref.current = null;
 			setRevisaoCarga((atual) => (atual < 2 ? atual + 1 : atual));
 		});
@@ -465,20 +480,16 @@ export default function NovaEmissaoNfePage() {
 		formState: { errors },
 	} = form;
 	const itensObservados = form.watch("itens") ?? [];
-	const itensValue = useMemo(
-		() =>
-			itensVisiveisParaEmissao(
-				itensObservados.length > 0
-					? itensObservados
-					: (itensFields as EmissaoNfeFormData["itens"]),
-			),
-		[itensFields, itensObservados],
+	const itensFieldsRef = useRef(itensFields);
+	itensFieldsRef.current = itensFields;
+	// Campos por último: um watch vazio, ou só com o id interno, não esconde
+	// os produtos que o useFieldArray já está mostrando.
+	const itensValue = itensVisiveisParaEmissao(
+		itensObservados,
+		itensFields as EmissaoNfeFormData["itens"],
 	);
 	const itensEmissaoRef = useRef<EmissaoNfeFormData["itens"]>([]);
-	itensEmissaoRef.current = itensVisiveisParaEmissao(
-		form.getValues("itens"),
-		itensValue,
-	);
+	itensEmissaoRef.current = itensValue;
 	const informacoesAdicionaisWatch = form.watch("informacoesAdicionais");
 	const localEntregaWatch = form.watch("localEntrega");
 	const observacoesComLotes = useMemo(
@@ -1693,15 +1704,28 @@ export default function NovaEmissaoNfePage() {
 		void form.trigger("itens");
 	}
 
+	function lerItensParaEmissao(): EmissaoNfeFormData["itens"] {
+		const daTela = itensVisiveisParaEmissao(itensEmissaoRef.current);
+		if (daTela.length > 0) return daTela;
+		return itensVisiveisParaEmissao(
+			itensFieldsRef.current as EmissaoNfeFormData["itens"],
+			lerItensGravados(),
+			form.getValues("itens"),
+		);
+	}
+
 	function resolverItensEmissaoFormulario(
 		dados: EmissaoNfeFormData,
 	): EmissaoNfeFormData {
-		const itens = itensVisiveisParaEmissao(
-			dados.itens,
-			itensEmissaoRef.current,
-			form.getValues("itens"),
-			itensValue,
-		);
+		const daTela = itensVisiveisParaEmissao(itensEmissaoRef.current);
+		const itens =
+			daTela.length > 0
+				? daTela
+				: itensVisiveisParaEmissao(
+						dados.itens,
+						itensFieldsRef.current as EmissaoNfeFormData["itens"],
+						form.getValues("itens"),
+					);
 		return { ...dados, itens };
 	}
 
@@ -2052,17 +2076,21 @@ export default function NovaEmissaoNfePage() {
 		});
 
 	function validarDadosVisiveisEmissao(): EmissaoNfeFormData | null {
-		const itens = itensVisiveisParaEmissao(
-			itensEmissaoRef.current,
-			form.getValues("itens"),
-			itensValue,
-		);
+		const itens = lerItensParaEmissao();
 
 		if (itens.length === 0) {
 			toast.error("Informe ao menos um item na nota.", {
 				description: "Adicione produtos na seção Itens antes de emitir.",
 			});
 			return null;
+		}
+
+		const gravados = form.getValues("itens");
+		if (!Array.isArray(gravados) || gravados.length === 0) {
+			form.setValue("itens", itens, {
+				shouldValidate: false,
+				shouldDirty: false,
+			});
 		}
 
 		form.clearErrors("itens");
@@ -3903,8 +3931,7 @@ export default function NovaEmissaoNfePage() {
 							{isPreviewPending ? "Gerando..." : "Pré-visualizar"}
 						</Button>
 						<Button
-							type="submit"
-							form="form-emissao-nfe"
+							type="button"
 							className="gap-2"
 							disabled={
 								isPending ||
@@ -3912,6 +3939,11 @@ export default function NovaEmissaoNfePage() {
 								isSalvandoRascunho ||
 								itensValue.length === 0
 							}
+							onClick={() => {
+								const dadosValidos = validarDadosVisiveisEmissao();
+								if (!dadosValidos) return;
+								handleSubmit(dadosValidos);
+							}}
 						>
 							<Send className="h-4 w-4" />
 							{isPending ? "Emitindo..." : "Emitir NF-e"}

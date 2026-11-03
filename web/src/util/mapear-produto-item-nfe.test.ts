@@ -179,6 +179,21 @@ describe("itensVisiveisParaEmissao", () => {
 			},
 		]);
 	});
+
+	it("não deixa uma lista só com id interno apagar os produtos da tela", () => {
+		const visivel = {
+			descricao: "Cachaça",
+			ncm: "22084000",
+			cfop: "5102",
+			unidade: "UN",
+			quantidade: 2,
+			valorUnitario: 8,
+		};
+		const fantasma = { id: "rhf-interno" } as ItemNfe & { id: string };
+
+		expect(itensVisiveisParaEmissao([visivel], [fantasma])).toEqual([visivel]);
+		expect(itensVisiveisParaEmissao([visivel], [])).toEqual([visivel]);
+	});
 });
 
 describe("mapearItemNotaReemissaoParaForm", () => {
