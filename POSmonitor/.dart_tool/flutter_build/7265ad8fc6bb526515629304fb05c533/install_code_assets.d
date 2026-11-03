@@ -1,0 +1,1 @@
+ D:\\Projetos\ Base44\\MaisGestao\\api-mais-gestao\\POSmonitor\\.dart_tool\\flutter_build\\7265ad8fc6bb526515629304fb05c533\\native_assets.json: 
