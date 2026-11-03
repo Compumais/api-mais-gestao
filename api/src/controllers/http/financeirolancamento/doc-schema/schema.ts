@@ -73,6 +73,35 @@ export const criarFinanceiroLancamentoSchema: FastifySchema = {
 				type: "string",
 				description: "Observações sobre o lançamento",
 			},
+			pagamentos: {
+				type: "array",
+				description:
+					"Meios de pagamento da baixa (soma deve igualar o valor). Cada item gera movimento na conta informada.",
+				items: {
+					type: "object",
+					properties: {
+						valor: {
+							anyOf: [{ type: "string" }, { type: "number" }],
+							description: "Valor deste meio",
+						},
+						metodo: {
+							type: "string",
+							nullable: true,
+							description: "Descrição do meio (PIX, Dinheiro, etc.)",
+						},
+						conta: {
+							type: "string",
+							nullable: true,
+							description: "ID da conta corrente/caixa",
+						},
+						observacao: {
+							type: "string",
+							nullable: true,
+							description: "Observação da linha",
+						},
+					},
+				},
+			},
 		},
 		required: ["idfinanceiro"],
 	},

@@ -195,10 +195,30 @@ export interface ResultadoEventoNfe {
 export async function cancelarNfe(
 	id: string,
 	justificativa: string,
+	extemporaneo = false,
 ): Promise<ResultadoEventoNfe> {
 	const { data } = await api.post<ResultadoEventoNfe>(
 		`/nfe/emissao/${id}/cancelar`,
-		{ justificativa },
+		{ justificativa, ...(extemporaneo ? { extemporaneo: true } : {}) },
+	);
+	return data;
+}
+
+export interface ResultadoConsultaSituacaoNfe {
+	idnotafiscal: string;
+	status: number;
+	alterouStatus: boolean;
+	situacao: "autorizada" | "cancelada" | "inalterada";
+	cStat?: string;
+	xMotivo?: string;
+	avisos?: string[];
+}
+
+export async function consultarSituacaoNfe(
+	id: string,
+): Promise<ResultadoConsultaSituacaoNfe> {
+	const { data } = await api.post<ResultadoConsultaSituacaoNfe>(
+		`/nfe/emissao/${id}/consultar-situacao`,
 	);
 	return data;
 }

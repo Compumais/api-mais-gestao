@@ -15,6 +15,24 @@ export function deveAtualizarNodePagina(
 }
 
 /**
+ * A aba guarda a página pelo pathname. Se a query mudou (corrigir/reemitir
+ * uma NF-e, por exemplo), o tree congelado precisa ser trocado — senão a
+ * tela continua com o formulário da visita anterior.
+ */
+export function deveTrocarNodePagina(
+	congeladas: readonly string[],
+	pathname: string,
+	searchAtual: string,
+	searchCacheado: string | undefined,
+): boolean {
+	if (!pathname) return false;
+	if (searchCacheado !== undefined && searchCacheado !== searchAtual) {
+		return true;
+	}
+	return !congeladas.includes(pathname);
+}
+
+/**
  * Ao sair de uma rota, congela o último tree para a aba poder voltar
  * com o mesmo estado. A rota atual continua recebendo children novos
  * (loading → conteúdo) até o usuário navegar para outra aba.

@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/screenRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/page_background"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/headerBleed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/navy_primary">
+
+        <LinearLayout
+            android:id="@+id/headerContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/screen_padding_horizontal"
+            android:paddingBottom="@dimen/header_padding_bottom">
+
+            <TextView
+                android:id="@+id/textHeaderTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/novo_cliente"
+                android:textAppearance="@style/TextAppearance.NFe.HeaderTitle" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_content_sheet"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/screen_padding_horizontal">
+
+            <ProgressBar
+                android:id="@+id/progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Identificação"
+                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                android:textColor="@color/foreground" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Nome *">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputNome"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapWords" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Razão social">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputRazao"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapWords" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="CPF/CNPJ *">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputCnpjCpf"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                style="@style/TextAppearance.NFe.FieldLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:text="Indicador de IE (NF-e) *" />
+
+            <Spinner
+                android:id="@+id/spinnerIndIeDest"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_card_item" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Inscrição estadual">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputInscricaoEstadual"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="RG">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputRg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Data de nascimento (AAAA-MM-DD)">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputNascimento"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="date" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                style="@style/TextAppearance.NFe.FieldLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:text="Plano de contas" />
+
+            <Spinner
+                android:id="@+id/spinnerPlanoContas"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_card_item" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Contato"
+                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                android:textColor="@color/foreground" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="E-mail">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Telefone">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputTelefone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="phone" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Fax">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputFax"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="phone" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Endereço"
+                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                android:textColor="@color/foreground" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="CEP">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputCep"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                style="@style/TextAppearance.NFe.FieldLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:text="Estado (UF)" />
+
+            <Spinner
+                android:id="@+id/spinnerEstado"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_card_item" />
+
+            <TextView
+                style="@style/TextAppearance.NFe.FieldLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:text="Município" />
+
+            <Spinner
+                android:id="@+id/spinnerMunicipio"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_card_item" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Logradouro">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputEndereco"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapWords" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Número">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputNumero"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Complemento">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputComplemento"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="Bairro">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputBairro"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapWords" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.NFe.TextInput.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/field_spacing"
+                android:hint="País">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputPais"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Brasil" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Classificação"
+                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                android:textColor="@color/foreground" />
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/checkCliente"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Cliente" />
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/checkFornecedor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Fornecedor" />
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/checkTransportador"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Transportador" />
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/checkRepresentante"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Representante" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSalvar"
+                style="@style/Widget.NFe.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="16dp"
+                android:text="@string/salvar" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

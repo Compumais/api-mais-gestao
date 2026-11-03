@@ -36,6 +36,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { obterLabelStatus } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
 import {
@@ -44,10 +45,12 @@ import {
 } from "@/hooks/use-preferencias-ui-usuario";
 import {
 	cancelarNfe,
+	consultarSituacaoNfe,
 	inutilizarNfe,
 	listarNfesEmitidas,
 	listarRascunhosEmissaoNfe,
 	type NotaFiscalEmitida,
+	type ResultadoConsultaSituacaoNfe,
 } from "@/services/nfe-emissao.service";
 import { PageContainer } from "../components/page-container";
 import { BotaoAlterarNumeracao } from "../configuracoes/components/dialog-alterar-numeracao";
@@ -93,8 +96,9 @@ export default function NotaFiscalVendaPage() {
 	const { nfeConfiguracao } = useNfeConfiguracao(empresa?.id);
 	const queryClient = useQueryClient();
 	const idPorPagina = useId();
+	const [consultandoId, setConsultandoId] = useState<string | null>(null);
 	const [eventoModal, setEventoModal] = useState<{
-		tipo: "cancelar" | "inutilizar";
+		tipo: "cancelar" | "cancelar-extemporaneo" | "inutilizar";
 		nota: NotaFiscalEmitida;
 	} | null>(null);
 	const [pagination, setPagination] = useState({
@@ -202,18 +206,53 @@ export default function NotaFiscalVendaPage() {
 		enabled: !!empresa,
 	});
 
+	const descreverConsulta = (resultado: ResultadoConsultaSituacaoNfe) =>
+		[resultado.xMotivo, ...(resultado.avisos ?? [])].filter(Boolean).join("\n") ||
+		undefined;
+
+	const { mutate: consultarSituacao } = useMutation({
+		mutationFn: (id: string) => consultarSituacaoNfe(id),
+		onSuccess: (resultado) => {
+			void queryClient.invalidateQueries({ queryKey: ["nfe-emitidas"] });
+			void queryClient.invalidateQueries({ queryKey: ["nfe-detalhe"] });
+			if (resultado.alterouStatus) {
+				toast.success(
+					`Situação atualizada: ${obterLabelStatus(resultado.status)}`,
+					{ description: descreverConsulta(resultado) },
+				);
+				return;
+			}
+			toast.success(
+				resultado.situacao === "autorizada"
+					? "A SEFAZ confirma a NF-e autorizada"
+					: "A consulta não alterou o status da NF-e",
+				{ description: descreverConsulta(resultado) },
+			);
+		},
+		onError: (erro) => {
+			toast.error("Não foi possível consultar a situação da NF-e", {
+				description: erro instanceof Error ? erro.message : "Erro desconhecido",
+			});
+		},
+		onSettled: () => setConsultandoId(null),
+	});
+
 	const { mutate: executarEvento, isPending: processandoEvento } = useMutation({
 		mutationFn: async ({
 			tipo,
 			nota,
 			justificativa,
 		}: {
-			tipo: "cancelar" | "inutilizar";
+			tipo: "cancelar" | "cancelar-extemporaneo" | "inutilizar";
 			nota: NotaFiscalEmitida;
 			justificativa: string;
 		}) => {
-			if (tipo === "cancelar") {
-				return cancelarNfe(nota.id, justificativa);
+			if (tipo === "cancelar" || tipo === "cancelar-extemporaneo") {
+				return cancelarNfe(
+					nota.id,
+					justificativa,
+					tipo === "cancelar-extemporaneo",
+				);
 			}
 			return inutilizarNfe(nota.id, justificativa);
 		},
@@ -221,17 +260,21 @@ export default function NotaFiscalVendaPage() {
 			void queryClient.invalidateQueries({ queryKey: ["nfe-emitidas"] });
 			setEventoModal(null);
 			toast.success(
-				variaveis.tipo === "cancelar"
-					? "NF-e cancelada com sucesso"
-					: "Numeração inutilizada com sucesso",
+				variaveis.tipo === "inutilizar"
+					? "Numeração inutilizada com sucesso"
+					: variaveis.tipo === "cancelar-extemporaneo"
+						? "SEFAZ aceitou o cancelamento"
+						: "NF-e cancelada com sucesso",
 				{ description: resultado.xMotivo ?? undefined },
 			);
 		},
 		onError: (erro, variaveis) => {
 			toast.error(
-				variaveis.tipo === "cancelar"
-					? "Não foi possível cancelar a NF-e"
-					: "Não foi possível inutilizar a numeração",
+				variaveis.tipo === "inutilizar"
+					? "Não foi possível inutilizar a numeração"
+					: variaveis.tipo === "cancelar-extemporaneo"
+						? "A SEFAZ não aceitou o cancelamento. A NF-e continua autorizada"
+						: "Não foi possível cancelar a NF-e",
 				{
 					description:
 						erro instanceof Error ? erro.message : "Erro desconhecido",
@@ -250,7 +293,14 @@ export default function NotaFiscalVendaPage() {
 				onFiltrarColuna,
 				configFiltroPorColuna,
 				onCancelar: (nota) => setEventoModal({ tipo: "cancelar", nota }),
+				onEfetivarCancelamento: (nota) =>
+					setEventoModal({ tipo: "cancelar-extemporaneo", nota }),
 				onInutilizar: (nota) => setEventoModal({ tipo: "inutilizar", nota }),
+				consultandoId,
+				onConsultarSituacao: (nota) => {
+					setConsultandoId(nota.id);
+					consultarSituacao(nota.id);
+				},
 			}),
 		[
 			filtrosColuna,
@@ -259,6 +309,8 @@ export default function NotaFiscalVendaPage() {
 			onOrdenarColuna,
 			onFiltrarColuna,
 			configFiltroPorColuna,
+			consultandoId,
+			consultarSituacao,
 		],
 	);
 
@@ -495,19 +547,25 @@ export default function NotaFiscalVendaPage() {
 				}}
 				carregando={processandoEvento}
 				titulo={
-					eventoModal?.tipo === "cancelar"
-						? `Cancelar NF-e ${eventoModal.nota.serie}-${eventoModal.nota.numeronotafiscal}`
-						: `Inutilizar ${eventoModal?.nota.serie}-${eventoModal?.nota.numeronotafiscal}`
+					eventoModal?.tipo === "cancelar-extemporaneo"
+						? `Efetivar cancelamento ${eventoModal.nota.serie}-${eventoModal.nota.numeronotafiscal}`
+						: eventoModal?.tipo === "cancelar"
+							? `Cancelar NF-e ${eventoModal.nota.serie}-${eventoModal.nota.numeronotafiscal}`
+							: `Inutilizar ${eventoModal?.nota.serie}-${eventoModal?.nota.numeronotafiscal}`
 				}
 				descricao={
-					eventoModal?.tipo === "cancelar"
-						? "Cancelamento permitido em até 24 horas após a autorização. Justificativa mínima de 15 caracteres."
-						: "Inutilização para NF-e não autorizada (pendente ou rejeitada). Justificativa mínima de 15 caracteres."
+					eventoModal?.tipo === "cancelar-extemporaneo"
+						? "A NF-e continua autorizada até a SEFAZ aceitar o evento. Envie somente se o fisco já aprovou o pedido e liberou um novo prazo. Se o prazo não estiver aberto, a SEFAZ recusa e o status local não muda."
+						: eventoModal?.tipo === "cancelar"
+							? "Cancelamento permitido em até 24 horas após a autorização. Justificativa mínima de 15 caracteres."
+							: "Inutilização para NF-e não autorizada (pendente ou rejeitada). Justificativa mínima de 15 caracteres."
 				}
 				rotuloConfirmar={
-					eventoModal?.tipo === "cancelar"
-						? "Confirmar cancelamento"
-						: "Confirmar inutilização"
+					eventoModal?.tipo === "cancelar-extemporaneo"
+						? "Enviar cancelamento à SEFAZ"
+						: eventoModal?.tipo === "cancelar"
+							? "Confirmar cancelamento"
+							: "Confirmar inutilização"
 				}
 			/>
 		</PageContainer>

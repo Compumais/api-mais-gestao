@@ -4,9 +4,11 @@ Monorepo da plataforma Mais Gestão. Os pacotes principais são:
 
 - `api/`: API Node.js/Fastify e migrações Drizzle/PostgreSQL;
 - `web/`: aplicação Next.js;
-- `pdv/`: PDV desktop;
-- `POSmaisgestao/`: aplicativo Android;
-- `estacao-balanca/`: estação Flutter (Windows/Android) de pesagem Prix e lançamento em comandas via LAN do PDV;
+- `aplicativos/pdv/`: PDV desktop;
+- `aplicativos/POSmaisgestao/`: aplicativo Android POS;
+- `aplicativos/NFeMaisGestao/`: aplicativo Android nativo para NF-e;
+- `aplicativos/estacao-balanca/`: estação Flutter (Windows/Android) de pesagem Prix e lançamento em comandas via LAN do PDV;
+- `packages/nfe-emissao-shared/`: schemas/utilitários de emissão NF-e compartilhados com o web;
 - `api_Nfe/`: gateways fiscais;
 - `infra/`: arquivos e referências de infraestrutura.
 

@@ -150,7 +150,7 @@ export const financeiro = pgTable(
 	(table) => [
 		index("idx_fin_entid_tipo_status").using(
 			"btree",
-			table.identidade.asc().nullsLast().op("int8_ops"),
+			table.identidade.asc().nullsLast().op("text_ops"),
 			table.tipo.asc().nullsLast().op("bpchar_ops"),
 			table.status.asc().nullsLast().op("bpchar_ops"),
 		),
@@ -164,7 +164,7 @@ export const financeiro = pgTable(
 		),
 		index("idx_financeiro_sped").using(
 			"btree",
-			table.idorigem.asc().nullsLast().op("int8_ops"),
+			table.idorigem.asc().nullsLast().op("text_ops"),
 			table.tipoorigem.asc().nullsLast().op("int2_ops"),
 		),
 		index("idx_financeiro_status").using(

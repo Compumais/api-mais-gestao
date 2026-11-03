@@ -1,12 +1,12 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Activity, useEffect, useRef, useState } from "react";
 import { useNavAbasAbertasOpcional } from "@/hooks/use-nav-abas-abertas";
 import {
 	type CachePaginasAbas,
 	cachePaginasVazio,
-	deveAtualizarNodePagina,
+	deveTrocarNodePagina,
 	evictPaginasFechadas,
 	ordenarPaginasParaExibicao,
 	registrarVisitaPagina,
@@ -14,8 +14,10 @@ import {
 
 export function NavAbasKeepAlive({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname() ?? "";
+	const search = useSearchParams().toString();
 	const ctx = useNavAbasAbertasOpcional();
 	const nodesRef = useRef(new Map<string, React.ReactNode>());
+	const searchPorPathRef = useRef(new Map<string, string>());
 	const pathnameAnteriorRef = useRef(pathname);
 	const [estado, setEstado] = useState<CachePaginasAbas>(cachePaginasVazio);
 
@@ -35,10 +37,17 @@ export function NavAbasKeepAlive({ children }: { children: React.ReactNode }) {
 	pathnameAnteriorRef.current = pathname;
 
 	const estadoRender = proximo;
-	if (deveAtualizarNodePagina(estadoRender.congeladas, pathname)) {
+	if (
+		deveTrocarNodePagina(
+			estadoRender.congeladas,
+			pathname,
+			search,
+			searchPorPathRef.current.get(pathname),
+		) ||
+		!nodesRef.current.has(pathname)
+	) {
 		nodesRef.current.set(pathname, children);
-	} else if (!nodesRef.current.has(pathname)) {
-		nodesRef.current.set(pathname, children);
+		searchPorPathRef.current.set(pathname, search);
 	}
 
 	useEffect(() => {
@@ -46,6 +55,7 @@ export function NavAbasKeepAlive({ children }: { children: React.ReactNode }) {
 		for (const id of nodesRef.current.keys()) {
 			if (!vivos.has(id)) {
 				nodesRef.current.delete(id);
+				searchPorPathRef.current.delete(id);
 			}
 		}
 	}, [estadoRender.paths]);

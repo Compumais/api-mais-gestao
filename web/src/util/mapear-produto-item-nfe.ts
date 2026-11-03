@@ -186,28 +186,57 @@ export function codigoCfopPorId(
 	return referencias.find((cfop) => cfop.id === idcfop)?.codigo;
 }
 
+/**
+ * Entre as fontes do formulário, fica a última lista preenchida.
+ * A ordem dos argumentos vai da mais antiga para a que está na tela,
+ * para uma edição ou exclusão não perder para um snapshot anterior
+ * só porque ele tinha mais itens.
+ */
 export function escolherItensFormularioEmissao(
 	...listas: Array<ItemNfe[] | null | undefined>
 ): ItemNfe[] {
-	let melhor: ItemNfe[] = [];
+	let escolhida: ItemNfe[] = [];
 	for (const lista of listas) {
-		if (!Array.isArray(lista)) continue;
-		if (lista.length > melhor.length) {
-			melhor = lista;
-		}
+		if (!Array.isArray(lista) || lista.length === 0) continue;
+		escolhida = lista;
 	}
-	return melhor;
+	return escolhida;
+}
+
+function itemEmissaoTemConteudo(item: unknown): boolean {
+	if (!item || typeof item !== "object") return false;
+	const linha = item as ItemNfe;
+	return (
+		String(linha.descricao ?? "").trim().length > 0 ||
+		String(linha.codigoProduto ?? "").trim().length > 0 ||
+		String(linha.idproduto ?? "").trim().length > 0
+	);
 }
 
 /** Remove o id interno do useFieldArray antes de validar/enviar a NF-e. */
+function semIdInternoCampo(item: ItemNfe): ItemNfe {
+	if (!item || typeof item !== "object") return item;
+	if (!("id" in item) && !("fieldId" in item)) return item;
+	const registro = item as ItemNfe & { id?: string; fieldId?: string };
+	const { id: _id, fieldId: _fieldId, ...resto } = registro;
+	return resto;
+}
+
+/**
+ * Fica a última lista que realmente tem produto.
+ * Lista vazia, ou só com o id interno do campo, não apaga os itens da tela.
+ */
 export function itensVisiveisParaEmissao(
 	...listas: Array<ItemNfe[] | null | undefined>
 ): ItemNfe[] {
-	return escolherItensFormularioEmissao(...listas).map((item) => {
-		if (!item || typeof item !== "object" || !("id" in item)) return item;
-		const { id: _id, ...resto } = item as ItemNfe & { id?: string };
-		return resto;
-	});
+	let escolhida: ItemNfe[] = [];
+	for (const lista of listas) {
+		if (!Array.isArray(lista) || lista.length === 0) continue;
+		const normalizada = lista.map((item) => semIdInternoCampo(item));
+		if (!normalizada.some(itemEmissaoTemConteudo)) continue;
+		escolhida = normalizada;
+	}
+	return escolhida;
 }
 
 export function mapearItemNotaReemissaoParaForm(

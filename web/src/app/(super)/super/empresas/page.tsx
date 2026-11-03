@@ -33,6 +33,7 @@ import { formatDateTimeBrasilia } from "@/lib/date";
 import { acessoBaseService } from "@/services/acesso-base.service";
 import { type AdminEmpresa, adminService } from "@/services/admin.service";
 import { DialogEntitlementProprietario } from "../components/dialog-entitlement-proprietario";
+import { DialogLimparBase } from "./dialog-limpar-base";
 
 type ModoVisualizacao = "cards" | "tabela";
 
@@ -65,6 +66,9 @@ export default function SuperEmpresasPage() {
 	const [exibirInativas, setExibirInativas] = useState(false);
 	const [empresaEntitlement, setEmpresaEntitlement] =
 		useState<AdminEmpresa | null>(null);
+	const [empresaLimpeza, setEmpresaLimpeza] = useState<AdminEmpresa | null>(
+		null,
+	);
 	const [empresaAcessandoId, setEmpresaAcessandoId] = useState<string | null>(
 		null,
 	);
@@ -163,6 +167,14 @@ export default function SuperEmpresasPage() {
 					onClick={() => statusMutation.mutate(empresa)}
 				>
 					{alterandoStatus ? "Salvando..." : inativa ? "Ativar" : "Inativar"}
+				</Button>
+				<Button
+					size="sm"
+					variant="outline"
+					className={larguraCheia ? "w-full" : undefined}
+					onClick={() => setEmpresaLimpeza(empresa)}
+				>
+					Limpar base
 				</Button>
 			</div>
 		);
@@ -305,6 +317,13 @@ export default function SuperEmpresasPage() {
 				</div>
 			)}
 
+			<DialogLimparBase
+				empresa={empresaLimpeza}
+				open={!!empresaLimpeza}
+				onOpenChange={(aberto) => {
+					if (!aberto) setEmpresaLimpeza(null);
+				}}
+			/>
 			<DialogEntitlementProprietario
 				userId={empresaEntitlement?.idproprietario ?? null}
 				open={!!empresaEntitlement}
