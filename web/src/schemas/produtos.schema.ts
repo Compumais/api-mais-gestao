@@ -97,6 +97,31 @@ export const produtoFormSchema = z.object({
 		.string()
 		.max(10, "NCM deve ter no máximo 10 caracteres")
 		.optional(),
+	codigoanp: z
+		.string()
+		.optional()
+		.nullable()
+		.refine(
+			(valor) =>
+				!valor ||
+				valor.trim() === "" ||
+				/^\d{9}$/.test(valor.replace(/\D/g, "")),
+			"Código ANP deve ter 9 dígitos",
+		),
+	descricaoanp: z
+		.string()
+		.max(95, "Descrição ANP deve ter no máximo 95 caracteres")
+		.optional()
+		.nullable(),
+	percentualbiodiesel: z
+		.string()
+		.optional()
+		.nullable()
+		.refine((valor) => {
+			if (!valor || valor.trim() === "") return true;
+			const numero = Number.parseFloat(valor.replace(",", "."));
+			return !Number.isNaN(numero) && numero >= 0 && numero <= 100;
+		}, "Percentual de biodiesel deve ficar entre 0 e 100"),
 	tipoproduto: z
 		.string()
 		.max(2, "Tipo de produto deve ter no máximo 2 caracteres")

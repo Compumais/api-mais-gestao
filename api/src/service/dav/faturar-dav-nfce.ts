@@ -89,6 +89,7 @@ import {
 	normalizarCodigoStatusNfe,
 	normalizarCStatGateway,
 } from "@/util/resolver-status-emissao-nfe.js";
+import { aplicarGrupoCombustivelItens } from "@/util/aplicar-grupo-combustivel-item-nfe.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 
 type FaturarDavNfceParametros = {
@@ -450,6 +451,17 @@ export async function faturarDavNfceService({
 		});
 	}
 
+	const grupoCombustivel = aplicarGrupoCombustivelItens(
+		itensNormalizados,
+		(empresaFiscal.uf ?? "").trim(),
+	);
+	if (grupoCombustivel.pendencias.length > 0) {
+		return httpOk({
+			emitida: false,
+			erro: grupoCombustivel.pendencias.join("; "),
+		});
+	}
+
 	const pendenciasIbsCbs = validarIbsCbsItensEmissao(
 		itensNormalizados,
 		"nfce",
@@ -553,7 +565,7 @@ export async function faturarDavNfceService({
 		certificadoAtivo,
 		numeroNf: reserva.numeroNf,
 		serie: reserva.serie,
-		itens: itensNormalizados,
+		itens: grupoCombustivel.itens,
 		pagamento: pagamentoNormalizado,
 		natOp,
 		dhEmi: identidade.dhEmi,

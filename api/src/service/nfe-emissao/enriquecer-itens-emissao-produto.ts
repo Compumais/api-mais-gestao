@@ -7,6 +7,7 @@ import {
 	cstPisCofinsAusenteOuInvalido,
 	normalizarCstPisCofins,
 } from "@/util/montar-grupo-pis-cofins-item-nfe.js";
+import { normalizarCodigoAnp } from "@/util/cfop-combustivel.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 function sanitizarGtin(valor?: string | number | null): string | undefined {
@@ -121,6 +122,24 @@ function aplicarPisCofinsDoProduto(
 	}
 
 	return resultado;
+}
+
+function aplicarAnpDoProduto(
+	item: ItemPayloadNfe,
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): ItemPayloadNfe {
+	const codigoAnp =
+		normalizarCodigoAnp(produto.codigoanp) ?? item.codigoAnp;
+	const descricaoAnp = produto.descricaoanp?.trim() || item.descricaoAnp;
+	const percentualProduto = paraNumeroOpcional(produto.percentualbiodiesel);
+	const percentualBiodiesel = percentualProduto ?? item.percentualBiodiesel;
+
+	return {
+		...item,
+		...(codigoAnp ? { codigoAnp } : {}),
+		...(descricaoAnp ? { descricaoAnp } : {}),
+		...(percentualBiodiesel != null ? { percentualBiodiesel } : {}),
+	};
 }
 
 function codigoCsosnProduto(
@@ -266,6 +285,8 @@ export async function enriquecerItensEmissaoComProduto(
 			if (!produto) {
 				return resultado;
 			}
+
+			resultado = aplicarAnpDoProduto(resultado, produto);
 
 			if (produto.codigo != null && !resultado.codigoProduto) {
 				resultado.codigoProduto = String(produto.codigo);

@@ -280,6 +280,72 @@ export function ProdutoAbaImpostos({
 								<FieldError errors={errors.ncm ? [errors.ncm] : []} />
 							</Field>
 
+							<Field data-invalid={!!errors.codigoanp}>
+								<FieldLabel htmlFor="codigoanp">
+									Código ANP{" "}
+									<span className="font-normal text-muted-foreground">
+										(combustível e lubrificante)
+									</span>
+								</FieldLabel>
+								<Input
+									id="codigoanp"
+									placeholder="Ex.: 820101012"
+									maxLength={9}
+									inputMode="numeric"
+									aria-invalid={!!errors.codigoanp}
+									{...register("codigoanp")}
+								/>
+								<FieldError
+									errors={errors.codigoanp ? [errors.codigoanp] : []}
+								/>
+								<p className="text-xs text-muted-foreground">
+									Obrigatório na nota quando o CFOP for de combustível ou
+									lubrificante. Sem este código, a SEFAZ rejeita o item por
+									falta do grupo de combustível.
+								</p>
+							</Field>
+
+							<Field data-invalid={!!errors.descricaoanp}>
+								<FieldLabel htmlFor="descricaoanp">
+									Descrição ANP{" "}
+									<span className="font-normal text-muted-foreground">
+										(opcional)
+									</span>
+								</FieldLabel>
+								<Input
+									id="descricaoanp"
+									placeholder="Ex.: OLEO DIESEL B S10"
+									maxLength={95}
+									aria-invalid={!!errors.descricaoanp}
+									{...register("descricaoanp")}
+								/>
+								<FieldError
+									errors={errors.descricaoanp ? [errors.descricaoanp] : []}
+								/>
+							</Field>
+
+							<Field data-invalid={!!errors.percentualbiodiesel}>
+								<FieldLabel htmlFor="percentualbiodiesel">
+									Biodiesel % (pBio){" "}
+									<span className="font-normal text-muted-foreground">
+										(opcional)
+									</span>
+								</FieldLabel>
+								<Input
+									id="percentualbiodiesel"
+									placeholder="Ex.: 12"
+									aria-invalid={!!errors.percentualbiodiesel}
+									{...register("percentualbiodiesel")}
+								/>
+								<FieldError
+									errors={
+										errors.percentualbiodiesel
+											? [errors.percentualbiodiesel]
+											: []
+									}
+								/>
+							</Field>
+
 							<Controller
 								name="origem"
 								control={control}

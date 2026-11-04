@@ -91,6 +91,9 @@ function buildProdutoPayload(
 		ippt: data.ippt,
 		origem: data.origem ?? 0,
 		ncm: textoOuNulo(data.ncm),
+		codigoanp: textoOuNulo(data.codigoanp)?.replace(/\D/g, "") || null,
+		descricaoanp: textoOuNulo(data.descricaoanp),
+		percentualbiodiesel: textoOuNulo(data.percentualbiodiesel),
 	};
 
 	if (data.ean != null && !Number.isNaN(data.ean)) {
@@ -221,6 +224,9 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			ippt: "P",
 			origem: 0,
 			ncm: "",
+			codigoanp: "",
+			descricaoanp: "",
+			percentualbiodiesel: "",
 			tipoproduto: null,
 			idcfopentrada: null,
 			idcfopsaida: null,

@@ -20,6 +20,10 @@ import {
 	mapErrorToHttpResponse,
 } from "@/util/map-error-to-http.js";
 import { httpNaoAutorizado, httpNaoEncontrado, httpProibido } from "@/util/http-util.js";
+import {
+	normalizarCodigoAnp,
+	normalizarPercentualBiodiesel,
+} from "@/util/cfop-combustivel.js";
 
 const atualizarProdutoParamsSchema = z.object({
 	id: z.string(),
@@ -61,6 +65,31 @@ const atualizarProdutoBodySchema = z.object({
 	ippt: z.enum(["P", "T"]).optional().nullable(),
 	origem: z.number().int().min(0).max(8).optional().nullable(),
 	ncm: z.string().max(10).optional().nullable(),
+	codigoanp: z
+		.string()
+		.max(9)
+		.optional()
+		.nullable()
+		.refine(
+			(valor) =>
+				valor == null ||
+				valor.trim() === "" ||
+				/^\d{9}$/.test(valor.replace(/\D/g, "")),
+			"Código ANP deve ter 9 dígitos",
+		),
+	descricaoanp: z.string().max(95).optional().nullable(),
+	percentualbiodiesel: z
+		.union([z.string(), z.number()])
+		.optional()
+		.nullable()
+		.refine(
+			(valor) => {
+				if (valor == null || String(valor).trim() === "") return true;
+				const numero = Number(String(valor).replace(",", "."));
+				return Number.isFinite(numero) && numero >= 0 && numero <= 100;
+			},
+			"Percentual de biodiesel deve ficar entre 0 e 100",
+		),
 	tipoproduto: z.string().max(2).optional().nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
@@ -138,6 +167,21 @@ export async function atualizarProduto(
 
 		if (dadosValidados.ncm !== undefined) {
 			dados.ncm = dadosValidados.ncm?.trim() || null;
+		}
+
+		if (dadosValidados.codigoanp !== undefined) {
+			const codigo = normalizarCodigoAnp(dadosValidados.codigoanp);
+			dados.codigoanp = codigo?.length === 9 ? codigo : null;
+		}
+
+		if (dadosValidados.descricaoanp !== undefined) {
+			dados.descricaoanp = dadosValidados.descricaoanp?.trim().slice(0, 95) || null;
+		}
+
+		if (dadosValidados.percentualbiodiesel !== undefined) {
+			dados.percentualbiodiesel = normalizarPercentualBiodiesel(
+				dadosValidados.percentualbiodiesel,
+			);
 		}
 
 		if (dadosValidados.nome !== undefined) {

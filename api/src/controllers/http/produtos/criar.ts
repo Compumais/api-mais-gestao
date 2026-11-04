@@ -20,6 +20,10 @@ import {
 } from "@/util/map-error-to-http.js";
 import { normalizarCamposNumericosProduto } from "@/util/normalizar-campos-numericos-produto.js";
 import { httpNaoAutorizado, httpProibido } from "@/util/http-util.js";
+import {
+	normalizarCodigoAnp,
+	normalizarPercentualBiodiesel,
+} from "@/util/cfop-combustivel.js";
 
 const criarProdutoBodySchema = z
 	.object({
@@ -56,6 +60,31 @@ const criarProdutoBodySchema = z
 		ippt: z.enum(["P", "T"]).optional().nullable(),
 		origem: z.number().int().min(0).max(8).optional().nullable(),
 		ncm: z.string().max(10).optional().nullable(),
+		codigoanp: z
+			.string()
+			.max(9)
+			.optional()
+			.nullable()
+			.refine(
+				(valor) =>
+					valor == null ||
+					valor.trim() === "" ||
+					/^\d{9}$/.test(valor.replace(/\D/g, "")),
+				"Código ANP deve ter 9 dígitos",
+			),
+		descricaoanp: z.string().max(95).optional().nullable(),
+		percentualbiodiesel: z
+			.union([z.string(), z.number()])
+			.optional()
+			.nullable()
+			.refine(
+				(valor) => {
+					if (valor == null || String(valor).trim() === "") return true;
+					const numero = Number(String(valor).replace(",", "."));
+					return Number.isFinite(numero) && numero >= 0 && numero <= 100;
+				},
+				"Percentual de biodiesel deve ficar entre 0 e 100",
+			),
 		tipoproduto: z.string().max(2).optional().nullable(),
 		observacoes: z.string().optional().nullable(),
 		enviamobile: z.number().int().min(0).max(1).optional(),
@@ -159,6 +188,11 @@ export async function criarProduto(
 			ippt: dadosValidados.ippt ?? (ehServico ? "T" : "P"),
 			origem: dadosValidados.origem ?? 0,
 			ncm: dadosValidados.ncm?.trim() || null,
+			codigoanp: normalizarCodigoAnp(dadosValidados.codigoanp),
+			descricaoanp: dadosValidados.descricaoanp?.trim() || null,
+			percentualbiodiesel: normalizarPercentualBiodiesel(
+				dadosValidados.percentualbiodiesel,
+			),
 			tipoproduto: dadosValidados.tipoproduto ?? (ehServico ? "09" : null),
 			observacoes: dadosValidados.observacoes ?? null,
 			enviamobile: dadosValidados.enviamobile ?? 0,
