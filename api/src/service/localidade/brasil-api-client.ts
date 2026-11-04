@@ -1,5 +1,8 @@
 const BRASIL_API_BASE_URL = "https://brasilapi.com.br/api";
+const IBGE_MUNICIPIOS_URL =
+	"https://servicodados.ibge.gov.br/api/v1/localidades/estados";
 const BRASIL_API_USER_AGENT = "MaisGestao/1.0 (+https://maisgestao.com.br)";
+const TIMEOUT_MUNICIPIOS_MS = 8_000;
 
 type BrasilApiMunicipio = {
 	nome: string;
@@ -40,28 +43,101 @@ function salvarNoCache<T>(
 	cache.set(chave, { data, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
-export async function buscarMunicipiosBrasilApi(
-	uf: string,
-): Promise<BrasilApiMunicipio[]> {
-	const ufNormalizada = uf.toUpperCase();
-	const cacheado = obterDoCache(municipiosCache, ufNormalizada);
-	if (cacheado) return cacheado;
+type MunicipioBruto = {
+	nome?: unknown;
+	codigo_ibge?: unknown;
+	id?: unknown;
+};
 
-	const resposta = await fetch(
-		`${BRASIL_API_BASE_URL}/ibge/municipios/v1/${ufNormalizada}`,
-		{
+function normalizarMunicipios(
+	dados: unknown,
+	campoCodigo: "codigo_ibge" | "id",
+): BrasilApiMunicipio[] {
+	if (!Array.isArray(dados)) {
+		throw new Error("Resposta de municípios inválida");
+	}
+
+	const lista = dados.flatMap((item) => {
+		if (!item || typeof item !== "object") return [];
+		const municipio = item as MunicipioBruto;
+		const nome =
+			typeof municipio.nome === "string" ? municipio.nome.trim() : "";
+		const codigoBruto = municipio[campoCodigo];
+		const codigo =
+			typeof codigoBruto === "string" || typeof codigoBruto === "number"
+				? String(codigoBruto).trim()
+				: "";
+		if (!nome || !codigo) return [];
+		return [{ nome, codigo_ibge: codigo }];
+	});
+
+	if (lista.length === 0) {
+		throw new Error("Nenhum município retornado");
+	}
+
+	return lista;
+}
+
+async function buscarJsonMunicipios(url: string): Promise<unknown> {
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), TIMEOUT_MUNICIPIOS_MS);
+
+	try {
+		const resposta = await fetch(url, {
 			headers: {
 				Accept: "application/json",
 				"User-Agent": BRASIL_API_USER_AGENT,
 			},
-		},
-	);
+			signal: controller.signal,
+		});
 
-	if (!resposta.ok) {
-		throw new Error(`BrasilAPI municípios retornou status ${resposta.status}`);
+		if (!resposta.ok) {
+			throw new Error(`status ${resposta.status}`);
+		}
+
+		return await resposta.json();
+	} finally {
+		clearTimeout(timeout);
+	}
+}
+
+async function buscarMunicipiosNoIbge(
+	uf: string,
+): Promise<BrasilApiMunicipio[]> {
+	const dados = await buscarJsonMunicipios(
+		`${IBGE_MUNICIPIOS_URL}/${uf}/municipios`,
+	);
+	return normalizarMunicipios(dados, "id");
+}
+
+async function buscarMunicipiosNaBrasilApi(
+	uf: string,
+): Promise<BrasilApiMunicipio[]> {
+	const dados = await buscarJsonMunicipios(
+		`${BRASIL_API_BASE_URL}/ibge/municipios/v1/${uf}`,
+	);
+	return normalizarMunicipios(dados, "codigo_ibge");
+}
+
+export async function buscarMunicipiosBrasilApi(
+	uf: string,
+): Promise<BrasilApiMunicipio[]> {
+	const ufNormalizada = uf.trim().toUpperCase();
+	const cacheado = obterDoCache(municipiosCache, ufNormalizada);
+	if (cacheado) return cacheado;
+
+	// A rota de municípios da BrasilAPI responde 504. O IBGE é a fonte oficial.
+	let dados: BrasilApiMunicipio[];
+	try {
+		dados = await buscarMunicipiosNoIbge(ufNormalizada);
+	} catch (erroIbge) {
+		console.error(
+			"IBGE indisponível ao listar municípios; tentando BrasilAPI:",
+			erroIbge,
+		);
+		dados = await buscarMunicipiosNaBrasilApi(ufNormalizada);
 	}
 
-	const dados = (await resposta.json()) as BrasilApiMunicipio[];
 	salvarNoCache(municipiosCache, ufNormalizada, dados);
 	return dados;
 }
