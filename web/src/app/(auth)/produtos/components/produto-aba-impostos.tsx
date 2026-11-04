@@ -11,6 +11,7 @@ import {
 } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/ui/combobox";
 import {
 	Field,
@@ -142,6 +143,7 @@ export function ProdutoAbaImpostos({
 	const { localStorageEmpresa: empresa } = useEmpresa();
 
 	const idcfopsaida = watch("idcfopsaida");
+	const derivadoPetroleo = watch("derivadopetroleo");
 
 	const {
 		data: cests = [],
@@ -280,71 +282,97 @@ export function ProdutoAbaImpostos({
 								<FieldError errors={errors.ncm ? [errors.ncm] : []} />
 							</Field>
 
-							<Field data-invalid={!!errors.codigoanp}>
-								<FieldLabel htmlFor="codigoanp">
-									Código ANP{" "}
-									<span className="font-normal text-muted-foreground">
-										(combustível e lubrificante)
-									</span>
-								</FieldLabel>
-								<Input
-									id="codigoanp"
-									placeholder="Ex.: 820101012"
-									maxLength={9}
-									inputMode="numeric"
-									aria-invalid={!!errors.codigoanp}
-									{...register("codigoanp")}
+							<div className="md:col-span-2 flex items-start gap-3 rounded-lg border p-3">
+								<Checkbox
+									id="derivadopetroleo"
+									checked={!!derivadoPetroleo}
+									onCheckedChange={(checked) => {
+										const marcado = checked === true;
+										setValue("derivadopetroleo", marcado, {
+											shouldDirty: true,
+											shouldValidate: true,
+										});
+										if (!marcado) {
+											setValue("codigoanp", "", { shouldDirty: true });
+											setValue("descricaoanp", "", { shouldDirty: true });
+											setValue("percentualbiodiesel", "", {
+												shouldDirty: true,
+											});
+										}
+									}}
 								/>
-								<FieldError
-									errors={errors.codigoanp ? [errors.codigoanp] : []}
-								/>
-								<p className="text-xs text-muted-foreground">
-									Obrigatório na nota quando o CFOP for de combustível ou
-									lubrificante. Sem este código, a SEFAZ rejeita o item por
-									falta do grupo de combustível.
-								</p>
-							</Field>
+								<div className="space-y-1">
+									<FieldLabel htmlFor="derivadopetroleo">
+										Derivado de petróleo
+									</FieldLabel>
+									<p className="text-xs text-muted-foreground">
+										Marque para informar o código ANP. Sem ele, a nota com
+										CFOP de combustível ou lubrificante é rejeitada.
+									</p>
+								</div>
+							</div>
 
-							<Field data-invalid={!!errors.descricaoanp}>
-								<FieldLabel htmlFor="descricaoanp">
-									Descrição ANP{" "}
-									<span className="font-normal text-muted-foreground">
-										(opcional)
-									</span>
-								</FieldLabel>
-								<Input
-									id="descricaoanp"
-									placeholder="Ex.: OLEO DIESEL B S10"
-									maxLength={95}
-									aria-invalid={!!errors.descricaoanp}
-									{...register("descricaoanp")}
-								/>
-								<FieldError
-									errors={errors.descricaoanp ? [errors.descricaoanp] : []}
-								/>
-							</Field>
+							{derivadoPetroleo && (
+								<>
+									<Field data-invalid={!!errors.codigoanp}>
+										<FieldLabel htmlFor="codigoanp">Código ANP</FieldLabel>
+										<Input
+											id="codigoanp"
+											placeholder="Ex.: 820101012"
+											maxLength={9}
+											inputMode="numeric"
+											aria-invalid={!!errors.codigoanp}
+											{...register("codigoanp")}
+										/>
+										<FieldError
+											errors={errors.codigoanp ? [errors.codigoanp] : []}
+										/>
+									</Field>
 
-							<Field data-invalid={!!errors.percentualbiodiesel}>
-								<FieldLabel htmlFor="percentualbiodiesel">
-									Biodiesel % (pBio){" "}
-									<span className="font-normal text-muted-foreground">
-										(opcional)
-									</span>
-								</FieldLabel>
-								<Input
-									id="percentualbiodiesel"
-									placeholder="Ex.: 12"
-									aria-invalid={!!errors.percentualbiodiesel}
-									{...register("percentualbiodiesel")}
-								/>
-								<FieldError
-									errors={
-										errors.percentualbiodiesel
-											? [errors.percentualbiodiesel]
-											: []
-									}
-								/>
-							</Field>
+									<Field data-invalid={!!errors.descricaoanp}>
+										<FieldLabel htmlFor="descricaoanp">
+											Descrição ANP{" "}
+											<span className="font-normal text-muted-foreground">
+												(opcional)
+											</span>
+										</FieldLabel>
+										<Input
+											id="descricaoanp"
+											placeholder="Ex.: OLEO DIESEL B S10"
+											maxLength={95}
+											aria-invalid={!!errors.descricaoanp}
+											{...register("descricaoanp")}
+										/>
+										<FieldError
+											errors={
+												errors.descricaoanp ? [errors.descricaoanp] : []
+											}
+										/>
+									</Field>
+
+									<Field data-invalid={!!errors.percentualbiodiesel}>
+										<FieldLabel htmlFor="percentualbiodiesel">
+											Biodiesel % (pBio){" "}
+											<span className="font-normal text-muted-foreground">
+												(opcional)
+											</span>
+										</FieldLabel>
+										<Input
+											id="percentualbiodiesel"
+											placeholder="Ex.: 12"
+											aria-invalid={!!errors.percentualbiodiesel}
+											{...register("percentualbiodiesel")}
+										/>
+										<FieldError
+											errors={
+												errors.percentualbiodiesel
+													? [errors.percentualbiodiesel]
+													: []
+											}
+										/>
+									</Field>
+								</>
+							)}
 
 							<Controller
 								name="origem"

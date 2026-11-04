@@ -5,6 +5,10 @@ import {
 	refinirCamposIbsCbsProduto,
 } from "@/util/campos-impostos-produto.js";
 import { camposServicoProdutoSchema } from "@/util/campos-servico-produto.js";
+import {
+	normalizarCodigoAnp,
+	normalizarPercentualBiodiesel,
+} from "@/util/cfop-combustivel.js";
 
 export const LIMITE_ALTERACAO_EM_MASSA_PRODUTOS = 500;
 
@@ -36,6 +40,28 @@ export const camposAlteracaoEmMassaProdutoSchema = z
 				const texto = valor?.trim();
 				return texto ? texto : null;
 			}),
+		derivadopetroleo: z.number().int().min(0).max(1).optional(),
+		codigoanp: z
+			.string()
+			.optional()
+			.nullable()
+			.refine(
+				(valor) =>
+					valor == null ||
+					valor.trim() === "" ||
+					/^\d{9}$/.test(valor.replace(/\D/g, "")),
+				"Código ANP deve ter 9 dígitos",
+			),
+		descricaoanp: z.string().max(95).optional().nullable(),
+		percentualbiodiesel: z
+			.union([z.string(), z.number()])
+			.optional()
+			.nullable()
+			.refine((valor) => {
+				if (valor == null || String(valor).trim() === "") return true;
+				const numero = Number(String(valor).replace(",", "."));
+				return Number.isFinite(numero) && numero >= 0 && numero <= 100;
+			}, "Percentual de biodiesel deve ficar entre 0 e 100"),
 		ippt: z.enum(["P", "T"]).optional().nullable(),
 		inativo: z.number().int().min(0).max(1).optional().nullable(),
 		controlalote: z.number().int().min(0).max(1).optional(),
@@ -97,6 +123,39 @@ export function prepararCamposAlteracaoEmMassaProduto(
 
 	if (dados.custoaquisicao !== undefined) {
 		dados.custoaquisicao = formatarValorMonetario(dados.custoaquisicao);
+	}
+
+	if (dados.derivadopetroleo === 0) {
+		dados.codigoanp = null;
+		dados.descricaoanp = null;
+		dados.percentualbiodiesel = null;
+	} else {
+		if (dados.codigoanp !== undefined) {
+			const codigo = normalizarCodigoAnp(dados.codigoanp);
+			if (codigo && codigo.length === 9) {
+				dados.codigoanp = codigo;
+			} else {
+				delete dados.codigoanp;
+			}
+		}
+		if (dados.descricaoanp !== undefined) {
+			const texto = dados.descricaoanp?.trim().slice(0, 95);
+			if (texto) {
+				dados.descricaoanp = texto;
+			} else {
+				delete dados.descricaoanp;
+			}
+		}
+		if (dados.percentualbiodiesel !== undefined) {
+			const percentual = normalizarPercentualBiodiesel(
+				dados.percentualbiodiesel,
+			);
+			if (percentual) {
+				dados.percentualbiodiesel = percentual;
+			} else {
+				delete dados.percentualbiodiesel;
+			}
+		}
 	}
 
 	return dados;

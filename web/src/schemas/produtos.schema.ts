@@ -97,6 +97,7 @@ export const produtoFormSchema = z.object({
 		.string()
 		.max(10, "NCM deve ter no máximo 10 caracteres")
 		.optional(),
+	derivadopetroleo: z.boolean().optional(),
 	codigoanp: z
 		.string()
 		.optional()

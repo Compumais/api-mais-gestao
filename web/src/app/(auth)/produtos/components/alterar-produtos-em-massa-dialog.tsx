@@ -446,6 +446,86 @@ export function AlterarProdutosEmMassaDialog({
 								/>
 							</LinhaCampo>
 							<LinhaCampo
+								id="derivadopetroleo"
+								label="Derivado de petróleo"
+								alterar={valores.derivadopetroleo?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("derivadopetroleo.alterar", alterar)
+								}
+							>
+								<div className="space-y-3">
+									<Controller
+										name="derivadopetroleo.valor"
+										control={control}
+										render={({ field }) => (
+											<Select
+												value={field.value?.toString()}
+												onValueChange={(valor) =>
+													field.onChange(Number(valor))
+												}
+											>
+												<SelectTrigger
+													id="derivadopetroleo"
+													className="w-full"
+												>
+													<SelectValue placeholder="Selecione" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="0">Não</SelectItem>
+													<SelectItem value="1">Sim</SelectItem>
+												</SelectContent>
+											</Select>
+										)}
+									/>
+									{valores.derivadopetroleo?.valor === 1 ? (
+										<div className="grid gap-3">
+											<div className="space-y-1">
+												<Label htmlFor="codigoanp-massa">Código ANP</Label>
+												<Input
+													id="codigoanp-massa"
+													maxLength={9}
+													inputMode="numeric"
+													placeholder="Ex.: 820101012"
+													{...register("derivadopetroleo.codigoanp")}
+												/>
+											</div>
+											<div className="space-y-1">
+												<Label htmlFor="descricaoanp-massa">
+													Descrição ANP
+												</Label>
+												<Input
+													id="descricaoanp-massa"
+													maxLength={95}
+													placeholder="Ex.: OLEO DIESEL B S10"
+													{...register("derivadopetroleo.descricaoanp")}
+												/>
+											</div>
+											<div className="space-y-1">
+												<Label htmlFor="percentualbiodiesel-massa">
+													Biodiesel % (pBio)
+												</Label>
+												<Input
+													id="percentualbiodiesel-massa"
+													placeholder="Ex.: 12"
+													{...register(
+														"derivadopetroleo.percentualbiodiesel",
+													)}
+												/>
+											</div>
+											<p className="text-xs text-muted-foreground">
+												Campos em branco mantêm o ANP já cadastrado. Ao
+												marcar Não, código, descrição e pBio são apagados.
+											</p>
+										</div>
+									) : (
+										<p className="text-xs text-muted-foreground">
+											Ao marcar Não, código ANP, descrição ANP e pBio são
+											apagados.
+										</p>
+									)}
+								</div>
+							</LinhaCampo>
+							<LinhaCampo
 								id="idcest"
 								label="CEST"
 								alterar={valores.idcest?.alterar ?? false}
