@@ -25,6 +25,9 @@ export interface Produto {
 	ippt: string | null;
 	origem: number | null;
 	ncm: string | null;
+	codigoanp?: string | null;
+	descricaoanp?: string | null;
+	percentualbiodiesel?: string | null;
 	tipoproduto?: string | null;
 	observacoes: string | null;
 	inativo: number | null;
@@ -196,6 +199,9 @@ export interface CriarProdutoData
 	ippt?: string | null;
 	origem?: number | null;
 	ncm?: string | null;
+	codigoanp?: string | null;
+	descricaoanp?: string | null;
+	percentualbiodiesel?: string | null;
 	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
@@ -302,6 +308,9 @@ export interface AtualizarProdutoData
 	ippt?: string | null;
 	origem?: number | null;
 	ncm?: string | null;
+	codigoanp?: string | null;
+	descricaoanp?: string | null;
+	percentualbiodiesel?: string | null;
 	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;

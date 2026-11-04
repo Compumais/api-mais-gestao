@@ -28,6 +28,15 @@ export type ItemPayloadNfe = {
 	descricao: string;
 	ncm: string;
 	cest?: string;
+	codigoAnp?: string;
+	descricaoAnp?: string;
+	percentualBiodiesel?: number;
+	combustivel?: {
+		cProdANP: string;
+		descANP: string;
+		UFCons: string;
+		pBio?: number;
+	};
 	cfop: string;
 	unidade: string;
 	quantidade: number;

@@ -327,6 +327,25 @@ final class NfeEmissaoService
 				$vOutroItem,
 			));
 
+			$combustivel = is_array($item['combustivel'] ?? null) ? $item['combustivel'] : null;
+			if (is_array($combustivel)) {
+				$codigoAnp = preg_replace('/\D/', '', (string) ($combustivel['cProdANP'] ?? '')) ?? '';
+				$ufCons = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', (string) ($combustivel['UFCons'] ?? '')) ?? '', 0, 2));
+				$descAnp = trim((string) ($combustivel['descANP'] ?? ''));
+				if (strlen($codigoAnp) === 9 && strlen($ufCons) === 2 && $descAnp !== '') {
+					$tagComb = [
+						'item' => $nItem,
+						'cProdANP' => $codigoAnp,
+						'descANP' => $descAnp,
+						'UFCons' => $ufCons,
+					];
+					if (isset($combustivel['pBio']) && $combustivel['pBio'] !== '' && $combustivel['pBio'] !== null) {
+						$tagComb['pBio'] = round((float) $combustivel['pBio'], 4);
+					}
+					$mk->tagcomb((object) $tagComb);
+				}
+			}
+
 			$dataEmissao = substr($dhEmi, 0, 10);
 			$rastrosItem = is_array($item['rastros'] ?? null) ? $item['rastros'] : [];
 			foreach (MontarRastroItemNfe::montar($nItem, $rastrosItem, $dataEmissao) as $rastro) {

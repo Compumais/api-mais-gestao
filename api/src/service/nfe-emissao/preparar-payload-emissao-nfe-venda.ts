@@ -72,6 +72,7 @@ import {
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 import { validarLocalEntregaCfopInterestadual } from "@/util/validar-local-entrega-cfop-interestadual.js";
+import { aplicarGrupoCombustivelItens } from "@/util/aplicar-grupo-combustivel-item-nfe.js";
 
 export const AVISO_PREVIEW_DANFE =
 	"*** PRÉ-VISUALIZAÇÃO - DOCUMENTO SEM VALOR FISCAL ***";
@@ -664,6 +665,15 @@ export async function prepararPayloadEmissaoNfeVenda(
 		return httpBadRequest(pendenciasLote.join("; "));
 	}
 
+	const grupoCombustivel = aplicarGrupoCombustivelItens(
+		itensComRastros,
+		(destinatario?.estado ?? empresaFiscal.uf ?? "").trim(),
+	);
+	if (grupoCombustivel.pendencias.length > 0) {
+		return httpBadRequest(grupoCombustivel.pendencias.join("; "));
+	}
+	const itensEmissao = grupoCombustivel.itens;
+
 	const vProd = itens.reduce(
 		(acc, item) => acc + item.quantidade * item.valorUnitario,
 		0,
@@ -718,14 +728,14 @@ export async function prepararPayloadEmissaoNfeVenda(
 	const permiteInterestadualMesmaUf =
 		await possuiCfopInterestadualDestinatarioMesmaUf(
 			idempresa,
-			itensComRastros,
+			itensEmissao,
 		);
 
 	const erroLocalEntrega = validarLocalEntregaCfopInterestadual({
 		ufEmitente: empresaFiscal.uf,
 		ufDestinatario: destinatario?.estado,
 		localEntrega,
-		possuiCfopInterestadual: itensComRastros.some((item) =>
+		possuiCfopInterestadual: itensEmissao.some((item) =>
 			item.cfop.replace(/\D/g, "").startsWith("6"),
 		),
 		possuiCfopInterestadualDestinatarioMesmaUf: permiteInterestadualMesmaUf,
@@ -805,7 +815,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 			finNFe,
 			consumidorFinal: true,
 			indIEDest: destinatario?.indIEDest,
-			itens: itensComRastros,
+			itens: itensEmissao,
 			totais: totais ?? {},
 			totaisInformados: totaisInformados ?? {
 				vProd: totaisFiscais.totalProdutos,
@@ -836,7 +846,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 
 	const tributosIbpt = await calcularTributosAproximadosIbpt({
 		uf: empresaFiscal.uf ?? "",
-		itens: itensComRastros,
+		itens: itensEmissao,
 	});
 
 	const itensComIbpt = tributosIbpt.itens;

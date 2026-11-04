@@ -82,8 +82,9 @@ import {
 	normalizarCodigoStatusNfe,
 	normalizarCStatGateway,
 } from "@/util/resolver-status-emissao-nfe.js";
-import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
+import { aplicarGrupoCombustivelItens } from "@/util/aplicar-grupo-combustivel-item-nfe.js";
 import { validarIbsCbsItensEmissao } from "@/util/ibs-cbs-emissao-nfe.js";
+import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 
 export type EmitirNfceVendaPdvParametros = {
 	idusuario: string;
@@ -576,6 +577,20 @@ async function emitirNfceVendaPdvInterno({
 		});
 	}
 
+	const grupoCombustivel = aplicarGrupoCombustivelItens(
+		itensNormalizados,
+		(empresaFiscal.uf ?? "").trim(),
+	);
+	if (grupoCombustivel.pendencias.length > 0) {
+		return persistirFalhaPreValidacaoNfce({
+			idusuario,
+			idempresa,
+			venda,
+			ambiente: nfceConfiguracao.ambiente,
+			mensagem: grupoCombustivel.pendencias.join("; "),
+		});
+	}
+
 	const pendenciasIbsCbs = validarIbsCbsItensEmissao(
 		itensNormalizados,
 		"nfce",
@@ -695,7 +710,7 @@ async function emitirNfceVendaPdvInterno({
 		certificadoAtivo,
 		numeroNf: reserva.numeroNf,
 		serie: reserva.serie,
-		itens: itensNormalizados,
+		itens: grupoCombustivel.itens,
 		pagamento: pagamentoNormalizado,
 		natOp,
 		dhEmi: identidade.dhEmi,
