@@ -65,6 +65,7 @@ const atualizarProdutoBodySchema = z.object({
 	ippt: z.enum(["P", "T"]).optional().nullable(),
 	origem: z.number().int().min(0).max(8).optional().nullable(),
 	ncm: z.string().max(10).optional().nullable(),
+	derivadopetroleo: z.number().int().min(0).max(1).optional(),
 	codigoanp: z
 		.string()
 		.max(9)
@@ -182,6 +183,16 @@ export async function atualizarProduto(
 			dados.percentualbiodiesel = normalizarPercentualBiodiesel(
 				dadosValidados.percentualbiodiesel,
 			);
+		}
+
+		if (dadosValidados.derivadopetroleo !== undefined) {
+			dados.derivadopetroleo = dadosValidados.derivadopetroleo;
+		}
+
+		if (dados.derivadopetroleo === 0) {
+			dados.codigoanp = null;
+			dados.descricaoanp = null;
+			dados.percentualbiodiesel = null;
 		}
 
 		if (dadosValidados.nome !== undefined) {

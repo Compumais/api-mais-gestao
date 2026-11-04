@@ -167,6 +167,7 @@ export const produtos = pgTable(
 		codigoanp: varchar({ length: 9 }),
 		descricaoanp: varchar({ length: 95 }),
 		percentualbiodiesel: numeric({ precision: 7, scale: 4 }),
+		derivadopetroleo: integer().default(0), // 0=não, 1=derivado de petróleo (exibe ANP)
 		nome: varchar({ length: 120 }).notNull(),
 		nomeecf: varchar({ length: 120 }),
 		numerofci: varchar({ length: 36 }),

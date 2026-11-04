@@ -38,6 +38,56 @@ describe("prepararCamposAlteracaoEmMassaProduto", () => {
 		expect(dados).not.toHaveProperty("cstpisentrada");
 	});
 
+	it("não sobrescreve ANP quando a flag de petróleo fica marcada e os campos vêm vazios", () => {
+		const dados = prepararCamposAlteracaoEmMassaProduto(
+			camposAlteracaoParseados({
+				derivadopetroleo: 1,
+				codigoanp: "",
+				descricaoanp: "  ",
+				percentualbiodiesel: "",
+			}),
+		);
+
+		expect(dados).toEqual({ derivadopetroleo: 1 });
+		expect(dados).not.toHaveProperty("codigoanp");
+		expect(dados).not.toHaveProperty("descricaoanp");
+		expect(dados).not.toHaveProperty("percentualbiodiesel");
+	});
+
+	it("grava o ANP preenchido quando o produto é derivado de petróleo", () => {
+		const dados = prepararCamposAlteracaoEmMassaProduto(
+			camposAlteracaoParseados({
+				derivadopetroleo: 1,
+				codigoanp: "820101012",
+				descricaoanp: "OLEO DIESEL B S10",
+				percentualbiodiesel: "12",
+			}),
+		);
+
+		expect(dados).toEqual({
+			derivadopetroleo: 1,
+			codigoanp: "820101012",
+			descricaoanp: "OLEO DIESEL B S10",
+			percentualbiodiesel: "12.0000",
+		});
+	});
+
+	it("limpa o ANP quando a flag de derivado de petróleo é desmarcada", () => {
+		const dados = prepararCamposAlteracaoEmMassaProduto(
+			camposAlteracaoParseados({
+				derivadopetroleo: 0,
+				codigoanp: "820101012",
+			}),
+		);
+
+		expect(dados).toEqual({
+			derivadopetroleo: 0,
+			codigoanp: null,
+			descricaoanp: null,
+			percentualbiodiesel: null,
+		});
+	});
+
 	it("permite limpar campo com null explícito sem afetar os demais", () => {
 		const dados = prepararCamposAlteracaoEmMassaProduto(
 			camposAlteracaoParseados({

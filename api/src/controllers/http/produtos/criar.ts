@@ -60,6 +60,7 @@ const criarProdutoBodySchema = z
 		ippt: z.enum(["P", "T"]).optional().nullable(),
 		origem: z.number().int().min(0).max(8).optional().nullable(),
 		ncm: z.string().max(10).optional().nullable(),
+		derivadopetroleo: z.number().int().min(0).max(1).optional(),
 		codigoanp: z
 			.string()
 			.max(9)
@@ -188,11 +189,19 @@ export async function criarProduto(
 			ippt: dadosValidados.ippt ?? (ehServico ? "T" : "P"),
 			origem: dadosValidados.origem ?? 0,
 			ncm: dadosValidados.ncm?.trim() || null,
-			codigoanp: normalizarCodigoAnp(dadosValidados.codigoanp),
-			descricaoanp: dadosValidados.descricaoanp?.trim() || null,
-			percentualbiodiesel: normalizarPercentualBiodiesel(
-				dadosValidados.percentualbiodiesel,
-			),
+			derivadopetroleo: dadosValidados.derivadopetroleo ?? 0,
+			codigoanp:
+				dadosValidados.derivadopetroleo === 1
+					? normalizarCodigoAnp(dadosValidados.codigoanp)
+					: null,
+			descricaoanp:
+				dadosValidados.derivadopetroleo === 1
+					? dadosValidados.descricaoanp?.trim() || null
+					: null,
+			percentualbiodiesel:
+				dadosValidados.derivadopetroleo === 1
+					? normalizarPercentualBiodiesel(dadosValidados.percentualbiodiesel)
+					: null,
 			tipoproduto: dadosValidados.tipoproduto ?? (ehServico ? "09" : null),
 			observacoes: dadosValidados.observacoes ?? null,
 			enviamobile: dadosValidados.enviamobile ?? 0,

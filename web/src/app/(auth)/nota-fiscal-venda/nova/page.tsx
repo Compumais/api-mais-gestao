@@ -138,6 +138,7 @@ import { ModalEnviarEmailNfe } from "../components/modal-enviar-email-nfe";
 import { ModalItemEmissao } from "../components/modal-item-emissao";
 import { ModalPreviewDanfeNfe } from "../components/modal-preview-danfe-nfe";
 import { PainelCalculoImpostosEmissao } from "../components/painel-calculo-impostos-emissao";
+import { CampoDescontoTotalNfe } from "../components/campo-desconto-total-nfe";
 import { ResumoDestinatarioNfe } from "../components/resumo-destinatario-nfe";
 import { SecaoDocumentoReferenciado } from "../components/secao-documento-referenciado";
 
@@ -3376,33 +3377,6 @@ export default function NovaEmissaoNfePage() {
 									/>
 								</Field>
 								<Field>
-									<FieldLabel>Desconto da nota</FieldLabel>
-									<Controller
-										control={form.control}
-										name="totais.desconto"
-										render={({ field }) => (
-											<MoneyInput
-												value={String(field.value ?? 0)}
-												onChange={(v) => field.onChange(v ? parseFloat(v) : 0)}
-											/>
-										)}
-									/>
-									{distribuicaoDescontos.descontoItens > 0 && (
-										<p className="text-xs text-muted-foreground">
-											Itens:{" "}
-											{formatarMoeda(distribuicaoDescontos.descontoItens)}
-											{" · "}
-											Total:{" "}
-											{formatarMoeda(distribuicaoDescontos.descontoTotal)}
-										</p>
-									)}
-									{errors.totais?.desconto && (
-										<p className="text-xs text-destructive">
-											{errors.totais.desconto.message}
-										</p>
-									)}
-								</Field>
-								<Field>
 									<FieldLabel>Outras Despesas</FieldLabel>
 									<Controller
 										control={form.control}
@@ -3415,6 +3389,24 @@ export default function NovaEmissaoNfePage() {
 										)}
 									/>
 								</Field>
+								<Controller
+									control={form.control}
+									name="totais.desconto"
+									render={({ field }) => (
+										<CampoDescontoTotalNfe
+											desconto={field.value ?? 0}
+											onDescontoChange={field.onChange}
+											crt={empresaFiscal?.crt ?? 3}
+											itens={itensValue ?? []}
+											frete={freteWatch ?? 0}
+											seguro={seguroWatch ?? 0}
+											outrasDespesas={outrasDespesasWatch ?? 0}
+											erro={errors.totais?.desconto?.message}
+											descontoItens={distribuicaoDescontos.descontoItens}
+											descontoTotal={distribuicaoDescontos.descontoTotal}
+										/>
+									)}
+								/>
 							</div>
 
 							{itensValue.length > 0 && (

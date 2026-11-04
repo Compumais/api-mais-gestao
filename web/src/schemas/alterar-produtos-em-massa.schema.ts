@@ -20,6 +20,13 @@ export const alterarProdutosEmMassaFormSchema = z
 		custoaquisicao: campoAlteracao(z.string().nullable()),
 		origem: campoAlteracao(z.number().int().min(0).max(8).nullable()),
 		ncm: campoAlteracao(z.string().nullable()),
+		derivadopetroleo: z.object({
+			alterar: z.boolean(),
+			valor: z.number().int().min(0).max(1),
+			codigoanp: z.string().optional().nullable(),
+			descricaoanp: z.string().max(95).optional().nullable(),
+			percentualbiodiesel: z.string().optional().nullable(),
+		}),
 		idcest: campoAlteracao(z.string().nullable()),
 		ippt: campoAlteracao(z.enum(["P", "T"]).nullable()),
 		inativo: campoAlteracao(z.number().int().min(0).max(1).nullable()),
@@ -86,6 +93,13 @@ export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	custoaquisicao: { alterar: false, valor: null },
 	origem: { alterar: false, valor: 0 },
 	ncm: { alterar: false, valor: "" },
+	derivadopetroleo: {
+		alterar: false,
+		valor: 0,
+		codigoanp: "",
+		descricaoanp: "",
+		percentualbiodiesel: "",
+	},
 	idcest: { alterar: false, valor: null },
 	ippt: { alterar: false, valor: "P" },
 	inativo: { alterar: false, valor: 0 },
@@ -146,6 +160,21 @@ export function montarCamposAlteracaoEmMassa(
 	}
 	if (dados.origem.alterar) campos.origem = dados.origem.valor;
 	if (dados.ncm.alterar) campos.ncm = valorOuNulo(dados.ncm.valor);
+	if (dados.derivadopetroleo.alterar) {
+		campos.derivadopetroleo = dados.derivadopetroleo.valor;
+		if (dados.derivadopetroleo.valor !== 1) {
+			campos.codigoanp = null;
+			campos.descricaoanp = null;
+			campos.percentualbiodiesel = null;
+		} else {
+			const codigo = dados.derivadopetroleo.codigoanp?.replace(/\D/g, "") ?? "";
+			if (codigo) campos.codigoanp = codigo;
+			const descricao = dados.derivadopetroleo.descricaoanp?.trim();
+			if (descricao) campos.descricaoanp = descricao;
+			const percentual = dados.derivadopetroleo.percentualbiodiesel?.trim();
+			if (percentual) campos.percentualbiodiesel = percentual;
+		}
+	}
 	if (dados.idcest.alterar) campos.idcest = dados.idcest.valor || null;
 	if (dados.ippt.alterar) campos.ippt = dados.ippt.valor;
 	if (dados.inativo.alterar) campos.inativo = dados.inativo.valor;

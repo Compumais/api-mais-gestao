@@ -91,9 +91,16 @@ function buildProdutoPayload(
 		ippt: data.ippt,
 		origem: data.origem ?? 0,
 		ncm: textoOuNulo(data.ncm),
-		codigoanp: textoOuNulo(data.codigoanp)?.replace(/\D/g, "") || null,
-		descricaoanp: textoOuNulo(data.descricaoanp),
-		percentualbiodiesel: textoOuNulo(data.percentualbiodiesel),
+		derivadopetroleo: data.derivadopetroleo ? 1 : 0,
+		codigoanp: data.derivadopetroleo
+			? textoOuNulo(data.codigoanp)?.replace(/\D/g, "") || null
+			: null,
+		descricaoanp: data.derivadopetroleo
+			? textoOuNulo(data.descricaoanp)
+			: null,
+		percentualbiodiesel: data.derivadopetroleo
+			? textoOuNulo(data.percentualbiodiesel)
+			: null,
 	};
 
 	if (data.ean != null && !Number.isNaN(data.ean)) {
@@ -224,6 +231,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			ippt: "P",
 			origem: 0,
 			ncm: "",
+			derivadopetroleo: false,
 			codigoanp: "",
 			descricaoanp: "",
 			percentualbiodiesel: "",

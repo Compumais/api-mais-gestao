@@ -41,6 +41,7 @@ export function mapProdutoToForm(
 		ippt: ippt === "P" || ippt === "T" ? ippt : "P",
 		origem: data.origem ?? 0,
 		ncm: data.ncm ?? "",
+		derivadopetroleo: data.derivadopetroleo === 1,
 		codigoanp: data.codigoanp ?? "",
 		descricaoanp: data.descricaoanp ?? "",
 		percentualbiodiesel: data.percentualbiodiesel ?? "",
