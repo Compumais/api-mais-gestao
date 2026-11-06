@@ -118,6 +118,7 @@ import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-fo
 import {
 	empresaUsaCsosn,
 	itensVisiveisParaEmissao,
+	descontoGlobalAoReabrirNota,
 	mapearItemNotaReemissaoParaForm,
 	prepararItemEmissaoFormulario,
 } from "@/util/mapear-produto-item-nfe";
@@ -994,7 +995,14 @@ export default function NovaEmissaoNfePage() {
 					? contextoReemissao.idDest
 					: undefined,
 			itens: itensForm,
-			totais: contextoReemissao.totais,
+			totais: {
+				...contextoReemissao.totais,
+				desconto: descontoGlobalAoReabrirNota(
+					contextoReemissao.totais.desconto ?? 0,
+					Number(notaFiscal.descontosubtotal ?? 0),
+					itensForm,
+				),
+			},
 			transporte: contextoReemissao.transporte,
 			informarEnderecoEntregaManual:
 				contextoReemissao.informarEnderecoEntregaManual,
@@ -1152,7 +1160,14 @@ export default function NovaEmissaoNfePage() {
 					? contextoClone.idDest
 					: undefined,
 			itens: itensForm,
-			totais: contextoClone.totais,
+			totais: {
+				...contextoClone.totais,
+				desconto: descontoGlobalAoReabrirNota(
+					contextoClone.totais.desconto ?? 0,
+					Number(notaFiscal.descontosubtotal ?? 0),
+					itensForm,
+				),
+			},
 			transporte: contextoClone.transporte,
 			informarEnderecoEntregaManual:
 				contextoClone.informarEnderecoEntregaManual,
@@ -1269,7 +1284,14 @@ export default function NovaEmissaoNfePage() {
 					? contexto.idDest
 					: undefined,
 			itens: itensForm,
-			totais: contexto.totais,
+			totais: {
+				...contexto.totais,
+				desconto: descontoGlobalAoReabrirNota(
+					contexto.totais.desconto ?? 0,
+					Number(notaFiscal.descontosubtotal ?? 0),
+					itensForm,
+				),
+			},
 			transporte: contexto.transporte,
 			informarEnderecoEntregaManual: contexto.informarEnderecoEntregaManual,
 			enderecoEntrega: contexto.enderecoEntrega,
@@ -2306,6 +2328,12 @@ export default function NovaEmissaoNfePage() {
 				? (dados.idnotafiscal ?? rascunhoId)
 				: dados.idnotafiscal,
 			idserienfe: serieSelecionada?.id,
+			totais: {
+				frete: Number(dados.totais?.frete ?? 0),
+				seguro: Number(dados.totais?.seguro ?? 0),
+				desconto: Number(dados.totais?.desconto ?? 0),
+				outrasDespesas: Number(dados.totais?.outrasDespesas ?? 0),
+			},
 			natOp,
 			itens: dados.itens.map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),

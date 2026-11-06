@@ -85,6 +85,9 @@ export function CampoDescontoTotalNfe({
 
 	useEffect(() => {
 		if (modo === "desconto") return;
+		// Enquanto o rascunho ainda não recolocou os itens, a base fica zerada.
+		// Não apagar um desconto que já estava na nota.
+		if (referencia.baseProdutos <= 0 && (desconto ?? 0) > 0) return;
 		const calculado = resolverDescontoTotalNfe({
 			modo,
 			informado:
