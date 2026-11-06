@@ -156,6 +156,23 @@ function round2(valor: number): number {
 	return Math.round(valor * 100) / 100;
 }
 
+/** Desconto global da nota ao reabrir rascunho ou reemissão.
+ * O snapshot guarda só o desconto do total. A coluna da nota soma esse valor com o desconto dos itens.
+ */
+export function descontoGlobalAoReabrirNota(
+	descontoSalvo: number,
+	descontoColuna: number,
+	itens: Array<{ desconto?: number }>,
+): number {
+	if (descontoSalvo > 0.009) return round2(descontoSalvo);
+	const descontoItens = itens.reduce(
+		(acc, item) => acc + Math.max(0, Number(item.desconto) || 0),
+		0,
+	);
+	const global = round2(Math.max(0, descontoColuna) - descontoItens);
+	return global > 0.009 ? global : Math.max(0, descontoSalvo);
+}
+
 function codigoCstOpcional(
 	valor: string | number | null | undefined,
 	tamanho = 2,
@@ -292,6 +309,7 @@ export function mapearItemNotaReemissaoParaForm(
 					: 1,
 			valorUnitario:
 				Number.isFinite(valorBruto) && valorBruto > 0 ? valorBruto : 0.01,
+			desconto: paraNumeroOpcional(item.desconto),
 			cst: situacaoTributaria,
 			cest: cestDigitos,
 			orig: Number(item.origem ?? 0) || 0,
