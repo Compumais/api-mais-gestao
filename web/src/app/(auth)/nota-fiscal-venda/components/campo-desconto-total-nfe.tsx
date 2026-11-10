@@ -158,7 +158,7 @@ export function CampoDescontoTotalNfe({
 	return (
 		<Field className="sm:col-span-2">
 			<FieldLabel>Desconto no total</FieldLabel>
-			<div className="grid gap-2 sm:grid-cols-[220px_minmax(0,1fr)]">
+			<div className="grid gap-2 sm:grid-cols-[200px_minmax(0,180px)]">
 				<Select
 					value={modo}
 					onValueChange={(valor) => alterarModo(valor as ModoDescontoTotalNfe)}
