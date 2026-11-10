@@ -61,7 +61,7 @@ export const notafiscalitem = pgTable(
 		decimaispreco: smallint(),
 		decimaisquantidade: smallint(),
 		descontoclienteprodutoaplicado: smallint(),
-		descricao: varchar({ length: 120 }),
+		descricao: varchar({ length: 255 }),
 		descricaoarma: varchar({ length: 256 }),
 		descricaocor: varchar({ length: 40 }),
 		detalhenfe: text(),

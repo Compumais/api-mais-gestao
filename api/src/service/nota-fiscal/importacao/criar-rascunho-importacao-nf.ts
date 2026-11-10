@@ -386,7 +386,7 @@ async function executarCriarRascunhoImportacaoNf({
 				idnotafiscal: notaFiscalId,
 				idproduto: dadosImportacao.idproduto ?? null,
 				idlocalestoque: dadosImportacao.idlocalestoque ?? null,
-				descricao: truncarTexto(itemXml.descricaoproduto, 120),
+				descricao: truncarTexto(itemXml.descricaoproduto, 255),
 				quantidade: dadosImportacao.quantidadeXml,
 				precounitario: dadosImportacao.precounitarioXml,
 				total: itemXml.total ?? null,

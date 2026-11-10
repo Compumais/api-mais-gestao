@@ -122,12 +122,12 @@ function sanitizarItemNotaFiscal(
 	item: ItemNotaFiscalEntrada,
 ): ItemNotaFiscalEntrada {
 	const descricao =
-		truncarTexto(item.descricao ?? item.descricaoproduto, 120) ?? undefined;
+		truncarTexto(item.descricao ?? item.descricaoproduto, 255) ?? undefined;
 
 	return {
 		...item,
 		descricao,
-		descricaoproduto: truncarTexto(item.descricaoproduto, 120) ?? descricao,
+		descricaoproduto: truncarTexto(item.descricaoproduto, 255) ?? descricao,
 		cfop: truncarTexto(item.cfop, 20) ?? undefined,
 		ncm: truncarTexto(item.ncm, 11) ?? undefined,
 		unidade: truncarTexto(item.unidade, 6) ?? undefined,

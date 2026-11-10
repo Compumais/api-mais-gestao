@@ -32,7 +32,7 @@ const itemNotaFiscalBody = {
 			type: "string",
 			description: "Descrição usada para busca ou cadastro automático do produto.",
 		},
-		descricao: { type: "string", maxLength: 120, description: "Descrição do item na nota." },
+		descricao: { type: "string", maxLength: 255, description: "Descrição do item na nota." },
 		quantidade: { type: "string" },
 		precounitario: { type: "string" },
 		total: { type: "string" },
