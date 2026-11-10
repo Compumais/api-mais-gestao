@@ -10,6 +10,7 @@ export type ItemMovimentoEstoqueNf = {
 	idproduto: string;
 	quantidade: string;
 	custoUnitario: string;
+	idlocalestoque?: string | undefined;
 	lote?: string | undefined;
 	idlote?: string | undefined;
 };
@@ -63,7 +64,7 @@ export async function registrarMovimentosEstoqueNf({
 		return { movimentosCriados: 0, avisos };
 	}
 
-	if (!idlocalestoque) {
+	if (!idlocalestoque && itens.every((item) => !item.idlocalestoque)) {
 		return {
 			movimentosCriados: 0,
 			avisos: [
@@ -97,6 +98,14 @@ export async function registrarMovimentosEstoqueNf({
 
 		if (!item.idproduto) {
 			avisos.push(`Item ${item.iditem}: sem produto vinculado, estoque ignorado`);
+			continue;
+		}
+
+		const localItem = item.idlocalestoque ?? idlocalestoque;
+		if (!localItem) {
+			avisos.push(
+				`Item ${item.iditem}: sem local de estoque definido, estoque ignorado`,
+			);
 			continue;
 		}
 
@@ -143,7 +152,7 @@ export async function registrarMovimentosEstoqueNf({
 				sentido,
 				tipoestoque: TIPO_ESTOQUE.AMBOS,
 				tipodocumento: TIPO_DOCUMENTO_ESTOQUE.NOTA_FISCAL,
-				idlocalestoque,
+				idlocalestoque: localItem,
 				idoriginal: idnotafiscal,
 				iditemoriginal: item.iditem,
 				idlote: item.idlote ?? null,

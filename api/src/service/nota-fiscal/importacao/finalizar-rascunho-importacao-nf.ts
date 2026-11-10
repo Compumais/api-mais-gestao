@@ -595,6 +595,9 @@ export async function finalizarRascunhoImportacaoNfService({
 			return {
 				id: item.id,
 				idproduto,
+				...(dados.idlocalestoque ?? item.idlocalestoque
+					? { idlocalestoque: dados.idlocalestoque ?? item.idlocalestoque }
+					: {}),
 				descricao: dados.descricaoFornecedor,
 				quantidade: dados.quantidadeXml,
 				precounitario: dados.precounitarioXml,
@@ -686,7 +689,7 @@ export async function finalizarRascunhoImportacaoNfService({
 						}
 					: undefined,
 			},
-			idlocalestoque: localEstoque?.id ?? nota.idlocalestoque,
+			idlocalestoque: nota.idlocalestoque ?? localEstoque?.id,
 		},
 		itensFinalizados,
 	);
@@ -764,7 +767,7 @@ export async function finalizarRascunhoImportacaoNfService({
 	}
 
 	try {
-		const idlocalestoque = localEstoque?.id ?? nota.idlocalestoque ?? undefined;
+		const idlocalestoque = nota.idlocalestoque ?? localEstoque?.id ?? undefined;
 		const resultadoEstoque = await registrarMovimentosEstoqueNf({
 			idempresa,
 			idnotafiscal: idRascunho,
@@ -779,6 +782,8 @@ export async function finalizarRascunhoImportacaoNfService({
 					const persistidos = lotesPorItem.get(item.id);
 					const custoUnitario =
 						dados.custoContabilCalculado ?? dados.precounitarioEstoque;
+					const idlocalestoqueItem =
+						dados.idlocalestoque ?? item.idlocalestoque ?? undefined;
 
 					if (persistidos && persistidos.length > 0) {
 						return persistidos
@@ -788,6 +793,9 @@ export async function finalizarRascunhoImportacaoNfService({
 								idproduto,
 								quantidade: parseQuantidadeEstoqueImportacao(lote.quantidade),
 								custoUnitario,
+								...(idlocalestoqueItem
+									? { idlocalestoque: idlocalestoqueItem }
+									: {}),
 								lote: lote.numero,
 								idlote: lote.idlote,
 							}));
@@ -799,6 +807,9 @@ export async function finalizarRascunhoImportacaoNfService({
 							idproduto,
 							quantidade: parseQuantidadeEstoqueImportacao(dados.quantidadeEstoque),
 							custoUnitario,
+							...(idlocalestoqueItem
+								? { idlocalestoque: idlocalestoqueItem }
+								: {}),
 						},
 					];
 				}),

@@ -2,6 +2,7 @@ import type { ConfiguracaoNotificacoes } from "@/model/configuracao-model.js";
 
 export type TipoTarefaExecucao =
 	| "alerta_vencimento"
+	| "alerta_vencimento_certificado"
 	| "saldo_baixo"
 	| "conciliacao_pendente"
 	| "relatorios_automaticos"

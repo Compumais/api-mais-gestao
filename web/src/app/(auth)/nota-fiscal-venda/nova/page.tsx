@@ -2557,12 +2557,10 @@ export default function NovaEmissaoNfePage() {
 							)}
 					</div>
 				)}
-				{nfeConfiguracao && (
-					<AvisoAmbienteNfe
-						ambiente={nfeConfiguracao.ambiente}
-						className="mb-6"
-					/>
-				)}
+				<AvisoAmbienteNfe
+					ambiente={nfeConfiguracao?.ambiente}
+					className="mb-6"
+				/>
 
 				{erroPreview && (
 					<CardErroNfe

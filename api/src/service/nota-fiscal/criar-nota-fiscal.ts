@@ -6,10 +6,12 @@ import type {
 } from "@/model/nota-fiscal-item-model.js";
 import type { NotaFiscal, NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { garantirLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { registrarCustosNfService } from "@/service/custo-produto/registrar-custos-nf.js";
 import { gerarContasPagarNfService } from "@/service/nota-fiscal/gerar-contas-pagar-nf.js";
+import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { vincularOuCriarFornecedorNf } from "@/service/nota-fiscal/vincular-ou-criar-fornecedor-nf.js";
 import {
 	type DadosProdutoNF,
@@ -31,6 +33,7 @@ import {
 
 export type ItemNotaFiscalEntrada = {
 	idproduto?: string | undefined;
+	idlocalestoque?: string | null | undefined;
 	codigoproduto?: number | undefined;
 	ean?: string | undefined;
 	descricaoproduto?: string | undefined;
@@ -97,6 +100,7 @@ function sanitizarDadosNotaFiscal(
 		idtipodocumento: idOpcionalOuNulo(dados.idtipodocumento) ?? null,
 		idoperacaofiscal: idOpcionalOuNulo(dados.idoperacaofiscal) ?? null,
 		idcfop: idOpcionalOuNulo(dados.idcfop) ?? null,
+		idlocalestoque: idOpcionalOuNulo(dados.idlocalestoque) ?? null,
 		numero: truncarTexto(dados.numero, 60),
 		numeronotafiscal: truncarTexto(dados.numeronotafiscal, 11),
 		serie: truncarTexto(dados.serie, 6),
@@ -176,10 +180,18 @@ export async function criarNotaFiscalService({
 
 	const produtosResolvidos: Array<{
 		idproduto: string;
+		idlocalestoque?: string | undefined;
 		item: ItemNotaFiscalEntrada;
 	}> = [];
 
+	const localPadrao = (
+		await garantirLocalEstoqueEmpresa(dadosSanitizados.idempresa)
+	)?.local;
+	const idlocalNota =
+		dadosSanitizados.idlocalestoque ?? localPadrao?.id ?? null;
+
 	for (const item of itensSanitizados) {
+		const idlocalItemInformado = idOpcionalOuNulo(item.idlocalestoque) ?? undefined;
 		const dadosProduto: DadosProdutoNF = {
 			idempresa: dadosSanitizados.idempresa,
 			idproduto: item.idproduto,
@@ -193,6 +205,7 @@ export async function criarNotaFiscalService({
 			idunidademedida: item.idunidademedida,
 			idcfopentrada: item.idcfop,
 			idfornecedor: identidadeFornecedor ?? undefined,
+			...(idlocalItemInformado ? { idlocalestoque: idlocalItemInformado } : {}),
 			custoaquisicao: paraString(item.custoaquisicao) ?? undefined,
 		};
 
@@ -202,7 +215,15 @@ export async function criarNotaFiscalService({
 			return httpBadRequest(resultado.erro ?? "Produto inválido");
 		}
 
-		produtosResolvidos.push({ idproduto: resultado.produto.id, item });
+		produtosResolvidos.push({
+			idproduto: resultado.produto.id,
+			idlocalestoque:
+				idlocalItemInformado ??
+				resultado.produto.idlocalestoque ??
+				idlocalNota ??
+				undefined,
+			item,
+		});
 	}
 
 	const notaFiscalId = uuidv4();
@@ -210,6 +231,7 @@ export async function criarNotaFiscalService({
 
 	const notaFiscal: NovaNotaFiscal = {
 		...dadosSanitizados,
+		idlocalestoque: idlocalNota,
 		id: notaFiscalId,
 		tipoorigem: 0,
 		idusuarioinclusao: idusuario,
@@ -218,10 +240,11 @@ export async function criarNotaFiscalService({
 	};
 
 	const itensParaInserir: NovoNotaFiscalItem[] = produtosResolvidos.map(
-		({ idproduto, item }, index) => ({
+		({ idproduto, idlocalestoque, item }, index) => ({
 			id: uuidv4(),
 			idnotafiscal: notaFiscalId,
 			idproduto,
+			idlocalestoque: idlocalestoque ?? null,
 			descricao: item.descricao ?? item.descricaoproduto ?? null,
 			quantidade: paraString(item.quantidade),
 			precounitario: paraString(item.precounitario),
@@ -271,6 +294,34 @@ export async function criarNotaFiscalService({
 
 	if (!resultado.notaFiscal) {
 		return httpErroInterno();
+	}
+
+	try {
+		await registrarMovimentosEstoqueNf({
+			idempresa: dadosSanitizados.idempresa,
+			idnotafiscal: notaFiscalId,
+			idlocalestoque: idlocalNota ?? undefined,
+			dataMovimento:
+				dadosSanitizados.entradasaida ??
+				dadosSanitizados.emissao ??
+				datahoraAtual,
+			sentido: "entrada",
+			idusuario,
+			itens: resultado.itens
+				.filter((itemCriado) => Boolean(itemCriado.idproduto))
+				.map((itemCriado) => ({
+					iditem: itemCriado.id,
+					idproduto: itemCriado.idproduto as string,
+					quantidade: itemCriado.quantidade ?? "0",
+					custoUnitario:
+						itemCriado.custoaquisicao ?? itemCriado.precounitario ?? "0",
+					...(itemCriado.idlocalestoque
+						? { idlocalestoque: itemCriado.idlocalestoque }
+						: {}),
+				})),
+		});
+	} catch (erro) {
+		console.error("Erro ao registrar movimentos de estoque da NF:", erro);
 	}
 
 	if (gerarCustos) {

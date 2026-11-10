@@ -12,6 +12,8 @@ export interface Produto {
 	idunidademedida: string | null;
 	fornecedor: string | null;
 	idgrupo: string | null;
+	idlocalestoque?: string | null;
+	localestoque?: string | null;
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
 	exportaBalanca?: number | null;
@@ -192,6 +194,7 @@ export interface CriarProdutoData
 	idunidademedida: string;
 	fornecedor?: string | null;
 	idgrupo?: string | null;
+	idlocalestoque?: string | null;
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
 	exportaBalanca?: number | null;

@@ -8,6 +8,7 @@ const criarLocalEstoqueBodySchema = z.object({
 	codigo: z.string().max(5).optional().nullable(),
 	descricao: z.string().max(50).optional().nullable(),
 	inativo: z.number().int().min(0).max(1).optional().nullable(),
+	padrao: z.number().int().min(0).max(1).optional().nullable(),
 	posse: z.string().max(1).optional().nullable(),
 	tipo: z.number().int().min(1).max(2).optional().nullable(),
 });

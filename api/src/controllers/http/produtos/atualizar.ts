@@ -47,6 +47,15 @@ const atualizarProdutoBodySchema = z.object({
 	referencia: z.string().max(60).optional().nullable(),
 	nome: z.string().min(1).max(120).optional(),
 	idunidademedida: z.string().optional(),
+	idlocalestoque: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			if (valor === undefined) return undefined;
+			if (!valor || valor === "none" || valor.trim() === "") return null;
+			return valor;
+		}),
 	fornecedor: z.string().optional().nullable(),
 	idgrupo: z.string().optional().nullable(),
 	idmarca: z.string().optional().nullable(),

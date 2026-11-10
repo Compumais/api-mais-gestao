@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellIcon, CheckIcon } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -224,6 +225,17 @@ export function NotificationsBell() {
 									)}
 							</div>
 							<DialogFooter>
+								{modalNotificacao.tipo === "alerta_vencimento_certificado" && (
+									<Button
+										asChild
+										variant="outline"
+										onClick={() => setModalNotificacao(null)}
+									>
+										<Link href="/configuracoes?tab=nfe">
+											Atualizar certificado
+										</Link>
+									</Button>
+								)}
 								{!modalNotificacao.lida && (
 									<Button
 										variant="secondary"

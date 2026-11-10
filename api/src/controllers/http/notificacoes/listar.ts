@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { listarNotificacoes } from "@/repositories/notificacoes-repositories.js";
+import { sincronizarNotificacoesCertificadoUsuario } from "@/worker/jobs/alertas-vencimento-certificado.js";
 
 const listarNotificacoesQuerySchema = z.object({
 	idempresa: z.string().uuid().optional(),
@@ -33,6 +34,11 @@ export async function listarNotificacoesHandler(
 			details: query.error.flatten(),
 		});
 	}
+
+	await sincronizarNotificacoesCertificadoUsuario(
+		request.user.id,
+		query.data.idempresa,
+	).catch(() => undefined);
 
 	const { notificacoes, total } = await listarNotificacoes({
 		idusuario: request.user.id,

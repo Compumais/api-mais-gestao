@@ -273,6 +273,9 @@ const propriedadesProdutoResposta = {
 	idunidademedida: {
 		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
 	},
+	idlocalestoque: {
+		anyOf: [{ type: "string" }, { type: "null" }],
+	},
 	fornecedor: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
 	idgrupo: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
 	idmarca: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
@@ -363,6 +366,7 @@ export const criarProdutoSchema: FastifySchema = {
 			referencia: { anyOf: [{ type: "string" }, { type: "null" }] },
 			nome: { type: "string" },
 			idunidademedida: { type: "string" },
+			idlocalestoque: { anyOf: [{ type: "string" }, { type: "null" }] },
 			fornecedor: { anyOf: [{ type: "string" }, { type: "null" }] },
 			idgrupo: { type: "string" },
 			idmarca: {
@@ -557,6 +561,7 @@ export const atualizarProdutoSchema: FastifySchema = {
 			referencia: { anyOf: [{ type: "string" }, { type: "null" }] },
 			nome: { type: "string" },
 			idunidademedida: { type: "string", format: "uuid" },
+			idlocalestoque: { anyOf: [{ type: "string" }, { type: "null" }] },
 			fornecedor: {
 				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
 			},

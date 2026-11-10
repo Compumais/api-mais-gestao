@@ -1,13 +1,43 @@
-import { and, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, isNull, ne, or, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import type { LocalEstoque, NovoLocalEstoque } from "@/model/local-estoque-model";
 import { localestoque } from "@/repositories/schema.js";
 import { db } from "./connection";
 
+export async function desmarcarPadraoLocalEstoqueEmpresa(
+	idempresa: string,
+	excetoId?: string,
+) {
+	const condicoes = [eq(localestoque.idempresa, idempresa), eq(localestoque.padrao, 1)];
+	if (excetoId) {
+		condicoes.push(ne(localestoque.id, excetoId));
+	}
+	await db
+		.update(localestoque)
+		.set({ padrao: 0 })
+		.where(and(...condicoes));
+}
+
 export async function criarLocalEstoque(dadosLocalEstoque: NovoLocalEstoque) {
+	let padraoResolvido = dadosLocalEstoque.padrao ?? 0;
+
+	if (padraoResolvido === 1) {
+		await desmarcarPadraoLocalEstoqueEmpresa(dadosLocalEstoque.idempresa);
+	} else if ((dadosLocalEstoque.inativo ?? 0) === 0) {
+		const existenteAtivo = await buscarPrimeiroLocalEstoqueEmpresa(
+			dadosLocalEstoque.idempresa,
+		);
+		if (!existenteAtivo) {
+			padraoResolvido = 1;
+		}
+	}
+
 	const [registro] = await db
 		.insert(localestoque)
-		.values(dadosLocalEstoque)
+		.values({
+			...dadosLocalEstoque,
+			padrao: padraoResolvido,
+		})
 		.returning();
 
 	return registro;
@@ -32,7 +62,11 @@ export async function buscarPrimeiroLocalEstoqueEmpresa(idempresa: string) {
 				or(eq(localestoque.inativo, 0), isNull(localestoque.inativo)),
 			),
 		)
-		.orderBy(desc(localestoque.descricao))
+		.orderBy(
+			desc(sql`COALESCE(${localestoque.padrao}, 0)`),
+			asc(localestoque.codigo),
+			asc(localestoque.descricao),
+		)
 		.limit(1);
 
 	return registro;
@@ -48,7 +82,11 @@ export async function garantirLocalEstoqueEmpresa(
 		.select()
 		.from(localestoque)
 		.where(eq(localestoque.idempresa, idempresa))
-		.orderBy(desc(localestoque.descricao))
+		.orderBy(
+			desc(sql`COALESCE(${localestoque.padrao}, 0)`),
+			asc(localestoque.codigo),
+			asc(localestoque.descricao),
+		)
 		.limit(1);
 
 	if (qualquer) return { local: qualquer, criado: false };
@@ -59,6 +97,7 @@ export async function garantirLocalEstoqueEmpresa(
 		codigo: "1",
 		descricao: "Estoque",
 		inativo: 0,
+		padrao: 1,
 		posse: "0",
 		tipo: 1,
 	});
@@ -73,10 +112,20 @@ export async function atualizarLocalEstoque(
 		codigo?: string | null | undefined;
 		descricao?: string | null | undefined;
 		inativo?: number | null | undefined;
+		padrao?: number | null | undefined;
 		posse?: string | null | undefined;
 		tipo?: number | null | undefined;
 	},
+	idempresa?: string,
 ) {
+	if (dados.padrao === 1) {
+		const empresaAlvo =
+			idempresa ?? (await buscarLocalEstoquePorId(id))?.idempresa;
+		if (empresaAlvo) {
+			await desmarcarPadraoLocalEstoqueEmpresa(empresaAlvo, id);
+		}
+	}
+
 	const [registro] = await db
 		.update(localestoque)
 		.set(dados)
@@ -131,7 +180,11 @@ export async function listarLocaisEstoque({
 			.select()
 			.from(localestoque)
 			.where(and(...where))
-			.orderBy(desc(localestoque.descricao))
+			.orderBy(
+				desc(sql`COALESCE(${localestoque.padrao}, 0)`),
+				asc(localestoque.codigo),
+				asc(localestoque.descricao),
+			)
 			.limit(limit)
 			.offset(offset),
 	]);

@@ -5,6 +5,7 @@ import {
 } from "@/repositories/tarefa-execucao-repositories.js";
 import { executarJob } from "./executar-job.js";
 import { executarAlertasVencimento } from "./jobs/alertas-vencimento.js";
+import { executarAlertasVencimentoCertificado } from "./jobs/alertas-vencimento-certificado.js";
 import { executarConciliacaoPendente } from "./jobs/conciliacao-pendente.js";
 import { executarConciliacaoNfcePendentes } from "./jobs/conciliar-nfce-pendentes.js";
 import { executarProcessarAutomacoes } from "./jobs/processar-automacoes.js";
@@ -33,6 +34,11 @@ async function executarCicloAlertas() {
 
 	try {
 		await executarJob("alerta_vencimento", executarAlertasVencimento, contexto);
+		await executarJob(
+			"alerta_vencimento_certificado",
+			executarAlertasVencimentoCertificado,
+			contexto,
+		);
 		await executarJob("saldo_baixo", executarSaldoBaixo, contexto);
 		await executarJob(
 			"conciliacao_pendente",
@@ -211,6 +217,14 @@ export const JOBS_DISPONIVEIS = {
 		executarJob("alerta_vencimento", executarAlertasVencimento, {
 			agora: new Date(),
 		}),
+	alertasVencimentoCertificado: () =>
+		executarJob(
+			"alerta_vencimento_certificado",
+			executarAlertasVencimentoCertificado,
+			{
+				agora: new Date(),
+			},
+		),
 	saldoBaixo: () =>
 		executarJob("saldo_baixo", executarSaldoBaixo, { agora: new Date() }),
 	conciliacaoPendente: () =>

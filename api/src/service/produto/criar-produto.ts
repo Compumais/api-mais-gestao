@@ -3,6 +3,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoProduto, Produto } from "@/model/produto-model.js";
 import { buscarProdutoBancoPorId } from "@/repositories/banco-imagem-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarPrimeiroLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
 import { criarProdutoComHistorico } from "@/repositories/produto-historico-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
@@ -60,6 +61,17 @@ export async function criarProdutoService({
 	}
 
 	let dadosGravacao = dadosProduto;
+	if (!dadosGravacao.idlocalestoque && dadosGravacao.tipo !== "S") {
+		const localPadrao = await buscarPrimeiroLocalEstoqueEmpresa(
+			dadosGravacao.idempresa,
+		);
+		if (localPadrao) {
+			dadosGravacao = {
+				...dadosGravacao,
+				idlocalestoque: localPadrao.id,
+			};
+		}
+	}
 	if (dadosProduto.idprodutopai) {
 		const pai = await buscarProdutoPorId(dadosProduto.idprodutopai);
 		if (!pai) {

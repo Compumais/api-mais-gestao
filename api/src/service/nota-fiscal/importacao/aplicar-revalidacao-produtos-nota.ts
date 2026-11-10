@@ -173,12 +173,25 @@ export async function aplicarRevalidacaoProdutosNotaService(params: {
 			dataMovimento: dataMovimentoNota(nota.entradasaida),
 			sentido: "entrada",
 			idusuario: params.idusuario,
-			itens: planejados.map((planejado) => ({
-				iditem: planejado.item.iditem,
-				idproduto: planejado.item.idproduto,
-				quantidade: planejado.quantidade,
-				custoUnitario: planejado.custoUnitario,
-			})),
+			itens: planejados.map((planejado) => {
+				const idlocalItem =
+					planejado.item.idlocalestoqueItem ??
+					(
+						planejado.item.dadosimportacao as
+							| { idlocalestoque?: string | undefined }
+							| null
+							| undefined
+					)?.idlocalestoque ??
+					planejado.item.idlocalestoqueProduto ??
+					undefined;
+				return {
+					iditem: planejado.item.iditem,
+					idproduto: planejado.item.idproduto,
+					quantidade: planejado.quantidade,
+					custoUnitario: planejado.custoUnitario,
+					...(idlocalItem ? { idlocalestoque: idlocalItem } : {}),
+				};
+			}),
 		});
 		avisos.push(...resultadoEstoque.avisos);
 

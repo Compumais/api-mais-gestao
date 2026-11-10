@@ -161,6 +161,10 @@ export const DATA = {
 					title: "Fatores de conversão",
 					url: "/fator-conversao",
 				},
+				{
+					title: "Locais de estoque",
+					url: "/locais-estoque",
+				},
 			],
 		},
 		{
@@ -211,6 +215,14 @@ export const DATA = {
 	] satisfies NavItem[],
 
 	navEstoque: [
+		{
+			title: "Locais de estoque",
+			url: "/locais-estoque",
+			icon: IconPackage,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
 		{
 			title: "Movimentações de produtos",
 			url: "/produtos/relatorios/movimentacoes",

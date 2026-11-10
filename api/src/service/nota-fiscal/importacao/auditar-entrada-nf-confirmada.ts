@@ -39,6 +39,8 @@ export type ItemAuditoriaEntrada = {
 	chavenfe: string | null;
 	iditem: string;
 	idproduto: string;
+	idlocalestoqueItem?: string | null;
+	idlocalestoqueProduto?: string | null;
 	quantidade: string | null;
 	precounitarioItem?: string | null;
 	custoaquisicaoItem?: string | null;

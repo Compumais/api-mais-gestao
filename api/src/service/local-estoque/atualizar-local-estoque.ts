@@ -18,6 +18,7 @@ type AtualizarLocalEstoqueParametros = {
 		codigo?: string | null | undefined;
 		descricao?: string | null | undefined;
 		inativo?: number | null | undefined;
+		padrao?: number | null | undefined;
 		posse?: string | null | undefined;
 		tipo?: number | null | undefined;
 	};
@@ -43,7 +44,11 @@ export async function atualizarLocalEstoqueService({
 		return httpProibido();
 	}
 
-	const registroAtualizado = await atualizarLocalEstoque(localEstoqueId, dados);
+	const registroAtualizado = await atualizarLocalEstoque(
+		localEstoqueId,
+		dados,
+		registroExistente.idempresa,
+	);
 
 	if (!registroAtualizado) {
 		return httpNaoEncontrado();

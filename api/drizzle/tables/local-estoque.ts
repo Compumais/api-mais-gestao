@@ -9,6 +9,7 @@ export const localestoque = pgTable(
     codigo: varchar({ length: 5 }),
     descricao: varchar({ length: 50 }),
     inativo: smallint(), // 0=Ativo, 1=Inativo
+    padrao: smallint().default(0), // 0=Normal, 1=Padrão da empresa
     posse: varchar({ length: 1 }), // 0=Propria, 1=Alugada
     tipo: smallint(), // 1=Estoque, 2=Produção
   },

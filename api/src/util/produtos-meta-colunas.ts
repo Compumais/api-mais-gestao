@@ -5,6 +5,7 @@ const COLUNAS_TABELA = Object.keys(getTableColumns(produtos));
 
 /** Colunas de estoque calculadas na listagem (não existem em `produtos`). */
 export const COLUNAS_LISTAGEM_CALCULADAS = [
+	"localestoque",
 	"quantidade",
 	"quantidadefiscal",
 	"divergencia",
@@ -37,6 +38,8 @@ const ROTULOS: Partial<Record<string, string>> = {
 	fornecedor: "Fornecedor",
 	custoaquisicao: "Custo aquisição",
 	datacadastro: "Data cadastro",
+	localestoque: "Local de estoque",
+	idlocalestoque: "ID local de estoque",
 	quantidade: "Operacional",
 	quantidadefiscal: "Fiscal",
 	divergencia: "Divergência",
@@ -65,6 +68,7 @@ function humanizarCampo(campo: string): string {
 const VISIVEL_PADRAO = new Set([
 	"codigo",
 	"nome",
+	"localestoque",
 	"preco",
 	"inativo",
 	"quantidade",

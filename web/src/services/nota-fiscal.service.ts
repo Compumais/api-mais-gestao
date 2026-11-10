@@ -23,6 +23,7 @@ export interface NotaFiscal {
 	idcondicaopagto: string | null;
 	idtipodocumento?: string | null;
 	idcfop: string | null;
+	idlocalestoque?: string | null;
 	baseicms: string | null;
 	icms: string | null;
 	ipi: string | null;
@@ -121,6 +122,7 @@ export interface NotaFiscalItem {
 	id: string;
 	idnotafiscal: string;
 	idproduto: string | null;
+	idlocalestoque?: string | null;
 	descricao: string | null;
 	quantidade: string | null;
 	precounitario: string | null;
@@ -143,6 +145,7 @@ export interface ListarNotasFiscaisResponse {
 
 export interface ItemNotaFiscalPayload {
 	idproduto?: string;
+	idlocalestoque?: string | null;
 	codigoproduto?: number;
 	ean?: string;
 	descricaoproduto?: string;
@@ -179,6 +182,7 @@ export interface CriarNotaFiscalPayload {
 	chavenfe?: string | null;
 	emissao?: string | null;
 	entradasaida?: string | null;
+	idlocalestoque?: string | null;
 	idplanocontas?: string | null;
 	idcondicaopagto?: string | null;
 	idtipodocumento?: string | null;

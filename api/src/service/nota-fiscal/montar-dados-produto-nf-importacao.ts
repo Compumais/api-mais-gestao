@@ -88,6 +88,7 @@ export function montarDadosProdutoNfImportacao(
 		idcfopsaidanfce: opcoes.idcfopsaida,
 		idfornecedor: opcoes.idfornecedor,
 		idgrupo: dados.idgrupo,
+		...(dados.idlocalestoque ? { idlocalestoque: dados.idlocalestoque } : {}),
 		tipoproduto: dados.tipoproduto,
 		unidademedida:
 			truncarTexto(dados.unidadeEstoque ?? dados.unidadeXml, 6) ?? undefined,

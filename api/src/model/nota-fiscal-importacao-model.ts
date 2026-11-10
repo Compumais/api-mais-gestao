@@ -61,6 +61,7 @@ export type DadosImportacaoItem = {
 	eanXml?: string | undefined;
 	statusVinculo: StatusVinculoImportacao;
 	idproduto?: string | undefined;
+	idlocalestoque?: string | undefined;
 	produtoEncontrado?: ProdutoEncontradoImportacao | undefined;
 	confirmarCadastro: boolean;
 	idgrupo?: string | undefined;

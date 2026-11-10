@@ -96,6 +96,7 @@ export const CAMPOS_TRIBUTACAO_VARIACAO = [
 export const CAMPOS_HERANCA_SE_VAZIO = [
 	"referencia",
 	"idunidademedida",
+	"idlocalestoque",
 	"idgrupo",
 	"idgrupogourmet",
 	"custoaquisicao",

@@ -27,6 +27,15 @@ export const camposAlteracaoEmMassaProdutoSchema = z
 			}),
 		espizza: z.number().int().min(0).max(1).optional(),
 		idunidademedida: z.string().uuid().optional(),
+		idlocalestoque: z
+			.string()
+			.optional()
+			.nullable()
+			.transform((valor) => {
+				if (valor === undefined) return undefined;
+				if (!valor || valor === "none" || valor.trim() === "") return null;
+				return valor;
+			}),
 		preco: z.union([z.string(), z.number()]).optional(),
 		custoaquisicao: z.union([z.string(), z.number()]).optional().nullable(),
 		origem: z.number().int().min(0).max(8).optional().nullable(),

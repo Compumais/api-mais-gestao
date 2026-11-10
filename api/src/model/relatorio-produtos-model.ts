@@ -32,6 +32,7 @@ export const filtrosRelatorioProdutosSchema = z
 		situacao: z.enum(["ativo", "inativo", "todos"]).optional(),
 		grupo: z.string().trim().max(120).optional(),
 		fornecedor: z.string().trim().max(120).optional(),
+		localEstoque: z.string().trim().max(120).optional(),
 		pendencia: z.string().trim().max(40).optional(),
 		origem: z
 			.enum(["pdv", "nota_fiscal", "acerto", "producao", "outro"])

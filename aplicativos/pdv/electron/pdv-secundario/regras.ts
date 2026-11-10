@@ -23,6 +23,8 @@ export const CHAVES_CONFIG_NEGOCIO = [
 	"etiqueta_balanca_indicador_uso",
 	"taxa_entrega_padrao",
 	"bairros_entrega",
+	"certificado_apelido",
+	"certificado_validade",
 ] as const;
 
 export type ChaveConfigNegocio = (typeof CHAVES_CONFIG_NEGOCIO)[number];
@@ -52,8 +54,6 @@ export const CHAVES_CONFIG_LOCAL = [
 	"impressora_pedido_porta",
 	"certificado_path",
 	"certificado_senha",
-	"certificado_apelido",
-	"certificado_validade",
 	"fiscal_ultima_sync",
 	"fiscal_sync_erro",
 	"tecnibra_habilitada",

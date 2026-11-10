@@ -20,6 +20,7 @@ const itemSchema = z.object({
 	idunidademedida: z.string().optional().nullable(),
 	unidade: z.string().optional().nullable(),
 	idproduto: z.string().optional().nullable(),
+	idlocalestoque: z.string().optional().nullable(),
 	desconto: z.union([z.string(), z.number()]).optional().nullable(),
 });
 
@@ -33,6 +34,7 @@ const bodySchema = z.object({
 	emissao: z.string().optional().nullable(),
 	entradasaida: z.string().optional().nullable(),
 	idcfop: z.string().optional().nullable(),
+	idlocalestoque: z.string().optional().nullable(),
 	idplanocontas: z.string().optional().nullable(),
 	idcondicaopagto: z.string().optional().nullable(),
 	idtipodocumento: z.string().optional().nullable(),
@@ -77,6 +79,7 @@ export async function atualizarNotaFiscalCompra(
 				emissao: body.emissao,
 				entradasaida: body.entradasaida,
 				idcfop: body.idcfop,
+				idlocalestoque: body.idlocalestoque,
 				idplanocontas: body.idplanocontas,
 				idcondicaopagto: body.idcondicaopagto,
 				idtipodocumento: body.idtipodocumento,
@@ -101,6 +104,7 @@ export async function atualizarNotaFiscalCompra(
 					idunidademedida: item.idunidademedida,
 					unidade: item.unidade,
 					idproduto: item.idproduto,
+					idlocalestoque: item.idlocalestoque,
 					desconto: paraString(item.desconto),
 				})),
 			},

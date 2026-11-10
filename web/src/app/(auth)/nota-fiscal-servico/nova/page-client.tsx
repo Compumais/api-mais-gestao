@@ -7,6 +7,7 @@ import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
+import { AlertaVencimentoCertificado } from "@/components/alerta-vencimento-certificado";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -275,6 +276,8 @@ export default function NovaNfsePage() {
 								: "Emissão manual de serviço (RPS → NFS-e)"}
 					</p>
 				</header>
+
+				<AlertaVencimentoCertificado />
 
 				{origemId && carregandoOrigem ? (
 					<p className="text-muted-foreground text-sm">

@@ -65,6 +65,7 @@ const ORDEM_COLUNAS_FIXAS = [
 	"imagem",
 	"preco",
 	"inativo",
+	"localestoque",
 	"quantidade",
 	"quantidadefiscal",
 	"divergencia",
@@ -75,6 +76,7 @@ const ROTULOS_FIXOS: Record<string, string> = {
 	imagem: "Imagem",
 	acoes: "Ações",
 	inativo: "Situação",
+	localestoque: "Local de estoque",
 };
 
 export function montarDefinicoesColunasProdutos(
@@ -389,6 +391,14 @@ export function criarColunasProdutos(
 							</span>
 						);
 					},
+				});
+				break;
+			case "localestoque":
+				colunas.push({
+					accessorKey: "localestoque",
+					header,
+					meta,
+					cell: ({ row }) => <div>{row.original.localestoque ?? "-"}</div>,
 				});
 				break;
 			case "quantidade":
