@@ -22,6 +22,13 @@ Após `tpEmit`, o schema exige `finNFSe` (obrigatório) **antes** de `cLocEmi`:
 
 Sem `finNFSe` em `infDPS`, a Sefin rejeita com E1235 (`cLocEmi` inválido; esperava `cMotivoEmisTI, finNFSe`).
 
+## Sequência de `cServ` (NT 009)
+
+`cTribNac` → `cTribMun`? → **`cNBS`**? → `cAtvSN`? → `cIntContrib`? → **`xDescServ`**
+
+- `xDescServ` ficou no **fim** do grupo (antes vinha antes de `cNBS`)
+- Sem essa ordem, a Sefin rejeita com E1235 (`cNBS` inválido após `xDescServ`)
+
 ## URLs
 
 | Ambiente | Base |

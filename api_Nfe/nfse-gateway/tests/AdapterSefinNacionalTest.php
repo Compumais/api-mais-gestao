@@ -97,6 +97,19 @@ assertTrue(str_contains($xml, '<cTribNac>010101</cTribNac>'), 'cTribNac presente
 assertTrue(str_contains($xml, '<cNBS>115021000</cNBS>'), 'cNBS presente');
 assertTrue(!str_contains($xml, '<IBSCBS>'), 'IBSCBS omitido para Simples (opSimpNac=3)');
 
+// NT 009: cServ — cNBS antes de xDescServ
+assertTrue(
+    (bool) preg_match(
+        '/<cTribNac>010101<\/cTribNac>\s*<cNBS>115021000<\/cNBS>\s*<xDescServ>/',
+        $xml,
+    ),
+    'cServ: cTribNac → cNBS → xDescServ (NT 009)',
+);
+assertTrue(
+    !preg_match('/<xDescServ>[\s\S]*?<cNBS>/', $xml),
+    'cNBS não pode aparecer depois de xDescServ',
+);
+
 // NT 009: finNFSe em infDPS após tpEmit e antes de cLocEmi
 assertTrue(str_contains($xml, '<finNFSe>0</finNFSe>'), 'finNFSe=0 em infDPS');
 assertTrue(

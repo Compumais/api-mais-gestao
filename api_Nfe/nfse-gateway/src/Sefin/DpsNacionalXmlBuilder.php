@@ -176,14 +176,23 @@ final class DpsNacionalXmlBuilder
         $locPrest = $xml->createElementNS(self::NS, 'locPrest');
         $this->appendText($xml, $locPrest, 'cLocPrestacao', $cLocPrestacao);
         $serv->appendChild($locPrest);
+        // NT 009: cTribNac → cTribMun? → cNBS? → cAtvSN? → cIntContrib? → xDescServ
         $cServ = $xml->createElementNS(self::NS, 'cServ');
         $this->appendText($xml, $cServ, 'cTribNac', $cTribNac);
         $cTribMun = preg_replace('/\D/', '', (string) ($servico['codigoTributacaoMunicipio'] ?? ''));
         if ($cTribMun !== null && strlen($cTribMun) === 3) {
             $this->appendText($xml, $cServ, 'cTribMun', $cTribMun);
         }
-        $this->appendText($xml, $cServ, 'xDescServ', (string) ($servico['discriminacao'] ?? 'Servico'));
         $this->appendText($xml, $cServ, 'cNBS', $cNbs);
+        $cAtvSN = preg_replace('/\D/', '', (string) ($servico['codigoAtividadeSN'] ?? $servico['cAtvSN'] ?? ''));
+        if ($cAtvSN !== null && $cAtvSN !== '') {
+            $this->appendText($xml, $cServ, 'cAtvSN', $cAtvSN);
+        }
+        $cIntContrib = trim((string) ($servico['codigoInternoContribuinte'] ?? $servico['cIntContrib'] ?? ''));
+        if ($cIntContrib !== '') {
+            $this->appendText($xml, $cServ, 'cIntContrib', $cIntContrib);
+        }
+        $this->appendText($xml, $cServ, 'xDescServ', (string) ($servico['discriminacao'] ?? 'Servico'));
         $serv->appendChild($cServ);
         $inf->appendChild($serv);
 
