@@ -193,7 +193,12 @@ export async function prepararPayloadEmissaoNfse(
 	}
 
 	const cIndOpRaw = (params.servico.ibsCbs?.cIndOp ?? "").replace(/\D/g, "");
-	if (layoutDps && cIndOpRaw !== "" && !/^\d{6}$/.test(cIndOpRaw)) {
+	if (layoutDps && cIndOpRaw === "") {
+		return httpBadRequest(
+			"Indicador de operação IBS/CBS (cIndOp) é obrigatório na DPS Nota Nacional — informe 6 dígitos (Anexo VII)",
+		);
+	}
+	if (layoutDps && !/^\d{6}$/.test(cIndOpRaw.padStart(6, "0").slice(-6))) {
 		return httpBadRequest(
 			"Indicador de operação IBS/CBS (cIndOp) deve ter 6 dígitos (Anexo VII)",
 		);
@@ -229,8 +234,7 @@ export async function prepararPayloadEmissaoNfse(
 	const optanteSimplesNacional =
 		crt === 1 || crt === 2 ? "1" : crt === 4 ? "mei" : "2";
 
-	// IBSCBS ainda opcional (obrigatório nacional a partir de 03/08/2026).
-	// Optantes do Simples: gateway omite o grupo no XML (piloto IBS/CBS não se aplica).
+	// Portal nacional: IBSCBS obrigatório (inclui Simples/MEI) quando layout DPS.
 	const ibsCbsDps =
 		layoutDps && cIndOpInformado !== ""
 			? {
@@ -244,9 +248,7 @@ export async function prepararPayloadEmissaoNfse(
 					cst: params.servico.ibsCbs?.cst ?? "000",
 					cClassTrib: params.servico.ibsCbs?.cClassTrib ?? "000001",
 				}
-			: layoutDps
-				? undefined
-				: params.servico.ibsCbs;
+			: params.servico.ibsCbs;
 
 	const payloadNfse: PayloadNfse = {
 		prestador: {

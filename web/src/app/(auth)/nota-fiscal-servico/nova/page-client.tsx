@@ -249,10 +249,14 @@ export default function NovaNfsePage() {
 	const layoutDps = (() => {
 		const versao = (config?.versaolayout ?? "").toLowerCase();
 		const url = (config?.urlwsdl ?? "").toLowerCase();
+		const provedor = (config?.provedor ?? "").toLowerCase();
 		return (
 			versao.includes("dps") ||
 			versao.includes("nacional") ||
-			url.includes("/dps/")
+			url.includes("/dps/") ||
+			provedor === "sefin_nacional" ||
+			provedor === "sefin-nacional" ||
+			provedor === "adn"
 		);
 	})();
 	const { errors } = form.formState;
@@ -302,6 +306,22 @@ export default function NovaNfsePage() {
 					className="space-y-6"
 					onSubmit={form.handleSubmit((dados) => {
 						setErroEmissao(null);
+						if (layoutDps) {
+							const cIndOp = (dados.codigoIndicadorOperacao ?? "").replace(
+								/\D/g,
+								"",
+							);
+							if (!/^\d{6}$/.test(cIndOp)) {
+								form.setError("codigoIndicadorOperacao", {
+									message:
+										"cIndOp obrigatório no portal nacional (6 dígitos, Anexo VII)",
+								});
+								toast.error(
+									"Informe o cIndOp IBS/CBS (6 dígitos) para emitir no portal nacional",
+								);
+								return;
+							}
+						}
 						emitirMutation.mutate(dados);
 					})}
 				>
@@ -386,18 +406,18 @@ export default function NovaNfsePage() {
 									</Field>
 									<Field data-invalid={!!errors.codigoIndicadorOperacao}>
 										<FieldLabel htmlFor={fid("codigoIndicadorOperacao")}>
-											cIndOp IBS/CBS (opcional)
+											cIndOp IBS/CBS (obrigatório)
 										</FieldLabel>
 										<Input
 											id={fid("codigoIndicadorOperacao")}
 											inputMode="numeric"
 											maxLength={6}
-											placeholder="Ex.: 100301 — deixe vazio se Simples"
+											placeholder="Ex.: 050101 ou 100301"
 											{...form.register("codigoIndicadorOperacao")}
 										/>
 										<p className="text-muted-foreground text-xs mt-1">
-											Simples Nacional: deixe em branco (evita rejeição E082).
-											Não confundir com cTribNac. TI remoto: 100301.
+											Obrigatório no portal nacional (Anexo VII), inclusive
+											Simples. Não confundir com cTribNac. TI remoto: 100301.
 										</p>
 									</Field>
 								</div>

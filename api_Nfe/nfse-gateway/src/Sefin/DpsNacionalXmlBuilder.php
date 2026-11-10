@@ -94,7 +94,8 @@ final class DpsNacionalXmlBuilder
         $this->appendText($xml, $inf, 'tpAmb', $tpAmb);
         $this->appendText($xml, $inf, 'dhEmi', $dhEmi);
         $this->appendText($xml, $inf, 'verAplic', 'mais-gestao_1.0');
-        $this->appendText($xml, $inf, 'serie', $seriePad);
+        // Elemento serie sem pad (Id usa seriePad de 5 dígitos).
+        $this->appendText($xml, $inf, 'serie', ltrim($serie, '0') !== '' ? ltrim($serie, '0') : '0');
         $this->appendText($xml, $inf, 'nDPS', $nDps);
         $this->appendText($xml, $inf, 'dCompet', substr($dCompet, 0, 10));
         $this->appendText($xml, $inf, 'tpEmit', '1');
@@ -203,16 +204,26 @@ final class DpsNacionalXmlBuilder
         $trib = $xml->createElementNS(self::NS, 'trib');
         $tribMun = $xml->createElementNS(self::NS, 'tribMun');
         $this->appendText($xml, $tribMun, 'tribISSQN', '1');
-        $this->appendText($xml, $tribMun, 'pAliq', $aliquota);
+        // pAliq opcional no XSD — omitir quando zero (como no XML autorizado Sefin).
+        if ((float) $aliquota > 0) {
+            $this->appendText($xml, $tribMun, 'pAliq', $aliquota);
+        }
         $this->appendText($xml, $tribMun, 'tpRetISSQN', $tpRetISSQN);
         $trib->appendChild($tribMun);
         $totTrib = $xml->createElementNS(self::NS, 'totTrib');
-        $this->appendText($xml, $totTrib, 'indTotTrib', '0');
+        $vTotTrib = $xml->createElementNS(self::NS, 'vTotTrib');
+        $vTotTribFed = $this->formatDecimal($valores['totalTributosFederais'] ?? 0);
+        $vTotTribEst = $this->formatDecimal($valores['totalTributosEstaduais'] ?? 0);
+        $vTotTribMun = $this->formatDecimal($valores['totalTributosMunicipais'] ?? 0);
+        $this->appendText($xml, $vTotTrib, 'vTotTribFed', $vTotTribFed);
+        $this->appendText($xml, $vTotTrib, 'vTotTribEst', $vTotTribEst);
+        $this->appendText($xml, $vTotTrib, 'vTotTribMun', $vTotTribMun);
+        $totTrib->appendChild($vTotTrib);
         $trib->appendChild($totTrib);
         $valoresNode->appendChild($trib);
         $inf->appendChild($valoresNode);
 
-        $this->appendIbsCbsMinimo($xml, $inf, $servico, $opSimpNac);
+        $this->appendIbsCbsMinimo($xml, $inf, $servico);
 
         $dps->appendChild($inf);
         $xml->appendChild($dps);
@@ -269,20 +280,17 @@ final class DpsNacionalXmlBuilder
     }
 
     /**
+     * Emite IBSCBS sempre que cIndOp estiver informado (incluindo Simples/MEI).
+     * NT 009: finNFSe fica em infDPS, não neste grupo.
+     *
      * @param array<string, mixed> $servico
      */
     private function appendIbsCbsMinimo(
         DOMDocument $xml,
         DOMElement $inf,
         array $servico,
-        string $opSimpNac,
     ): void {
         $ibs = is_array($servico['ibsCbs'] ?? null) ? $servico['ibsCbs'] : [];
-        $forcarEnvio = !empty($ibs['forcarEnvio']);
-
-        if (($opSimpNac === '2' || $opSimpNac === '3') && !$forcarEnvio) {
-            return;
-        }
 
         $cIndOpFonte = (string) ($ibs['cIndOp'] ?? '');
         $cIndOp = preg_replace('/\D/', '', $cIndOpFonte) ?? '';
@@ -307,7 +315,6 @@ final class DpsNacionalXmlBuilder
         $cClassTrib = preg_replace('/\D/', '', (string) ($ibs['cClassTrib'] ?? '000001')) ?? '000001';
         $cClassTrib = str_pad(substr($cClassTrib, 0, 6), 6, '0', STR_PAD_LEFT);
 
-        // NT 009: finNFSe saiu de IBSCBS e ficou em infDPS.
         $ibsCbs = $xml->createElementNS(self::NS, 'IBSCBS');
         $this->appendText($xml, $ibsCbs, 'indFinal', $indFinal);
         $this->appendText($xml, $ibsCbs, 'cIndOp', $cIndOp);

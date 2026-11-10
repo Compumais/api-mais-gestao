@@ -10,6 +10,7 @@ describe("emissaoNfseSchema com origem OS", () => {
 			discriminacao: "2 x Consultoria",
 			codigoTributacaoNacional: "010101",
 			codigoNbs: "115021000",
+			codigoIndicadorOperacao: "100301",
 			exigibilidadeIss: "1",
 			issRetido: "2",
 			valores: {

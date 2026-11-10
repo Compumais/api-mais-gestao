@@ -95,7 +95,13 @@ assertTrue(str_contains($xml, '<DPS'), 'Raiz é DPS (sem envelope SOAP)');
 assertTrue(str_contains($xml, 'Id="' . $idInf . '"'), 'infDPS traz atributo Id');
 assertTrue(str_contains($xml, '<cTribNac>010101</cTribNac>'), 'cTribNac presente');
 assertTrue(str_contains($xml, '<cNBS>115021000</cNBS>'), 'cNBS presente');
-assertTrue(!str_contains($xml, '<IBSCBS>'), 'IBSCBS omitido para Simples (opSimpNac=3)');
+assertTrue(!str_contains($xml, '<IBSCBS>'), 'IBSCBS omitido sem cIndOp');
+assertTrue(str_contains($xml, '<serie>1</serie>'), 'serie sem pad no elemento');
+assertTrue(str_contains($xml, '<vTotTribFed>0.00</vTotTribFed>'), 'vTotTribFed presente');
+assertTrue(str_contains($xml, '<vTotTribEst>0.00</vTotTribEst>'), 'vTotTribEst presente');
+assertTrue(str_contains($xml, '<vTotTribMun>0.00</vTotTribMun>'), 'vTotTribMun presente');
+assertTrue(!str_contains($xml, '<indTotTrib>'), 'indTotTrib não é mais usado');
+assertTrue(str_contains($xml, '<pAliq>2.00</pAliq>'), 'pAliq emitido quando > 0');
 
 // NT 009: cServ — cNBS antes de xDescServ
 assertTrue(
@@ -117,30 +123,42 @@ assertTrue(
     'finNFSe fica entre tpEmit e cLocEmi',
 );
 
-// Não-SN com cIndOp: IBSCBS sem finNFSe interno
-$payloadNaoSn = payloadNfseMinimo();
-$payloadNaoSn['prestador']['opSimpNac'] = '1';
-unset($payloadNaoSn['prestador']['regApTribSN']);
-$payloadNaoSn['servico']['ibsCbs'] = [
-    'cIndOp' => '100301',
+// Simples com cIndOp: IBSCBS obrigatório (portal nacional)
+$payloadSnIbs = payloadNfseMinimo();
+$payloadSnIbs['servico']['ibsCbs'] = [
+    'cIndOp' => '050101',
     'finNFSe' => 0,
     'indFinal' => 0,
     'indDest' => 0,
+    'cst' => '000',
+    'cClassTrib' => '000001',
 ];
-[, $xmlIbs] = $builder->montar($payloadNaoSn, [
+[, $xmlSnIbs] = $builder->montar($payloadSnIbs, [
     'ambiente' => 2,
     'cnpj' => '12345678000195',
     'codigomunicipioibge' => '3550308',
 ]);
-assertTrue(str_contains($xmlIbs, '<IBSCBS>'), 'IBSCBS emitido para não-SN com cIndOp');
+assertTrue(str_contains($xmlSnIbs, '<IBSCBS>'), 'IBSCBS emitido para Simples com cIndOp');
+assertTrue(str_contains($xmlSnIbs, '<cIndOp>050101</cIndOp>'), 'cIndOp 050101 no IBSCBS');
+assertTrue(str_contains($xmlSnIbs, '<CST>000</CST>'), 'CST no gIBSCBS');
 assertTrue(
-    (bool) preg_match('/<tpEmit>1<\/tpEmit>\s*<finNFSe>0<\/finNFSe>\s*<cLocEmi>/', $xmlIbs),
+    (bool) preg_match('/<tpEmit>1<\/tpEmit>\s*<finNFSe>0<\/finNFSe>\s*<cLocEmi>/', $xmlSnIbs),
     'finNFSe permanece em infDPS no XML com IBSCBS',
 );
 assertTrue(
-    !preg_match('/<IBSCBS>[\s\S]*<finNFSe>/', $xmlIbs),
+    !preg_match('/<IBSCBS>[\s\S]*<finNFSe>/', $xmlSnIbs),
     'finNFSe não aparece dentro de IBSCBS',
 );
+
+// Aliquota zero: omite pAliq
+$payloadSemAliq = payloadNfseMinimo();
+$payloadSemAliq['servico']['valores']['aliquota'] = 0;
+[, $xmlSemAliq] = $builder->montar($payloadSemAliq, [
+    'ambiente' => 2,
+    'cnpj' => '12345678000195',
+    'codigomunicipioibge' => '3550308',
+]);
+assertTrue(!str_contains($xmlSemAliq, '<pAliq>'), 'pAliq omitido quando aliquota=0');
 
 $idExtraido = DpsNacionalXmlBuilder::extrairIdInfDps($xml);
 assertTrue($idExtraido === $idInf, 'extrairIdInfDps retorna o mesmo Id');

@@ -29,6 +29,14 @@ Sem `finNFSe` em `infDPS`, a Sefin rejeita com E1235 (`cLocEmi` inválido; esper
 - `xDescServ` ficou no **fim** do grupo (antes vinha antes de `cNBS`)
 - Sem essa ordem, a Sefin rejeita com E1235 (`cNBS` inválido após `xDescServ`)
 
+## Grupos alinhados ao XML autorizado (portal nacional)
+
+- `serie` no elemento sem zero à esquerda (pad só no `Id` da `infDPS`)
+- `totTrib` com `vTotTrib` / `vTotTribFed|Est|Mun` (não `indTotTrib`)
+- `pAliq` só quando alíquota > 0
+- **`IBSCBS` também para Simples/MEI** quando `cIndOp` informado (`indFinal`, `cIndOp`, `indDest`, `gIBSCBS/CST/cClassTrib`)
+- `cIndOp` é obrigatório na API para layout DPS (Anexo VII)
+
 ## URLs
 
 | Ambiente | Base |
