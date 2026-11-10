@@ -263,13 +263,11 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         }
 
         if ($status === 400 || $status === 500) {
-            $erros = $this->mapearMensagens($json['erros'] ?? []);
-            if ($erros === []) {
-                $erros = [[
-                    'codigo' => (string) $status,
-                    'mensagem' => 'Rejeição Sefin Nacional sem detalhe',
-                ]];
-            }
+            $erros = $this->extrairErrosDaRespostaSefin(
+                $resposta,
+                (string) $status,
+                'Rejeição Sefin Nacional sem detalhe',
+            );
 
             return [
                 ...$this->baseMeta(),
@@ -278,6 +276,7 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                 'idDps' => (string) ($json['idDPS'] ?? $json['idDps'] ?? $idDps),
                 'xmlEnviado' => $xmlEnviado,
                 'erros' => $erros,
+                'erro' => $erros[0]['mensagem'] ?? null,
             ];
         }
 
@@ -334,14 +333,11 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         }
 
         if ($status === 400 || $status === 401 || $status === 403) {
-            $erroUnico = is_array($json['erro'] ?? null) ? [$json['erro']] : ($json['erros'] ?? []);
-            $erros = $this->mapearMensagens($erroUnico);
-            if ($erros === []) {
-                $erros = [[
-                    'codigo' => (string) $status,
-                    'mensagem' => 'Falha ao registrar evento de cancelamento na Sefin',
-                ]];
-            }
+            $erros = $this->extrairErrosDaRespostaSefin(
+                $resposta,
+                (string) $status,
+                'Falha ao registrar evento de cancelamento na Sefin',
+            );
 
             return [
                 ...$this->baseMeta(),
@@ -351,6 +347,7 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                 'codigoVerificacao' => $chave,
                 'xmlEnviado' => $xmlEnviado,
                 'erros' => $erros,
+                'erro' => $erros[0]['mensagem'] ?? null,
             ];
         }
 
@@ -407,9 +404,6 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
     private function mapearRespostaErroGenerico(array $resposta, ?string $idDps, ?string $chave): array
     {
         $status = (int) ($resposta['status'] ?? 0);
-        $json = is_array($resposta['json'] ?? null) ? $resposta['json'] : [];
-        $erroUnico = is_array($json['erro'] ?? null) ? [$json['erro']] : ($json['erros'] ?? []);
-        $erros = $this->mapearMensagens($erroUnico);
 
         if ($status === 0) {
             return [
@@ -427,17 +421,13 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             ];
         }
 
-        if ($erros === []) {
-            $erros = [[
-                'codigo' => (string) $status,
-                'mensagem' => match ($status) {
-                    404 => 'Chave de acesso ou DPS não encontrada',
-                    403 => 'Consulta não permitida para este certificado',
-                    401 => 'Não foi possível obter o certificado de cliente',
-                    default => 'Falha na consulta Sefin Nacional',
-                },
-            ]];
-        }
+        $fallback = match ($status) {
+            404 => 'Chave de acesso ou DPS não encontrada',
+            403 => 'Consulta não permitida para este certificado',
+            401 => 'Não foi possível obter o certificado de cliente',
+            default => 'Falha na consulta Sefin Nacional',
+        };
+        $erros = $this->extrairErrosDaRespostaSefin($resposta, (string) $status, $fallback);
 
         return [
             ...$this->baseMeta(),
@@ -447,7 +437,109 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             'chaveAcesso' => $chave,
             'codigoVerificacao' => $chave,
             'erros' => $erros,
+            'erro' => $erros[0]['mensagem'] ?? null,
         ];
+    }
+
+    /**
+     * Extrai erros da resposta Sefin em vários formatos conhecidos.
+     *
+     * Ordem: erros[] → erro (objeto/string) → campos top-level → body bruto → fallback.
+     *
+     * @param array{status?: int, json?: array<string, mixed>|null, body?: string, erro?: string} $resposta
+     * @return list<array{codigo: string, mensagem: string}>
+     */
+    private function extrairErrosDaRespostaSefin(
+        array $resposta,
+        string $codigoFallback,
+        string $mensagemFallback,
+    ): array {
+        $json = is_array($resposta['json'] ?? null) ? $resposta['json'] : [];
+
+        $candidatos = [];
+        if (isset($json['erros'])) {
+            $candidatos[] = $json['erros'];
+        }
+        if (array_key_exists('erro', $json)) {
+            $candidatos[] = $json['erro'];
+        }
+        if (isset($json['mensagens'])) {
+            $candidatos[] = $json['mensagens'];
+        }
+        if (isset($json['messages'])) {
+            $candidatos[] = $json['messages'];
+        }
+
+        foreach ($candidatos as $candidato) {
+            $erros = $this->mapearMensagens($candidato);
+            if ($erros !== []) {
+                return $erros;
+            }
+        }
+
+        $codigoTop = trim((string) (
+            $json['codigo']
+            ?? $json['codigoStatus']
+            ?? $json['code']
+            ?? ''
+        ));
+        $mensagemTop = trim((string) (
+            $json['descricao']
+            ?? $json['motivoStatus']
+            ?? $json['mensagem']
+            ?? $json['message']
+            ?? $json['title']
+            ?? $json['detail']
+            ?? ''
+        ));
+        $complementoTop = trim((string) ($json['complemento'] ?? ''));
+        if ($mensagemTop !== '' || $complementoTop !== '') {
+            $mensagem = $mensagemTop;
+            if ($complementoTop !== '') {
+                $mensagem = $mensagem !== ''
+                    ? "{$mensagem} — {$complementoTop}"
+                    : $complementoTop;
+            }
+
+            return [[
+                'codigo' => $codigoTop !== '' ? $codigoTop : $codigoFallback,
+                'mensagem' => $mensagem,
+            ]];
+        }
+
+        $erroCurl = trim((string) ($resposta['erro'] ?? ''));
+        if ($erroCurl !== '') {
+            return [[
+                'codigo' => $codigoFallback,
+                'mensagem' => $erroCurl,
+            ]];
+        }
+
+        $body = trim((string) ($resposta['body'] ?? ''));
+        if ($body !== '') {
+            $bodyResumo = $this->resumirCorpoResposta($body);
+
+            return [[
+                'codigo' => $codigoFallback,
+                'mensagem' => "HTTP {$codigoFallback}: {$bodyResumo}",
+            ]];
+        }
+
+        return [[
+            'codigo' => $codigoFallback,
+            'mensagem' => $mensagemFallback,
+        ]];
+    }
+
+    private function resumirCorpoResposta(string $body): string
+    {
+        $limpo = preg_replace('/\s+/', ' ', $body) ?? $body;
+        $limpo = trim($limpo);
+        if (strlen($limpo) > 500) {
+            return substr($limpo, 0, 500) . '…';
+        }
+
+        return $limpo;
     }
 
     /**
@@ -525,18 +617,65 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
      */
     private function mapearMensagens(mixed $mensagens): array
     {
+        // Objeto único { codigo, descricao } ou string simples.
+        if (is_string($mensagens)) {
+            $texto = trim($mensagens);
+            return $texto === ''
+                ? []
+                : [['codigo' => 'SEFIN', 'mensagem' => $texto]];
+        }
+
         if (!is_array($mensagens)) {
+            return [];
+        }
+
+        // Lista associativa única (não é lista de erros).
+        $ehLista = array_is_list($mensagens);
+        if (!$ehLista && (
+            isset($mensagens['codigo'])
+            || isset($mensagens['descricao'])
+            || isset($mensagens['mensagem'])
+            || isset($mensagens['message'])
+            || isset($mensagens['complemento'])
+        )) {
+            $mensagens = [$mensagens];
+        } elseif (!$ehLista) {
             return [];
         }
 
         $saida = [];
         foreach ($mensagens as $item) {
+            if (is_string($item)) {
+                $texto = trim($item);
+                if ($texto === '') {
+                    continue;
+                }
+                $saida[] = ['codigo' => 'SEFIN', 'mensagem' => $texto];
+                continue;
+            }
             if (!is_array($item)) {
                 continue;
             }
-            $codigo = (string) ($item['codigo'] ?? '');
-            $descricao = trim((string) ($item['descricao'] ?? $item['mensagem'] ?? ''));
-            $complemento = trim((string) ($item['complemento'] ?? ''));
+            $codigo = (string) (
+                $item['codigo']
+                ?? $item['code']
+                ?? $item['Codigo']
+                ?? ''
+            );
+            $descricao = trim((string) (
+                $item['descricao']
+                ?? $item['mensagem']
+                ?? $item['message']
+                ?? $item['motivo']
+                ?? $item['title']
+                ?? $item['detail']
+                ?? ''
+            ));
+            $complemento = trim((string) (
+                $item['complemento']
+                ?? $item['Complemento']
+                ?? ''
+            ));
             $mensagem = $descricao;
             if ($complemento !== '') {
                 $mensagem = $mensagem !== '' ? "{$mensagem} — {$complemento}" : $complemento;

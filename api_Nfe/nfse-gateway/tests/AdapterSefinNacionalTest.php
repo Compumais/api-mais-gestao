@@ -215,6 +215,68 @@ assertTrue(($res400['sucesso'] ?? true) === false, '400 mapeia rejeição');
 assertTrue(($res400['erros'][0]['codigo'] ?? '') === 'E050', '400 preserva codigo E050');
 assertTrue(($res400['pendente'] ?? true) === false, '400 não fica pendente');
 
+$res400ErroSingular = $mapearEmissao->invoke(
+    $adapterSefin,
+    [
+        'status' => 400,
+        'json' => [
+            'erro' => [
+                'codigo' => 'E082',
+                'descricao' => 'Indicador de operação inválido',
+                'complemento' => 'cIndOp',
+            ],
+        ],
+        'body' => '',
+    ],
+    $idInf,
+    '<DPS/>',
+);
+assertTrue(
+    ($res400ErroSingular['erros'][0]['codigo'] ?? '') === 'E082',
+    '400 lê erro singular',
+);
+assertTrue(
+    str_contains((string) ($res400ErroSingular['erros'][0]['mensagem'] ?? ''), 'Indicador'),
+    '400 mensagem do erro singular',
+);
+
+$res400TopLevel = $mapearEmissao->invoke(
+    $adapterSefin,
+    [
+        'status' => 400,
+        'json' => [
+            'codigoStatus' => 400,
+            'motivoStatus' => 'DPS rejeitada pela validação',
+        ],
+        'body' => '',
+    ],
+    $idInf,
+    '<DPS/>',
+);
+assertTrue(
+    str_contains((string) ($res400TopLevel['erros'][0]['mensagem'] ?? ''), 'DPS rejeitada'),
+    '400 lê motivoStatus top-level',
+);
+
+$res400Body = $mapearEmissao->invoke(
+    $adapterSefin,
+    [
+        'status' => 400,
+        'json' => null,
+        'body' => '{"falha":"schema DPS inválido no envelope"}',
+    ],
+    $idInf,
+    '<DPS/>',
+);
+assertTrue(
+    str_contains((string) ($res400Body['erros'][0]['mensagem'] ?? ''), 'schema DPS'),
+    '400 usa body bruto quando JSON não tem erros',
+);
+assertTrue(
+    !str_contains((string) ($res400Body['erros'][0]['mensagem'] ?? ''), 'sem detalhe'),
+    '400 com body não usa fallback sem detalhe',
+);
+
 $mapearErro = $ref->getMethod('mapearRespostaErroGenerico');
 $mapearErro->setAccessible(true);
 $res404 = $mapearErro->invoke(
