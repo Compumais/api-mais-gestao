@@ -19,7 +19,10 @@ import {
 } from "@/util/http-util.js";
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
-import { isLayoutNfseDps } from "@/util/validar-pre-requisitos-emissao-nfse.js";
+import {
+	isLayoutNfseDps,
+	isProvedorSefinNacional,
+} from "@/util/validar-pre-requisitos-emissao-nfse.js";
 
 export type ResultadoConsultaNfse = {
 	idnotafiscal: string;
@@ -173,8 +176,11 @@ export async function consultarNfseService({
 		protocolo = protocoloCancelamento;
 	}
 
+	const provedorConfig = String(credenciais.configJson.provedor ?? "");
+	const sefin = isProvedorSefinNacional(provedorConfig);
 	const configLayoutDps = isLayoutNfseDps(
 		credenciais.configJson.versaolayout as string | undefined,
+		provedorConfig,
 	);
 	const modoDps = resolverModoConsultaDps({
 		emissaoSalva,
@@ -184,7 +190,19 @@ export async function consultarNfseService({
 		configLayoutDps,
 	});
 
-	if (modoDps && !protocolo) {
+	const idDpsSalvo = emissaoSalva?.idDps?.trim() || null;
+	const chaveAcessoNota = (nota.codigoautenticidadenfse ?? "").replace(
+		/\D/g,
+		"",
+	);
+
+	if (sefin) {
+		if (!idDpsSalvo && chaveAcessoNota.length !== 50) {
+			return httpBadRequest(
+				"Consulta Sefin Nacional exige Id da DPS ou chave de acesso (50 dígitos) gravados na nota.",
+			);
+		}
+	} else if (modoDps && !protocolo) {
 		if (nota.status === NFE_STATUS.REJEITADA) {
 			return httpBadRequest(
 				"A emissão DPS falhou antes de obter protocolo (ex.: erro de conexão SOAP). Emita novamente — não há status para consultar nesta nota.",
@@ -200,7 +218,14 @@ export async function consultarNfseService({
 		configJson: credenciais.configJson,
 		pfxBase64: credenciais.pfxBase64,
 		senha: credenciais.senha,
-		dados: modoDps
+		dados: sefin
+			? {
+					...(idDpsSalvo ? { idDps: idDpsSalvo } : {}),
+					...(chaveAcessoNota.length === 50
+						? { chaveAcesso: chaveAcessoNota }
+						: {}),
+				}
+			: modoDps
 			? {
 					protocolo,
 					tipoIntegracao,
@@ -324,24 +349,42 @@ export async function consultarNfseService({
 
 	const estavaAutorizada = nota.status === NFE_STATUS.AUTORIZADA;
 	const atualizacao: Partial<NovaNotaFiscal> = {};
+	const chaveResposta = (
+		resposta.chaveAcesso ??
+		resposta.codigoVerificacao ??
+		""
+	).replace(/\D/g, "");
+	const autorizadaPorConsulta =
+		Boolean(resposta.numeroNfse) ||
+		(resposta.sucesso === true && chaveResposta.length === 50);
 
-	if (resposta.numeroNfse) {
-		atualizacao.numeronfse = resposta.numeroNfse;
+	if (autorizadaPorConsulta) {
+		if (resposta.numeroNfse) {
+			atualizacao.numeronfse = resposta.numeroNfse;
+		}
 		atualizacao.status = NFE_STATUS.AUTORIZADA;
 		atualizacao.pendenciarps = 0;
 		atualizacao.mensagemtransmissaonfe = null;
 	}
-	if (resposta.codigoVerificacao) {
+	if (chaveResposta.length === 50) {
+		atualizacao.codigoautenticidadenfse = chaveResposta;
+	} else if (resposta.codigoVerificacao) {
 		atualizacao.codigoautenticidadenfse = resposta.codigoVerificacao;
 	}
 	if (resposta.link) {
 		atualizacao.linknfse = resposta.link;
 	}
-	if (precisaBackfillProtocolo || (modoDps && protocolo)) {
+	if (
+		precisaBackfillProtocolo ||
+		(modoDps && protocolo) ||
+		resposta.idDps ||
+		sefin
+	) {
 		atualizacao.dadosimportacao = {
 			...(emissaoSalva ?? {}),
 			...(protocolo ? { protocolo } : {}),
-			...(modoDps ? { modo: "dps" as const } : {}),
+			...(resposta.idDps ? { idDps: resposta.idDps } : {}),
+			...(modoDps || sefin ? { modo: "dps" as const } : {}),
 		} as unknown as Record<string, unknown>;
 	}
 
@@ -367,8 +410,7 @@ export async function consultarNfseService({
 	}
 
 	let integracao: ResultadoConsultaNfse["integracao"];
-	const acabouDeAutorizar =
-		Boolean(resposta.numeroNfse) && !estavaAutorizada;
+	const acabouDeAutorizar = autorizadaPorConsulta && !estavaAutorizada;
 
 	if (acabouDeAutorizar && (emissaoSalva?.gerarFinanceiro ?? true)) {
 		const resultadoIntegracao = await integrarNfseAutorizadaService({

@@ -17,7 +17,9 @@ import {
 } from "@/util/http-util.js";
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
-import { isLayoutNfseDps } from "@/util/validar-pre-requisitos-emissao-nfse.js";
+import {
+	isLayoutNfseDps,
+} from "@/util/validar-pre-requisitos-emissao-nfse.js";
 
 export type ResultadoCancelamentoNfse = {
 	idnotafiscal: string;
@@ -89,7 +91,10 @@ export async function cancelarNfseService({
 	const emissaoSalva = extrairDadosEmissao(nota.dadosimportacao);
 	const modoDps =
 		emissaoSalva?.modo === "dps" ||
-		isLayoutNfseDps(credenciais.configJson.versaolayout as string | undefined);
+		isLayoutNfseDps(
+			credenciais.configJson.versaolayout as string | undefined,
+			String(credenciais.configJson.provedor ?? ""),
+		);
 
 	const chaveAcesso = (nota.codigoautenticidadenfse ?? "").replace(/\D/g, "");
 	if (modoDps && chaveAcesso.length !== 50) {

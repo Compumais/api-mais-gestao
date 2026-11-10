@@ -18,8 +18,10 @@ import {
 import {
 	BETHA_DPS_WSDL,
 	isLayoutNfseDps,
+	isProvedorSefinNacional,
 	NFSE_LAYOUTS,
 	NFSE_PROVEDORES,
+	urlBaseSefinNacional,
 } from "@/constants/nfse-emissao";
 import { nfseConfiguracaoSchema } from "@/schemas/nfse-configuracao.schema";
 import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
@@ -74,11 +76,12 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 
 	const salvarMutation = useMutation({
 		mutationFn: (dados: z.output<typeof nfseConfiguracaoSchema>) => {
-			const modoDps =
+			const sefin = isProvedorSefinNacional(dados.provedor);
+			const modoDpsBetha =
 				dados.provedor === "betha" && isLayoutNfseDps(dados.versaolayout);
 			const urls = dados.urlsoperacao;
 			const urlsoperacao =
-				dados.provedor === "betha" && !modoDps && urls
+				dados.provedor === "betha" && !modoDpsBetha && urls
 					? {
 							emissao: urls.emissao?.trim() || null,
 							consulta: urls.consulta?.trim() || null,
@@ -88,11 +91,14 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 
 			return nfseConfiguracaoService.atualizar(idempresa, {
 				...dados,
-				urlwsdl: modoDps
-					? (dados.urlwsdl?.trim() || BETHA_DPS_WSDL)
-					: dados.urlwsdl,
-				usarlotesincrono: modoDps ? false : dados.usarlotesincrono,
-				urlsoperacao,
+				versaolayout: sefin ? "dps-1.01" : dados.versaolayout,
+				urlwsdl: sefin
+					? dados.urlwsdl?.trim() || null
+					: modoDpsBetha
+						? (dados.urlwsdl?.trim() || BETHA_DPS_WSDL)
+						: dados.urlwsdl,
+				usarlotesincrono: sefin || modoDpsBetha ? false : dados.usarlotesincrono,
+				urlsoperacao: sefin ? null : urlsoperacao,
 			});
 		},
 		onSuccess: () => {
@@ -106,8 +112,11 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 
 	const provedorAtual = form.watch("provedor");
 	const layoutAtual = form.watch("versaolayout");
-	const modoDps =
+	const ambienteAtual = form.watch("ambiente");
+	const sefinAtual = isProvedorSefinNacional(provedorAtual);
+	const modoDpsBetha =
 		provedorAtual === "betha" && isLayoutNfseDps(layoutAtual);
+	const modoDps = sefinAtual || modoDpsBetha;
 
 	if (isLoading) {
 		return <p className="text-muted-foreground">Carregando...</p>;
@@ -141,7 +150,18 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 							<FieldLabel htmlFor="provedor">Provedor</FieldLabel>
 							<Select
 								value={form.watch("provedor")}
-								onValueChange={(v) => form.setValue("provedor", v)}
+								onValueChange={(v) => {
+									form.setValue("provedor", v);
+									if (isProvedorSefinNacional(v)) {
+										form.setValue("versaolayout", "dps-1.01");
+										form.setValue("usarlotesincrono", false);
+										form.setValue("urlsoperacao", {
+											emissao: "",
+											consulta: "",
+											cancelamento: "",
+										});
+									}
+								}}
 							>
 								<SelectTrigger id="provedor">
 									<SelectValue />
@@ -187,30 +207,59 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 								</SelectContent>
 							</Select>
 							<p className="text-muted-foreground text-xs mt-1">
-								{modoDps
+								{modoDpsBetha
 									? "Nota Nacional (DPS): emissão assíncrona via protocolo Betha cloud."
 									: "RPS e-gov (ABRASF 2.02): GerarNfse / lote no ambiente municipal Betha."}
 							</p>
 						</Field>
 					) : null}
 
-					<Field>
-						<FieldLabel htmlFor="urlwsdl">URL / WSDL do provedor</FieldLabel>
-						<Input
-							id="urlwsdl"
-							placeholder={modoDps ? BETHA_DPS_WSDL : undefined}
-							{...form.register("urlwsdl")}
-						/>
-						{provedorAtual === "betha" ? (
-							<p className="text-muted-foreground text-xs mt-1">
-								{modoDps
-									? "WSDL único DPS: nota-eletronica.betha.cloud/dps/ws/service.wsdl"
-									: "Betha RPS usa WSDL por operação. Informe a URL base (ex.: gerarNfse?wsdl) e, se necessário, complete as URLs abaixo."}
+					{sefinAtual ? (
+						<div className="space-y-3 rounded-md border border-dashed p-4 text-sm">
+							<p className="font-medium">Sefin Nacional (Emissor Público)</p>
+							<p className="text-muted-foreground text-xs">
+								Layout fixo <code>dps-1.01</code>. Comunicação REST + mTLS —
+								o certificado A1 precisa ter extensão &quot;Autenticação
+								Cliente&quot;.
 							</p>
-						) : null}
-					</Field>
+							<p className="text-muted-foreground text-xs">
+								URL padrão (
+								{Number(ambienteAtual) === 1 ? "produção" : "homologação"}
+								):{" "}
+								<code className="break-all">
+									{urlBaseSefinNacional(Number(ambienteAtual))}
+								</code>
+							</p>
+							<Field>
+								<FieldLabel htmlFor="urlwsdl-sefin">
+									URL base (opcional — override)
+								</FieldLabel>
+								<Input
+									id="urlwsdl-sefin"
+									placeholder={urlBaseSefinNacional(Number(ambienteAtual))}
+									{...form.register("urlwsdl")}
+								/>
+							</Field>
+						</div>
+					) : (
+						<Field>
+							<FieldLabel htmlFor="urlwsdl">URL / WSDL do provedor</FieldLabel>
+							<Input
+								id="urlwsdl"
+								placeholder={modoDpsBetha ? BETHA_DPS_WSDL : undefined}
+								{...form.register("urlwsdl")}
+							/>
+							{provedorAtual === "betha" ? (
+								<p className="text-muted-foreground text-xs mt-1">
+									{modoDpsBetha
+										? "WSDL único DPS: nota-eletronica.betha.cloud/dps/ws/service.wsdl"
+										: "Betha RPS usa WSDL por operação. Informe a URL base (ex.: gerarNfse?wsdl) e, se necessário, complete as URLs abaixo."}
+								</p>
+							) : null}
+						</Field>
+					)}
 
-					{provedorAtual === "betha" && !modoDps ? (
+					{provedorAtual === "betha" && !modoDpsBetha ? (
 						<div className="space-y-3 rounded-md border p-4">
 							<p className="text-sm font-medium">URLs WSDL por operação (Betha)</p>
 							<p className="text-muted-foreground text-xs">
@@ -250,10 +299,10 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 						</div>
 					) : null}
 
-					{modoDps ? (
+					{modoDpsBetha ? (
 						<div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
 							<p className="font-medium text-foreground mb-1">
-								Modo DPS (Nota Nacional)
+								Modo DPS (Betha cloud)
 							</p>
 							<p>
 								Emissão via <code>RecepcionarDps</code>; o retorno traz

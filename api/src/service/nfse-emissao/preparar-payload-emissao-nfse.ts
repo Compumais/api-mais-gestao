@@ -149,6 +149,14 @@ export async function prepararPayloadEmissaoNfse(
 	}
 
 	const layoutDps = (() => {
+		const provedor = (nfseConfiguracao.provedor ?? "").toLowerCase();
+		if (
+			provedor === "sefin_nacional" ||
+			provedor === "sefin-nacional" ||
+			provedor === "adn"
+		) {
+			return true;
+		}
 		const versao = (nfseConfiguracao.versaolayout ?? "").toLowerCase();
 		const url = (nfseConfiguracao.urlwsdl ?? "").toLowerCase();
 		return (

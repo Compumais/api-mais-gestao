@@ -9,6 +9,7 @@ use MaisGestao\NfseGateway\Adapters\AdapterBetha;
 use MaisGestao\NfseGateway\Adapters\AdapterGinfes;
 use MaisGestao\NfseGateway\Adapters\AdapterIpm;
 use MaisGestao\NfseGateway\Adapters\AdapterIssNet;
+use MaisGestao\NfseGateway\Adapters\AdapterSefinNacional;
 use MaisGestao\NfseGateway\Contract\NfseProvedorAdapter;
 
 final class ProvedorFactory
@@ -20,6 +21,7 @@ final class ProvedorFactory
             'issnet' => new AdapterIssNet(),
             'ginfes' => new AdapterGinfes(),
             'betha' => new AdapterBetha(),
+            'sefin_nacional', 'sefin-nacional', 'adn' => new AdapterSefinNacional(),
             default => new AdapterAbrasfV202(),
         };
     }

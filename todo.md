@@ -1,2 +1,0 @@
-- [] Deixar Unidade Medida Global para todos usuários;
-- []

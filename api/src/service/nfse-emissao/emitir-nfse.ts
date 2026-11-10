@@ -23,7 +23,10 @@ import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-f
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
-import { isLayoutNfseDps } from "@/util/validar-pre-requisitos-emissao-nfse.js";
+import {
+	isLayoutNfseDps,
+	isProvedorSefinNacional,
+} from "@/util/validar-pre-requisitos-emissao-nfse.js";
 
 export type EmitirNfseParametros = PrepararPayloadEmissaoNfseParams;
 
@@ -126,15 +129,28 @@ export async function emitirNfseService(
 	const agora = new Date().toISOString();
 	const idnotafiscal = uuidv4();
 
-	const autorizada = resposta.sucesso === true && Boolean(resposta.numeroNfse);
+	const provedorConfig = String(payloadGateway.configJson.provedor ?? "");
+	const chaveAcesso =
+		(resposta.chaveAcesso ?? resposta.codigoVerificacao ?? "")
+			.replace(/\D/g, "") || null;
+	const chaveValida = Boolean(chaveAcesso && chaveAcesso.length === 50);
+	const autorizada =
+		resposta.sucesso === true &&
+		(Boolean(resposta.numeroNfse) || chaveValida);
 	const modoDps =
 		resposta.modo === "dps" ||
 		String(resposta.versaolayout ?? "")
 			.toLowerCase()
 			.includes("dps") ||
-		isLayoutNfseDps(String(payloadGateway.configJson.versaolayout ?? ""));
+		isLayoutNfseDps(
+			String(payloadGateway.configJson.versaolayout ?? ""),
+			provedorConfig,
+		);
 	const pendenteDps =
-		resposta.sucesso === true && !autorizada && Boolean(resposta.protocolo);
+		(resposta.pendente === true && Boolean(resposta.idDps)) ||
+		(resposta.sucesso === true &&
+			!autorizada &&
+			Boolean(resposta.protocolo));
 	const status = autorizada
 		? NFE_STATUS.AUTORIZADA
 		: pendenteDps
@@ -145,6 +161,7 @@ export async function emitirNfseService(
 		...dadosSalvos,
 		payload: payloadGateway.payloadNfse,
 		...(resposta.protocolo ? { protocolo: resposta.protocolo } : {}),
+		...(resposta.idDps ? { idDps: resposta.idDps } : {}),
 		...(modoDps || pendenteDps
 			? { modo: "dps" as const }
 			: resposta.modo === "rps-gerar"
@@ -159,10 +176,18 @@ export async function emitirNfseService(
 	const indicaE050 =
 		/E050/i.test(mensagemRejeicaoBruta) ||
 		(resposta.erros ?? []).some((e) => e.codigo === "E050");
+	const sefin = isProvedorSefinNacional(provedorConfig);
 	const mensagemRejeicao = indicaE050
-		? `${mensagemRejeicaoBruta} O ID da DPS (série+nDPS ${numeroRps}) já foi usado na Betha/ADN. ` +
-			"Em Configurações → NFS-e, ajuste o próximo número da série para o valor do Fly (ex.: 8402) e emita/retransmita de novo."
+		? sefin
+			? `${mensagemRejeicaoBruta} O ID da DPS (série+nDPS ${numeroRps}) já foi usado na Sefin Nacional. ` +
+				"Em Configurações → NFS-e, avance o próximo número da série e emita/retransmita de novo (ou consulte a DPS pelo Id antes)."
+			: `${mensagemRejeicaoBruta} O ID da DPS (série+nDPS ${numeroRps}) já foi usado na Betha/ADN. ` +
+				"Em Configurações → NFS-e, ajuste o próximo número da série para o valor do Fly (ex.: 8402) e emita/retransmita de novo."
 		: mensagemRejeicaoBruta;
+
+	const mensagemPendente = sefin
+		? `Emissão Sefin pendente de confirmação. Id DPS: ${resposta.idDps}. Use Consultar antes de reemitir.`
+		: `DPS recebida. Protocolo: ${resposta.protocolo}. Aguardando processamento no ambiente nacional.`;
 
 	const nota: NovaNotaFiscal = {
 		id: idnotafiscal,
@@ -175,7 +200,7 @@ export async function emitirNfseService(
 		numero: String(numeroRps),
 		numeronotafiscal: String(numeroRps),
 		numeronfse: resposta.numeroNfse ?? null,
-		codigoautenticidadenfse: resposta.codigoVerificacao ?? null,
+		codigoautenticidadenfse: chaveAcesso ?? resposta.codigoVerificacao ?? null,
 		linknfse: resposta.link ?? null,
 		pendenciarps: autorizada ? 0 : 1,
 		status,
@@ -193,7 +218,7 @@ export async function emitirNfseService(
 		mensagemtransmissaonfe: autorizada
 			? null
 			: pendenteDps
-				? `DPS recebida. Protocolo: ${resposta.protocolo}. Aguardando processamento no ambiente nacional.`
+				? mensagemPendente
 				: mensagemRejeicao,
 	};
 

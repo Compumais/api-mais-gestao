@@ -142,11 +142,16 @@ export type NfseGatewayRespostaBase = {
 export type NfseGatewayEmissaoResposta = NfseGatewayRespostaBase & {
 	numeroNfse?: string | null;
 	codigoVerificacao?: string | null;
+	/** Chave de acesso NFS-e nacional (50 dígitos). Compatível com codigoVerificacao no fluxo DPS. */
+	chaveAcesso?: string | null;
+	/** Identificador da DPS (45 chars). */
+	idDps?: string | null;
 	link?: string | null;
 	protocolo?: string | null;
 	xml?: string | null;
 	xmlEnviado?: string | null;
 	erros?: NfseGatewayErro[];
+	alertas?: NfseGatewayErro[];
 	provedor?: string;
 	versaolayout?: string;
 	modo?: "dps" | "rps" | "rps-gerar" | string;
@@ -173,5 +178,7 @@ export type DadosEmissaoNfseSalvos = {
 	protocolo?: string | null;
 	protocoloCancelamento?: string | null;
 	protocoloSubstituicao?: string | null;
+	/** Id da DPS (Sefin Nacional / Betha DPS). */
+	idDps?: string | null;
 	modo?: "dps" | "rps" | "rps-gerar";
 };

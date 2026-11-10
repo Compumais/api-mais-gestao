@@ -8,6 +8,10 @@ export const NFSE_PROVEDORES = [
 	{ value: "ginfes", label: "GINFES" },
 	{ value: "ipm", label: "IPM Sistemas" },
 	{ value: "betha", label: "Betha" },
+	{
+		value: "sefin_nacional",
+		label: "Sefin Nacional (Emissor Público)",
+	},
 ] as const;
 
 export const NFSE_AMBIENTE_LABELS: Record<number, string> = {
@@ -23,7 +27,32 @@ export const NFSE_LAYOUTS = [
 export const BETHA_DPS_WSDL =
 	"https://nota-eletronica.betha.cloud/dps/ws/service.wsdl";
 
-export function isLayoutNfseDps(versaolayout?: string | null): boolean {
+export const SEFIN_NACIONAL_URL_HOMOLOGACAO =
+	"https://sefin.producaorestrita.nfse.gov.br/SefinNacional";
+
+export const SEFIN_NACIONAL_URL_PRODUCAO =
+	"https://sefin.nfse.gov.br/SefinNacional";
+
+export function isProvedorSefinNacional(
+	provedor?: string | null,
+): boolean {
+	const p = (provedor ?? "").toLowerCase().trim();
+	return p === "sefin_nacional" || p === "sefin-nacional" || p === "adn";
+}
+
+export function isLayoutNfseDps(
+	versaolayout?: string | null,
+	provedor?: string | null,
+): boolean {
+	if (isProvedorSefinNacional(provedor)) {
+		return true;
+	}
 	const v = (versaolayout ?? "").toLowerCase();
 	return v.includes("dps") || v.includes("nacional");
+}
+
+export function urlBaseSefinNacional(ambiente?: number | null): string {
+	return ambiente === 1
+		? SEFIN_NACIONAL_URL_PRODUCAO
+		: SEFIN_NACIONAL_URL_HOMOLOGACAO;
 }

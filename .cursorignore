@@ -1,0 +1,38 @@
+
+# Dependências
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+**/coverage/
+**/.turbo/
+**/.cache/
+
+# Arquivos gerados
+**/generated/
+**/drizzle/meta/
+**/*.min.js
+**/*.map
+
+# Logs e temporários
+**/*.log
+**/tmp/
+**/temp/
+
+# Dados locais
+**/.env
+**/.env.*
+**/uploads/
+**/backups/
+**/dump/
+
+# Binários e instaladores
+**/*.exe
+**/*.dll
+**/*.bin
+**/*.zip
+**/*.7z
+
+# IDE
+**/.idea/
+**/.vscode/

@@ -9,13 +9,16 @@ import { AlertaVencimentoCertificado } from "@/components/alerta-vencimento-cert
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NFE_STATUS, NFE_STATUS_LABELS } from "@/constants/nfe-status";
+import { isProvedorSefinNacional } from "@/constants/nfse-emissao";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
+import { useEmpresa } from "@/provider/empresa-provider";
 import {
 	buscarNfsePorId,
 	cancelarNfse,
 	consultarNfsePorRps,
 	substituirNfse,
 } from "@/services/nfse-emissao.service";
+import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
 import { PageContainer } from "../../components/page-container";
 import { AvisoAmbienteNfse } from "../components/aviso-ambiente-nfse";
 import { CardErroNfse } from "../components/card-erro-nfse";
@@ -29,17 +32,23 @@ function extrairProtocolo(mensagem?: string | null): string | null {
 
 function notaEhDps(nota: {
 	mensagemtransmissaonfe?: string | null;
-	dadosimportacao?: { modo?: string; protocolo?: string | null } | null;
+	dadosimportacao?: {
+		modo?: string;
+		protocolo?: string | null;
+		idDps?: string | null;
+	} | null;
 }): boolean {
 	if (nota.dadosimportacao?.modo === "dps") return true;
 	if (nota.dadosimportacao?.protocolo) return true;
+	if (nota.dadosimportacao?.idDps) return true;
 	const msg = nota.mensagemtransmissaonfe ?? "";
-	return /dps|protocolo|ambiente nacional/i.test(msg);
+	return /dps|protocolo|ambiente nacional|sefin/i.test(msg);
 }
 
 export default function DetalheNfsePage() {
 	const params = useParams<{ id: string }>();
 	const queryClient = useQueryClient();
+	const { empresa } = useEmpresa();
 	const [motivoCancelamento, setMotivoCancelamento] = useState("");
 	const [idNotaSubstituta, setIdNotaSubstituta] = useState("");
 	const [motivoSubstituicao, setMotivoSubstituicao] = useState("");
@@ -51,6 +60,12 @@ export default function DetalheNfsePage() {
 	const { data, isLoading } = useQuery({
 		queryKey: ["nfse-detalhe", params.id],
 		queryFn: () => buscarNfsePorId(params.id),
+	});
+
+	const { data: nfseConfig } = useQuery({
+		queryKey: ["nfse-configuracao", empresa?.id],
+		queryFn: () => nfseConfiguracaoService.buscar(empresa!.id),
+		enabled: Boolean(empresa?.id),
 	});
 
 	useTituloAba(
@@ -155,6 +170,9 @@ export default function DetalheNfsePage() {
 	const cancelada = nota.status === NFE_STATUS.CANCELADA;
 	const pendente = nota.status === NFE_STATUS.PENDENTE;
 	const modoDps = notaEhDps(nota);
+	const sefin = isProvedorSefinNacional(nfseConfig?.provedor);
+	const chaveAcesso = (nota.codigoautenticidadenfse ?? "").replace(/\D/g, "");
+	const idDps = nota.dadosimportacao?.idDps?.trim() || null;
 	const protocolo =
 		nota.dadosimportacao?.protocolo?.trim() ||
 		nota.dadosimportacao?.protocoloCancelamento?.trim() ||

@@ -38,6 +38,15 @@ Implementado em `AdapterBetha`. Ver [betha.md](./betha.md).
 - Métodos SOAP camelCase
 - Derivação automática de URL a partir de `urlwsdl`
 
+## sefin_nacional
+
+Implementado em `AdapterSefinNacional`. Ver [sefin-nacional.md](./sefin-nacional.md).
+
+- REST + mTLS (Sefin Nacional / Emissor Público)
+- DPS GZip+Base64 síncrona (`POST /nfse`)
+- Cancelamento por evento `e101101`
+- URL por ambiente (produção restrita / produção); override em `urlwsdl`
+
 ## Adicionar novo provedor
 
 1. Criar `src/Adapters/Adapter{Nome}.php` implementando `NfseProvedorAdapter`

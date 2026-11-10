@@ -1,3 +1,7 @@
+import {
+	NFSE_SEFIN_SERIE_MAX,
+	NFSE_SEFIN_SERIE_MIN,
+} from "@/constants/nfse-emissao.js";
 import type { Empresa } from "@/model/empresa-model.js";
 import type { CertificadoDigital } from "@/model/nfe-emissao-model.js";
 import type { NfseConfiguracao } from "@/model/nfse-emissao-model.js";
@@ -9,7 +13,20 @@ export type PendenciaNfse = {
 	mensagem: string;
 };
 
-export function isLayoutNfseDps(versaolayout?: string | null): boolean {
+export function isProvedorSefinNacional(
+	provedor?: string | null,
+): boolean {
+	const p = (provedor ?? "").toLowerCase().trim();
+	return p === "sefin_nacional" || p === "sefin-nacional" || p === "adn";
+}
+
+export function isLayoutNfseDps(
+	versaolayout?: string | null,
+	provedor?: string | null,
+): boolean {
+	if (isProvedorSefinNacional(provedor)) {
+		return true;
+	}
 	const v = (versaolayout ?? "").toLowerCase();
 	return v.includes("dps") || v.includes("nacional");
 }
@@ -76,12 +93,15 @@ export function validarPreRequisitosEmissaoNfse({
 		const temUrlConsulta = Boolean(urlsOperacao?.consulta?.trim());
 		const temUrlEmissao = Boolean(urlsOperacao?.emissao?.trim());
 		const provedor = String(nfseConfiguracao.provedor ?? "").toLowerCase();
-		const modoDps = isLayoutNfseDps(nfseConfiguracao.versaolayout);
+		const sefin = isProvedorSefinNacional(provedor);
+		const modoDps = isLayoutNfseDps(nfseConfiguracao.versaolayout, provedor);
 		const urlDps =
 			urlPareceDps(nfseConfiguracao.urlwsdl) ||
 			urlPareceDps(urlsOperacao?.emissao);
 
-		if (provedor === "betha" && modoDps) {
+		if (sefin) {
+			// Sefin Nacional: URL por ambiente no gateway; WSDL SOAP não é exigido.
+		} else if (provedor === "betha" && modoDps) {
 			if (!temUrlBase && !temUrlEmissao) {
 				pendencias.push({
 					codigo: "NFSE_WSDL_DPS",
@@ -125,6 +145,21 @@ export function validarPreRequisitosEmissaoNfse({
 			codigo: "SERIE_RPS",
 			mensagem: "Série RPS padrão não configurada",
 		});
+	} else if (isProvedorSefinNacional(nfseConfiguracao?.provedor)) {
+		const serieNum = Number.parseInt(
+			String(seriePadrao.serie).replace(/\D/g, "") || "0",
+			10,
+		);
+		if (
+			!Number.isFinite(serieNum) ||
+			serieNum < NFSE_SEFIN_SERIE_MIN ||
+			serieNum > NFSE_SEFIN_SERIE_MAX
+		) {
+			pendencias.push({
+				codigo: "SERIE_SEFIN_FAIXA",
+				mensagem: `Série DPS Sefin Nacional deve estar entre ${NFSE_SEFIN_SERIE_MIN} e ${NFSE_SEFIN_SERIE_MAX} (aplicativos próprios / API)`,
+			});
+		}
 	}
 
 	return pendencias;

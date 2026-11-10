@@ -1,5 +1,8 @@
 import { MODELO_NFSE, TIPO_ORIGEM_NFSE } from "@/constants/nfse-emissao.js";
-import { emitirNfseGateway } from "@/lib/nfse-gateway-client.js";
+import {
+	consultarNfsePorRpsGateway,
+	emitirNfseGateway,
+} from "@/lib/nfse-gateway-client.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import type {
 	DadosEmissaoNfseSalvos,
@@ -27,7 +30,10 @@ import {
 } from "@/util/http-util.js";
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
-import { isLayoutNfseDps } from "@/util/validar-pre-requisitos-emissao-nfse.js";
+import {
+	isLayoutNfseDps,
+	isProvedorSefinNacional,
+} from "@/util/validar-pre-requisitos-emissao-nfse.js";
 
 export type ResultadoRetransmissaoNfse = {
 	idnotafiscal: string;
@@ -179,6 +185,89 @@ export async function retransmitirNfseService({
 		);
 	}
 
+	const provedorConfig = String(credenciais.configJson.provedor ?? "");
+	const sefin = isProvedorSefinNacional(provedorConfig);
+	const idDpsAnterior = emissaoSalva.idDps?.trim() || null;
+
+	// Sefin: consultar DPS anterior antes de reservar novo nDPS (evita duplicidade).
+	if (sefin && idDpsAnterior) {
+		const consultaPrevia = await consultarNfsePorRpsGateway({
+			configJson: credenciais.configJson,
+			pfxBase64: credenciais.pfxBase64,
+			senha: credenciais.senha,
+			dados: { idDps: idDpsAnterior },
+		});
+		const chaveConsulta = (
+			consultaPrevia.chaveAcesso ??
+			consultaPrevia.codigoVerificacao ??
+			""
+		).replace(/\D/g, "");
+		const jaAutorizada =
+			consultaPrevia.sucesso === true &&
+			(Boolean(consultaPrevia.numeroNfse) || chaveConsulta.length === 50);
+
+		if (jaAutorizada) {
+			await atualizarNotaFiscal(idnotafiscal, {
+				numeronfse: consultaPrevia.numeroNfse ?? nota.numeronfse,
+				codigoautenticidadenfse:
+					chaveConsulta.length === 50
+						? chaveConsulta
+						: (consultaPrevia.codigoVerificacao ??
+							nota.codigoautenticidadenfse),
+				linknfse: consultaPrevia.link ?? nota.linknfse,
+				pendenciarps: 0,
+				status: NFE_STATUS.AUTORIZADA,
+				mensagemtransmissaonfe: null,
+				dadosimportacao: {
+					...emissaoSalva,
+					idDps: idDpsAnterior,
+					modo: "dps",
+				} as unknown as Record<string, unknown>,
+			});
+
+			if (consultaPrevia.xml) {
+				await arquivarXmlNotaFiscal({
+					idempresa: nota.idempresa,
+					idnotafiscal,
+					tipo: "autorizado",
+					xml: consultaPrevia.xml,
+					chavenfe: montarIdentificadorXmlNfse(
+						consultaPrevia,
+						idnotafiscal,
+					),
+				});
+			}
+
+			let integracaoReconciliacao: ResultadoRetransmissaoNfse["integracao"];
+			if (emissaoSalva.gerarFinanceiro ?? true) {
+				const resultadoIntegracao = await integrarNfseAutorizadaService({
+					idusuario,
+					idnotafiscal,
+					gerarFinanceiro: true,
+				});
+				if (resultadoIntegracao.success && resultadoIntegracao.body) {
+					integracaoReconciliacao = {
+						parcelasGeradas: resultadoIntegracao.body.parcelasGeradas,
+						lancamentosCaixa: resultadoIntegracao.body.lancamentosCaixa,
+						avisos: resultadoIntegracao.body.avisos,
+					};
+				}
+			}
+
+			return httpOk<ResultadoRetransmissaoNfse>({
+				idnotafiscal,
+				numeroNfse: consultaPrevia.numeroNfse,
+				codigoVerificacao:
+					chaveConsulta.length === 50
+						? chaveConsulta
+						: consultaPrevia.codigoVerificacao,
+				status: NFE_STATUS.AUTORIZADA,
+				pendente: false,
+				integracao: integracaoReconciliacao,
+			});
+		}
+	}
+
 	const payloadOriginal = emissaoSalva.payload;
 	const numeroAnterior = Number(
 		payloadOriginal.rps.numero || nota.numeronotafiscal || 0,
@@ -221,18 +310,26 @@ export async function retransmitirNfseService({
 		payloadNfse,
 	});
 
+	const chaveAcesso = (
+		resposta.chaveAcesso ??
+		resposta.codigoVerificacao ??
+		""
+	).replace(/\D/g, "");
 	const autorizada =
-		resposta.sucesso === true && Boolean(resposta.numeroNfse);
+		resposta.sucesso === true &&
+		(Boolean(resposta.numeroNfse) || chaveAcesso.length === 50);
 	const modoDps =
 		resposta.modo === "dps" ||
 		String(resposta.versaolayout ?? "").toLowerCase().includes("dps") ||
 		isLayoutNfseDps(
 			String(credenciais.configJson.versaolayout ?? ""),
+			provedorConfig,
 		);
 	const pendenteDps =
-		resposta.sucesso === true &&
-		!autorizada &&
-		Boolean(resposta.protocolo);
+		(resposta.pendente === true && Boolean(resposta.idDps)) ||
+		(resposta.sucesso === true &&
+			!autorizada &&
+			Boolean(resposta.protocolo));
 	const status = autorizada
 		? NFE_STATUS.AUTORIZADA
 		: pendenteDps
@@ -251,6 +348,7 @@ export async function retransmitirNfseService({
 		...emissaoSalva,
 		payload: payloadNfse,
 		...(resposta.protocolo ? { protocolo: resposta.protocolo } : {}),
+		...(resposta.idDps ? { idDps: resposta.idDps } : {}),
 		...(modoDps || pendenteDps
 			? { modo: "dps" as const }
 			: resposta.modo === "rps-gerar"
@@ -258,12 +356,19 @@ export async function retransmitirNfseService({
 				: { modo: "rps" as const }),
 	};
 
+	const mensagemPendente = sefin
+		? `Emissão Sefin pendente de confirmação. Id DPS: ${resposta.idDps}. Use Consultar antes de reemitir.`
+		: `DPS recebida. Protocolo: ${resposta.protocolo}. Aguardando processamento no ambiente nacional.`;
+
 	await atualizarNotaFiscal(idnotafiscal, {
 		serie: reserva.serie,
 		numero: String(reserva.numeroRps),
 		numeronotafiscal: String(reserva.numeroRps),
 		numeronfse: resposta.numeroNfse ?? null,
-		codigoautenticidadenfse: resposta.codigoVerificacao ?? null,
+		codigoautenticidadenfse:
+			chaveAcesso.length === 50
+				? chaveAcesso
+				: (resposta.codigoVerificacao ?? null),
 		linknfse: resposta.link ?? null,
 		pendenciarps: autorizada ? 0 : 1,
 		status,
@@ -271,7 +376,7 @@ export async function retransmitirNfseService({
 		mensagemtransmissaonfe: autorizada
 			? null
 			: pendenteDps
-				? `DPS recebida. Protocolo: ${resposta.protocolo}. Aguardando processamento no ambiente nacional.`
+				? mensagemPendente
 				: mensagemRejeicao,
 	});
 

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as openCnpjClient from "@/lib/opencnpj-client.js";
-import type { OpenCnpjDados } from "@/model/consulta-cnpj-model.js";
-import * as entidadeRepository from "@/repositories/entidade-repositories.js";
-import * as brasilApiClient from "@/service/localidade/brasil-api-client.js";
+import * as openCnpjClient from "../../lib/opencnpj-client.js";
+import type { OpenCnpjDados } from "../../model/consulta-cnpj-model.js";
+import * as entidadeRepository from "../../repositories/entidade-repositories.js";
+import * as brasilApiClient from "../../service/localidade/brasil-api-client.js";
 import { consultarCnpjEntidadeService } from "./consultar-cnpj-entidade.js";
 
-vi.mock("@/lib/opencnpj-client.js");
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/service/localidade/brasil-api-client.js");
+vi.mock("../../lib/opencnpj-client.js");
+vi.mock("../../repositories/entidade-repositories.js");
+vi.mock("../../service/localidade/brasil-api-client.js");
 
 const dadosOpenCnpjMock: OpenCnpjDados = {
 	cnpj: "10579611000190",

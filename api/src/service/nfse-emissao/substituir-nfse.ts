@@ -15,7 +15,10 @@ import {
 	httpProibido,
 } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
-import { isLayoutNfseDps } from "@/util/validar-pre-requisitos-emissao-nfse.js";
+import {
+	isLayoutNfseDps,
+	isProvedorSefinNacional,
+} from "@/util/validar-pre-requisitos-emissao-nfse.js";
 
 export type ResultadoSubstituicaoNfse = {
 	idnotafiscal: string;
@@ -103,8 +106,16 @@ export async function substituirNfseService({
 		);
 	}
 
+	const provedorConfig = String(credenciais.configJson.provedor ?? "");
+	if (isProvedorSefinNacional(provedorConfig)) {
+		return httpBadRequest(
+			"Substituição Sefin Nacional ainda não suportada nesta versão",
+		);
+	}
+
 	const modoDps = isLayoutNfseDps(
 		credenciais.configJson.versaolayout as string | undefined,
+		provedorConfig,
 	);
 	if (!modoDps) {
 		return httpBadRequest(

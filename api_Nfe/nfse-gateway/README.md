@@ -37,6 +37,8 @@ Registrados em `ProvedorFactory`:
 - `issnet` — slot ISSNet
 - `ginfes` — slot GINFES
 - `ipm` — slot IPM
+- `betha` — Betha (RPS legado ou DPS cloud)
+- `sefin_nacional` — Sefin Nacional / Emissor Público (REST + mTLS)
 
 Documentação por provedor: `docs/provedores/`
 
