@@ -14,6 +14,7 @@ Leia [`../../AGENTS.md`](../../AGENTS.md) antes destes arquivos. Cada módulo de
 | Mesas, gourmet e delivery | [mesas-gourmet-delivery.md](mesas-gourmet-delivery.md) | Conta, comanda, entrega e fila de produção |
 | Impressão | [impressao.md](impressao.md) | DANFC-e, cupom e pedido de cozinha |
 | LAN e POS | [lan-pos.md](lan-pos.md) | Maquininha Android no desktop |
+| Serviço LAN | [servico-lan.md](servico-lan.md) | API LAN, outbox e NFC-e em segundo plano (`--lan-service`) |
 | PDV secundário | [pdv-secundario.md](pdv-secundario.md) | Terminal extra sem banco fiscal próprio |
 | Integrações | [integracoes-perifericos.md](integracoes-perifericos.md) | SiTef, balança e Tecnibra |
 | Backup | [backup.md](backup.md) | Cópia local e troca de empresa |

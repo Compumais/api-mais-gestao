@@ -81,7 +81,9 @@ export async function montarItensEmissaoDav(
 	opcoes: MontarItensEmissaoDavOpcoes = {},
 ): Promise<{ itens: ItemPayloadNfe[]; pendencias: string[] }> {
 	const itensDav = await listarItensPorDav(iddav);
-	const lotesDav = await listarLotesPorDavItens(itensDav.map((item) => item.id));
+	const lotesDav = await listarLotesPorDavItens(
+		itensDav.map((item) => item.id),
+	);
 	const lotesPorItem = new Map<string, typeof lotesDav>();
 	for (const lote of lotesDav) {
 		const atuais = lotesPorItem.get(lote.iddavitem) ?? [];
@@ -134,6 +136,11 @@ export async function montarItensEmissaoDav(
 		const quantidade = parseFloat(itemDav.quantidade ?? "0");
 		const precoUnitario = parseFloat(itemDav.preco ?? "0");
 		const totalItem = parseFloat(itemDav.total ?? "0");
+		const descontoItemBruto = parseFloat(itemDav.desconto ?? "0");
+		const descontoItem =
+			Number.isFinite(descontoItemBruto) && descontoItemBruto > 0
+				? round2(descontoItemBruto)
+				: 0;
 		const valorUnitario =
 			precoUnitario > 0
 				? precoUnitario
@@ -189,6 +196,7 @@ export async function montarItensEmissaoDav(
 			unidade: itemDav.unidademedida ?? produto.unidademedida ?? "UN",
 			quantidade,
 			valorUnitario,
+			...(descontoItem > 0 ? { desconto: descontoItem } : {}),
 			...(usaCsosn
 				? csosn
 					? { csosn }
@@ -200,9 +208,7 @@ export async function montarItensEmissaoDav(
 						...(cstComIcmsProprio
 							? {
 									baseIcms: vProd,
-									...(aliquotaIcms != null
-										? { aliquotaIcms }
-										: {}),
+									...(aliquotaIcms != null ? { aliquotaIcms } : {}),
 								}
 							: {}),
 					}),

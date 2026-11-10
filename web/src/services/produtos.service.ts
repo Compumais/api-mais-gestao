@@ -96,6 +96,11 @@ export interface Produto {
 	aliquotacbs?: string | null;
 	quantidade?: string | null;
 	quantidadefiscal?: string | null;
+	quantidadeprovisionada?: string | null;
+	saldoprevisto?: string | null;
+	estoque?: number | null;
+	quantidadeProvisionada?: number | null;
+	saldoPrevisto?: number | null;
 	divergencia?: string | null;
 	possuiSaldo?: boolean;
 	imagem?: string | null;

@@ -21,6 +21,8 @@ const rastroSchema = z.object({
 const atualizarDavItemBodySchema = z.object({
 	quantidade: z.string().optional(),
 	preco: z.string().optional(),
+	desconto: z.string().optional().nullable(),
+	total: z.string().optional().nullable(),
 	unidademedida: z.string().max(6).optional(),
 	idcfop: z.string().uuid().optional().nullable(),
 	idproduto: z.string().uuid().optional(),

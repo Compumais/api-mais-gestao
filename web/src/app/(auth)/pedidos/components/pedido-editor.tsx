@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { CampoDescontoTotalNfe } from "@/app/(auth)/nota-fiscal-venda/components/campo-desconto-total-nfe";
 import { CamposIntegracaoNfVenda } from "@/app/(auth)/nota-fiscal-venda/components/campos-integracao-nf-venda";
 import {
 	AlertDialog,
@@ -39,7 +40,6 @@ import {
 	FieldLegend,
 	FieldSet,
 } from "@/components/ui/field";
-import { MoneyInput } from "@/components/ui/money-input";
 import { Separator } from "@/components/ui/separator";
 import {
 	Table,
@@ -68,6 +68,7 @@ import {
 } from "@/services/dav.service";
 import { entidadesService } from "@/services/entidades.service";
 import { produtosService } from "@/services/produtos.service";
+import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
 import { PageContainer } from "../../components/page-container";
 import { ModalImprimirPedido } from "./modal-imprimir-pedido";
 import { ModalItemPedido } from "./modal-item-pedido";
@@ -78,22 +79,19 @@ const formatarMoeda = (valor: number) =>
 		currency: "BRL",
 	}).format(valor);
 
-function calcularTotalItens(itens: PedidoDavItem[]) {
-	return itens.reduce((acc, item) => {
-		const qtd = parseFloat(item.quantidade ?? "0");
-		const preco = parseFloat(item.preco ?? "0");
-		const total = parseFloat(item.total ?? "0");
-		if (Number.isFinite(total) && total > 0) return acc + total;
-		if (Number.isFinite(qtd) && Number.isFinite(preco)) return acc + qtd * preco;
-		return acc;
-	}, 0);
-}
+const formatarQuantidade = (valor: number) =>
+	new Intl.NumberFormat("pt-BR", {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 4,
+	}).format(Number.isFinite(valor) ? valor : 0);
 
-function totalLinha(quantidade: string, preco: string) {
+function totalLinha(quantidade: string, preco: string, desconto?: string) {
 	const qtd = parseFloat(quantidade);
 	const valor = parseFloat(preco);
+	const desc = Math.max(0, parseFloat(desconto ?? "0") || 0);
 	if (!Number.isFinite(qtd) || !Number.isFinite(valor)) return "0.00";
-	return (qtd * valor).toFixed(2);
+	const bruto = Math.round(qtd * valor * 100) / 100;
+	return Math.max(0, bruto - desc).toFixed(2);
 }
 
 type PedidoEditorProps = {
@@ -112,7 +110,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 	const [idcondicaopagto, setIdcondicaopagto] = useState("");
 	const [idplanocontas, setIdplanocontas] = useState("");
 	const [idlocalestoque, setIdlocalestoque] = useState("");
-	const [desconto, setDesconto] = useState("0");
+	const [descontoGlobal, setDescontoGlobal] = useState(0);
 	const [observacao, setObservacao] = useState("");
 	const [itensLocais, setItensLocais] = useState<PedidoDavItem[]>([]);
 
@@ -164,7 +162,14 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 		setIdtipodocumento(pedido.idtipodocumentofinanceiro ?? "");
 		setIdcondicaopagto(pedido.idcondicaopagamento ?? "");
 		setIdlocalestoque(pedido.idlocalestoque ?? "");
-		setDesconto(pedido.descontosubtotal ?? pedido.desconto ?? "0");
+		const descBruto =
+			parseFloat(
+				String(pedido.descontosubtotal ?? pedido.desconto ?? "0").replace(
+					",",
+					".",
+				),
+			) || 0;
+		setDescontoGlobal(Math.max(0, Math.round(descBruto * 100) / 100));
 		setObservacao(pedido.observacao ?? "");
 	}, [pedido]);
 
@@ -181,19 +186,119 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 	}, [modoCriacao, pedido, pedidoId, router, searchParams]);
 
 	const itens = modoCriacao ? itensLocais : itensServidor;
-	const totalItens = useMemo(() => calcularTotalItens(itens), [itens]);
+
 	const mapaProdutos = useMemo(() => {
 		const mapa = new Map<string, string>();
 		for (const produto of produtosLista ?? []) {
 			mapa.set(
 				produto.id,
-				produto.descricao?.trim() || produto.nome || String(produto.codigo ?? ""),
+				produto.descricao?.trim() ||
+					produto.nome ||
+					String(produto.codigo ?? ""),
 			);
 		}
 		return mapa;
 	}, [produtosLista]);
-	const descontoNumero = parseFloat(desconto.replace(",", ".")) || 0;
-	const totalPedido = Math.max(totalItens - descontoNumero, 0);
+
+	const mapaSaldosProdutos = useMemo(() => {
+		const mapa = new Map<
+			string,
+			{
+				estoque: number;
+				provisionadoBanco: number;
+				unidademedida: string | null;
+			}
+		>();
+		for (const produto of produtosLista ?? []) {
+			const estoque = Number(produto.quantidade ?? 0);
+			const provisionadoBanco = Number(produto.quantidadeprovisionada ?? 0);
+			mapa.set(produto.id, {
+				estoque: Number.isFinite(estoque) ? estoque : 0,
+				provisionadoBanco: Number.isFinite(provisionadoBanco)
+					? provisionadoBanco
+					: 0,
+				unidademedida: produto.unidademedida ?? null,
+			});
+		}
+		return mapa;
+	}, [produtosLista]);
+
+	const quantidadesLocaisPorProduto = useMemo(() => {
+		if (!modoCriacao) return {};
+		const acumulado: Record<string, number> = {};
+		for (const item of itensLocais) {
+			if (!item.idproduto) continue;
+			const qtd = parseFloat(item.quantidade ?? "0") || 0;
+			acumulado[item.idproduto] = (acumulado[item.idproduto] ?? 0) + qtd;
+		}
+		return acumulado;
+	}, [modoCriacao, itensLocais]);
+
+	const quantidadesLocaisParaModal = useMemo(() => {
+		if (!modoCriacao) return {};
+		const acumulado: Record<string, number> = {};
+		for (const item of itensLocais) {
+			if (!item.idproduto) continue;
+			if (itemEditando && item.id === itemEditando.id) continue;
+			const qtd = parseFloat(item.quantidade ?? "0") || 0;
+			acumulado[item.idproduto] = (acumulado[item.idproduto] ?? 0) + qtd;
+		}
+		return acumulado;
+	}, [modoCriacao, itensLocais, itemEditando]);
+
+	const totalBrutoItens = useMemo(
+		() =>
+			Math.round(
+				itens.reduce((acc, item) => {
+					const qtd = parseFloat(item.quantidade ?? "0") || 0;
+					const preco = parseFloat(item.preco ?? "0") || 0;
+					return acc + Math.round(qtd * preco * 100) / 100;
+				}, 0) * 100,
+			) / 100,
+		[itens],
+	);
+
+	const distribuicaoDesconto = useMemo(
+		() =>
+			distribuirDescontosEmissaoNfe(
+				itens.map((item) => ({
+					quantidade: parseFloat(item.quantidade ?? "0") || 0,
+					valorUnitario: parseFloat(item.preco ?? "0") || 0,
+					desconto: parseFloat(item.desconto ?? "0") || 0,
+				})),
+				descontoGlobal,
+			),
+		[itens, descontoGlobal],
+	);
+
+	const subtotalAposDescontoItens = useMemo(
+		() =>
+			Math.max(
+				0,
+				Math.round(
+					(totalBrutoItens - distribuicaoDesconto.descontoItens) * 100,
+				) / 100,
+			),
+		[totalBrutoItens, distribuicaoDesconto.descontoItens],
+	);
+
+	useEffect(() => {
+		setDescontoGlobal((anterior) => {
+			if (subtotalAposDescontoItens <= 0) return anterior === 0 ? anterior : 0;
+			if (anterior > subtotalAposDescontoItens + 0.0001) {
+				return subtotalAposDescontoItens;
+			}
+			return anterior;
+		});
+	}, [subtotalAposDescontoItens]);
+
+	const descontoNumero = distribuicaoDesconto.descontoGlobal;
+	const totalPedido = Math.max(
+		Math.round((totalBrutoItens - distribuicaoDesconto.descontoTotal) * 100) /
+			100,
+		0,
+	);
+
 	const origemPos =
 		pedidoEhOrigemPos(pedido ?? {}) ||
 		searchParams.get("origem")?.toUpperCase() === "POS";
@@ -232,7 +337,9 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 			cnpjcpfcliente: cliente?.cnpjcpf ?? pedido.cnpjcpfcliente,
 			observacao: observacao.trim() || pedido.observacao,
 			descontosubtotal:
-				descontoNumero > 0 ? descontoNumero.toFixed(2) : pedido.descontosubtotal,
+				descontoNumero > 0
+					? descontoNumero.toFixed(2)
+					: pedido.descontosubtotal,
 			valor: totalPedido.toFixed(2),
 		};
 	}, [
@@ -274,6 +381,9 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 
 	const { mutate: salvarPedido, isPending: salvandoPedido } = useMutation({
 		mutationFn: async (opcoes: { concluir?: boolean }) => {
+			if (distribuicaoDesconto.erros.length > 0) {
+				throw new Error(distribuicaoDesconto.erros[0]);
+			}
 			if (modoCriacao) {
 				const validacao = salvarNovoPedidoDavSchema.safeParse({
 					idcliente,
@@ -284,6 +394,14 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 										idproduto: item.idproduto,
 										quantidade: item.quantidade ?? "1",
 										preco: item.preco ?? "0",
+										desconto: item.desconto ?? "0",
+										total:
+											item.total ??
+											totalLinha(
+												item.quantidade ?? "1",
+												item.preco ?? "0",
+												item.desconto ?? "0",
+											),
 										unidademedida: item.unidademedida ?? undefined,
 										rastros: item.rastros,
 									},
@@ -316,6 +434,8 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 						idproduto: item.idproduto,
 						quantidade: item.quantidade,
 						preco: item.preco,
+						desconto: item.desconto,
+						total: item.total,
 						unidademedida: item.unidademedida,
 						rastros: item.rastros,
 					});
@@ -341,10 +461,14 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 			}
 
 			void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+			void queryClient.invalidateQueries({
+				queryKey: ["produtos-pedido-detalhe", empresa?.id],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["produtos-pedido-busca", empresa?.id],
+			});
 			if (resultado.pedido) {
-				toast.success(
-					opcoes?.concluir ? "Pedido concluído" : "Pedido salvo",
-				);
+				toast.success(opcoes?.concluir ? "Pedido concluído" : "Pedido salvo");
 				router.push(
 					opcoes?.concluir
 						? `/pedidos/${resultado.pedido.id}?imprimir=1`
@@ -372,6 +496,8 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 			idproduto: string;
 			quantidade: string;
 			preco: string;
+			desconto?: string;
+			total?: string;
 			unidademedida?: string;
 			rastros?: PedidoDavItem["rastros"];
 		}) => {
@@ -388,6 +514,12 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 				});
 				void queryClient.invalidateQueries({ queryKey: ["pedido", pedidoId] });
 			}
+			void queryClient.invalidateQueries({
+				queryKey: ["produtos-pedido-detalhe", empresa?.id],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["produtos-pedido-busca", empresa?.id],
+			});
 			setModalItemAberto(false);
 			setItemEditando(null);
 			toast.success(itemEditando ? "Item atualizado" : "Item adicionado");
@@ -410,6 +542,12 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 					queryKey: ["pedido-itens", pedidoId],
 				});
 			}
+			void queryClient.invalidateQueries({
+				queryKey: ["produtos-pedido-detalhe", empresa?.id],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["produtos-pedido-busca", empresa?.id],
+			});
 			toast.success("Item removido");
 		},
 		onError: (erro) => {
@@ -430,6 +568,12 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 				void queryClient.invalidateQueries({ queryKey: ["pedido", pedidoId] });
 			}
 			void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+			void queryClient.invalidateQueries({
+				queryKey: ["produtos-pedido-detalhe", empresa?.id],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["produtos-pedido-busca", empresa?.id],
+			});
 			setConfirmandoCancelamento(false);
 			toast.success("Pedido cancelado");
 		},
@@ -444,11 +588,14 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 		idproduto: string;
 		quantidade: string;
 		preco: string;
+		desconto?: string;
+		total?: string;
 		unidademedida?: string;
 		rastros?: PedidoDavItem["rastros"];
 	}) {
 		const nomeproduto = mapaProdutos.get(dados.idproduto) ?? null;
-		const total = totalLinha(dados.quantidade, dados.preco);
+		const total =
+			dados.total ?? totalLinha(dados.quantidade, dados.preco, dados.desconto);
 
 		if (itemEditando) {
 			setItensLocais((atuais) =>
@@ -460,6 +607,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 								nomeproduto,
 								quantidade: dados.quantidade,
 								preco: dados.preco,
+								desconto: dados.desconto ?? "0.00",
 								total,
 								unidademedida: dados.unidademedida ?? item.unidademedida,
 								rastros: dados.rastros,
@@ -479,6 +627,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 					codigoproduto: null,
 					quantidade: dados.quantidade,
 					preco: dados.preco,
+					desconto: dados.desconto ?? "0.00",
 					total,
 					unidademedida: dados.unidademedida ?? null,
 					idcfop: null,
@@ -496,6 +645,8 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 		idproduto: string;
 		quantidade: string;
 		preco: string;
+		desconto?: string;
+		total?: string;
 		unidademedida?: string;
 		rastros?: PedidoDavItem["rastros"];
 	}) {
@@ -617,9 +768,9 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 
 	return (
 		<PageContainer>
-			<div className="flex flex-col gap-6 p-4 md:p-6">
+			<div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div className="space-y-2">
+					<div className="space-y-1.5">
 						<Button variant="ghost" size="sm" asChild className="-ml-2 w-fit">
 							<Link href={hrefListaPedidos}>
 								<ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -629,7 +780,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 						<div className="flex flex-wrap items-center gap-2">
 							<h1 className="text-2xl font-semibold tracking-tight">
 								{modoCriacao
-									? "Novo pedido"
+									? "Novo pedido de faturamento"
 									: `Pedido ${pedido?.codigo ?? pedidoId?.slice(0, 8)}`}
 							</h1>
 							{origemPos && <Badge variant="secondary">POS</Badge>}
@@ -647,6 +798,10 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 								<Badge variant="secondary">Aberto</Badge>
 							)}
 						</div>
+						<p className="text-xs text-muted-foreground">
+							Preencha o cliente, adicione os produtos conferindo o saldo
+							previsto, aplique descontos e conclua ou fature o pedido.
+						</p>
 						{pedido?.idnfce && (
 							<Button variant="link" asChild className="h-auto p-0">
 								<Link href="/nfce">
@@ -738,10 +893,11 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 					</div>
 				</div>
 
+				{/* 1. Dados do pedido */}
 				<FieldGroup>
 					<FieldSet>
-						<FieldLegend>Dados do pedido</FieldLegend>
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<FieldLegend>1. Dados do pedido</FieldLegend>
+						<div className="grid grid-cols-1 gap-4">
 							<Field>
 								<FieldLabel htmlFor="cliente-pedido">Cliente</FieldLabel>
 								<Combobox
@@ -755,18 +911,9 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 									value={idcliente}
 									onChange={setIdcliente}
 									placeholder="Selecione o cliente"
-									searchPlaceholder="Buscar cliente..."
+									searchPlaceholder="Buscar cliente por nome, razão social ou CPF/CNPJ..."
 									emptyMessage="Nenhum cliente encontrado."
-									disabled={pedidoFaturado}
-								/>
-							</Field>
-
-							<Field>
-								<FieldLabel>Desconto no subtotal</FieldLabel>
-								<MoneyInput
-									value={desconto}
-									onChange={setDesconto}
-									disabled={pedidoFaturado}
+									disabled={pedidoFaturado || pedidoCancelado}
 								/>
 							</Field>
 						</div>
@@ -781,7 +928,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 								gerarFinanceiro
 								gerarEstoque
 								mostrarFlagsIntegracao={false}
-								desabilitado={pedidoFaturado}
+								desabilitado={pedidoFaturado || pedidoCancelado}
 								onIdtipodocumentoChange={setIdtipodocumento}
 								onIdcondicaopagtoChange={setIdcondicaopagto}
 								onIdplanocontasChange={setIdplanocontas}
@@ -790,25 +937,21 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 								onGerarEstoqueChange={() => undefined}
 							/>
 						</div>
-
-						<Field className="mt-4">
-							<FieldLabel htmlFor="observacao-pedido">Observação</FieldLabel>
-							<Textarea
-								id="observacao-pedido"
-								value={observacao}
-								onChange={(event) => setObservacao(event.target.value)}
-								rows={2}
-								disabled={pedidoFaturado}
-							/>
-						</Field>
 					</FieldSet>
 				</FieldGroup>
 
 				<Separator />
 
-				<div className="space-y-4">
+				{/* 2. Itens do pedido */}
+				<div className="space-y-3">
 					<div className="flex items-center justify-between">
-						<h2 className="text-lg font-semibold">Itens</h2>
+						<div>
+							<h2 className="text-base font-medium">2. Itens do pedido</h2>
+							<p className="text-xs text-muted-foreground">
+								O saldo previsto considera a quantidade do produto em estoque
+								menos a quantidade provisionada nos pedidos de faturamento.
+							</p>
+						</div>
 						<Button
 							variant="outline"
 							size="sm"
@@ -816,30 +959,34 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 								setItemEditando(null);
 								setModalItemAberto(true);
 							}}
-							disabled={pedidoFaturado}
+							disabled={pedidoFaturado || pedidoCancelado}
 						>
 							<Plus className="h-4 w-4" aria-hidden="true" />
 							Adicionar item
 						</Button>
 					</div>
 
-					<div className="rounded-md border">
+					<div className="overflow-x-auto rounded-md border">
 						<Table>
 							<TableHeader>
 								<TableRow>
+									<TableHead className="w-10">#</TableHead>
 									<TableHead>Produto</TableHead>
+									<TableHead className="w-16 text-center">UN</TableHead>
 									<TableHead className="text-right">Qtd</TableHead>
-									<TableHead className="text-right">Preço</TableHead>
+									<TableHead className="text-right">Saldo previsto</TableHead>
+									<TableHead className="text-right">Preço unit.</TableHead>
+									<TableHead className="text-right">Desconto</TableHead>
 									<TableHead className="text-right">Total</TableHead>
-									<TableHead />
+									<TableHead className="w-24" />
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{!modoCriacao && carregandoItens ? (
 									<TableRow>
 										<TableCell
-											colSpan={5}
-											className="text-center text-muted-foreground"
+											colSpan={9}
+											className="py-8 text-center text-muted-foreground"
 										>
 											Carregando itens...
 										</TableCell>
@@ -847,22 +994,52 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 								) : itens.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={5}
-											className="text-center text-muted-foreground"
+											colSpan={9}
+											className="py-8 text-center text-muted-foreground"
 										>
-											Nenhum item no pedido.
+											Nenhum item adicionado ao pedido.
 										</TableCell>
 									</TableRow>
 								) : (
-									itens.map((item) => {
-										const qtd = parseFloat(item.quantidade ?? "0");
-										const preco = parseFloat(item.preco ?? "0");
-										const total =
-											parseFloat(item.total ?? "0") || qtd * preco;
+									itens.map((item, idx) => {
+										const qtd = parseFloat(item.quantidade ?? "0") || 0;
+										const preco = parseFloat(item.preco ?? "0") || 0;
+										const linhaRateio = distribuicaoDesconto.linhas[idx];
+										const descontoExplicito =
+											linhaRateio?.descontoExplicito ??
+											(parseFloat(item.desconto ?? "0") || 0);
+										const descontoGlobalRateado =
+											linhaRateio?.descontoGlobalRateado ?? 0;
+										const descontoEfetivo =
+											linhaRateio?.descontoEfetivo ?? descontoExplicito;
+										const liquido =
+											linhaRateio?.liquido ??
+											Math.max(0, qtd * preco - descontoEfetivo);
+
+										const infoSaldo = item.idproduto
+											? mapaSaldosProdutos.get(item.idproduto)
+											: undefined;
+										const estoqueProduto = infoSaldo?.estoque ?? null;
+										const provisionadoTotal =
+											infoSaldo != null
+												? infoSaldo.provisionadoBanco +
+													(item.idproduto
+														? (quantidadesLocaisPorProduto[item.idproduto] ?? 0)
+														: 0)
+												: null;
+										const saldoPrevisto =
+											estoqueProduto != null && provisionadoTotal != null
+												? estoqueProduto - provisionadoTotal
+												: null;
+										const unidade =
+											item.unidademedida ?? infoSaldo?.unidademedida ?? "—";
 
 										return (
 											<TableRow key={item.id}>
-												<TableCell>
+												<TableCell className="text-muted-foreground">
+													{idx + 1}
+												</TableCell>
+												<TableCell className="font-medium">
 													{item.nomeproduto ??
 														(item.idproduto
 															? mapaProdutos.get(item.idproduto)
@@ -870,12 +1047,55 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 														item.codigoproduto ??
 														"—"}
 												</TableCell>
-												<TableCell className="text-right">{qtd}</TableCell>
-												<TableCell className="text-right">
+												<TableCell className="text-center text-xs text-muted-foreground">
+													{unidade}
+												</TableCell>
+												<TableCell className="text-right tabular-nums">
+													{formatarQuantidade(qtd)}
+												</TableCell>
+												<TableCell className="text-right tabular-nums">
+													{saldoPrevisto !== null ? (
+														<div>
+															<span
+																className={
+																	saldoPrevisto < 0
+																		? "font-semibold text-destructive"
+																		: "font-medium"
+																}
+															>
+																{formatarQuantidade(saldoPrevisto)}
+															</span>
+															<span className="block text-[11px] text-muted-foreground">
+																Est.: {formatarQuantidade(estoqueProduto ?? 0)}{" "}
+																· Prov.:{" "}
+																{formatarQuantidade(provisionadoTotal ?? 0)}
+															</span>
+														</div>
+													) : (
+														<span className="text-muted-foreground">—</span>
+													)}
+												</TableCell>
+												<TableCell className="text-right tabular-nums">
 													{formatarMoeda(preco)}
 												</TableCell>
-												<TableCell className="text-right">
-													{formatarMoeda(total)}
+												<TableCell className="text-right tabular-nums text-muted-foreground">
+													{descontoEfetivo > 0 ? (
+														<div>
+															<span>{formatarMoeda(descontoEfetivo)}</span>
+															{descontoGlobalRateado > 0 && (
+																<span className="block text-[11px] text-muted-foreground">
+																	{descontoExplicito > 0
+																		? `item ${formatarMoeda(descontoExplicito)} + rateio ${formatarMoeda(descontoGlobalRateado)}`
+																		: `rateio ${formatarMoeda(descontoGlobalRateado)}`}
+																</span>
+															)}
+														</div>
+													) : (
+														"—"
+													)}
+												</TableCell>
+												<TableCell className="text-right font-medium tabular-nums">
+													{formatarMoeda(liquido)}
 												</TableCell>
 												<TableCell className="text-right">
 													<div className="flex justify-end gap-1">
@@ -886,7 +1106,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 																setItemEditando(item);
 																setModalItemAberto(true);
 															}}
-															disabled={pedidoFaturado}
+															disabled={pedidoFaturado || pedidoCancelado}
 															aria-label="Editar item"
 														>
 															<Pencil className="h-4 w-4" aria-hidden="true" />
@@ -895,7 +1115,11 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 															variant="ghost"
 															size="icon"
 															onClick={() => handleExcluirItem(item.id)}
-															disabled={pedidoFaturado || excluindoItem}
+															disabled={
+																pedidoFaturado ||
+																pedidoCancelado ||
+																excluindoItem
+															}
 															aria-label="Excluir item"
 														>
 															<Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -910,21 +1134,121 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 						</Table>
 					</div>
 
-					<div className="flex flex-col items-end gap-1 text-sm">
-						<div className="flex gap-8">
-							<span className="text-muted-foreground">Subtotal</span>
-							<span>{formatarMoeda(totalItens)}</span>
-						</div>
-						{descontoNumero > 0 && (
-							<div className="flex gap-8">
-								<span className="text-muted-foreground">Desconto</span>
-								<span>- {formatarMoeda(descontoNumero)}</span>
+					{/* 3. Desconto e Totais (mesma metodologia da emissão de NF-e de venda) */}
+					<div className="space-y-3 rounded-md border bg-muted/20 px-4 py-3 text-sm">
+						<CampoDescontoTotalNfe
+							rotuloDocumento="pedido"
+							subtotalAposDescontoItens={subtotalAposDescontoItens}
+							value={descontoGlobal}
+							onChange={setDescontoGlobal}
+							disabled={pedidoFaturado || pedidoCancelado}
+						/>
+
+						{distribuicaoDesconto.erros.length > 0 && (
+							<div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+								{distribuicaoDesconto.erros.map((erro) => (
+									<p key={erro}>{erro}</p>
+								))}
 							</div>
 						)}
-						<div className="flex gap-8 text-base font-semibold">
-							<span>Total</span>
-							<span>{formatarMoeda(totalPedido)}</span>
+
+						<div className="flex flex-wrap items-center justify-end gap-6 border-t pt-3">
+							<div>
+								<span className="text-muted-foreground">Produtos: </span>
+								<span className="font-medium tabular-nums">
+									{formatarMoeda(totalBrutoItens)}
+								</span>
+							</div>
+							<div>
+								<span className="text-muted-foreground">
+									Desconto nos itens:{" "}
+								</span>
+								<span className="font-medium tabular-nums">
+									{formatarMoeda(distribuicaoDesconto.descontoItens)}
+								</span>
+							</div>
+							<div>
+								<span className="text-muted-foreground">
+									Desconto no total:{" "}
+								</span>
+								<span className="font-medium tabular-nums">
+									{formatarMoeda(distribuicaoDesconto.descontoGlobal)}
+								</span>
+							</div>
+							<div className="text-base">
+								<span className="text-muted-foreground">Total do pedido: </span>
+								<span className="font-semibold tabular-nums">
+									{formatarMoeda(totalPedido)}
+								</span>
+							</div>
 						</div>
+					</div>
+				</div>
+
+				<Separator />
+
+				{/* 4. Observação (no fim da página) */}
+				<FieldGroup>
+					<FieldSet>
+						<FieldLegend>3. Observação</FieldLegend>
+						<Field>
+							<FieldLabel htmlFor="observacao-pedido">
+								Observações do pedido
+							</FieldLabel>
+							<Textarea
+								id="observacao-pedido"
+								placeholder="Informações complementares ou observações para entrega / faturamento..."
+								value={observacao}
+								onChange={(event) => setObservacao(event.target.value)}
+								rows={3}
+								disabled={pedidoFaturado || pedidoCancelado}
+							/>
+						</Field>
+					</FieldSet>
+				</FieldGroup>
+
+				<div className="flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+					<div className="text-sm">
+						<span className="text-muted-foreground">Total líquido: </span>
+						<span className="text-lg font-semibold tabular-nums">
+							{formatarMoeda(totalPedido)}
+						</span>
+						<span className="ml-3 text-xs text-muted-foreground">
+							({itens.length} {itens.length === 1 ? "item" : "itens"})
+						</span>
+					</div>
+					<div className="flex flex-wrap gap-2">
+						{!modoCriacao && (
+							<Button
+								variant="outline"
+								onClick={() => setModalImpressaoAberto(true)}
+								disabled={!pedido}
+							>
+								<Printer className="h-4 w-4" aria-hidden="true" />
+								Imprimir
+							</Button>
+						)}
+						{podeConcluir && (
+							<Button
+								onClick={() => salvarPedido({ concluir: true })}
+								disabled={salvandoPedido}
+							>
+								<CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+								{salvandoPedido ? "Concluindo..." : "Concluir"}
+							</Button>
+						)}
+						<Button
+							variant={podeConcluir ? "outline" : "default"}
+							onClick={() => salvarPedido({})}
+							disabled={salvandoPedido || pedidoFaturado || pedidoCancelado}
+						>
+							<Save className="h-4 w-4" aria-hidden="true" />
+							{salvandoPedido
+								? "Salvando..."
+								: modoCriacao
+									? "Salvar pedido"
+									: "Salvar"}
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -939,6 +1263,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 				idempresa={empresa.id}
 				itemParaEditar={itemEditando}
 				carregando={salvandoItem}
+				quantidadesLocaisPorProduto={quantidadesLocaisParaModal}
 			/>
 
 			<AlertDialog

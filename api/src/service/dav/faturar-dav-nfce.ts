@@ -42,6 +42,7 @@ import {
 	isAmbienteHomologacao,
 	resolverAmbienteSefaz,
 } from "@/util/ambiente-sefaz.js";
+import { aplicarGrupoCombustivelItens } from "@/util/aplicar-grupo-combustivel-item-nfe.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import {
@@ -89,7 +90,6 @@ import {
 	normalizarCodigoStatusNfe,
 	normalizarCStatGateway,
 } from "@/util/resolver-status-emissao-nfe.js";
-import { aplicarGrupoCombustivelItens } from "@/util/aplicar-grupo-combustivel-item-nfe.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 
 type FaturarDavNfceParametros = {
@@ -475,7 +475,8 @@ export async function faturarDavNfceService({
 	}
 
 	const valorTotalItens = itensNormalizados.reduce(
-		(acc, item) => acc + item.quantidade * item.valorUnitario,
+		(acc, item) =>
+			acc + item.quantidade * item.valorUnitario - (item.desconto ?? 0),
 		0,
 	);
 	const desconto = parseValor(dav.descontosubtotal ?? dav.desconto);

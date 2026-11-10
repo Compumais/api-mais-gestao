@@ -25,20 +25,20 @@ import {
 	produtos,
 	saldoestoque,
 } from "@/repositories/schema.js";
-import { LIMITE_EXPORTACAO_CSV } from "@/util/csv.js";
 import { resolverImagemVariacao } from "@/service/produto/resolver-imagem-variacao.js";
+import { LIMITE_EXPORTACAO_CSV } from "@/util/csv.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { normalizarCamposNumericosProduto } from "@/util/normalizar-campos-numericos-produto.js";
-import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
-import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
-import { db } from "./connection";
 import {
 	colunaProdutoFiltravel,
 	ehColunaFiltroBoolean,
-	type OrdenarProdutosCampoListagem,
 	ORDENAR_PRODUTOS_CAMPOS_LISTAGEM,
+	type OrdenarProdutosCampoListagem,
 	referenciaColunaProduto,
 } from "@/util/produtos-meta-colunas.js";
+import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
+import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
+import { db } from "./connection";
 import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
 
 export const ORDENAR_PRODUTOS_CAMPOS = ORDENAR_PRODUTOS_CAMPOS_LISTAGEM;
@@ -82,6 +82,17 @@ function calcularDivergencia(
 	const fi = Number.parseFloat(fiscal ?? "0");
 	if (Number.isNaN(op) || Number.isNaN(fi)) return "0";
 	return (op - fi).toFixed(6);
+}
+
+function calcularSaldoPrevisto(
+	operacional: string | null | undefined,
+	provisionada: string | null | undefined,
+): string {
+	const op = Number.parseFloat(operacional ?? "0");
+	const prov = Number.parseFloat(provisionada ?? "0");
+	const opSeguro = Number.isNaN(op) ? 0 : op;
+	const provSeguro = Number.isNaN(prov) ? 0 : prov;
+	return (opSeguro - provSeguro).toFixed(4);
 }
 
 function montarOrdenacaoProdutos(
@@ -131,6 +142,8 @@ function montarOrdenacaoProdutos(
 export type ProdutoListagem = Produto & {
 	quantidade: string;
 	quantidadefiscal: string;
+	quantidadeprovisionada?: string;
+	saldoprevisto?: string;
 	divergencia: string;
 	possuiSaldo: boolean;
 	nomepai: string | null;
@@ -161,10 +174,7 @@ function aplicarFiltroColunaProduto(
 	if (!valor?.trim()) return;
 
 	if (campo === "inativo") {
-		const filtroInativo = filtroRegistroAtivo(
-			produtos.inativo,
-			Number(valor),
-		);
+		const filtroInativo = filtroRegistroAtivo(produtos.inativo, Number(valor));
 		if (filtroInativo) where.push(filtroInativo);
 		return;
 	}
@@ -453,6 +463,17 @@ export async function listarProdutosPorEmpresa({
 			WHERE pi.idproduto = ${produtos.id}
 		)
 	)`;
+	const quantidadeProvisionadaExpressao = sql<string>`COALESCE((
+		SELECT SUM(COALESCE(di.quantidade::numeric, 0))
+		FROM "davitem" di
+		INNER JOIN "dav" d ON d.id = di.iddav
+		WHERE d.idempresa = ${produtos.idempresa}
+			AND di.idproduto = ${produtos.id}
+			AND (di.cancelado IS NULL OR di.cancelado = 0)
+			AND d.idnotafiscal IS NULL
+			AND d.idnfce IS NULL
+			AND (d.status IS NULL OR d.status NOT IN (3, 4))
+	), 0)::text`;
 
 	const [totalCount, rows] = await Promise.all([
 		db
@@ -466,6 +487,7 @@ export async function listarProdutosPorEmpresa({
 				idsaldo: saldoestoque.id,
 				quantidadeSaldo: saldoestoque.quantidade,
 				quantidadefiscalSaldo: saldoestoque.quantidadefiscal,
+				quantidadeProvisionadaSaldo: quantidadeProvisionadaExpressao,
 				nomepai: produtoPai.nome,
 				imagemPai: produtoPai.imagem,
 				caminhoimagemPai: produtoPai.caminhoimagem,
@@ -485,6 +507,7 @@ export async function listarProdutosPorEmpresa({
 			idsaldo,
 			quantidadeSaldo,
 			quantidadefiscalSaldo,
+			quantidadeProvisionadaSaldo,
 			nomepai,
 			imagemPai,
 			caminhoimagemPai,
@@ -493,6 +516,7 @@ export async function listarProdutosPorEmpresa({
 		} = row;
 		const quantidade = quantidadeSaldo ?? "0";
 		const quantidadefiscal = quantidadefiscalSaldo ?? "0";
+		const quantidadeprovisionada = quantidadeProvisionadaSaldo ?? "0";
 		const imagemResolvida = resolverImagemVariacao({
 			imagem: produto.imagem,
 			caminhoimagem: produto.caminhoimagem,
@@ -508,6 +532,8 @@ export async function listarProdutosPorEmpresa({
 			nomepai: nomepai ?? null,
 			quantidade,
 			quantidadefiscal,
+			quantidadeprovisionada,
+			saldoprevisto: calcularSaldoPrevisto(quantidade, quantidadeprovisionada),
 			divergencia: calcularDivergencia(quantidade, quantidadefiscal),
 			possuiSaldo: idsaldo != null,
 		};

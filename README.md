@@ -1,19 +1,62 @@
 # Mais Gestão
 
-Monorepo da plataforma Mais Gestão. Os pacotes principais são:
+Monorepo da plataforma SaaS multi-empresa **Mais Gestão** para controle financeiro, contábil, comercial, estoque e fiscal. Os pacotes principais são:
 
 - `api/`: API Node.js/Fastify e migrações Drizzle/PostgreSQL;
-- `web/`: aplicação Next.js;
-- `aplicativos/pdv/`: PDV desktop;
-- `aplicativos/POSmaisgestao/`: aplicativo Android POS;
+- `web/`: aplicação Next.js (App Router);
+- `aplicativos/pdv/`: PDV desktop híbrido (Electron + React + PostgreSQL local);
+- `aplicativos/POSmaisgestao/`: aplicativo Android POS para maquininhas;
 - `aplicativos/NFeMaisGestao/`: aplicativo Android nativo para NF-e;
 - `aplicativos/estacao-balanca/`: estação Flutter (Windows/Android) de pesagem Prix e lançamento em comandas via LAN do PDV;
-- `packages/nfe-emissao-shared/`: schemas/utilitários de emissão NF-e compartilhados com o web;
-- `api_Nfe/`: gateways fiscais;
+- `aplicativos/POSselfpay/`: aplicativo Flutter de autoatendimento (self-pay);
+- `packages/nfe-emissao-shared/`: schemas e utilitários de cálculo fiscal de emissão NF-e compartilhados entre pacotes;
+- `api_Nfe/`: gateways fiscais PHP (`nfe-gateway` para SEFAZ NF-e/NFC-e e `nfse-gateway` para emissão municipal NFS-e);
 - `infra/`: arquivos e referências de infraestrutura.
 
-Cada pacote possui documentação própria quando necessário. Para detalhes de
-infraestrutura, consulte também [`infra/README.md`](infra/README.md).
+Cada pacote possui documentação própria quando necessário. Para visão arquitetural e contratos entre pacotes, consulte [`docs/sistema/visao-geral.md`](docs/sistema/visao-geral.md), [`docs/sistema/contratos-entre-pacotes.md`](docs/sistema/contratos-entre-pacotes.md), [`docs/sistema/pontos-criticos.md`](docs/sistema/pontos-criticos.md) e [`docs/sistema/indice-modulos.md`](docs/sistema/indice-modulos.md). Para detalhes de infraestrutura, consulte também [`infra/README.md`](infra/README.md).
+
+## Mapa de Módulos por Pacote
+
+### 1. Backend (`api/`)
+
+Arquitetura em camadas (`controllers/http` → `service` → `repositories` → `drizzle/schema.ts`), com autenticação Better Auth e isolamento multi-empresa (`x-empresa-id`). Documentação detalhada em [`api/AGENTS.md`](api/AGENTS.md) e [`api/docs/modulos/README.md`](api/docs/modulos/README.md):
+
+| Domínio | Módulos documentados (`api/docs/modulos/`) | Escopo principal |
+| --- | --- | --- |
+| Plataforma, Auth e Tenancy | [`plataforma-auth.md`](api/docs/modulos/plataforma-auth.md), [`empresas-tenancy.md`](api/docs/modulos/empresas-tenancy.md), [`admin-ia-conteudo.md`](api/docs/modulos/admin-ia-conteudo.md) | Login/sessão Better Auth, vínculo usuário–empresa, planos SaaS, painel Super Admin, banco de imagens e chaves de IA. |
+| Financeiro, Centro de Custos e Contábil | [`financeiro.md`](api/docs/modulos/financeiro.md), [`centro-custo.md`](api/docs/modulos/centro-custo.md), [`contabilidade.md`](api/docs/modulos/contabilidade.md) | Contas a pagar/receber, baixas parciais e multi-meio, contas correntes, conciliação, árvore de centros de custo, rateios, orçamento (`budget_centro_custo`), plano de contas e integração Domínio. |
+| Cadastros, Estoque e Produção | [`entidades.md`](api/docs/modulos/entidades.md), [`produtos.md`](api/docs/modulos/produtos.md), [`estoque.md`](api/docs/modulos/estoque.md), [`producao.md`](api/docs/modulos/producao.md), [`cadastros-auxiliares.md`](api/docs/modulos/cadastros-auxiliares.md) | Clientes, fornecedores, catálogo e variações, saldos por local, lotes, custo médio, ficha técnica com explosão de estoque e tabelas auxiliares. |
+| Comercial e PDV | [`vendas-dav.md`](api/docs/modulos/vendas-dav.md), [`ordem-servico.md`](api/docs/modulos/ordem-servico.md), [`pdv.md`](api/docs/modulos/pdv.md) | Pedidos (DAV), ordens de serviço, sync de vendas/caixa/comandas do PDV e distribuição de auto-update (`/pdv/updates/*`). |
+| Fiscal, Compras e Automação | [`compras-entrada-nfe.md`](api/docs/modulos/compras-entrada-nfe.md), [`emissao-fiscal.md`](api/docs/modulos/emissao-fiscal.md), [`obrigacoes-fiscais.md`](api/docs/modulos/obrigacoes-fiscais.md), [`relatorios-dashboard.md`](api/docs/modulos/relatorios-dashboard.md), [`automacao-email.md`](api/docs/modulos/automacao-email.md) | Entrada de XML/DF-e, emissão NF-e/NFC-e/NFS-e via gateways PHP, certificados A1, regras fiscais, SINTEGRA, SPED EFD, relatórios e jobs/alertas. |
+
+### 2. Aplicação Web (`web/`)
+
+Frontend Next.js 16 + React 19 + TanStack React Query + Tailwind 4 + shadcn/ui. Consome a API exclusivamente via `web/src/services/` e `web/src/hooks/`. Documentação em [`web/AGENTS.md`](web/AGENTS.md) e [`web/docs/modulos/README.md`](web/docs/modulos/README.md):
+
+| Domínio | Módulos documentados (`web/docs/modulos/`) | Escopo principal |
+| --- | --- | --- |
+| Acesso e Público | [`publico.md`](web/docs/modulos/publico.md), [`acesso.md`](web/docs/modulos/acesso.md), [`assinatura.md`](web/docs/modulos/assinatura.md) | Landing, login, cotação pública, cardápio delivery, sessão, `EmpresaProvider`, guards de rota por perfil/plano, abas keep-alive e checkout de planos. |
+| Operação Comercial e Estoque | [`dashboard.md`](web/docs/modulos/dashboard.md), [`cadastros.md`](web/docs/modulos/cadastros.md), [`estoque.md`](web/docs/modulos/estoque.md), [`compras.md`](web/docs/modulos/compras.md), [`vendas.md`](web/docs/modulos/vendas.md) | Dashboard gerencial, produtos (com banco de imagens e variações), clientes/fornecedores, movimentação de estoque, produção, cotações, DAV e OS. |
+| PDV Web e Gourmet | [`pdv.md`](web/docs/modulos/pdv.md), [`gourmet.md`](web/docs/modulos/gourmet.md) | Frente de caixa web (`(pdv)`), fechamento de caixa, módulo gourmet (`(gourmet)`) e atendimento de garçom (`(garcom)`). |
+| Financeiro, Centro de Custos e Contábil | [`financeiro.md`](web/docs/modulos/financeiro.md), [`centro-custo.md`](web/docs/modulos/centro-custo.md), [`contabilidade.md`](web/docs/modulos/contabilidade.md), [`relatorios.md`](web/docs/modulos/relatorios.md) | Contas a pagar/receber (resumo, timeline e histórico de baixas), árvore e orçamento de centros de custo, plano de contas, SINTEGRA, EFD e relatórios. |
+| Fiscal, Configurações e Super | [`fiscal.md`](web/docs/modulos/fiscal.md), [`configuracoes.md`](web/docs/modulos/configuracoes.md), [`ajuda.md`](web/docs/modulos/ajuda.md), [`super-admin.md`](web/docs/modulos/super-admin.md) | Emissão NF-e/NFC-e/NFS-e, entrada de notas, tributos/CFOP, certificados digitais, parâmetros da empresa e painel Super (`(super)`). |
+
+### 3. PDV Desktop (`aplicativos/pdv/`)
+
+Aplicação Electron + React + Vite com banco PostgreSQL 17 local (`pdv_local`) e sincronização assíncrona via fila `outbox` idempotente. Documentação em [`aplicativos/pdv/AGENTS.md`](aplicativos/pdv/AGENTS.md) e [`aplicativos/pdv/docs/modulos/README.md`](aplicativos/pdv/docs/modulos/README.md):
+
+- **Base local e sincronização:** [`banco-local.md`](aplicativos/pdv/docs/modulos/banco-local.md), [`sessao-configuracao.md`](aplicativos/pdv/docs/modulos/sessao-configuracao.md), [`sync-outbox.md`](aplicativos/pdv/docs/modulos/sync-outbox.md), [`backup.md`](aplicativos/pdv/docs/modulos/backup.md) e [`atualizacao-installer.md`](aplicativos/pdv/docs/modulos/atualizacao-installer.md).
+- **Caixa, venda e NFC-e:** [`catalogo.md`](aplicativos/pdv/docs/modulos/catalogo.md), [`caixa.md`](aplicativos/pdv/docs/modulos/caixa.md), [`venda-pagamento.md`](aplicativos/pdv/docs/modulos/venda-pagamento.md), [`fiscal-nfce.md`](aplicativos/pdv/docs/modulos/fiscal-nfce.md) (emissão online e contingência `tpEmis=9`) e [`impressao.md`](aplicativos/pdv/docs/modulos/impressao.md).
+- **Gourmet, LAN e periféricos:** [`mesas-gourmet-delivery.md`](aplicativos/pdv/docs/modulos/mesas-gourmet-delivery.md), [`lan-pos.md`](aplicativos/pdv/docs/modulos/lan-pos.md) (API LAN `:5050`), [`servico-lan.md`](aplicativos/pdv/docs/modulos/servico-lan.md) (execução em segundo plano `--lan-service` sem UI), [`pdv-secundario.md`](aplicativos/pdv/docs/modulos/pdv-secundario.md) e [`integracoes-perifericos.md`](aplicativos/pdv/docs/modulos/integracoes-perifericos.md) (SiTef, balança e Tecnibra).
+
+### 4. Aplicativos Mobile, Estações, Pacotes e Gateways
+
+- **POS Android ([`aplicativos/POSmaisgestao/`](aplicativos/POSmaisgestao/AGENTS.md)):** App Java/Android para maquininhas com suporte aos modos `cloud` (API) e `pdv_local` (LAN `:5050` do PDV). Módulos em [`aplicativos/POSmaisgestao/docs/modulos/README.md`](aplicativos/POSmaisgestao/docs/modulos/README.md): `app-shell`, `autenticacao`, `configuracao-build`, `pagamento`, `venda-fiscal`, `mesas-comandas`, `integracao-api`, `persistencia-offline` e `perifericos`.
+- **NFe Mais Gestão Android ([`aplicativos/NFeMaisGestao/`](aplicativos/NFeMaisGestao/README.md)):** App Android nativo (Java) com wizard de emissão NF-e em 7 etapas, consulta, cancelamento, inutilização, DANFE, produtos e clientes.
+- **Estação Balança ([`aplicativos/estacao-balanca/`](aplicativos/estacao-balanca/README.md)):** App Flutter (Windows/Android) integrado à balança Toledo Prix (`Prt3`) e à API LAN do PDV (`:5050`) para pesagem em KG e lançamento em comandas com leitor de código de barras.
+- **POS Self-Pay ([`aplicativos/POSselfpay/`](aplicativos/POSselfpay/README.md)):** Aplicação Flutter para terminal de autoatendimento.
+- **Pacote Compartilhado NF-e ([`packages/nfe-emissao-shared/`](packages/nfe-emissao-shared/package.json)):** Schemas Zod e funções puras de cálculo/normalização de emissão NF-e (totais fiscais, distribuição de descontos, `indPres`, pagamentos e contexto de reemissão).
+- **Gateways Fiscais (`api_Nfe/`):** `api_Nfe/nfe-gateway/` (PHP `sped-nfe`, porta `8088`, comunicação SEFAZ para NF-e/NFC-e e DF-e) e `api_Nfe/nfse-gateway/` (PHP, porta `8089`, emissão municipal de NFS-e).
 
 ## Deploy de produção é manual
 

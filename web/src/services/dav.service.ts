@@ -42,6 +42,7 @@ export interface PedidoDavItem {
 	codigoproduto: string | null;
 	quantidade: string | null;
 	preco: string | null;
+	desconto?: string | null;
 	total: string | null;
 	unidademedida: string | null;
 	idcfop: string | null;
@@ -88,11 +89,13 @@ export interface CriarPedidoData {
 	datainclusao?: string;
 	currenttimemillis?: number;
 	descontosubtotal?: string;
+	desconto?: string;
 	valor?: string;
 }
 
 export interface AtualizarPedidoData extends Partial<CriarPedidoData> {
 	descontosubtotal?: string;
+	desconto?: string;
 	valor?: string;
 }
 
@@ -100,6 +103,8 @@ export interface CriarPedidoItemData {
 	idproduto: string;
 	quantidade: string;
 	preco: string;
+	desconto?: string;
+	total?: string;
 	unidademedida?: string;
 	idcfop?: string;
 	rastros?: PedidoDavItemRastro[];
@@ -109,6 +114,8 @@ export interface AtualizarPedidoItemData {
 	idproduto?: string;
 	quantidade?: string;
 	preco?: string;
+	desconto?: string | null;
+	total?: string | null;
 	unidademedida?: string;
 	idcfop?: string | null;
 	rastros?: PedidoDavItemRastro[];
@@ -150,6 +157,7 @@ export interface ContextoEmissaoNfePedidoItem {
 	unidade: string;
 	quantidade: number;
 	valorUnitario: number;
+	desconto?: number;
 	cst?: string;
 	csosn?: string;
 	orig?: number;

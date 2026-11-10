@@ -116,9 +116,9 @@ import { inferirIndIeDestEntidade } from "@/util/destinatario-nfe-util";
 import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
 import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-form";
 import {
+	descontoGlobalAoReabrirNota,
 	empresaUsaCsosn,
 	itensVisiveisParaEmissao,
-	descontoGlobalAoReabrirNota,
 	mapearItemNotaReemissaoParaForm,
 	prepararItemEmissaoFormulario,
 } from "@/util/mapear-produto-item-nfe";
@@ -132,6 +132,7 @@ import { normalizarErroOperacaoNfe } from "@/util/normalizar-erro-operacao-nfe";
 import { montarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe";
 import { resolverContextoReemissaoNfe } from "@/util/resolver-contexto-reemissao-nfe";
 import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
+import { CampoDescontoTotalNfe } from "../components/campo-desconto-total-nfe";
 import { CamposIntegracaoNfVenda } from "../components/campos-integracao-nf-venda";
 import { CardErroNfe } from "../components/card-erro-nfe";
 import { DialogRelatorioFiscal } from "../components/dialog-relatorio-fiscal";
@@ -139,7 +140,6 @@ import { ModalEnviarEmailNfe } from "../components/modal-enviar-email-nfe";
 import { ModalItemEmissao } from "../components/modal-item-emissao";
 import { ModalPreviewDanfeNfe } from "../components/modal-preview-danfe-nfe";
 import { PainelCalculoImpostosEmissao } from "../components/painel-calculo-impostos-emissao";
-import { CampoDescontoTotalNfe } from "../components/campo-desconto-total-nfe";
 import { ResumoDestinatarioNfe } from "../components/resumo-destinatario-nfe";
 import { SecaoDocumentoReferenciado } from "../components/secao-documento-referenciado";
 
@@ -791,8 +791,7 @@ export default function NovaEmissaoNfePage() {
 			entidadeSelecionada.idestado.toUpperCase() &&
 		!(
 			ufEntregaExplicitaForm &&
-			ufEntregaExplicitaForm.toUpperCase() !==
-				empresaFiscal.uf.toUpperCase()
+			ufEntregaExplicitaForm.toUpperCase() !== empresaFiscal.uf.toUpperCase()
 		);
 	const valorFreteForm = Number(freteWatch ?? 0);
 	const modFreteEfetivo =
@@ -1373,6 +1372,7 @@ export default function NovaEmissaoNfePage() {
 					unidade: item.unidade,
 					quantidade: item.quantidade,
 					valorUnitario: item.valorUnitario,
+					desconto: item.desconto ?? 0,
 					cst: item.cst,
 					csosn: item.csosn,
 					orig: item.orig ?? 0,
@@ -1498,6 +1498,7 @@ export default function NovaEmissaoNfePage() {
 					unidade: item.unidade,
 					quantidade: item.quantidade,
 					valorUnitario: item.valorUnitario,
+					desconto: item.desconto ?? 0,
 					cst: item.cst,
 					csosn: item.csosn,
 					orig: item.orig ?? 0,
@@ -3158,20 +3159,19 @@ export default function NovaEmissaoNfePage() {
 										<p className="mt-3 text-xs text-amber-800 dark:text-amber-300">
 											{retiradaPresencialSemFrete ? (
 												<>
-													Cliente contribuinte de outra UF em retirada no
-													local (indPres=1 e frete 9, sem transporte): use{" "}
-													<span className="font-medium">idDest=1</span> e
-													CFOP <span className="font-medium">5xxx</span>{" "}
-													(ex.: 5102).
+													Cliente contribuinte de outra UF em retirada no local
+													(indPres=1 e frete 9, sem transporte): use{" "}
+													<span className="font-medium">idDest=1</span> e CFOP{" "}
+													<span className="font-medium">5xxx</span> (ex.: 5102).
 												</>
 											) : (
 												<>
-													Cliente contribuinte de outra UF com frete: a
-													SEFAZ rejeita operação interna (521). Use{" "}
-													<span className="font-medium">idDest=2</span> e
-													CFOP <span className="font-medium">6xxx</span>{" "}
-													(ex.: 6102). Retirada no local só vale com
-													indPres=1 e modalidade de frete 9.
+													Cliente contribuinte de outra UF com frete: a SEFAZ
+													rejeita operação interna (521). Use{" "}
+													<span className="font-medium">idDest=2</span> e CFOP{" "}
+													<span className="font-medium">6xxx</span> (ex.: 6102).
+													Retirada no local só vale com indPres=1 e modalidade
+													de frete 9.
 												</>
 											)}
 										</p>
