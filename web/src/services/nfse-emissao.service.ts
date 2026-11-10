@@ -22,6 +22,8 @@ export interface DadosEmissaoNfseSalvos {
 	protocolo?: string | null;
 	protocoloCancelamento?: string | null;
 	protocoloSubstituicao?: string | null;
+	/** Identificador DPS (45 chars) — Sefin Nacional / Nota Nacional. */
+	idDps?: string | null;
 	modo?: "dps" | "rps" | "rps-gerar";
 	gerarFinanceiro?: boolean;
 	payload?: {
