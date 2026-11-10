@@ -61,6 +61,8 @@ export async function listarItensCompraConfirmadaAuditoria(params: {
 			contador: notafiscalitem.contador,
 			descricao: notafiscalitem.descricao,
 			idproduto: notafiscalitem.idproduto,
+			idlocalestoqueItem: notafiscalitem.idlocalestoque,
+			idlocalestoqueProduto: produtos.idlocalestoque,
 			quantidade: notafiscalitem.quantidade,
 			precounitarioItem: notafiscalitem.precounitario,
 			custoaquisicaoItem: notafiscalitem.custoaquisicao,

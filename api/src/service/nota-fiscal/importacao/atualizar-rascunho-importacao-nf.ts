@@ -45,6 +45,7 @@ type AtualizarCabecalhoRascunhoParametros = {
 	dados: {
 		identidade?: string | null | undefined;
 		idcfop?: string | null | undefined;
+		idlocalestoque?: string | null | undefined;
 		idplanocontas?: string | null | undefined;
 		idcondicaopagto?: string | null | undefined;
 		idtipodocumento?: string | null | undefined;
@@ -52,6 +53,7 @@ type AtualizarCabecalhoRascunhoParametros = {
 		observacao?: string | null | undefined;
 		entradasaida?: string | null | undefined;
 		aplicarCfopItens?: boolean | undefined;
+		aplicarLocalEstoqueItens?: boolean | undefined;
 	};
 };
 
@@ -143,6 +145,7 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 	const notaAtualizada = await atualizarNotaFiscal(idRascunho, {
 		identidade: idOpcionalOuNulo(dados.identidade) ?? undefined,
 		idcfop: idOpcionalOuNulo(dados.idcfop) ?? undefined,
+		idlocalestoque: idOpcionalOuNulo(dados.idlocalestoque) ?? undefined,
 		idplanocontas: idOpcionalOuNulo(dados.idplanocontas) ?? undefined,
 		idcondicaopagto: idOpcionalOuNulo(dados.idcondicaopagto) ?? undefined,
 		idtipodocumento: idOpcionalOuNulo(dados.idtipodocumento) ?? undefined,
@@ -153,6 +156,35 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 
 	if (!notaAtualizada) {
 		return httpNaoEncontrado();
+	}
+
+	if (dados.aplicarLocalEstoqueItens && dados.idlocalestoque) {
+		const idlocalestoque = idOpcionalOuNulo(dados.idlocalestoque);
+		if (idlocalestoque) {
+			const itens = await listarItensPorNotaFiscal(idRascunho);
+			for (const item of itens) {
+				const dadosAtuais =
+					(item.dadosimportacao as DadosImportacaoItem | null) ?? {
+						descricaoFornecedor: item.descricao ?? "",
+						statusVinculo: "pendente" as const,
+						confirmarCadastro: false,
+						fatorConversao: "1",
+						quantidadeXml: item.quantidade ?? "0",
+						quantidadeEstoque: item.quantidade ?? "0",
+						precounitarioXml: item.precounitario ?? "0",
+						precounitarioEstoque: item.precounitario ?? "0",
+						tributacao: {},
+					};
+
+				await atualizarItemNotaFiscal(item.id, {
+					idlocalestoque,
+					dadosimportacao: {
+						...dadosAtuais,
+						idlocalestoque,
+					},
+				});
+			}
+		}
 	}
 
 	if (dados.aplicarCfopItens && dados.idcfop) {
@@ -266,6 +298,10 @@ export async function atualizarItemRascunhoImportacaoNfService({
 			precoVenda:
 				dadosMesclados.precoVenda?.trim() ||
 				(produto.preco?.trim() ? produto.preco : undefined),
+			idlocalestoque:
+				dados.idlocalestoque ??
+				produto.idlocalestoque ??
+				dadosMesclados.idlocalestoque,
 		};
 
 		if (!dadosMesclados.idcfop && produto.idcfopentrada) {
@@ -421,6 +457,7 @@ export async function atualizarItemRascunhoImportacaoNfService({
 
 	const itemAtualizado = await atualizarItemNotaFiscal(idItem, {
 		idproduto: dadosMesclados.idproduto ?? null,
+		idlocalestoque: idOpcionalOuNulo(dadosMesclados.idlocalestoque) ?? null,
 		descricao: dadosMesclados.descricaoFornecedor,
 		quantidade: numeroOpcionalOuNulo(dadosMesclados.quantidadeXml) ?? null,
 		precounitario:

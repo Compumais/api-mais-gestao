@@ -13,6 +13,7 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { cfop } from "./cfop.js";
+import { localestoque } from "./local-estoque.js";
 import { motivorebaixa } from "./motivo-rebaixa.js";
 import { ncm } from "./ncm.js";
 import { notafiscal } from "./nota-fiscal.js";
@@ -101,6 +102,7 @@ export const notafiscalitem = pgTable(
 		idobservacaolancamentofiscal: text(),
 		idpedidocompraitem: text(),
 		idproduto: text(),
+		idlocalestoque: text(),
 		idprodutobase: text(),
 		idprodutokit: text(),
 		idpromocao: text(),
@@ -230,6 +232,17 @@ export const notafiscalitem = pgTable(
 			"btree",
 			table.idproduto.asc().nullsLast().op("text_ops"),
 		),
+		index("notafiscalitem_idlocalestoque_idx").using(
+			"btree",
+			table.idlocalestoque.asc().nullsLast().op("text_ops"),
+		),
+		foreignKey({
+			columns: [table.idlocalestoque],
+			foreignColumns: [localestoque.id],
+			name: "fk_notafiscalitem_localestoque",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
 		foreignKey({
 			columns: [table.idnotafiscal],
 			foreignColumns: [notafiscal.id],

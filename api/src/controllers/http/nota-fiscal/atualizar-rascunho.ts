@@ -14,6 +14,7 @@ const cabecalhoBodySchema = z.object({
 	idempresa: z.string(),
 	identidade: z.string().optional().nullable(),
 	idcfop: z.string().optional().nullable(),
+	idlocalestoque: z.string().optional().nullable(),
 	idplanocontas: z.string().optional().nullable(),
 	idcondicaopagto: z.string().optional().nullable(),
 	idtipodocumento: z.string().optional().nullable(),
@@ -21,6 +22,7 @@ const cabecalhoBodySchema = z.object({
 	observacao: z.string().optional().nullable(),
 	entradasaida: z.string().optional().nullable(),
 	aplicarCfopItens: z.boolean().optional(),
+	aplicarLocalEstoqueItens: z.boolean().optional(),
 });
 
 const tributacaoSchema = z
@@ -49,6 +51,7 @@ const itemBodySchema = z.object({
 	descricaoFornecedor: z.string().min(1).optional(),
 	statusVinculo: z.enum(["pendente", "vinculado", "novo"]).optional(),
 	idproduto: z.string().optional(),
+	idlocalestoque: z.string().optional(),
 	confirmarCadastro: z.boolean().optional(),
 	fatorConversao: z.string().optional(),
 	quantidadeXml: z.string().optional(),
@@ -132,6 +135,9 @@ export async function atualizarItemRascunhoImportacao(
 					statusVinculo: dados.statusVinculo,
 				}),
 				...(dados.idproduto !== undefined && { idproduto: dados.idproduto }),
+				...(dados.idlocalestoque !== undefined && {
+					idlocalestoque: dados.idlocalestoque,
+				}),
 				...(dados.confirmarCadastro !== undefined && {
 					confirmarCadastro: dados.confirmarCadastro,
 				}),

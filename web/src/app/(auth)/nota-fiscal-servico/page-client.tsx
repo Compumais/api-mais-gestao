@@ -11,6 +11,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AlertaVencimentoCertificado } from "@/components/alerta-vencimento-certificado";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import {
@@ -370,12 +371,11 @@ export default function NotaFiscalServicoPage() {
 					</div>
 				</div>
 
+				<AlertaVencimentoCertificado className="mx-4" />
+
 				<div className="mx-4 rounded-lg border bg-card">
 					{mostrarSkeleton ? (
-						<TableSkeleton
-							rows={8}
-							columns={colunasVisiveis.length || 7}
-						>
+						<TableSkeleton rows={8} columns={colunasVisiveis.length || 7}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
 							))}

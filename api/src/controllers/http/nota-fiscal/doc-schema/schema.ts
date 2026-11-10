@@ -15,6 +15,11 @@ const itemNotaFiscalBody = {
 			type: "string",
 			description: "ID do produto já cadastrado. Se omitido, busca por codigo/ean ou cria novo.",
 		},
+		idlocalestoque: {
+			type: "string",
+			nullable: true,
+			description: "ID do local de estoque específico deste item.",
+		},
 		codigoproduto: {
 			type: "number",
 			description: "Código interno do produto para lookup automático.",
@@ -87,6 +92,11 @@ export const criarNotaFiscalSchema: FastifySchema = {
 			datahoraentradasaida: { type: "string", nullable: true },
 			tipodocumento: { type: "string", nullable: true, maxLength: 2 },
 			idcfop: { type: "string", nullable: true, description: "CFOP principal da nota (FK)." },
+			idlocalestoque: {
+				type: "string",
+				nullable: true,
+				description: "ID do local de estoque padrão da nota (FK localestoque).",
+			},
 			idoperacaofiscal: { type: "string", nullable: true, description: "ID da operação fiscal (FK)." },
 			idplanocontas: { type: "string", nullable: true, description: "ID do plano de contas para lançamentos." },
 			idcondicaopagto: { type: "string", nullable: true, description: "ID da condição de pagamento. Dispara geração de contas a pagar." },

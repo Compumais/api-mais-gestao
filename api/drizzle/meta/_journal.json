@@ -827,6 +827,13 @@
 			"when": 1791100000000,
 			"tag": "0115_produto_derivado_petroleo",
 			"breakpoints": true
+		},
+		{
+			"idx": 117,
+			"version": "7",
+			"when": 1791200000000,
+			"tag": "0116_local_estoque_padrao_produto_nfitem",
+			"breakpoints": true
 		}
 	]
 }

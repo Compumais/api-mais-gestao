@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { contarNaoLidas } from "@/repositories/notificacoes-repositories.js";
+import { sincronizarNotificacoesCertificadoUsuario } from "@/worker/jobs/alertas-vencimento-certificado.js";
 
 export async function contarNaoLidasHandler(
 	request: FastifyRequest,
@@ -11,6 +12,10 @@ export async function contarNaoLidasHandler(
 			code: "UNAUTHORIZED",
 		});
 	}
+
+	await sincronizarNotificacoesCertificadoUsuario(request.user.id).catch(
+		() => undefined,
+	);
 
 	const total = await contarNaoLidas(request.user.id);
 

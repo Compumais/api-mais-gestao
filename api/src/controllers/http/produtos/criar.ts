@@ -41,6 +41,14 @@ const criarProdutoBodySchema = z
 		referencia: z.string().max(60).optional().nullable(),
 		nome: z.string().min(1, "Nome é obrigatório").max(120),
 		idunidademedida: z.string().min(1, "Unidade de medida é obrigatória"),
+		idlocalestoque: z
+			.string()
+			.optional()
+			.nullable()
+			.transform((valor) => {
+				if (!valor || valor === "none" || valor.trim() === "") return null;
+				return valor;
+			}),
 		fornecedor: z.string().optional().nullable(),
 		idgrupo: z.string().optional().nullable(),
 		idmarca: z.string().optional().nullable(),
@@ -179,6 +187,7 @@ export async function criarProduto(
 			nome: dadosValidados.nome,
 			descricao: dadosValidados.nome.slice(0, 100),
 			idunidademedida: dadosValidados.idunidademedida,
+			idlocalestoque: dadosValidados.idlocalestoque ?? null,
 			fornecedor: dadosValidados.fornecedor ?? null,
 			idgrupo: dadosValidados.idgrupo ?? null,
 			idmarca: dadosValidados.idmarca ?? null,

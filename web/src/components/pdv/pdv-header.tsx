@@ -3,7 +3,9 @@
 import { IconArrowLeft, IconCash, IconLogout } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
+import { AlertaVencimentoCertificado } from "@/components/alerta-vencimento-certificado";
 import { LogoMaisGestao } from "@/components/logo-mais-gestao";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
@@ -105,6 +107,8 @@ export function PdvHeader({
 						</>
 					)}
 
+					<NotificationsBell />
+
 					{hrefVoltar && (
 						<Button variant="outline" size="sm" asChild>
 							<Link href={hrefVoltar}>
@@ -123,6 +127,7 @@ export function PdvHeader({
 					</Button>
 				</div>
 			</header>
+			<AlertaVencimentoCertificado variante="barra" />
 
 			<AbrirCaixaDialog open={abrirDialog} onOpenChange={setAbrirDialog} />
 			<FecharCaixaDialog open={fecharDialog} onOpenChange={setFecharDialog} />

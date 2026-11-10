@@ -802,6 +802,10 @@ export const localApi = {
 			nfceSyncUltimaOk,
 			nfceSyncUltimoErro: nfceSyncUltimoErro || null,
 			nfceSyncUltimoResumo: parseJsonSeguro(nfceSyncUltimoResumo),
+			certificadoValidade:
+				(await getConfig("certificado_validade", "")).trim() || null,
+			certificadoApelido:
+				(await getConfig("certificado_apelido", "")).trim() || null,
 		};
 	},
 

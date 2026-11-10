@@ -129,6 +129,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 					situacao: { type: "string", enum: ["ativo", "inativo", "todos"] },
 					grupo: { type: "string" },
 					fornecedor: { type: "string" },
+					localEstoque: { type: "string" },
 					pendencia: { type: "string" },
 					origem: {
 						type: "string",

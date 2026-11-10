@@ -21,6 +21,7 @@ import {
 	cfop,
 	departamento,
 	hierarquia,
+	localestoque,
 	ncm,
 	produtos,
 	saldoestoque,
@@ -118,6 +119,11 @@ function montarOrdenacaoProdutos(
 			? sql`${expressaoDivergencia} DESC NULLS LAST`
 			: sql`${expressaoDivergencia} ASC NULLS LAST`;
 	}
+	if (ordenarPor === "localestoque") {
+		return ordem === "desc"
+			? desc(localestoque.descricao)
+			: asc(localestoque.descricao);
+	}
 
 	if (ordenarPor === "codigo") {
 		return ordem === "desc"
@@ -140,6 +146,7 @@ function montarOrdenacaoProdutos(
 }
 
 export type ProdutoListagem = Produto & {
+	localestoque: string | null;
 	quantidade: string;
 	quantidadefiscal: string;
 	quantidadeprovisionada?: string;
@@ -227,6 +234,15 @@ function aplicarFiltroColunaProduto(
 		adicionarFiltroTexto(
 			where,
 			sql`(SELECT pp.nome FROM produtos pp WHERE pp.id = ${produtos.idprodutopai} LIMIT 1)`,
+			valor,
+		);
+		return;
+	}
+
+	if (campo === "localestoque") {
+		adicionarFiltroTexto(
+			where,
+			sql`(SELECT COALESCE(le.descricao, le.codigo, '') FROM localestoque le WHERE le.id = ${produtos.idlocalestoque} LIMIT 1)`,
 			valor,
 		);
 		return;
@@ -484,6 +500,8 @@ export async function listarProdutosPorEmpresa({
 		db
 			.select({
 				...getTableColumns(produtos),
+				localestoqueDescricao: localestoque.descricao,
+				localestoqueCodigo: localestoque.codigo,
 				idsaldo: saldoestoque.id,
 				quantidadeSaldo: saldoestoque.quantidade,
 				quantidadefiscalSaldo: saldoestoque.quantidadefiscal,
@@ -495,6 +513,7 @@ export async function listarProdutosPorEmpresa({
 			})
 			.from(produtos)
 			.leftJoin(saldoestoque, joinSaldo)
+			.leftJoin(localestoque, eq(produtos.idlocalestoque, localestoque.id))
 			.leftJoin(produtoPai, eq(produtos.idprodutopai, produtoPai.id))
 			.where(and(...where))
 			.orderBy(ordenacao)
@@ -504,6 +523,8 @@ export async function listarProdutosPorEmpresa({
 
 	const produtosListagem: ProdutoListagem[] = rows.map((row) => {
 		const {
+			localestoqueDescricao,
+			localestoqueCodigo,
 			idsaldo,
 			quantidadeSaldo,
 			quantidadefiscalSaldo,
@@ -527,6 +548,7 @@ export async function listarProdutosPorEmpresa({
 
 		return {
 			...produto,
+			localestoque: localestoqueDescricao ?? localestoqueCodigo ?? null,
 			imagem: imagemResolvida.imagem,
 			caminhoimagem: imagemResolvida.caminhoimagem,
 			nomepai: nomepai ?? null,

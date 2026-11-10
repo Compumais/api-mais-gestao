@@ -9,6 +9,7 @@ import type { NotaFiscalItem, NovoNotaFiscalItem } from "@/model/nota-fiscal-ite
 import type { NotaFiscal, NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarEntidadePorCnpj, verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarPrimeiroLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
 import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { buscarProdutoParaNf } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
@@ -64,6 +65,7 @@ async function montarDadosImportacaoItem(
 	idempresa: string,
 	_identidade?: string | undefined,
 	ufEmitente?: string | undefined,
+	idlocalestoquePadrao?: string | undefined,
 ): Promise<ItemMontadoImportacao> {
 	const fatorConversao = "1";
 	const quantidadeXml = itemXml.quantidade ?? "0";
@@ -126,6 +128,8 @@ async function montarDadosImportacaoItem(
 			eanXml: itemXml.ean,
 			statusVinculo,
 			idproduto: produtoEncontrado?.id,
+			idlocalestoque:
+				produtoEncontrado?.idlocalestoque ?? idlocalestoquePadrao ?? undefined,
 			produtoEncontrado: produtoEncontrado
 				? {
 						id: produtoEncontrado.id,
@@ -274,10 +278,12 @@ async function executarCriarRascunhoImportacaoNf({
 
 	const notaFiscalId = uuidv4();
 	const datahoraAtual = new Date().toISOString();
+	const localPadrao = await buscarPrimeiroLocalEstoqueEmpresa(idempresa);
 
 	const notaFiscal: NovaNotaFiscal = {
 		id: notaFiscalId,
 		idempresa,
+		idlocalestoque: localPadrao?.id ?? null,
 		identidade: entidadeFornecedor?.id ?? null,
 		numero: truncarTexto(dadosXml.numero, 60),
 		numeronotafiscal: truncarTexto(dadosXml.numeronotafiscal, 11),
@@ -359,6 +365,7 @@ async function executarCriarRascunhoImportacaoNf({
 					idempresa,
 					entidadeFornecedor?.id,
 					dadosXml.ufemitente,
+					localPadrao?.id,
 				),
 			),
 		);
@@ -378,6 +385,7 @@ async function executarCriarRascunhoImportacaoNf({
 				id: uuidv4(),
 				idnotafiscal: notaFiscalId,
 				idproduto: dadosImportacao.idproduto ?? null,
+				idlocalestoque: dadosImportacao.idlocalestoque ?? null,
 				descricao: truncarTexto(itemXml.descricaoproduto, 120),
 				quantidade: dadosImportacao.quantidadeXml,
 				precounitario: dadosImportacao.precounitarioXml,

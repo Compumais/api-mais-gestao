@@ -10,6 +10,7 @@ import {
 
 const itemNotaFiscalSchema = z.object({
 	idproduto: z.string().optional(),
+	idlocalestoque: z.string().optional().nullable(),
 	codigoproduto: z.number().int().optional(),
 	ean: z.string().optional(),
 	descricaoproduto: z.string().max(120).optional(),
@@ -61,6 +62,7 @@ const criarNotaFiscalBodySchema = z.object({
 	datahoraentradasaida: z.string().optional().nullable(),
 	tipodocumento: z.string().max(2).optional().nullable(),
 	idcfop: z.string().optional().nullable(),
+	idlocalestoque: z.string().optional().nullable(),
 	idoperacaofiscal: z.string().optional().nullable(),
 	idplanocontas: z.string().optional().nullable(),
 	idcondicaopagto: z.string().optional().nullable(),
@@ -135,6 +137,7 @@ export async function criarNotaFiscal(
 			datahoraentradasaida: dadosValidados.datahoraentradasaida ?? null,
 			tipodocumento: dadosValidados.tipodocumento ?? null,
 			idcfop: dadosValidados.idcfop ?? null,
+			idlocalestoque: dadosValidados.idlocalestoque ?? null,
 			idoperacaofiscal: dadosValidados.idoperacaofiscal ?? null,
 			idplanocontas: dadosValidados.idplanocontas ?? null,
 			idcondicaopagto: dadosValidados.idcondicaopagto ?? null,

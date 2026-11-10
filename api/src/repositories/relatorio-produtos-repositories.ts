@@ -130,6 +130,7 @@ const ORDENACOES: Record<TipoRelatorioProdutos, Record<string, string>> = {
 		codigo: "codigo",
 		nome: "nome",
 		unidade: "unidade",
+		local_estoque: "local_estoque",
 		estoque_operacional: "estoque_operacional",
 		estoque_fiscal: "estoque_fiscal",
 		minimo: "minimo",
@@ -146,6 +147,7 @@ const ORDENACOES: Record<TipoRelatorioProdutos, Record<string, string>> = {
 		nome: "nome",
 		unidade: "unidade",
 		grupo: "grupo",
+		local_estoque: "local_estoque",
 		status: "status",
 		quantidade_operacional: "quantidade_operacional",
 		quantidade_fiscal: "quantidade_fiscal",
@@ -275,6 +277,7 @@ function filtrosBase(f: FiltrosRelatorioProdutos): SQL {
 		${f.q ? sql`AND (p.nome ILIKE ${`%${f.q}%`} OR p.descricao ILIKE ${`%${f.q}%`} OR p.codigo::text ILIKE ${`%${f.q}%`} OR COALESCE(p.ean::text, '') ILIKE ${`%${f.q}%`})` : sql``}
 		${f.grupo ? sql`AND (h.id = ${f.grupo} OR h.nome ILIKE ${`%${f.grupo}%`})` : sql``}
 		${f.fornecedor ? sql`AND (e.id = ${f.fornecedor} OR e.nome ILIKE ${`%${f.fornecedor}%`} OR COALESCE(p.fornecedor, '') ILIKE ${`%${f.fornecedor}%`})` : sql``}
+		${f.localEstoque ? sql`AND (p.idlocalestoque = ${f.localEstoque} OR EXISTS (SELECT 1 FROM localestoque le_f WHERE le_f.idempresa = p.idempresa AND (le_f.id = ${f.localEstoque} OR le_f.descricao ILIKE ${`%${f.localEstoque}%`}) AND (le_f.id = p.idlocalestoque OR EXISTS (SELECT 1 FROM movimentoestoque me_loc WHERE me_loc.idproduto = p.id AND me_loc.idempresa = p.idempresa AND COALESCE(me_loc.cancelado, 0) = 0 AND me_loc.idlocalestoque = le_f.id))))` : sql``}
 	`;
 }
 
@@ -298,7 +301,7 @@ function colunasProdutoRelatorio(): SQL {
 		p.percentualipisaida, p.cstibs, p.classtributariaibs, p.aliquotaiibs, p.aliquotacbs,
 		p.idbeneficiofiscalnf, p.idbeneficiofiscaloperacao,
 		p.idgrupo, p.idfornecedor, p.fornecedor, p.idncm, p.idcest, p.idcfopsaida,
-		p.quantidademinima, p.quantidademaxima
+		p.idlocalestoque, p.quantidademinima, p.quantidademaxima
 	`;
 }
 
@@ -326,7 +329,8 @@ function baseProdutos(f: FiltrosRelatorioProdutos): SQL {
 			SELECT me.idproduto,
 				MAX(COALESCE(me.datahora, me.data::timestamp)) FILTER (WHERE COALESCE(me.cancelado, 0) = 0) ultimo_movimento,
 				MAX(COALESCE(me.datahora, me.data::timestamp)) FILTER (WHERE COALESCE(me.quantidadeentrada::numeric, 0) > 0 AND COALESCE(me.cancelado, 0) = 0) ultima_entrada,
-				MAX(COALESCE(me.datahora, me.data::timestamp)) FILTER (WHERE COALESCE(me.quantidadesaida::numeric, 0) > 0 AND COALESCE(me.cancelado, 0) = 0) ultima_saida
+				MAX(COALESCE(me.datahora, me.data::timestamp)) FILTER (WHERE COALESCE(me.quantidadesaida::numeric, 0) > 0 AND COALESCE(me.cancelado, 0) = 0) ultima_saida,
+				(ARRAY_AGG(me.idlocalestoque ORDER BY COALESCE(me.datahora, me.data::timestamp) DESC, me.id DESC) FILTER (WHERE COALESCE(me.cancelado, 0) = 0 AND me.idlocalestoque IS NOT NULL))[1] ultimo_idlocalestoque
 			FROM movimentoestoque me WHERE me.idempresa = ${f.idempresa}
 			GROUP BY me.idproduto
 		), duplicados AS (
@@ -340,6 +344,7 @@ function baseProdutos(f: FiltrosRelatorioProdutos): SQL {
 		), base AS (
 			SELECT ${colunasProdutoRelatorio()},
 				h.nome grupo_nome,
+				COALESCE(le_prod.descricao, '-') local_estoque,
 				NULL::text marca_nome,
 				COALESCE(e.nome, p.fornecedor) fornecedor_nome,
 				n.codigo ncm_cadastro, ce.codigo::text cest_cadastro, cf.codigo cfop_saida,
@@ -362,6 +367,7 @@ function baseProdutos(f: FiltrosRelatorioProdutos): SQL {
 			LEFT JOIN custos c ON c.idproduto = p.id
 			LEFT JOIN saldos s ON s.idempresa = p.idempresa AND s.codigoproduto = p.codigo::text
 			LEFT JOIN movimentos m ON m.idproduto = p.id
+			LEFT JOIN localestoque le_prod ON le_prod.id = COALESCE(p.idlocalestoque, m.ultimo_idlocalestoque) AND le_prod.idempresa = p.idempresa
 			LEFT JOIN duplicados d ON d.idempresa = p.idempresa AND d.codigo = p.codigo
 			LEFT JOIN eans ed ON ed.idempresa = p.idempresa AND ed.ean = p.ean
 			WHERE p.idempresa = ${f.idempresa} ${filtrosBase(f)}
@@ -569,7 +575,7 @@ async function consultarProdutosBase(
 			tipo,
 			f,
 			sql`
-			b.codigo, b.nome, b.unidademedida unidade,
+			b.codigo, b.nome, b.unidademedida unidade, b.local_estoque,
 			COALESCE(b.estoque_operacional, 0)::numeric estoque_operacional,
 			COALESCE(b.estoque_fiscal, 0)::numeric estoque_fiscal,
 			b.quantidademinima minimo, b.quantidademaxima maximo,
@@ -592,7 +598,7 @@ async function consultarProdutosBase(
 			tipo,
 			f,
 			sql`
-			b.codigo, b.ean, b.nome, b.unidademedida unidade, b.grupo_nome grupo,
+			b.codigo, b.ean, b.nome, b.unidademedida unidade, b.grupo_nome grupo, b.local_estoque,
 			CASE WHEN COALESCE(b.inativo, 0) = 0 THEN 'Ativo' ELSE 'Inativo' END status,
 			COALESCE(b.estoque_operacional, 0)::numeric quantidade_operacional,
 			COALESCE(b.estoque_fiscal, 0)::numeric quantidade_fiscal,
@@ -712,6 +718,7 @@ async function consultarMovimentacoes(
 			${filtroDatas(f, "COALESCE(me.datahora, me.data::timestamp)")}
 			${filtroOrigemMovimento(f.origem)}
 			${filtroTipoEstoque(f.tipoEstoque)}
+			${f.localEstoque ? sql`AND (me.idlocalestoque = ${f.localEstoque} OR p.idlocalestoque = ${f.localEstoque} OR le.descricao ILIKE ${`%${f.localEstoque}%`})` : sql``}
 			${f.situacao === "ativo" ? sql`AND COALESCE(me.cancelado, 0) = 0` : sql``}
 			${f.situacao === "inativo" ? sql`AND COALESCE(me.cancelado, 0) <> 0` : sql``}
 		${paginacao("movimentacoes", f)}

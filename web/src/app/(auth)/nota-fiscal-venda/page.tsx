@@ -184,9 +184,7 @@ export default function NotaFiscalVendaPage() {
 				...(filtrosColuna.status
 					? { status: Number(filtrosColuna.status) }
 					: {}),
-				...(filtrosColuna.chavenfe
-					? { chavenfe: filtrosColuna.chavenfe }
-					: {}),
+				...(filtrosColuna.chavenfe ? { chavenfe: filtrosColuna.chavenfe } : {}),
 				...(ordenarPor ? { ordenarPor } : {}),
 				...(ordem ? { ordem } : {}),
 			});
@@ -207,8 +205,9 @@ export default function NotaFiscalVendaPage() {
 	});
 
 	const descreverConsulta = (resultado: ResultadoConsultaSituacaoNfe) =>
-		[resultado.xMotivo, ...(resultado.avisos ?? [])].filter(Boolean).join("\n") ||
-		undefined;
+		[resultado.xMotivo, ...(resultado.avisos ?? [])]
+			.filter(Boolean)
+			.join("\n") || undefined;
 
 	const { mutate: consultarSituacao } = useMutation({
 		mutationFn: (id: string) => consultarSituacaoNfe(id),
@@ -378,11 +377,10 @@ export default function NotaFiscalVendaPage() {
 					)}
 				</div>
 
-				{nfeConfiguracao && (
-					<div className="px-4">
-						<AvisoAmbienteNfe ambiente={nfeConfiguracao.ambiente} />
-					</div>
-				)}
+				<AvisoAmbienteNfe
+					ambiente={nfeConfiguracao?.ambiente}
+					className="px-4"
+				/>
 
 				{rascunhos && rascunhos.data.length > 0 ? (
 					<section className="mx-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
@@ -411,10 +409,7 @@ export default function NotaFiscalVendaPage() {
 							</p>
 						</div>
 					) : mostrarSkeleton ? (
-						<TableSkeleton
-							rows={10}
-							columns={colunasVisiveis.length || 7}
-						>
+						<TableSkeleton rows={10} columns={colunasVisiveis.length || 7}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
 							))}

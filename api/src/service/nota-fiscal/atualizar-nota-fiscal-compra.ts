@@ -42,6 +42,7 @@ export type ItemAtualizacaoNotaFiscalCompra = {
 	idunidademedida?: string | null | undefined;
 	unidade?: string | null | undefined;
 	idproduto?: string | null | undefined;
+	idlocalestoque?: string | null | undefined;
 	desconto?: string | null | undefined;
 };
 
@@ -58,6 +59,7 @@ type AtualizarNotaFiscalCompraParametros = {
 		emissao?: string | null | undefined;
 		entradasaida?: string | null | undefined;
 		idcfop?: string | null | undefined;
+		idlocalestoque?: string | null | undefined;
 		idplanocontas?: string | null | undefined;
 		idcondicaopagto?: string | null | undefined;
 		idtipodocumento?: string | null | undefined;
@@ -129,6 +131,7 @@ export async function atualizarNotaFiscalCompraService({
 		emissao: dados.emissao ?? undefined,
 		entradasaida: dados.entradasaida ?? undefined,
 		idcfop: idOpcionalOuNulo(dados.idcfop) ?? undefined,
+		idlocalestoque: idOpcionalOuNulo(dados.idlocalestoque) ?? undefined,
 		idplanocontas: idOpcionalOuNulo(dados.idplanocontas) ?? undefined,
 		idcondicaopagto: idOpcionalOuNulo(dados.idcondicaopagto) ?? undefined,
 		idtipodocumento: idOpcionalOuNulo(dados.idtipodocumento) ?? undefined,
@@ -170,6 +173,7 @@ export async function atualizarNotaFiscalCompraService({
 				idunidademedida: idOpcionalOuNulo(itemDados.idunidademedida) ?? undefined,
 				unidade: itemDados.unidade ?? undefined,
 				idproduto: idOpcionalOuNulo(itemDados.idproduto) ?? undefined,
+				idlocalestoque: idOpcionalOuNulo(itemDados.idlocalestoque) ?? undefined,
 				desconto: numeroOpcionalOuNulo(itemDados.desconto) ?? undefined,
 			});
 
@@ -213,11 +217,12 @@ export async function atualizarNotaFiscalCompraService({
 			avisos.push(...(estorno.body?.avisos ?? []));
 
 			const localEstoque =
+				notaAtualizada.idlocalestoque ??
 				nota.idlocalestoque ??
 				movimentosAtivos[0]?.idlocalestoque ??
 				(await buscarPrimeiroLocalEstoqueEmpresa(idempresa))?.id;
 
-			if (localEstoque) {
+			if (localEstoque || itensFinais.some((item) => item.idlocalestoque)) {
 				const itensEstoque = itensFinais
 					.filter((item) => item.idproduto)
 					.map((item) => ({
@@ -226,6 +231,9 @@ export async function atualizarNotaFiscalCompraService({
 						quantidade: item.quantidade ?? "0",
 						custoUnitario:
 							item.custoaquisicao ?? item.precounitario ?? "0",
+						...(item.idlocalestoque
+							? { idlocalestoque: item.idlocalestoque }
+							: {}),
 					}));
 
 				const resultadoEstoque = await registrarMovimentosEstoqueNf({

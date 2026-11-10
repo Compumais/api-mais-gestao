@@ -91,6 +91,7 @@ const COLUNAS_ITEM_NF = [
 	"id",
 	"idnotafiscal",
 	"idproduto",
+	"idlocalestoque",
 	"descricao",
 	"quantidade",
 	"precounitario",

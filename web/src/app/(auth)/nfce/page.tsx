@@ -501,9 +501,7 @@ export default function NfcePage() {
 					</div>
 				</div>
 
-				<div className="px-4">
-					<AvisoAmbienteNfe ambiente={ambienteNfce} />
-				</div>
+				<AvisoAmbienteNfe ambiente={ambienteNfce} className="px-4" />
 
 				<div className="mx-4 rounded-lg border bg-card">
 					{mostrarSkeleton ? (

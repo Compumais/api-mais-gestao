@@ -9,6 +9,7 @@ import { listarIdsUsuariosFinanceirosPorEmpresa } from "@/repositories/usuarios-
 export type TipoNotificacaoAgendada =
 	| "alerta_agendado"
 	| "alerta_vencimento"
+	| "alerta_vencimento_certificado"
 	| "alerta_saldo_baixo"
 	| "alerta_conciliacao"
 	| "relatorio_automatico"
@@ -33,8 +34,9 @@ export async function criarNotificacaoAgendadaService(
 		destinatarios.add(empresa.idproprietario);
 	}
 
-	const idsFinanceiros =
-		await listarIdsUsuariosFinanceirosPorEmpresa(params.idempresa);
+	const idsFinanceiros = await listarIdsUsuariosFinanceirosPorEmpresa(
+		params.idempresa,
+	);
 	for (const id of idsFinanceiros) {
 		destinatarios.add(id);
 	}

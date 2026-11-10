@@ -39,6 +39,7 @@ import {
 import { entidadesService } from "@/services/entidades.service";
 import { gruposGourmetService } from "@/services/grupos-gourmet.service";
 import { hierarquiasService } from "@/services/hierarquias.service";
+import { localEstoqueService } from "@/services/local-estoque.service";
 import {
 	type CriarProdutoData,
 	produtosService,
@@ -76,6 +77,10 @@ function buildProdutoPayload(
 		nome: data.nome.trim(),
 		idunidademedida: data.idunidademedida,
 		idgrupo: data.idgrupo,
+		idlocalestoque:
+			data.idlocalestoque && data.idlocalestoque !== "none"
+				? data.idlocalestoque
+				: null,
 		idgrupogourmet:
 			data.idgrupogourmet && data.idgrupogourmet !== "none"
 				? data.idgrupogourmet
@@ -217,6 +222,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			idunidademedida: "",
 			fornecedor: null,
 			idgrupo: "",
+			idlocalestoque: null,
 			idgrupogourmet: "none",
 			espizza: false,
 			exibircardapiodelivery: false,
@@ -296,6 +302,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const idunidademedida = watch("idunidademedida");
 	const fornecedor = watch("fornecedor");
 	const idgrupo = watch("idgrupo");
+	const idlocalestoque = watch("idlocalestoque");
 	const tipo = watch("tipo");
 	const tipoproduto = watch("tipoproduto");
 	const iat = watch("iat");
@@ -343,6 +350,29 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		},
 		enabled: !!empresa,
 	});
+
+	const { data: locaisEstoqueData } = useQuery({
+		queryKey: ["locais-estoque", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return await localEstoqueService.listar({
+				idempresa: empresa.id,
+				limit: 100,
+			});
+		},
+		enabled: !!empresa,
+	});
+
+	useEffect(() => {
+		if (!isEdicao && !idlocalestoque && locaisEstoqueData?.data?.length) {
+			const padrao =
+				locaisEstoqueData.data.find((l) => l.padrao === 1 && l.inativo !== 1) ??
+				locaisEstoqueData.data.find((l) => l.inativo !== 1);
+			if (padrao) {
+				setValue("idlocalestoque", padrao.id);
+			}
+		}
+	}, [isEdicao, idlocalestoque, locaisEstoqueData, setValue]);
 
 	const idgrupogourmetInicial = props.valoresIniciais?.idgrupogourmet ?? null;
 
@@ -731,6 +761,49 @@ export function ProdutoForm(props: ProdutoFormProps) {
 									</Select>
 									<FieldError errors={errors.idgrupo ? [errors.idgrupo] : []} />
 								</Field>
+
+								{tipo !== "S" && (
+									<Field data-invalid={!!errors.idlocalestoque}>
+										<FieldLabel htmlFor="idlocalestoque">
+											Local de estoque
+										</FieldLabel>
+										<Select
+											value={idlocalestoque || "none"}
+											onValueChange={(value) =>
+												setValue(
+													"idlocalestoque",
+													value === "none" ? null : value,
+												)
+											}
+										>
+											<SelectTrigger className="w-full">
+												<SelectValue placeholder="Selecione o local de estoque" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="none">Padrão da empresa</SelectItem>
+												{locaisEstoqueData?.data
+													.filter(
+														(local) =>
+															local.inativo !== 1 ||
+															local.id === idlocalestoque,
+													)
+													.map((local) => (
+														<SelectItem key={local.id} value={local.id}>
+															{local.codigo
+																? `${local.codigo} - ${local.descricao ?? ""}`
+																: (local.descricao ?? local.id)}
+															{local.padrao === 1 ? " (Padrão)" : ""}
+														</SelectItem>
+													))}
+											</SelectContent>
+										</Select>
+										<FieldError
+											errors={
+												errors.idlocalestoque ? [errors.idlocalestoque] : []
+											}
+										/>
+									</Field>
+								)}
 
 								<Field data-invalid={!!errors.preco}>
 									<FieldLabel htmlFor="preco">Preço de venda *</FieldLabel>

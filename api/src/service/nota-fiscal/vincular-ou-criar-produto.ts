@@ -31,6 +31,7 @@ export type DadosProdutoNF = {
 	idcest?: string | undefined;
 	idfornecedor?: string | undefined;
 	idgrupo?: string | undefined;
+	idlocalestoque?: string | undefined;
 	unidademedida?: string | undefined;
 	custoaquisicao?: string | undefined;
 	/** Coluna integer. Não recebe a quantidade da NF — o saldo vem do movimento. */
@@ -165,6 +166,9 @@ export async function criarProdutoParaNf(
 			idcest: dados.idcest ?? null,
 			idfornecedor: dados.idfornecedor ?? null,
 			idgrupo: dados.idgrupo ?? null,
+			...(dados.idlocalestoque !== undefined
+				? { idlocalestoque: dados.idlocalestoque ?? null }
+				: {}),
 			custoaquisicao: dados.custoaquisicao ?? null,
 			precoultimacompra: dados.custoaquisicao ?? null,
 			quantidadepadrao: null,
@@ -218,6 +222,7 @@ export function montarAtualizacaoProdutoNf(
 		idunidademedida: dados.idunidademedida ?? undefined,
 		unidademedida: truncarTexto(dados.unidademedida, 6) ?? undefined,
 		idgrupo: dados.idgrupo ?? undefined,
+		...(dados.idlocalestoque ? { idlocalestoque: dados.idlocalestoque } : {}),
 		ean: ean ?? undefined,
 		eantributavel: ean ?? undefined,
 		idncm: dados.idncm ?? undefined,

@@ -19,6 +19,7 @@ import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
 import { grupogourmet } from "./grupo-gourmet.js";
 import { hierarquia } from "./hierarquia.js";
+import { localestoque } from "./local-estoque.js";
 import { marca } from "./marca.js";
 import { ncm } from "./ncm.js";
 import { planocontas } from "./plano-contas.js";
@@ -150,6 +151,7 @@ export const produtos = pgTable(
 		idmotivorebaixa: text(),
 		idncm: text(),
 		idplanocontas: text(),
+		idlocalestoque: text(),
 		idreceitasemcontribuicao: text(),
 		imagem: text(),
 		ipi: numeric({ precision: 12, scale: 2 }),
@@ -411,5 +413,13 @@ export const produtos = pgTable(
 			.onUpdate("cascade")
 			.onDelete("set null"),
 		index("produtos_idbancoimagem_idx").on(table.idbancoimagem),
+		foreignKey({
+			columns: [table.idlocalestoque],
+			foreignColumns: [localestoque.id],
+			name: "produtos_idlocalestoque_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		index("produtos_idlocalestoque_idx").on(table.idlocalestoque),
 	],
 );

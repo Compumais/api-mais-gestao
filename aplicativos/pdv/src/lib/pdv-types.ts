@@ -204,6 +204,8 @@ export type StatusPdv = {
 		conflitos: number;
 		falhas: number;
 	} | null;
+	certificadoValidade?: string | null;
+	certificadoApelido?: string | null;
 };
 
 export type BalancaStatus = {

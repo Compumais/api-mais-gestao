@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AlertaVencimentoCertificado } from "@/components/alerta-vencimento-certificado";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NFE_STATUS, NFE_STATUS_LABELS } from "@/constants/nfe-status";
@@ -175,6 +176,7 @@ export default function DetalheNfsePage() {
 	return (
 		<PageContainer>
 			<main className="flex flex-col gap-6 py-4 px-4 max-w-3xl">
+				<AlertaVencimentoCertificado />
 				<header className="flex flex-wrap items-start justify-between gap-3">
 					<div>
 						<h1 className="text-2xl font-bold">
@@ -295,8 +297,7 @@ export default function DetalheNfsePage() {
 									variant="destructive"
 									onClick={() => cancelarMutation.mutate()}
 									disabled={
-										cancelarMutation.isPending ||
-										motivoCancelamento.length < 15
+										cancelarMutation.isPending || motivoCancelamento.length < 15
 									}
 								>
 									Cancelar NFS-e
