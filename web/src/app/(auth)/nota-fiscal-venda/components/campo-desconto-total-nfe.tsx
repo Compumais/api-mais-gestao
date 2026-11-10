@@ -39,14 +39,14 @@ function formatarPercentual(valor: number): string {
 type CampoDescontoTotalNfeProps = {
 	desconto: number;
 	onDescontoChange: (valor: number) => void;
-	crt: number;
+	crt?: number;
 	itens: ItemTributacaoEmissaoNfe[];
-	frete: number;
-	seguro: number;
-	outrasDespesas: number;
+	frete?: number;
+	seguro?: number;
+	outrasDespesas?: number;
 	erro?: string;
-	descontoItens: number;
-	descontoTotal: number;
+	descontoItens?: number;
+	descontoTotal?: number;
 	disabled?: boolean;
 	rotuloDocumento?: "NF-e" | "pedido";
 };
@@ -54,14 +54,14 @@ type CampoDescontoTotalNfeProps = {
 export function CampoDescontoTotalNfe({
 	desconto,
 	onDescontoChange,
-	crt,
+	crt = 1,
 	itens,
-	frete,
-	seguro,
-	outrasDespesas,
+	frete = 0,
+	seguro = 0,
+	outrasDespesas = 0,
 	erro,
-	descontoItens,
-	descontoTotal,
+	descontoItens = 0,
+	descontoTotal = 0,
 	disabled = false,
 	rotuloDocumento = "NF-e",
 }: CampoDescontoTotalNfeProps) {
