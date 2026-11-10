@@ -98,6 +98,13 @@ final class DpsNacionalXmlBuilder
         $this->appendText($xml, $inf, 'nDPS', $nDps);
         $this->appendText($xml, $inf, 'dCompet', substr($dCompet, 0, 10));
         $this->appendText($xml, $inf, 'tpEmit', '1');
+        // NT 009: finNFSe é filho direto de infDPS (após tpEmit), não de IBSCBS.
+        $ibsPayload = is_array($servico['ibsCbs'] ?? null) ? $servico['ibsCbs'] : [];
+        $finNFSe = preg_replace('/\D/', '', (string) ($ibsPayload['finNFSe'] ?? '0')) ?? '0';
+        if ($finNFSe === '' || !in_array($finNFSe, ['0', '1', '2'], true)) {
+            $finNFSe = '0';
+        }
+        $this->appendText($xml, $inf, 'finNFSe', $finNFSe);
         $this->appendText($xml, $inf, 'cLocEmi', $cLocEmi);
 
         $prest = $xml->createElementNS(self::NS, 'prest');
@@ -284,7 +291,6 @@ final class DpsNacionalXmlBuilder
             );
         }
 
-        $finNFSe = (string) ($ibs['finNFSe'] ?? 0);
         $indFinal = (string) ($ibs['indFinal'] ?? 0);
         $indDest = (string) ($ibs['indDest'] ?? 0);
         $cst = preg_replace('/\D/', '', (string) ($ibs['cst'] ?? '000')) ?? '000';
@@ -292,8 +298,8 @@ final class DpsNacionalXmlBuilder
         $cClassTrib = preg_replace('/\D/', '', (string) ($ibs['cClassTrib'] ?? '000001')) ?? '000001';
         $cClassTrib = str_pad(substr($cClassTrib, 0, 6), 6, '0', STR_PAD_LEFT);
 
+        // NT 009: finNFSe saiu de IBSCBS e ficou em infDPS.
         $ibsCbs = $xml->createElementNS(self::NS, 'IBSCBS');
-        $this->appendText($xml, $ibsCbs, 'finNFSe', $finNFSe);
         $this->appendText($xml, $ibsCbs, 'indFinal', $indFinal);
         $this->appendText($xml, $ibsCbs, 'cIndOp', $cIndOp);
         if (isset($ibs['tpOper'])) {

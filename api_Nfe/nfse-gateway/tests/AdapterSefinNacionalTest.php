@@ -97,6 +97,38 @@ assertTrue(str_contains($xml, '<cTribNac>010101</cTribNac>'), 'cTribNac presente
 assertTrue(str_contains($xml, '<cNBS>115021000</cNBS>'), 'cNBS presente');
 assertTrue(!str_contains($xml, '<IBSCBS>'), 'IBSCBS omitido para Simples (opSimpNac=3)');
 
+// NT 009: finNFSe em infDPS após tpEmit e antes de cLocEmi
+assertTrue(str_contains($xml, '<finNFSe>0</finNFSe>'), 'finNFSe=0 em infDPS');
+assertTrue(
+    (bool) preg_match('/<tpEmit>1<\/tpEmit>\s*<finNFSe>0<\/finNFSe>\s*<cLocEmi>/', $xml),
+    'finNFSe fica entre tpEmit e cLocEmi',
+);
+
+// Não-SN com cIndOp: IBSCBS sem finNFSe interno
+$payloadNaoSn = payloadNfseMinimo();
+$payloadNaoSn['prestador']['opSimpNac'] = '1';
+unset($payloadNaoSn['prestador']['regApTribSN']);
+$payloadNaoSn['servico']['ibsCbs'] = [
+    'cIndOp' => '100301',
+    'finNFSe' => 0,
+    'indFinal' => 0,
+    'indDest' => 0,
+];
+[, $xmlIbs] = $builder->montar($payloadNaoSn, [
+    'ambiente' => 2,
+    'cnpj' => '12345678000195',
+    'codigomunicipioibge' => '3550308',
+]);
+assertTrue(str_contains($xmlIbs, '<IBSCBS>'), 'IBSCBS emitido para não-SN com cIndOp');
+assertTrue(
+    (bool) preg_match('/<tpEmit>1<\/tpEmit>\s*<finNFSe>0<\/finNFSe>\s*<cLocEmi>/', $xmlIbs),
+    'finNFSe permanece em infDPS no XML com IBSCBS',
+);
+assertTrue(
+    !preg_match('/<IBSCBS>[\s\S]*<finNFSe>/', $xmlIbs),
+    'finNFSe não aparece dentro de IBSCBS',
+);
+
 $idExtraido = DpsNacionalXmlBuilder::extrairIdInfDps($xml);
 assertTrue($idExtraido === $idInf, 'extrairIdInfDps retorna o mesmo Id');
 

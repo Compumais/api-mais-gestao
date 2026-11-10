@@ -8,7 +8,19 @@ Provedor: `sefin_nacional`
 - REST + JSON + mTLS (certificado A1 ICP-Brasil com "Autenticação Cliente")
 - DPS XML assinada (XMLDSig), compactada em GZip e enviada em Base64 (`dpsXmlGZipB64`)
 - Namespace: `http://www.sped.fazenda.gov.br/nfse` **sem prefixo**
-- Layout: `dps-1.01`
+- Layout: `dps-1.01` (sequência **NT 009** na produção restrita)
+
+## Sequência crítica de `infDPS` (NT 009)
+
+Após `tpEmit`, o schema exige `finNFSe` (obrigatório) **antes** de `cLocEmi`:
+
+`tpAmb` → `dhEmi` → `verAplic` → `serie` → `nDPS` → `dCompet` → `tpEmit` → (`cMotivoEmisTI` se tpEmit≠1) → **`finNFSe`** → `cLocEmi` → …
+
+- `finNFSe`: `0` regular (default), `1` crédito, `2` débito
+- Com `tpEmit=1` (prestador), **não** enviar `cMotivoEmisTI`
+- `finNFSe` **não** deve mais aparecer dentro de `IBSCBS` (campo deslocado da NT 004 → NT 009)
+
+Sem `finNFSe` em `infDPS`, a Sefin rejeita com E1235 (`cLocEmi` inválido; esperava `cMotivoEmisTI, finNFSe`).
 
 ## URLs
 
