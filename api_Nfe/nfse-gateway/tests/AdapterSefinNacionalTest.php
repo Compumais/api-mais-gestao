@@ -140,7 +140,11 @@ $payloadSnIbs['servico']['ibsCbs'] = [
 ]);
 assertTrue(str_contains($xmlSnIbs, '<IBSCBS>'), 'IBSCBS emitido para Simples com cIndOp');
 assertTrue(str_contains($xmlSnIbs, '<cIndOp>050101</cIndOp>'), 'cIndOp 050101 no IBSCBS');
-assertTrue(str_contains($xmlSnIbs, '<CST>000</CST>'), 'CST no gIBSCBS');
+assertTrue(
+    (bool) preg_match('/<trib>\s*<CST>000<\/CST>\s*<cClassTrib>000001<\/cClassTrib>/', $xmlSnIbs),
+    'CST/cClassTrib diretos em trib (sem gIBSCBS)',
+);
+assertTrue(!str_contains($xmlSnIbs, '<gIBSCBS>'), 'gIBSCBS removido no NT 009');
 assertTrue(
     (bool) preg_match('/<tpEmit>1<\/tpEmit>\s*<finNFSe>0<\/finNFSe>\s*<cLocEmi>/', $xmlSnIbs),
     'finNFSe permanece em infDPS no XML com IBSCBS',

@@ -34,7 +34,8 @@ Sem `finNFSe` em `infDPS`, a Sefin rejeita com E1235 (`cLocEmi` inválido; esper
 - `serie` no elemento sem zero à esquerda (pad só no `Id` da `infDPS`)
 - `totTrib` com `vTotTrib` / `vTotTribFed|Est|Mun` (não `indTotTrib`)
 - `pAliq` só quando alíquota > 0
-- **`IBSCBS` também para Simples/MEI** quando `cIndOp` informado (`indFinal`, `cIndOp`, `indDest`, `gIBSCBS/CST/cClassTrib`)
+- **`IBSCBS` também para Simples/MEI** quando `cIndOp` informado (`indFinal`, `cIndOp`, `indDest`, `valores/trib/CST` + `cClassTrib`)
+- NT 009: `CST`/`cClassTrib` são filhos diretos de `trib` (sem wrapper `gIBSCBS`)
 - `cIndOp` é obrigatório na API para layout DPS (Anexo VII)
 
 ## URLs

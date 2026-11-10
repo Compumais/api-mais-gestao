@@ -323,12 +323,11 @@ final class DpsNacionalXmlBuilder
         }
         $this->appendText($xml, $ibsCbs, 'indDest', $indDest);
 
+        // NT 009: trib espera CST/cClassTrib diretos (sem wrapper gIBSCBS).
         $valoresIbs = $xml->createElementNS(self::NS, 'valores');
         $tribIbs = $xml->createElementNS(self::NS, 'trib');
-        $gIbsCbs = $xml->createElementNS(self::NS, 'gIBSCBS');
-        $this->appendText($xml, $gIbsCbs, 'CST', $cst);
-        $this->appendText($xml, $gIbsCbs, 'cClassTrib', $cClassTrib);
-        $tribIbs->appendChild($gIbsCbs);
+        $this->appendText($xml, $tribIbs, 'CST', $cst);
+        $this->appendText($xml, $tribIbs, 'cClassTrib', $cClassTrib);
         $valoresIbs->appendChild($tribIbs);
         $ibsCbs->appendChild($valoresIbs);
         $inf->appendChild($ibsCbs);
