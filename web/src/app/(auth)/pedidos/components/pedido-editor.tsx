@@ -1138,19 +1138,21 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 
 					{/* 3. Desconto e Totais (mesma metodologia da emissão de NF-e de venda) */}
 					<div className="space-y-3 rounded-md border bg-muted/20 px-4 py-3 text-sm">
-						<CampoDescontoTotalNfe
-							rotuloDocumento="pedido"
-							desconto={descontoGlobal}
-							onDescontoChange={setDescontoGlobal}
-							itens={itens.map((item) => ({
-								quantidade: parseFloat(item.quantidade ?? "0") || 0,
-								valorUnitario: parseFloat(item.preco ?? "0") || 0,
-								desconto: parseFloat(item.desconto ?? "0") || 0,
-							}))}
-							descontoItens={distribuicaoDesconto.descontoItens}
-							descontoTotal={distribuicaoDesconto.descontoTotal}
-							disabled={pedidoFaturado || pedidoCancelado}
-						/>
+						<div className="max-w-md">
+							<CampoDescontoTotalNfe
+								rotuloDocumento="pedido"
+								desconto={descontoGlobal}
+								onDescontoChange={setDescontoGlobal}
+								itens={itens.map((item) => ({
+									quantidade: parseFloat(item.quantidade ?? "0") || 0,
+									valorUnitario: parseFloat(item.preco ?? "0") || 0,
+									desconto: parseFloat(item.desconto ?? "0") || 0,
+								}))}
+								descontoItens={distribuicaoDesconto.descontoItens}
+								descontoTotal={distribuicaoDesconto.descontoTotal}
+								disabled={pedidoFaturado || pedidoCancelado}
+							/>
+						</div>
 
 						{distribuicaoDesconto.erros.length > 0 && (
 							<div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
