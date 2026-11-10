@@ -7,6 +7,7 @@ Leia [../../AGENTS.md](../../AGENTS.md) antes de editar. Um arquivo por domínio
 | [Plataforma e auth](plataforma-auth.md) | Derruba login, sessão e todas as rotas protegidas. |
 | [Empresas, tenancy e planos](empresas-tenancy.md) | Quebra isolamento multi-empresa, limite de empresas e cobrança SaaS. |
 | [Financeiro](financeiro.md) | Corrompe contas a pagar/receber, caixa e conciliação. |
+| [Centro de custos](centro-custo.md) | Quebra árvore de centros de custo, apropriações, rateios e acompanhamento orçamentário. |
 | [Contabilidade](contabilidade.md) | Desalinha plano de contas, exportação e integração Domínio. |
 | [Entidades](entidades.md) | Remove clientes, fornecedores e o vínculo usuário–empresa. |
 | [Produtos](produtos.md) | Quebra cadastro usado por estoque, fiscal, PDV e compras. |

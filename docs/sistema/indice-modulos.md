@@ -6,8 +6,12 @@ Este arquivo só aponta. A descrição interna de cada módulo fica em `docs/mod
 |--------|-----------------|--------------------------|
 | API | [api/AGENTS.md](../../api/AGENTS.md) | [api/docs/modulos/](../../api/docs/modulos/) |
 | Web | [web/AGENTS.md](../../web/AGENTS.md) | [web/docs/modulos/](../../web/docs/modulos/) |
-| PDV | [pdv/AGENTS.md](../../pdv/AGENTS.md) | [pdv/docs/modulos/](../../pdv/docs/modulos/) |
-| POS Android | [POSmaisgestao/AGENTS.md](../../POSmaisgestao/AGENTS.md) | [POSmaisgestao/docs/modulos/](../../POSmaisgestao/docs/modulos/) |
+| PDV | [aplicativos/pdv/AGENTS.md](../../aplicativos/pdv/AGENTS.md) | [aplicativos/pdv/docs/modulos/](../../aplicativos/pdv/docs/modulos/) |
+| POS Android | [aplicativos/POSmaisgestao/AGENTS.md](../../aplicativos/POSmaisgestao/AGENTS.md) | [aplicativos/POSmaisgestao/docs/modulos/](../../aplicativos/POSmaisgestao/docs/modulos/) |
+| NFe Android | [aplicativos/NFeMaisGestao/README.md](../../aplicativos/NFeMaisGestao/README.md) | — |
+| Estação Balança | [aplicativos/estacao-balanca/README.md](../../aplicativos/estacao-balanca/README.md) | — |
+| POS Self-Pay | [aplicativos/POSselfpay/README.md](../../aplicativos/POSselfpay/README.md) | — |
+| NF-e Shared | [packages/nfe-emissao-shared/package.json](../../packages/nfe-emissao-shared/package.json) | — |
 
 Contratos entre eles: [contratos-entre-pacotes.md](contratos-entre-pacotes.md). O que não remover: [pontos-criticos.md](pontos-criticos.md).
 
@@ -25,6 +29,7 @@ Antes de editar: [api/AGENTS.md](../../api/AGENTS.md). Pasta: [api/docs/modulos/
 | [plataforma-auth.md](../../api/docs/modulos/plataforma-auth.md) | Derruba login, sessão e todas as rotas protegidas. |
 | [empresas-tenancy.md](../../api/docs/modulos/empresas-tenancy.md) | Quebra isolamento multi-empresa, limite de empresas e cobrança SaaS. |
 | [financeiro.md](../../api/docs/modulos/financeiro.md) | Corrompe contas a pagar/receber, caixa e conciliação. |
+| [centro-custo.md](../../api/docs/modulos/centro-custo.md) | Quebra árvore de centros de custo, apropriações, rateios e acompanhamento orçamentário. |
 | [contabilidade.md](../../api/docs/modulos/contabilidade.md) | Desalinha plano de contas, exportação e integração Domínio. |
 | [entidades.md](../../api/docs/modulos/entidades.md) | Remove clientes, fornecedores e o vínculo usuário–empresa. |
 | [produtos.md](../../api/docs/modulos/produtos.md) | Quebra cadastro usado por estoque, fiscal, PDV e compras. |
@@ -58,6 +63,7 @@ Antes de editar: [web/AGENTS.md](../../web/AGENTS.md). Pasta: [web/docs/modulos/
 | [pdv.md](../../web/docs/modulos/pdv.md) | `(pdv)/pdv`, vendas e fechamento de caixa |
 | [gourmet.md](../../web/docs/modulos/gourmet.md) | `(gourmet)` e `(garcom)` |
 | [financeiro.md](../../web/docs/modulos/financeiro.md) | Contas, movimentações, plano de contas, budget |
+| [centro-custo.md](../../web/docs/modulos/centro-custo.md) | `(auth)/centros-custo` e `(auth)/orcamento-centro-custos` |
 | [fiscal.md](../../web/docs/modulos/fiscal.md) | NF-e, NFC-e, NFS-e, compra, tributos, CFOP |
 | [contabilidade.md](../../web/docs/modulos/contabilidade.md) | SINTEGRA, EFD, plano contábil |
 | [relatorios.md](../../web/docs/modulos/relatorios.md) | `(auth)/relatorios` |
@@ -68,39 +74,40 @@ Antes de editar: [web/AGENTS.md](../../web/AGENTS.md). Pasta: [web/docs/modulos/
 
 ## PDV
 
-Antes de editar: [pdv/AGENTS.md](../../pdv/AGENTS.md). Pasta: [pdv/docs/modulos/](../../pdv/docs/modulos/).
+Antes de editar: [aplicativos/pdv/AGENTS.md](../../aplicativos/pdv/AGENTS.md). Pasta: [aplicativos/pdv/docs/modulos/](../../aplicativos/pdv/docs/modulos/).
 
 | Arquivo | Linha do README |
 |---------|-----------------|
-| [README.md](../../pdv/docs/modulos/README.md) | Módulos do PDV |
-| [banco-local.md](../../pdv/docs/modulos/banco-local.md) | Postgres do caixa, migração e config |
-| [sessao-configuracao.md](../../pdv/docs/modulos/sessao-configuracao.md) | Login, empresa, chaves de `config` |
-| [catalogo.md](../../pdv/docs/modulos/catalogo.md) | Produtos, preços e atalhos em cache |
-| [venda-pagamento.md](../../pdv/docs/modulos/venda-pagamento.md) | Cupom, meios e fechamento |
-| [caixa.md](../../pdv/docs/modulos/caixa.md) | Turno, suprimento e conferência |
-| [fiscal-nfce.md](../../pdv/docs/modulos/fiscal-nfce.md) | Emissão, contingência, número e XML |
-| [sync-outbox.md](../../pdv/docs/modulos/sync-outbox.md) | Fila até a API |
-| [mesas-gourmet-delivery.md](../../pdv/docs/modulos/mesas-gourmet-delivery.md) | Conta, comanda, entrega e fila de produção |
-| [impressao.md](../../pdv/docs/modulos/impressao.md) | DANFC-e, cupom e pedido de cozinha |
-| [lan-pos.md](../../pdv/docs/modulos/lan-pos.md) | Maquininha Android no desktop |
-| [pdv-secundario.md](../../pdv/docs/modulos/pdv-secundario.md) | Terminal extra sem banco fiscal próprio |
-| [integracoes-perifericos.md](../../pdv/docs/modulos/integracoes-perifericos.md) | SiTef, balança e Tecnibra |
-| [backup.md](../../pdv/docs/modulos/backup.md) | Cópia local e troca de empresa |
-| [atualizacao-installer.md](../../pdv/docs/modulos/atualizacao-installer.md) | Versão, setup e preservação do banco |
+| [README.md](../../aplicativos/pdv/docs/modulos/README.md) | Módulos do PDV |
+| [banco-local.md](../../aplicativos/pdv/docs/modulos/banco-local.md) | Postgres do caixa, migração e config |
+| [sessao-configuracao.md](../../aplicativos/pdv/docs/modulos/sessao-configuracao.md) | Login, empresa, chaves de `config` |
+| [catalogo.md](../../aplicativos/pdv/docs/modulos/catalogo.md) | Produtos, preços e atalhos em cache |
+| [venda-pagamento.md](../../aplicativos/pdv/docs/modulos/venda-pagamento.md) | Cupom, meios e fechamento |
+| [caixa.md](../../aplicativos/pdv/docs/modulos/caixa.md) | Turno, suprimento e conferência |
+| [fiscal-nfce.md](../../aplicativos/pdv/docs/modulos/fiscal-nfce.md) | Emissão, contingência, número e XML |
+| [sync-outbox.md](../../aplicativos/pdv/docs/modulos/sync-outbox.md) | Fila até a API |
+| [mesas-gourmet-delivery.md](../../aplicativos/pdv/docs/modulos/mesas-gourmet-delivery.md) | Conta, comanda, entrega e fila de produção |
+| [impressao.md](../../aplicativos/pdv/docs/modulos/impressao.md) | DANFC-e, cupom e pedido de cozinha |
+| [lan-pos.md](../../aplicativos/pdv/docs/modulos/lan-pos.md) | Maquininha Android no desktop |
+| [servico-lan.md](../../aplicativos/pdv/docs/modulos/servico-lan.md) | API LAN, outbox e NFC-e em segundo plano (`--lan-service`) |
+| [pdv-secundario.md](../../aplicativos/pdv/docs/modulos/pdv-secundario.md) | Terminal extra sem banco fiscal próprio |
+| [integracoes-perifericos.md](../../aplicativos/pdv/docs/modulos/integracoes-perifericos.md) | SiTef, balança e Tecnibra |
+| [backup.md](../../aplicativos/pdv/docs/modulos/backup.md) | Cópia local e troca de empresa |
+| [atualizacao-installer.md](../../aplicativos/pdv/docs/modulos/atualizacao-installer.md) | Versão, setup e preservação do banco |
 
 ## POS Android
 
-Antes de editar: [POSmaisgestao/AGENTS.md](../../POSmaisgestao/AGENTS.md). Pasta: [POSmaisgestao/docs/modulos/](../../POSmaisgestao/docs/modulos/).
+Antes de editar: [aplicativos/POSmaisgestao/AGENTS.md](../../aplicativos/POSmaisgestao/AGENTS.md). Pasta: [aplicativos/POSmaisgestao/docs/modulos/](../../aplicativos/POSmaisgestao/docs/modulos/).
 
 | Arquivo | Linha do README |
 |---------|-----------------|
-| [README.md](../../POSmaisgestao/docs/modulos/README.md) | Módulos do POS Android |
-| [app-shell.md](../../POSmaisgestao/docs/modulos/app-shell.md) | Application, launcher, navegação, Activities |
-| [autenticacao.md](../../POSmaisgestao/docs/modulos/autenticacao.md) | Login, empresa, token |
-| [configuracao-build.md](../../POSmaisgestao/docs/modulos/configuracao-build.md) | URL, modo cloud/local, Gradle |
-| [pagamento.md](../../POSmaisgestao/docs/modulos/pagamento.md) | Meios, PIX QR, ausência de TEF |
-| [venda-fiscal.md](../../POSmaisgestao/docs/modulos/venda-fiscal.md) | Venda rápida, NFC-e, DAV, caixa |
-| [mesas-comandas.md](../../POSmaisgestao/docs/modulos/mesas-comandas.md) | Mesas, comanda, fila de pedidos |
-| [integracao-api.md](../../POSmaisgestao/docs/modulos/integracao-api.md) | `ApiClient` e `LocalPdvApi` |
-| [persistencia-offline.md](../../POSmaisgestao/docs/modulos/persistencia-offline.md) | Prefs, catálogo SQLite, outbox |
-| [perifericos.md](../../POSmaisgestao/docs/modulos/perifericos.md) | Impressora, balança, câmera |
+| [README.md](../../aplicativos/POSmaisgestao/docs/modulos/README.md) | Módulos do POS Android |
+| [app-shell.md](../../aplicativos/POSmaisgestao/docs/modulos/app-shell.md) | Application, launcher, navegação, Activities |
+| [autenticacao.md](../../aplicativos/POSmaisgestao/docs/modulos/autenticacao.md) | Login, empresa, token |
+| [configuracao-build.md](../../aplicativos/POSmaisgestao/docs/modulos/configuracao-build.md) | URL, modo cloud/local, Gradle |
+| [pagamento.md](../../aplicativos/POSmaisgestao/docs/modulos/pagamento.md) | Meios, PIX QR, ausência de TEF |
+| [venda-fiscal.md](../../aplicativos/POSmaisgestao/docs/modulos/venda-fiscal.md) | Venda rápida, NFC-e, DAV, caixa |
+| [mesas-comandas.md](../../aplicativos/POSmaisgestao/docs/modulos/mesas-comandas.md) | Mesas, comanda, fila de pedidos |
+| [integracao-api.md](../../aplicativos/POSmaisgestao/docs/modulos/integracao-api.md) | `ApiClient` e `LocalPdvApi` |
+| [persistencia-offline.md](../../aplicativos/POSmaisgestao/docs/modulos/persistencia-offline.md) | Prefs, catálogo SQLite, outbox |
+| [perifericos.md](../../aplicativos/POSmaisgestao/docs/modulos/perifericos.md) | Impressora, balança, câmera |

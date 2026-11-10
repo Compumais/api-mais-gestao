@@ -16,6 +16,7 @@ Leia antes [../../AGENTS.md](../../AGENTS.md) (deste pacote) e o [AGENTS.md da r
 | [pdv.md](pdv.md) | `(pdv)/pdv`, vendas e fechamento de caixa |
 | [gourmet.md](gourmet.md) | `(gourmet)` e `(garcom)` |
 | [financeiro.md](financeiro.md) | Contas, movimentações, plano de contas, budget |
+| [centro-custo.md](centro-custo.md) | `(auth)/centros-custo` e `(auth)/orcamento-centro-custos` |
 | [fiscal.md](fiscal.md) | NF-e, NFC-e, NFS-e, compra, tributos, CFOP |
 | [contabilidade.md](contabilidade.md) | SINTEGRA, EFD, plano contábil |
 | [relatorios.md](relatorios.md) | `(auth)/relatorios` |

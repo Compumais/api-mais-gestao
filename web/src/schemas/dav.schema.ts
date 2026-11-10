@@ -18,6 +18,8 @@ export const pedidoDavItemLocalSchema = z.object({
 	idproduto: z.string().uuid(),
 	quantidade: z.string().min(1),
 	preco: z.string().min(1),
+	desconto: z.string().optional(),
+	total: z.string().optional(),
 	unidademedida: z.string().optional(),
 	rastros: z.array(rastroPedidoSchema).optional(),
 });

@@ -47,6 +47,8 @@ type CampoDescontoTotalNfeProps = {
 	erro?: string;
 	descontoItens: number;
 	descontoTotal: number;
+	disabled?: boolean;
+	rotuloDocumento?: "NF-e" | "pedido";
 };
 
 export function CampoDescontoTotalNfe({
@@ -60,6 +62,8 @@ export function CampoDescontoTotalNfe({
 	erro,
 	descontoItens,
 	descontoTotal,
+	disabled = false,
+	rotuloDocumento = "NF-e",
 }: CampoDescontoTotalNfeProps) {
 	const [modo, setModo] = useState<ModoDescontoTotalNfe>("desconto");
 	const [percentualTexto, setPercentualTexto] = useState("");
@@ -118,8 +122,10 @@ export function CampoDescontoTotalNfe({
 		if (proximo === "total") {
 			setValorTotal(
 				Math.round(
-					Math.max(0, referencia.totalSemDescontoGlobal - Math.max(0, desconto)) *
-						100,
+					Math.max(
+						0,
+						referencia.totalSemDescontoGlobal - Math.max(0, desconto),
+					) * 100,
 				) / 100,
 			);
 		}
@@ -132,6 +138,10 @@ export function CampoDescontoTotalNfe({
 			(referencia.totalSemDescontoGlobal - Math.max(0, desconto)) * 100,
 		) / 100;
 
+	const nomeDoc = rotuloDocumento === "pedido" ? "do pedido" : "da nota";
+	const nomeDocTotal =
+		rotuloDocumento === "pedido" ? "Total do pedido" : "Total da NF-e";
+
 	let complemento = "O valor é abatido do total e rateado entre os itens.";
 	if (modo === "percentual") {
 		complemento =
@@ -141,8 +151,8 @@ export function CampoDescontoTotalNfe({
 	} else if (modo === "total") {
 		complemento =
 			valorTotal > referencia.totalSemDescontoGlobal + 0.009
-				? "O valor informado é maior que o total da nota. Nenhum desconto será aplicado."
-				: `Desconto calculado: ${formatarMoeda(desconto)}. Total da NF-e: ${formatarMoeda(totalResultante)}.`;
+				? `O valor informado é maior que o total ${nomeDoc}. Nenhum desconto será aplicado.`
+				: `Desconto calculado: ${formatarMoeda(desconto)}. ${nomeDocTotal}: ${formatarMoeda(totalResultante)}.`;
 	}
 
 	return (
@@ -152,6 +162,7 @@ export function CampoDescontoTotalNfe({
 				<Select
 					value={modo}
 					onValueChange={(valor) => alterarModo(valor as ModoDescontoTotalNfe)}
+					disabled={disabled}
 				>
 					<SelectTrigger aria-label="Forma do desconto">
 						<SelectValue />
@@ -168,14 +179,16 @@ export function CampoDescontoTotalNfe({
 						placeholder="Ex.: 10"
 						aria-label="Porcentagem de desconto"
 						value={percentualTexto}
+						disabled={disabled}
 						onChange={(evento) => setPercentualTexto(evento.target.value)}
 					/>
 				) : (
 					<MoneyInput
 						aria-label={
-							modo === "total" ? "Valor total da nota" : "Valor do desconto"
+							modo === "total" ? `Valor total ${nomeDoc}` : "Valor do desconto"
 						}
 						value={String(modo === "total" ? valorTotal : (desconto ?? 0))}
+						disabled={disabled}
 						onChange={(valor) => {
 							const numero = valor ? Number.parseFloat(valor) : 0;
 							const normalizado = Number.isFinite(numero) ? numero : 0;

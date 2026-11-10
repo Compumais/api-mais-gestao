@@ -1,6 +1,7 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { Produto } from "@/model/produto-model.js";
 import { buscarCestPorId } from "@/repositories/cest-repositories.js";
+import { somarQuantidadeProvisionadaPorProduto } from "@/repositories/dav-item-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { buscarSaldoEstoquePorCodigoProduto } from "@/repositories/saldo-estoque-repositories.js";
@@ -9,6 +10,8 @@ import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 export type ProdutoComEstoque = Produto & {
 	estoque: number | null;
+	quantidadeProvisionada?: number;
+	saldoPrevisto?: number;
 	cestCodigo?: string | null;
 };
 
@@ -50,6 +53,13 @@ export async function buscarProdutoService({
 		}
 	}
 
+	const quantidadeProvisionada = await somarQuantidadeProvisionadaPorProduto({
+		idempresa: registro.idempresa,
+		idproduto: registro.id,
+	});
+	const saldoPrevisto =
+		Math.round(((estoque ?? 0) - quantidadeProvisionada) * 10000) / 10000;
+
 	let cestCodigo: string | null = null;
 	// Preferir idcest (cadastro atual); campo integer `cest` é legado e costuma ser 0.
 	if (registro.idcest) {
@@ -62,5 +72,11 @@ export async function buscarProdutoService({
 		cestCodigo = cestLegado?.length === 7 ? cestLegado : null;
 	}
 
-	return httpOk<ProdutoComEstoque>({ ...registro, estoque, cestCodigo });
+	return httpOk<ProdutoComEstoque>({
+		...registro,
+		estoque,
+		quantidadeProvisionada,
+		saldoPrevisto,
+		cestCodigo,
+	});
 }
