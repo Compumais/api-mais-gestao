@@ -254,6 +254,7 @@ export interface DadosImportacaoItem {
 	eanXml?: string;
 	statusVinculo: StatusVinculoImportacao;
 	idproduto?: string;
+	idlocalestoque?: string | null;
 	produtoEncontrado?: { id: string; nome: string; codigo?: number };
 	confirmarCadastro: boolean;
 	idgrupo?: string;
@@ -491,12 +492,14 @@ export const notaFiscalService = {
 			idempresa: string;
 			identidade?: string | null;
 			idcfop?: string | null;
+			idlocalestoque?: string | null;
 			idplanocontas?: string | null;
 			idcondicaopagto?: string | null;
 			idtipodocumento?: string | null;
 			observacao?: string | null;
 			entradasaida?: string | null;
 			aplicarCfopItens?: boolean;
+			aplicarLocalEstoqueItens?: boolean;
 		},
 	): Promise<NotaFiscal> {
 		const { data } = await api.patch<NotaFiscal>(

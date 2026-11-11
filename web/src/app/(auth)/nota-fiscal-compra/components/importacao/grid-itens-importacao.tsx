@@ -41,6 +41,7 @@ import {
 import { listarPendenciasCamposImportacao } from "@/util/pendencias-finalizacao-importacao-nf";
 import { CelulaCfopEntradaImportacao } from "./celula-cfop-entrada-importacao";
 import { CelulaFatorConversaoImportacao } from "./celula-fator-conversao-importacao";
+import { CelulaLocalEstoqueImportacao } from "./celula-local-estoque-importacao";
 import { DialogCadastrarEmMassaImportacao } from "./dialog-cadastrar-em-massa-importacao";
 import { LocalizarProdutoDialog } from "./localizar-produto-dialog";
 import { ModalComposicaoPrecoImportacao } from "./modal-composicao-preco-importacao";
@@ -214,6 +215,10 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 		atualizarItem({ idItem: item.id, dados: { idempresa, idcfop: idcfop || undefined } });
 	};
 
+	const atualizarLocalEstoque = (item: NotaFiscalItemImportacao, idlocalestoque: string | null) => {
+		atualizarItem({ idItem: item.id, dados: { idempresa, idlocalestoque: idlocalestoque || null } });
+	};
+
 	return (
 		<>
 			<div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -262,6 +267,7 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 							<TableHead className="w-10">#</TableHead>
 							<TableHead>Produto (fornecedor)</TableHead>
 							<TableHead>Produto estoque</TableHead>
+							<TableHead>Local estoque</TableHead>
 							<TableHead>CFOP entrada</TableHead>
 							<TableHead className="hidden md:table-cell">NCM</TableHead>
 							<TableHead>Qtd NF</TableHead>
@@ -279,7 +285,7 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 								<TableRow key={item.id}>
 									<TableCell />
 									<TableCell className="text-muted-foreground text-xs">{item.contador}</TableCell>
-									<TableCell colSpan={10}><span className="text-destructive text-sm">Sem dados de importação</span></TableCell>
+									<TableCell colSpan={11}><span className="text-destructive text-sm">Sem dados de importação</span></TableCell>
 								</TableRow>
 							);
 
@@ -306,6 +312,14 @@ export function GridItensImportacao({ idempresa, idRascunho, itens, idgrupoPadra
 										</div>
 									</TableCell>
 									<TableCell>{exibirProdutoCadastro(dados)}</TableCell>
+									<TableCell>
+										<CelulaLocalEstoqueImportacao
+											idempresa={idempresa}
+											idlocalestoque={dados.idlocalestoque ?? item.idlocalestoque}
+											disabled={isPending}
+											onChange={(idlocal) => atualizarLocalEstoque(item, idlocal)}
+										/>
+									</TableCell>
 									<TableCell>
 										<CelulaCfopEntradaImportacao
 											idempresa={idempresa}

@@ -40,6 +40,7 @@ import {
 } from "@/services/nota-fiscal.service";
 import { DialogCriarGrupoRapido } from "../dialog-criar-grupo-rapido";
 import { CampoCfopImportacao } from "./campo-cfop-importacao";
+import { CampoLocalEstoqueImportacao } from "./campo-local-estoque-importacao";
 import { CampoUnidadeMedidaImportacao } from "./campo-unidade-medida-importacao";
 
 type ModalItemImportacaoProps = {
@@ -95,6 +96,7 @@ function montarDefaultValues(
 		idncm: dados.idncm ?? "",
 		eanXml: dados.eanXml ?? "",
 		idgrupo: dados.idgrupo ?? "",
+		idlocalestoque: dados.idlocalestoque ?? item.idlocalestoque ?? null,
 		idunidademedida: dados.idunidademedida ?? "",
 		tipoproduto: dados.tipoproduto ?? "",
 		unidadeEstoque: dados.unidadeEstoque ?? "",
@@ -225,6 +227,7 @@ export function ModalItemImportacao({
 				idncm: formData.idncm || undefined,
 				eanXml: formData.eanXml || dados.eanXml,
 				idgrupo: formData.idgrupo || undefined,
+				idlocalestoque: formData.idlocalestoque || undefined,
 				idunidademedida: formData.idunidademedida || undefined,
 				tipoproduto: formData.tipoproduto || undefined,
 				unidadeEstoque: formData.unidadeEstoque || undefined,
@@ -462,6 +465,15 @@ export function ModalItemImportacao({
 													shouldDirty: true,
 												});
 											}
+										}}
+									/>
+									<CampoLocalEstoqueImportacao
+										idempresa={idempresa}
+										id="idlocalestoque-item-modal"
+										label="Local de estoque"
+										value={watch("idlocalestoque")}
+										onChange={(idlocal) => {
+											setValue("idlocalestoque", idlocal, { shouldDirty: true });
 										}}
 									/>
 									<Field>
