@@ -210,7 +210,7 @@ export function ModalPrecoVendaImportacao({
 
 	return (
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
-			<DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+			<DialogContent className="flex max-h-[90vh] w-[95vw] max-w-5xl sm:max-w-5xl flex-col">
 				<DialogHeader>
 					<DialogTitle>Preços de venda</DialogTitle>
 					<DialogDescription>
@@ -300,9 +300,9 @@ export function ModalPrecoVendaImportacao({
 						<TableHeader>
 							<TableRow>
 								<TableHead className="w-12">#</TableHead>
-								<TableHead>Produto</TableHead>
-								<TableHead className="w-28 text-right">Custo</TableHead>
-								<TableHead className="w-40">Preço de venda</TableHead>
+								<TableHead className="min-w-[280px]">Produto</TableHead>
+								<TableHead className="w-32 text-right">Custo</TableHead>
+								<TableHead className="w-48">Preço de venda</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -311,7 +311,7 @@ export function ModalPrecoVendaImportacao({
 									<TableCell className="text-muted-foreground">
 										{item.contador}
 									</TableCell>
-									<TableCell className="max-w-[200px] truncate">
+									<TableCell className="font-medium">
 										{item.descricao}
 									</TableCell>
 									<TableCell className="text-right tabular-nums">

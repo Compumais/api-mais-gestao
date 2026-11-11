@@ -325,6 +325,138 @@ describe("finalizarRascunhoImportacaoNfService", () => {
 		);
 	});
 
+	it("inclui na observacao do produto novo o numero da nf de origem", async () => {
+		prepararFinalizacao();
+		vi.mocked(
+			notaFiscalRepositories.buscarNotaFiscalRascunhoPorId,
+		).mockResolvedValue({
+			id: parametros.idRascunho,
+			idempresa: parametros.idempresa,
+			status: 99,
+			numero: "98765",
+			dadosimportacao: {},
+			chavenfe: null,
+			cnpjemissor: null,
+			totalproduto: "10.00",
+			valortotalnota: "10.00",
+		} as never);
+		vi.mocked(produtosRepositories.criarProduto).mockResolvedValue({
+			id: "produto-obs-teste",
+			idempresa: parametros.idempresa,
+			nome: "Produto Obs Teste",
+			controlalote: 0,
+			tipoproduto: "00",
+		} as never);
+		vi.mocked(produtosRepositories.buscarProdutoPorId).mockResolvedValue({
+			id: "produto-obs-teste",
+			idempresa: parametros.idempresa,
+			nome: "Produto Obs Teste",
+			controlalote: 0,
+			tipoproduto: "00",
+		} as never);
+		vi.mocked(notaFiscalRepositories.listarItensPorNotaFiscal).mockResolvedValue([
+			{
+				id: "item-obs",
+				idnotafiscal: parametros.idRascunho,
+				contador: 1,
+				cfop: "1102",
+				total: "10.00",
+				dadosimportacao: {
+					descricaoFornecedor: "PRODUTO OBS TESTE",
+					statusVinculo: "novo",
+					codigoProduto: 99,
+					idcfop: "cfop-entrada-1",
+					quantidadeXml: "1",
+					quantidadeEstoque: "1",
+					precounitarioXml: "10",
+					precounitarioEstoque: "10",
+					fatorConversao: "1",
+					idunidademedida: "un-1",
+					idgrupo: "grupo-1",
+					tributacao: { situacaotributaria: "00" },
+				},
+			},
+		] as never);
+
+		const resultado = await finalizarRascunhoImportacaoNfService({
+			...parametros,
+			gerarCustos: false,
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(produtosRepositories.criarProduto).toHaveBeenCalledWith(
+			expect.objectContaining({
+				observacoes: "cadastro incluido automaticamente atraves da nf n° 98765",
+			}),
+		);
+	});
+
+	it("usa numeronotafiscal quando numero da nota for string vazia", async () => {
+		vi.mocked(
+			notaFiscalRepositories.buscarNotaFiscalRascunhoPorId,
+		).mockResolvedValue({
+			id: parametros.idRascunho,
+			idempresa: parametros.idempresa,
+			status: 99,
+			numero: "",
+			numeronotafiscal: "54321",
+			dadosimportacao: {},
+			chavenfe: null,
+			cnpjemissor: null,
+			totalproduto: "10.00",
+			valortotalnota: "10.00",
+		} as never);
+		vi.mocked(produtosRepositories.criarProduto).mockResolvedValue({
+			id: "produto-obs-teste-2",
+			idempresa: parametros.idempresa,
+			nome: "Produto Obs Teste 2",
+			controlalote: 0,
+			tipoproduto: "00",
+		} as never);
+		vi.mocked(produtosRepositories.buscarProdutoPorId).mockResolvedValue({
+			id: "produto-obs-teste-2",
+			idempresa: parametros.idempresa,
+			nome: "Produto Obs Teste 2",
+			controlalote: 0,
+			tipoproduto: "00",
+		} as never);
+		vi.mocked(notaFiscalRepositories.listarItensPorNotaFiscal).mockResolvedValue([
+			{
+				id: "item-obs-2",
+				idnotafiscal: parametros.idRascunho,
+				contador: 1,
+				cfop: "1102",
+				total: "10.00",
+				dadosimportacao: {
+					descricaoFornecedor: "PRODUTO OBS TESTE 2",
+					statusVinculo: "novo",
+					codigoProduto: 999,
+					idcfop: "cfop-entrada-1",
+					quantidadeXml: "1",
+					quantidadeEstoque: "1",
+					precounitarioXml: "10",
+					precounitarioEstoque: "10",
+					fatorConversao: "1",
+					idunidademedida: "un-1",
+					idgrupo: "grupo-1",
+					tributacao: { situacaotributaria: "00" },
+				},
+			},
+		] as never);
+
+		const resultado = await finalizarRascunhoImportacaoNfService({
+			...parametros,
+			gerarCustos: false,
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(produtosRepositories.criarProduto).toHaveBeenCalledWith(
+			expect.objectContaining({
+				observacoes: "cadastro incluido automaticamente atraves da nf n° 54321",
+			}),
+		);
+	});
+
 	it("devolve aviso quando o estoque não é lançado", async () => {
 		prepararFinalizacao();
 		vi.mocked(produtosRepositories.buscarProdutoPorId).mockResolvedValue({

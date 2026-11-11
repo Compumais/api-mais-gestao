@@ -834,6 +834,13 @@
 			"when": 1791200000000,
 			"tag": "0116_local_estoque_padrao_produto_nfitem",
 			"breakpoints": true
+		},
+		{
+			"idx": 118,
+			"version": "7",
+			"when": 1791300000000,
+			"tag": "0117_custoproduto_colunas_faltantes",
+			"breakpoints": true
 		}
 	]
 }

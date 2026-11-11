@@ -190,6 +190,13 @@ export async function criarNotaFiscalService({
 	const idlocalNota =
 		dadosSanitizados.idlocalestoque ?? localPadrao?.id ?? null;
 
+	const numeroNf =
+		dadosSanitizados.numero?.trim() ||
+		dadosSanitizados.numeronotafiscal?.trim();
+	const observacaoNf = numeroNf
+		? `cadastro incluido automaticamente atraves da nf n° ${numeroNf}`
+		: "cadastro incluido automaticamente atraves da nf";
+
 	for (const item of itensSanitizados) {
 		const idlocalItemInformado = idOpcionalOuNulo(item.idlocalestoque) ?? undefined;
 		const dadosProduto: DadosProdutoNF = {
@@ -207,6 +214,7 @@ export async function criarNotaFiscalService({
 			idfornecedor: identidadeFornecedor ?? undefined,
 			...(idlocalItemInformado ? { idlocalestoque: idlocalItemInformado } : {}),
 			custoaquisicao: paraString(item.custoaquisicao) ?? undefined,
+			observacoes: observacaoNf,
 		};
 
 		const resultado = await vincularOuCriarProdutoService(dadosProduto);

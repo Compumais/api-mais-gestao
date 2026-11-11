@@ -132,7 +132,7 @@ export function DialogCadastrarEmMassaImportacao({
 
 	return (
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
-			<DialogContent className="flex max-h-[90vh] max-w-2xl flex-col">
+			<DialogContent className="flex max-h-[90vh] w-[95vw] max-w-5xl sm:max-w-5xl flex-col">
 				<DialogHeader>
 					<DialogTitle>Cadastrar produtos em massa</DialogTitle>
 					<DialogDescription>
@@ -184,11 +184,11 @@ export function DialogCadastrarEmMassaImportacao({
 								return (
 									<li
 										key={item.id}
-										className="flex items-start gap-2 px-3 py-2"
+										className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors"
 									>
 										<Checkbox
 											id={idCheckbox}
-											className="mt-0.5"
+											className="mt-0.5 shrink-0"
 											checked={idsSelecionados.includes(item.id)}
 											onCheckedChange={(checked) =>
 												alternarItem(item.id, checked === true)
@@ -196,21 +196,37 @@ export function DialogCadastrarEmMassaImportacao({
 										/>
 										<Label
 											htmlFor={idCheckbox}
-											className="flex min-w-0 flex-1 flex-col items-start gap-0.5 font-normal"
+											className="flex min-w-0 flex-1 items-center justify-between gap-4 font-normal cursor-pointer"
 										>
-											<span className="truncate text-sm font-medium">
-												{item.contador ? `${item.contador}. ` : ""}
-												{dados?.descricaoFornecedor ?? item.descricao}
-											</span>
-											<span className="text-xs text-muted-foreground">
-												{dados?.eanXml
-													? `EAN ${dados.eanXml}`
-													: "Sem código de barras"}
-												{" · "}
-												{dados?.unidadeXml ?? dados?.unidadeEstoque ?? "s/ un."}
-												{semGrupo ? " · sem grupo" : null}
-												{semUnidade ? " · sem unidade de medida" : null}
-											</span>
+											<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+												<span className="text-sm font-medium leading-snug">
+													{item.contador ? `${item.contador}. ` : ""}
+													{dados?.descricaoFornecedor ?? item.descricao}
+												</span>
+												<span className="text-xs text-muted-foreground">
+													{dados?.eanXml
+														? `EAN ${dados.eanXml}`
+														: "Sem código de barras"}
+													{" · "}
+													{dados?.ncmXml ? `NCM ${dados.ncmXml} · ` : ""}
+													{dados?.unidadeXml ?? dados?.unidadeEstoque ?? "s/ un."}
+													{dados?.precounitarioEstoque
+														? ` · Custo: R$ ${dados.precounitarioEstoque}`
+														: ""}
+												</span>
+											</div>
+											<div className="flex items-center gap-2 shrink-0 text-xs">
+												{semGrupo ? (
+													<span className="rounded bg-amber-100 px-2 py-0.5 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
+														sem grupo
+													</span>
+												) : null}
+												{semUnidade ? (
+													<span className="rounded bg-rose-100 px-2 py-0.5 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200">
+														sem unidade de medida
+													</span>
+												) : null}
+											</div>
 										</Label>
 									</li>
 								);
