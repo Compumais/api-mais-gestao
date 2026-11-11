@@ -279,7 +279,7 @@ export function ModalResolverPendenciasImportacao({
 
 	return (
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
-			<DialogContent className="flex max-h-[90vh] max-w-4xl flex-col">
+			<DialogContent className="flex max-h-[90vh] w-[95vw] max-w-5xl sm:max-w-5xl flex-col">
 				<DialogHeader>
 					<DialogTitle>Resolver pendências da importação</DialogTitle>
 					<DialogDescription>

@@ -2,9 +2,52 @@ import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoCustoProduto } from "@/model/custo-produto-model";
 import type { NovoProduto } from "@/model/produto-model";
 import { custoproduto, notafiscal, produtos, usuarios } from "@/repositories/schema.js";
-import { db } from "./connection";
+import { db, pool } from "./connection.js";
+
+let colunasCustoProdutoGarantidas = false;
+
+export async function garantirColunasCustoProduto(): Promise<void> {
+	if (colunasCustoProdutoGarantidas) return;
+	try {
+		if (pool?.query) {
+			await pool.query(`
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "custo" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "custoaquisicao" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "customedio" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "desconto" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "diferencialicms" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "fcpst" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "freteconhecimento" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "fretesegurooutrasdesp" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "icmsdesonerado" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "icmsfcp" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "icmspiscofinsconhecimento" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "icmsst" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "ipi" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "lancamentospedcredito" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "lancamentospeddebito" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "outrosvalorescredito" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "outrosvaloresdebito" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "percentualadicional" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "percentualdiferencialicms" numeric(5, 2);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "percentualicmsfcp" numeric(5, 2);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "percentualoutrosvalorescredito" numeric(5, 2);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "percentualoutrosvaloresdebito" numeric(5, 2);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "percentualpiscofins" numeric(5, 2);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "piscofins" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "precocompra" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "rebaixa" numeric(21, 10);
+				ALTER TABLE "custoproduto" ADD COLUMN IF NOT EXISTS "vendor" numeric(21, 10);
+			`);
+			colunasCustoProdutoGarantidas = true;
+		}
+	} catch {
+		// Ignora se pool não estiver disponível ou em ambiente sem conexão direta
+	}
+}
 
 export async function criarCustoProduto(dados: NovoCustoProduto) {
+	await garantirColunasCustoProduto();
 	const [registro] = await db.insert(custoproduto).values(dados).returning();
 
 	return registro;
@@ -15,6 +58,7 @@ export async function criarCustosProdutoEmLote(dados: NovoCustoProduto[]) {
 		return [];
 	}
 
+	await garantirColunasCustoProduto();
 	return db.insert(custoproduto).values(dados).returning();
 }
 
@@ -182,6 +226,7 @@ export async function registrarCustosNfEmTransacao(
 	custos: NovoCustoProduto[],
 	atualizacoesProdutos: AtualizacaoProdutoCusto[],
 ) {
+	await garantirColunasCustoProduto();
 	return db.transaction(async (tx) => {
 		const custosCriados =
 			custos.length > 0

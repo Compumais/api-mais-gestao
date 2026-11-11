@@ -285,7 +285,7 @@ export function ModalItemImportacao({
 	return (
 		<>
 			<Dialog open={aberto} onOpenChange={onAbertoChange}>
-				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+				<DialogContent className="max-h-[90vh] w-[95vw] max-w-3xl sm:max-w-3xl overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Lançamento do produto</DialogTitle>
 					</DialogHeader>

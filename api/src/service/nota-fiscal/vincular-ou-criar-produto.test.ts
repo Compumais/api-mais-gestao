@@ -53,4 +53,18 @@ describe("criarProdutoParaNf", () => {
 		);
 		expect(produto?.codigo).toBe(7);
 	});
+
+	it("passa observacoes para criarProduto", async () => {
+		await criarProdutoParaNf({
+			idempresa: "empresa-1",
+			descricaoproduto: "Produto com obs",
+			observacoes: "cadastro incluido automaticamente atraves da nf n° 123",
+		});
+
+		expect(produtosRepositories.criarProduto).toHaveBeenCalledWith(
+			expect.objectContaining({
+				observacoes: "cadastro incluido automaticamente atraves da nf n° 123",
+			}),
+		);
+	});
 });

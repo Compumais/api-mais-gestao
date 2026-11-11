@@ -52,6 +52,7 @@ export type DadosProdutoNF = {
 	cstipientrada?: string | undefined;
 	cstipisaida?: string | undefined;
 	idenquadramentoipi?: string | undefined;
+	observacoes?: string | null | undefined;
 };
 
 function precoVendaInformado(preco?: string | null): preco is string {
@@ -188,6 +189,7 @@ export async function criarProdutoParaNf(
 			cstipientrada: dados.cstipientrada ?? null,
 			cstipisaida: dados.cstipisaida ?? null,
 			idenquadramentoipisaida: dados.idenquadramentoipi ?? null,
+			observacoes: dados.observacoes ?? null,
 			tipo: "P",
 			inativo: 0,
 			datacadastro: new Date().toISOString(),

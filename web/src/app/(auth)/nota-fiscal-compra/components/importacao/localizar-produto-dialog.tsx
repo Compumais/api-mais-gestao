@@ -135,7 +135,7 @@ export function LocalizarProdutoDialog({
 
 	return (
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
-			<DialogContent>
+			<DialogContent className="max-h-[90vh] w-[95vw] max-w-3xl sm:max-w-3xl overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>
 						{isBulk ? "Vincular produtos em massa" : "Localizar produto"}

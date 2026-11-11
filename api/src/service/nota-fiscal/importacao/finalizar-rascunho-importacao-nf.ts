@@ -510,6 +510,17 @@ export async function finalizarRascunhoImportacaoNfService({
 				parametrizacao?.sugestao.tipoproduto?.trim() ||
 				(await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada));
 
+			const numeroNf =
+				nota.numero?.trim() || nota.numeronotafiscal?.trim();
+			const observacaoNf = numeroNf
+				? `cadastro incluido automaticamente atraves da nf n° ${numeroNf}`
+				: "cadastro incluido automaticamente atraves da nf";
+			const observacoesFinal = dadosProduto.observacoes
+				? dadosProduto.observacoes.includes(observacaoNf)
+					? dadosProduto.observacoes
+					: `${dadosProduto.observacoes}\n${observacaoNf}`
+				: observacaoNf;
+
 			const novoProduto = await criarProdutoParaNf({
 				...dadosProduto,
 				...sugestaoSaida,
@@ -517,6 +528,7 @@ export async function finalizarRascunhoImportacaoNfService({
 					sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 				cfopvendaecf: sugestaoSaida.cfopvendaecf,
 				...(tipoprodutoResolvido ? { tipoproduto: tipoprodutoResolvido } : {}),
+				observacoes: observacoesFinal,
 			});
 
 			if (!novoProduto) {
