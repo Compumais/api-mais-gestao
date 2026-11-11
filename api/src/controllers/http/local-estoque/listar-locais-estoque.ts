@@ -5,7 +5,7 @@ import { listarLocaisEstoqueService } from "@/service/local-estoque/listar-locai
 const listarLocaisEstoqueQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
-	idempresa: z.uuid(),
+	idempresa: z.string().uuid().optional(),
 	descricao: z.string().optional(),
 	codigo: z.string().optional(),
 });
@@ -24,10 +24,26 @@ export async function listarLocaisEstoque(
 
 		const idusuario = request.user.id;
 		const query = listarLocaisEstoqueQuerySchema.parse(request.query);
+		const idempresa = query.idempresa || request.empresaContext?.idempresa;
+
+		if (!idempresa) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				message: "idempresa é obrigatório",
+				details: [
+					{
+						path: ["idempresa"],
+						message: "idempresa é obrigatório",
+					},
+				],
+			});
+		}
 
 		const resultado = await listarLocaisEstoqueService({
 			idusuario,
 			...query,
+			idempresa,
 		});
 
 		if (!resultado.success) {

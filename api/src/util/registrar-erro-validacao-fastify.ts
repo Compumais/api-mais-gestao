@@ -7,11 +7,27 @@ type AjvValidationError = {
 	params?: Record<string, unknown>;
 };
 
-function caminhoParaPath(instancePath: string, validationContext?: string): string[] {
+function caminhoParaPath(
+	erro: AjvValidationError,
+	validationContext?: string,
+): string[] {
+	const instancePath = erro.instancePath ?? "";
 	const bruto = instancePath.replace(/^\//, "");
-	if (bruto) {
-		return bruto.split("/").filter(Boolean);
+	const partes = bruto ? bruto.split("/").filter(Boolean) : [];
+
+	const missingProperty =
+		typeof erro.params?.missingProperty === "string"
+			? erro.params.missingProperty
+			: undefined;
+
+	if (missingProperty) {
+		partes.push(missingProperty);
 	}
+
+	if (partes.length > 0) {
+		return partes;
+	}
+
 	if (validationContext && validationContext !== "body") {
 		return [validationContext];
 	}
@@ -42,7 +58,7 @@ export function registrarErroValidacaoFastify(app: FastifyInstance) {
 			const validation = error.validation as AjvValidationError[];
 			const details = validation.map((item) => {
 				const path = caminhoParaPath(
-					item.instancePath ?? "",
+					item,
 					error.validationContext,
 				);
 				return {
