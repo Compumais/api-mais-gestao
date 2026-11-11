@@ -20,6 +20,7 @@ import type {
 } from "@/services/nota-fiscal.service";
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import { CampoCfopImportacao } from "./campo-cfop-importacao";
+import { CampoLocalEstoqueImportacao } from "./campo-local-estoque-importacao";
 
 type CabecalhoNfImportacaoProps = {
 	idempresa: string;
@@ -66,6 +67,52 @@ export function CabecalhoNfImportacao({
 	const queryClient = useQueryClient();
 	const [cfopPendente, setCfopPendente] = useState<string | null>(null);
 	const [dialogAberto, setDialogAberto] = useState(false);
+	const [localPendente, setLocalPendente] = useState<string | null>(null);
+	const [dialogLocalAberto, setDialogLocalAberto] = useState(false);
+
+	const { mutate: salvarLocalEstoque, isPending: isPendingLocal } = useMutation({
+		mutationFn: (params: {
+			idlocalestoque: string | null;
+			aplicarLocalEstoqueItens?: boolean;
+		}) =>
+			notaFiscalService.atualizarRascunhoImportacao(idRascunho, {
+				idempresa,
+				idlocalestoque: params.idlocalestoque,
+				aplicarLocalEstoqueItens: params.aplicarLocalEstoqueItens,
+			}),
+		onSuccess: (_data, variables) => {
+			toast.success(
+				variables.aplicarLocalEstoqueItens
+					? "Local de estoque aplicado ao cabeçalho e aos itens"
+					: "Local de estoque da nota atualizado",
+			);
+			queryClient.invalidateQueries({
+				queryKey: ["rascunho-importacao-nf", idRascunho],
+			});
+		},
+		onError: (error: Error) => toast.error(error.message),
+	});
+
+	function solicitarAlteracaoLocalEstoque(idlocalestoque: string | null) {
+		if (isPendingLocal) return;
+
+		if (quantidadeItens > 0 && idlocalestoque) {
+			setLocalPendente(idlocalestoque);
+			setDialogLocalAberto(true);
+			return;
+		}
+
+		salvarLocalEstoque({ idlocalestoque });
+	}
+
+	function confirmarPropagacaoLocal(aplicar: boolean) {
+		salvarLocalEstoque({
+			idlocalestoque: localPendente,
+			aplicarLocalEstoqueItens: aplicar,
+		});
+		setLocalPendente(null);
+		setDialogLocalAberto(false);
+	}
 
 	const { mutate: salvarCfop, isPending } = useMutation({
 		mutationFn: (params: { idcfop: string; aplicarCfopItens?: boolean }) =>
@@ -207,6 +254,17 @@ export function CabecalhoNfImportacao({
 				</div>
 
 				<div className="flex flex-col gap-4">
+					<CampoLocalEstoqueImportacao
+						idempresa={idempresa}
+						id="idlocalestoque-nota"
+						label="Local de estoque de entrada"
+						value={nota.idlocalestoque ?? undefined}
+						disabled={isPendingLocal}
+						onChange={(idlocalestoque) => {
+							solicitarAlteracaoLocalEstoque(idlocalestoque);
+						}}
+					/>
+
 					<CampoCfopImportacao
 						id="idcfop-nota"
 						label="CFOP de entrada da operação"
@@ -285,6 +343,42 @@ export function CabecalhoNfImportacao({
 						<AlertDialogAction
 							disabled={isPending}
 							onClick={() => confirmarPropagacao(true)}
+						>
+							Sim, aplicar a todos
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog
+				open={dialogLocalAberto}
+				onOpenChange={(aberto) => {
+					setDialogLocalAberto(aberto);
+					if (!aberto) setLocalPendente(null);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							Aplicar este local de estoque a todos os itens?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							O local de estoque será definido no cabeçalho da nota
+							{quantidadeItens > 0
+								? `. Deseja também atualizar o local dos ${quantidadeItens} itens?`
+								: "."}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel
+							disabled={isPendingLocal}
+							onClick={() => confirmarPropagacaoLocal(false)}
+						>
+							Não, só o cabeçalho
+						</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={isPendingLocal}
+							onClick={() => confirmarPropagacaoLocal(true)}
 						>
 							Sim, aplicar a todos
 						</AlertDialogAction>

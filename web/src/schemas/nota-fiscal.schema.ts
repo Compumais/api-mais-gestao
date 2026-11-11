@@ -126,6 +126,7 @@ export const itemImportacaoSchema = z.object({
 	idncm: z.string().optional(),
 	eanXml: z.string().optional(),
 	idgrupo: z.string().optional(),
+	idlocalestoque: z.string().optional().nullable(),
 	idunidademedida: z.string().optional(),
 	tipoproduto: z.string().optional().nullable(),
 	unidadeEstoque: z.string().optional(),
