@@ -64,9 +64,10 @@ export function CelulaCfopEntradaImportacao({
 		: null;
 
 	return (
-		<div className="min-w-[150px] max-w-[200px] space-y-0.5">
+		<div className="min-w-[200px] max-w-[280px] space-y-0.5">
 			<Combobox
 				className="text-xs"
+				dropdownClassName="w-[360px] max-w-[90vw]"
 				options={opcoes}
 				value={idcfop ?? ""}
 				onChange={(novoValor) => {
