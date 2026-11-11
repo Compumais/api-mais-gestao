@@ -14,10 +14,10 @@ export function AvisoAmbienteNfe({
 	ambiente,
 	className,
 }: AvisoAmbienteNfeProps) {
-	const { alerta } = useAlertaVencimentoCertificado();
+	const { mostrarAlerta } = useAlertaVencimentoCertificado();
 	const emHomologacao = ambiente === 2;
 
-	if (!emHomologacao && !alerta) return null;
+	if (!emHomologacao && !mostrarAlerta) return null;
 
 	return (
 		<div className={cn("flex flex-col gap-3", className)}>
