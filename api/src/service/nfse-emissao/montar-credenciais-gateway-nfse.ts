@@ -14,7 +14,8 @@ export async function montarCredenciaisGatewayNfse(idempresa: string) {
 		};
 	}
 
-	const { empresa, empresaFiscal, nfseConfiguracao, certificadoAtivo } = contexto;
+	const { empresa, empresaFiscal, nfseConfiguracao, certificadoAtivo } =
+		contexto;
 
 	if (!empresa || !empresaFiscal || !nfseConfiguracao || !certificadoAtivo) {
 		return {

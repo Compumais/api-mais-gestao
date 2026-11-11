@@ -24,6 +24,7 @@ import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
+	formatarMensagemErroGatewayNfse,
 	isLayoutNfseDps,
 	isProvedorSefinNacional,
 } from "@/util/validar-pre-requisitos-emissao-nfse.js";
@@ -36,9 +37,15 @@ export type ResultadoEmissaoNfse = {
 	serie: string;
 	numeroNfse?: string | null;
 	codigoVerificacao?: string | null;
+	chaveAcesso?: string | null;
+	idDps?: string | null;
 	link?: string | null;
 	protocolo?: string | null;
+	status?: number;
+	pendente?: boolean;
 	ambiente?: number;
+	mensagemErro?: string | null;
+	alertas?: Array<{ codigo: string; mensagem: string }>;
 	pendencias?: Array<{ codigo: string; mensagem: string }>;
 	erros?: Array<{ codigo: string; mensagem: string }>;
 	integracao?: {
@@ -131,12 +138,13 @@ export async function emitirNfseService(
 
 	const provedorConfig = String(payloadGateway.configJson.provedor ?? "");
 	const chaveAcesso =
-		(resposta.chaveAcesso ?? resposta.codigoVerificacao ?? "")
-			.replace(/\D/g, "") || null;
+		(resposta.chaveAcesso ?? resposta.codigoVerificacao ?? "").replace(
+			/\D/g,
+			"",
+		) || null;
 	const chaveValida = Boolean(chaveAcesso && chaveAcesso.length === 50);
 	const autorizada =
-		resposta.sucesso === true &&
-		(Boolean(resposta.numeroNfse) || chaveValida);
+		resposta.sucesso === true && (Boolean(resposta.numeroNfse) || chaveValida);
 	const modoDps =
 		resposta.modo === "dps" ||
 		String(resposta.versaolayout ?? "")
@@ -148,9 +156,7 @@ export async function emitirNfseService(
 		);
 	const pendenteDps =
 		(resposta.pendente === true && Boolean(resposta.idDps)) ||
-		(resposta.sucesso === true &&
-			!autorizada &&
-			Boolean(resposta.protocolo));
+		(resposta.sucesso === true && !autorizada && Boolean(resposta.protocolo));
 	const status = autorizada
 		? NFE_STATUS.AUTORIZADA
 		: pendenteDps
@@ -169,10 +175,10 @@ export async function emitirNfseService(
 				: { modo: "rps" as const }),
 	};
 
-	const mensagemRejeicaoBruta =
-		resposta.erro ??
-		resposta.erros?.map((e) => e.mensagem).join("; ") ??
-		"Emissão NFS-e rejeitada";
+	const mensagemRejeicaoBruta = formatarMensagemErroGatewayNfse(
+		resposta,
+		"Emissão NFS-e rejeitada",
+	);
 	const indicaE050 =
 		/E050/i.test(mensagemRejeicaoBruta) ||
 		(resposta.erros ?? []).some((e) => e.codigo === "E050");
@@ -185,9 +191,18 @@ export async function emitirNfseService(
 				"Em Configurações → NFS-e, ajuste o próximo número da série para o valor do Fly (ex.: 8402) e emita/retransmita de novo."
 		: mensagemRejeicaoBruta;
 
+	const detalhePendenteSefin = formatarMensagemErroGatewayNfse(resposta, "");
 	const mensagemPendente = sefin
-		? `Emissão Sefin pendente de confirmação. Id DPS: ${resposta.idDps}. Use Consultar antes de reemitir.`
+		? detalhePendenteSefin
+			? `Emissão Sefin pendente de confirmação (${detalhePendenteSefin}). Id DPS: ${resposta.idDps}. Use Consultar antes de reemitir.`
+			: `Emissão Sefin pendente de confirmação. Id DPS: ${resposta.idDps}. Use Consultar antes de reemitir.`
 		: `DPS recebida. Protocolo: ${resposta.protocolo}. Aguardando processamento no ambiente nacional.`;
+
+	const mensagemTransmissao = autorizada
+		? null
+		: pendenteDps
+			? mensagemPendente
+			: mensagemRejeicao;
 
 	const nota: NovaNotaFiscal = {
 		id: idnotafiscal,
@@ -215,11 +230,7 @@ export async function emitirNfseService(
 		cnpjcpf: destinatario?.cnpjCpf ?? null,
 		razaosocial: destinatario?.razaoSocial ?? null,
 		dadosimportacao: dadosImportacao as unknown as Record<string, unknown>,
-		mensagemtransmissaonfe: autorizada
-			? null
-			: pendenteDps
-				? mensagemPendente
-				: mensagemRejeicao,
+		mensagemtransmissaonfe: mensagemTransmissao,
 	};
 
 	const itens = montarItensPersistencia(
@@ -290,10 +301,16 @@ export async function emitirNfseService(
 		numeroRps,
 		serie,
 		numeroNfse: resposta.numeroNfse,
-		codigoVerificacao: resposta.codigoVerificacao,
+		codigoVerificacao: chaveAcesso ?? resposta.codigoVerificacao,
+		chaveAcesso,
+		idDps: resposta.idDps ?? null,
 		link: resposta.link,
 		protocolo: resposta.protocolo,
+		status,
+		pendente: pendenteDps,
 		ambiente,
+		mensagemErro: mensagemTransmissao,
+		alertas: resposta.alertas,
 		erros: resposta.erros,
 		integracao,
 	});

@@ -95,9 +95,10 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 				urlwsdl: sefin
 					? dados.urlwsdl?.trim() || null
 					: modoDpsBetha
-						? (dados.urlwsdl?.trim() || BETHA_DPS_WSDL)
+						? dados.urlwsdl?.trim() || BETHA_DPS_WSDL
 						: dados.urlwsdl,
-				usarlotesincrono: sefin || modoDpsBetha ? false : dados.usarlotesincrono,
+				usarlotesincrono:
+					sefin || modoDpsBetha ? false : dados.usarlotesincrono,
 				urlsoperacao: sefin ? null : urlsoperacao,
 			});
 		},
@@ -155,6 +156,15 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 									if (isProvedorSefinNacional(v)) {
 										form.setValue("versaolayout", "dps-1.01");
 										form.setValue("usarlotesincrono", false);
+										const urlAtual = (
+											form.getValues("urlwsdl") ?? ""
+										).toLowerCase();
+										if (
+											urlAtual.includes("wsdl") ||
+											urlAtual.includes("betha")
+										) {
+											form.setValue("urlwsdl", "");
+										}
 										form.setValue("urlsoperacao", {
 											emissao: "",
 											consulta: "",
@@ -218,8 +228,8 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 						<div className="space-y-3 rounded-md border border-dashed p-4 text-sm">
 							<p className="font-medium">Sefin Nacional (Emissor Público)</p>
 							<p className="text-muted-foreground text-xs">
-								Layout fixo <code>dps-1.01</code>. Comunicação REST + mTLS —
-								o certificado A1 precisa ter extensão &quot;Autenticação
+								Layout fixo <code>dps-1.01</code>. Comunicação REST + mTLS — o
+								certificado A1 precisa ter extensão &quot;Autenticação
 								Cliente&quot;.
 							</p>
 							<p className="text-muted-foreground text-xs">
@@ -261,9 +271,12 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 
 					{provedorAtual === "betha" && !modoDpsBetha ? (
 						<div className="space-y-3 rounded-md border p-4">
-							<p className="text-sm font-medium">URLs WSDL por operação (Betha)</p>
+							<p className="text-sm font-medium">
+								URLs WSDL por operação (Betha)
+							</p>
 							<p className="text-muted-foreground text-xs">
-								Homologação: https://e-gov.betha.com.br/e-nota-contribuinte-test-ws/
+								Homologação:
+								https://e-gov.betha.com.br/e-nota-contribuinte-test-ws/
 								gerarNfse?wsdl
 							</p>
 							<Field>

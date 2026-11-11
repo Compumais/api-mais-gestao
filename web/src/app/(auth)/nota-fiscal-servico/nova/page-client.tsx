@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { NFE_STATUS } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { emissaoNfseSchema } from "@/schemas/nfse-emissao.schema";
 import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
@@ -216,14 +217,43 @@ export default function NovaNfsePage() {
 			return emitirNfse(empresa.id, dados);
 		},
 		onSuccess: (resultado) => {
-			if (resultado.numeroNfse) {
-				toast.success(`NFS-e ${resultado.numeroNfse} autorizada`);
-			} else if (resultado.protocolo) {
+			const chaveValida =
+				(resultado.chaveAcesso ?? resultado.codigoVerificacao ?? "").replace(
+					/\D/g,
+					"",
+				).length === 50;
+			const foiAutorizada =
+				resultado.status === NFE_STATUS.AUTORIZADA ||
+				Boolean(resultado.numeroNfse) ||
+				(chaveValida && !resultado.pendente && !resultado.erros?.length);
+			const ficouPendente =
+				resultado.pendente === true ||
+				resultado.status === NFE_STATUS.PENDENTE ||
+				(!foiAutorizada && Boolean(resultado.protocolo));
+			const motivoErro =
+				resultado.mensagemErro ||
+				resultado.erros
+					?.map((e) => (e.codigo ? `[${e.codigo}] ${e.mensagem}` : e.mensagem))
+					.filter(Boolean)
+					.join("; ");
+
+			if (foiAutorizada) {
+				toast.success(
+					resultado.numeroNfse
+						? `NFS-e ${resultado.numeroNfse} autorizada`
+						: "NFS-e autorizada no ambiente nacional",
+				);
+			} else if (ficouPendente) {
 				toast.warning(
-					`DPS recebida. Protocolo: ${resultado.protocolo}. Consulte o status no detalhe.`,
+					motivoErro ||
+						(resultado.protocolo
+							? `DPS recebida. Protocolo: ${resultado.protocolo}. Consulte o status no detalhe.`
+							: "Emissão pendente de confirmação — consulte o status no detalhe."),
 				);
 			} else {
-				toast.warning("Transmitido — consulte o status na listagem");
+				toast.error("NFS-e rejeitada", {
+					description: motivoErro || "Emissão NFS-e rejeitada pelo provedor",
+				});
 			}
 			router.push(`/nota-fiscal-servico/${resultado.idnotafiscal}`);
 		},

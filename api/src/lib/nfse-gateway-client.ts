@@ -122,7 +122,17 @@ async function chamarNfseGateway<T extends NfseGatewayRespostaBase>(
 		const corpo = (await lerCorpoRespostaGateway(resposta)) as T;
 
 		if (!resposta.ok && corpo.sucesso !== true) {
-			const erroGateway = corpo.erro ?? `Gateway retornou HTTP ${resposta.status}`;
+			const erroGateway =
+				corpo.erro ??
+				(
+					corpo as {
+						erros?: Array<{ codigo?: string; mensagem?: string }>;
+					}
+				).erros
+					?.map((e) => (e.codigo ? `[${e.codigo}] ${e.mensagem}` : e.mensagem))
+					.filter(Boolean)
+					.join("; ") ??
+				`Gateway retornou HTTP ${resposta.status}`;
 			const erro =
 				resposta.status === 401
 					? "Falha de autenticação com o gateway NFS-e. Verifique se NFSE_GATEWAY_SECRET é o mesmo na API e no container Docker (api_Nfe/nfse-gateway/.env)."
@@ -133,6 +143,7 @@ async function chamarNfseGateway<T extends NfseGatewayRespostaBase>(
 						: erroGateway;
 
 			return {
+				...corpo,
 				sucesso: false,
 				erro,
 			} as T;

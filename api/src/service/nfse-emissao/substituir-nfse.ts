@@ -70,7 +70,9 @@ export async function substituirNfseService({
 	}
 
 	if (nota.idempresa !== substituta.idempresa) {
-		return httpBadRequest("Nota original e substituta devem ser da mesma empresa");
+		return httpBadRequest(
+			"Nota original e substituta devem ser da mesma empresa",
+		);
 	}
 
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(

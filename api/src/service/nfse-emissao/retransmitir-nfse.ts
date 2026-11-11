@@ -31,6 +31,7 @@ import {
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
+	formatarMensagemErroGatewayNfse,
 	isLayoutNfseDps,
 	isProvedorSefinNacional,
 } from "@/util/validar-pre-requisitos-emissao-nfse.js";
@@ -41,11 +42,15 @@ export type ResultadoRetransmissaoNfse = {
 	serie?: string;
 	numeroNfse?: string | null;
 	codigoVerificacao?: string | null;
+	chaveAcesso?: string | null;
+	idDps?: string | null;
 	link?: string | null;
 	protocolo?: string | null;
 	status?: number;
 	pendente?: boolean;
 	ambiente?: number;
+	mensagemErro?: string | null;
+	alertas?: Array<{ codigo: string; mensagem: string }>;
 	erros?: Array<{ codigo: string; mensagem: string }>;
 	integracao?: {
 		parcelasGeradas: number;
@@ -79,7 +84,14 @@ function payloadNfseValido(payload: unknown): payload is PayloadNfse {
 	return Boolean(p.prestador && p.tomador && p.rps && p.servico);
 }
 
-function mensagemErroE050(mensagemBase: string): string {
+function mensagemErroE050(mensagemBase: string, sefin: boolean): string {
+	if (sefin) {
+		return (
+			`${mensagemBase} ` +
+			"O ID da DPS (série + nDPS) já foi usado na Sefin Nacional. " +
+			"Em Configurações → NFS-e, avance o próximo número da série e retransmita novamente (ou consulte a DPS pelo Id antes)."
+		);
+	}
 	return (
 		`${mensagemBase} ` +
 		"O ID da DPS (série + nDPS) já foi usado na Betha/ADN — mesmo quando a nota aparece rejeitada. " +
@@ -113,10 +125,8 @@ async function reservarNovoNumeroDps(params: {
 	numeroUsadoAnteriormente: number;
 }) {
 	let serieRegistro =
-		(await buscarNfseSeriePorNumeroSerie(
-			params.idempresa,
-			params.serieNota,
-		)) ?? (await buscarNfseSeriePadrao(params.idempresa));
+		(await buscarNfseSeriePorNumeroSerie(params.idempresa, params.serieNota)) ??
+		(await buscarNfseSeriePadrao(params.idempresa));
 
 	if (!serieRegistro) {
 		return null;
@@ -136,7 +146,9 @@ async function reservarNovoNumeroDps(params: {
 export async function retransmitirNfseService({
 	idusuario,
 	idnotafiscal,
-}: RetransmitirNfseParametros): Promise<HttpResponse<ResultadoRetransmissaoNfse>> {
+}: RetransmitirNfseParametros): Promise<
+	HttpResponse<ResultadoRetransmissaoNfse>
+> {
 	const nota = await buscarNotaFiscalPorId(idnotafiscal);
 
 	if (!nota) {
@@ -231,10 +243,7 @@ export async function retransmitirNfseService({
 					idnotafiscal,
 					tipo: "autorizado",
 					xml: consultaPrevia.xml,
-					chavenfe: montarIdentificadorXmlNfse(
-						consultaPrevia,
-						idnotafiscal,
-					),
+					chavenfe: montarIdentificadorXmlNfse(consultaPrevia, idnotafiscal),
 				});
 			}
 
@@ -272,9 +281,7 @@ export async function retransmitirNfseService({
 	const numeroAnterior = Number(
 		payloadOriginal.rps.numero || nota.numeronotafiscal || 0,
 	);
-	const serieNota = String(
-		payloadOriginal.rps.serie || nota.serie || "1",
-	);
+	const serieNota = String(payloadOriginal.rps.serie || nota.serie || "1");
 
 	const reserva = await reservarNovoNumeroDps({
 		idempresa: nota.idempresa,
@@ -320,28 +327,28 @@ export async function retransmitirNfseService({
 		(Boolean(resposta.numeroNfse) || chaveAcesso.length === 50);
 	const modoDps =
 		resposta.modo === "dps" ||
-		String(resposta.versaolayout ?? "").toLowerCase().includes("dps") ||
+		String(resposta.versaolayout ?? "")
+			.toLowerCase()
+			.includes("dps") ||
 		isLayoutNfseDps(
 			String(credenciais.configJson.versaolayout ?? ""),
 			provedorConfig,
 		);
 	const pendenteDps =
 		(resposta.pendente === true && Boolean(resposta.idDps)) ||
-		(resposta.sucesso === true &&
-			!autorizada &&
-			Boolean(resposta.protocolo));
+		(resposta.sucesso === true && !autorizada && Boolean(resposta.protocolo));
 	const status = autorizada
 		? NFE_STATUS.AUTORIZADA
 		: pendenteDps
 			? NFE_STATUS.PENDENTE
 			: NFE_STATUS.REJEITADA;
 
-	const mensagemRejeicaoBruta =
-		resposta.erro ??
-		resposta.erros?.map((e) => e.mensagem).join("; ") ??
-		"Emissão NFS-e rejeitada";
+	const mensagemRejeicaoBruta = formatarMensagemErroGatewayNfse(
+		resposta,
+		"Emissão NFS-e rejeitada",
+	);
 	const mensagemRejeicao = respostaIndicaE050(resposta)
-		? mensagemErroE050(mensagemRejeicaoBruta)
+		? mensagemErroE050(mensagemRejeicaoBruta, sefin)
 		: mensagemRejeicaoBruta;
 
 	const dadosImportacao: DadosEmissaoNfseSalvos = {
@@ -356,9 +363,18 @@ export async function retransmitirNfseService({
 				: { modo: "rps" as const }),
 	};
 
+	const detalhePendenteSefin = formatarMensagemErroGatewayNfse(resposta, "");
 	const mensagemPendente = sefin
-		? `Emissão Sefin pendente de confirmação. Id DPS: ${resposta.idDps}. Use Consultar antes de reemitir.`
+		? detalhePendenteSefin
+			? `Emissão Sefin pendente de confirmação (${detalhePendenteSefin}). Id DPS: ${resposta.idDps}. Use Consultar antes de reemitir.`
+			: `Emissão Sefin pendente de confirmação. Id DPS: ${resposta.idDps}. Use Consultar antes de reemitir.`
 		: `DPS recebida. Protocolo: ${resposta.protocolo}. Aguardando processamento no ambiente nacional.`;
+
+	const mensagemTransmissao = autorizada
+		? null
+		: pendenteDps
+			? mensagemPendente
+			: mensagemRejeicao;
 
 	await atualizarNotaFiscal(idnotafiscal, {
 		serie: reserva.serie,
@@ -373,11 +389,7 @@ export async function retransmitirNfseService({
 		pendenciarps: autorizada ? 0 : 1,
 		status,
 		dadosimportacao: dadosImportacao as unknown as Record<string, unknown>,
-		mensagemtransmissaonfe: autorizada
-			? null
-			: pendenteDps
-				? mensagemPendente
-				: mensagemRejeicao,
+		mensagemtransmissaonfe: mensagemTransmissao,
 	});
 
 	const identificadorXml = montarIdentificadorXmlNfse(resposta, idnotafiscal);
@@ -432,12 +444,17 @@ export async function retransmitirNfseService({
 		numeroRps: reserva.numeroRps,
 		serie: reserva.serie,
 		numeroNfse: resposta.numeroNfse,
-		codigoVerificacao: resposta.codigoVerificacao,
+		codigoVerificacao:
+			chaveAcesso.length === 50 ? chaveAcesso : resposta.codigoVerificacao,
+		chaveAcesso: chaveAcesso.length === 50 ? chaveAcesso : null,
+		idDps: resposta.idDps ?? null,
 		link: resposta.link,
 		protocolo: resposta.protocolo,
 		status,
 		pendente: pendenteDps,
 		ambiente,
+		mensagemErro: mensagemTransmissao,
+		alertas: resposta.alertas,
 		erros: resposta.erros,
 		integracao,
 	});

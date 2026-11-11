@@ -12,13 +12,13 @@ import { NFE_STATUS, NFE_STATUS_LABELS } from "@/constants/nfe-status";
 import { isProvedorSefinNacional } from "@/constants/nfse-emissao";
 import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { useEmpresa } from "@/provider/empresa-provider";
+import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
 import {
 	buscarNfsePorId,
 	cancelarNfse,
 	consultarNfsePorRps,
 	substituirNfse,
 } from "@/services/nfse-emissao.service";
-import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
 import { PageContainer } from "../../components/page-container";
 import { AvisoAmbienteNfse } from "../components/aviso-ambiente-nfse";
 import { CardErroNfse } from "../components/card-erro-nfse";
@@ -28,6 +28,44 @@ function extrairProtocolo(mensagem?: string | null): string | null {
 	if (!mensagem) return null;
 	const match = mensagem.match(/Protocolo:\s*([^\s.]+)/i);
 	return match?.[1]?.trim() || null;
+}
+
+function extrairDetalhesErroNfse(mensagem?: string | null): {
+	codigo: string | null;
+	motivo: string;
+	instrucao: string | null;
+} {
+	const texto = (mensagem ?? "").trim();
+	if (!texto) {
+		return { codigo: null, motivo: "—", instrucao: null };
+	}
+
+	const matchColchete = texto.match(/^\[([A-Za-z0-9_-]+)\]\s*(.*)$/s);
+	const matchCodigoInline = texto.match(
+		/\b(E\d{3,4}|CERTIFICADO_MTLS|HTTP_\d{3}|REDE_COM_DPS|REDE|ADAPTER)\b/,
+	);
+	const codigo = matchColchete?.[1] ?? matchCodigoInline?.[1] ?? null;
+	const motivo = (matchColchete?.[2] ?? texto).trim() || texto;
+
+	let instrucao: string | null = null;
+	if (codigo === "CERTIFICADO_MTLS") {
+		instrucao =
+			"Verifique em Configurações → Certificados se o certificado A1 é ICP-Brasil, está dentro da validade, pertence ao CNPJ prestador e possui a finalidade 'Autenticação Cliente'.";
+	} else if (codigo === "E050" || /E050/i.test(texto)) {
+		instrucao =
+			"O número da DPS já foi utilizado anteriormente. Use 'Retransmitir' na listagem para reservar automaticamente o próximo número ou avance o número da série em Configurações → NFS-e.";
+	} else if (codigo === "HTTP_404") {
+		instrucao =
+			"Em Configurações → NFS-e, deixe o campo 'URL base (override)' em branco para usar o endereço oficial da Sefin Nacional do ambiente selecionado.";
+	} else if (codigo === "REDE" || codigo === "REDE_COM_DPS") {
+		instrucao =
+			"Verifique se o container nfse-gateway está ativo e com acesso à internet/Sefin Nacional, ou clique em 'Consultar status DPS' para verificar se a nota foi processada.";
+	} else if (codigo === "E1235") {
+		instrucao =
+			"Rejeição de estrutura/schema XML da DPS (NT 009). Confira os campos fiscais do serviço (cTribNac, cNBS e cIndOp) e reconstrua o container nfse-gateway se necessário.";
+	}
+
+	return { codigo, motivo, instrucao };
 }
 
 function notaEhDps(nota: {
@@ -187,9 +225,13 @@ export default function DetalheNfsePage() {
 	const mensagemPendenteDps =
 		(pendente || eventoPendente) &&
 		modoDps &&
-		Boolean(nota.mensagemtransmissaonfe || protocolo);
+		Boolean(nota.mensagemtransmissaonfe || protocolo || idDps);
 	const mensagemRejeicao =
 		nota.mensagemtransmissaonfe && !autorizada && !mensagemPendenteDps;
+	const detalhesRejeicao = extrairDetalhesErroNfse(nota.mensagemtransmissaonfe);
+	const detalhesErroOperacao = erroOperacao
+		? extrairDetalhesErroNfse(erroOperacao.motivo)
+		: null;
 
 	return (
 		<PageContainer>
@@ -208,10 +250,12 @@ export default function DetalheNfsePage() {
 					<AvisoAmbienteNfse ambiente={nota.tipoambientenfe} />
 				</header>
 
-				{erroOperacao ? (
+				{erroOperacao && detalhesErroOperacao ? (
 					<CardErroNfse
 						titulo={erroOperacao.titulo}
-						motivo={erroOperacao.motivo}
+						motivo={detalhesErroOperacao.motivo}
+						codigo={detalhesErroOperacao.codigo}
+						instrucao={detalhesErroOperacao.instrucao}
 					/>
 				) : null}
 
@@ -220,12 +264,23 @@ export default function DetalheNfsePage() {
 						<p className="font-medium">
 							{eventoPendente
 								? "Evento DPS recebido — aguardando processamento"
-								: "DPS recebida — aguardando processamento"}
+								: "DPS pendente de confirmação no ambiente nacional"}
 						</p>
+						{idDps ? (
+							<p>
+								<span className="text-muted-foreground">Id DPS:</span>{" "}
+								<span className="font-mono break-all">{idDps}</span>
+							</p>
+						) : null}
 						{protocolo ? (
 							<p>
 								<span className="text-muted-foreground">Protocolo:</span>{" "}
 								<span className="font-mono">{protocolo}</span>
+							</p>
+						) : null}
+						{nota.mensagemtransmissaonfe ? (
+							<p className="text-amber-700 dark:text-amber-400 whitespace-pre-wrap">
+								{nota.mensagemtransmissaonfe}
 							</p>
 						) : null}
 						<p className="text-muted-foreground">
@@ -238,7 +293,9 @@ export default function DetalheNfsePage() {
 				{mensagemRejeicao && nota.mensagemtransmissaonfe ? (
 					<CardErroNfse
 						titulo="NFS-e rejeitada"
-						motivo={nota.mensagemtransmissaonfe}
+						motivo={detalhesRejeicao.motivo}
+						codigo={detalhesRejeicao.codigo}
+						instrucao={detalhesRejeicao.instrucao}
 					/>
 				) : null}
 
@@ -251,10 +308,23 @@ export default function DetalheNfsePage() {
 							minimumFractionDigits: 2,
 						})}
 					</p>
-					{nota.codigoautenticidadenfse ? (
+					{chaveAcesso.length === 50 ? (
+						<p>
+							<span className="text-muted-foreground">
+								Chave de acesso (50 dígitos):
+							</span>{" "}
+							<span className="font-mono break-all">{chaveAcesso}</span>
+						</p>
+					) : nota.codigoautenticidadenfse ? (
 						<p>
 							<span className="text-muted-foreground">Verificação:</span>{" "}
 							{nota.codigoautenticidadenfse}
+						</p>
+					) : null}
+					{idDps ? (
+						<p>
+							<span className="text-muted-foreground">Id DPS:</span>{" "}
+							<span className="font-mono break-all">{idDps}</span>
 						</p>
 					) : null}
 					{nota.linknfse ? (
@@ -321,7 +391,7 @@ export default function DetalheNfsePage() {
 									Cancelar NFS-e
 								</Button>
 							</div>
-							{modoDps ? (
+							{modoDps && !sefin ? (
 								<div className="flex flex-col gap-2 w-full sm:max-w-md border-t pt-4">
 									<p className="text-sm font-medium">Substituição DPS</p>
 									<Input

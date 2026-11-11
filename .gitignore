@@ -17,6 +17,7 @@ local.properties
 **/local.properties
 .idea/
 **/.idea/
+release/
 
 # Environment variables
 .env

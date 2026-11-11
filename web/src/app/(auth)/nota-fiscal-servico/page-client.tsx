@@ -246,14 +246,43 @@ export default function NotaFiscalServicoPage() {
 	const retransmitirMutation = useMutation({
 		mutationFn: (id: string) => retransmitirNfse(id),
 		onSuccess: (resultado) => {
-			if (resultado.numeroNfse) {
-				toast.success(`NFS-e ${resultado.numeroNfse} autorizada`);
-			} else if (resultado.protocolo) {
+			const chaveValida =
+				(resultado.chaveAcesso ?? resultado.codigoVerificacao ?? "").replace(
+					/\D/g,
+					"",
+				).length === 50;
+			const foiAutorizada =
+				resultado.status === NFE_STATUS.AUTORIZADA ||
+				Boolean(resultado.numeroNfse) ||
+				(chaveValida && !resultado.pendente && !resultado.erros?.length);
+			const ficouPendente =
+				resultado.pendente === true ||
+				resultado.status === NFE_STATUS.PENDENTE ||
+				(!foiAutorizada && Boolean(resultado.protocolo));
+			const motivoErro =
+				resultado.mensagemErro ||
+				resultado.erros
+					?.map((e) => (e.codigo ? `[${e.codigo}] ${e.mensagem}` : e.mensagem))
+					.filter(Boolean)
+					.join("; ");
+
+			if (foiAutorizada) {
+				toast.success(
+					resultado.numeroNfse
+						? `NFS-e ${resultado.numeroNfse} autorizada`
+						: "NFS-e autorizada no ambiente nacional",
+				);
+			} else if (ficouPendente) {
 				toast.warning(
-					`DPS recebida. Protocolo: ${resultado.protocolo}. Consulte o status.`,
+					motivoErro ||
+						(resultado.protocolo
+							? `DPS recebida. Protocolo: ${resultado.protocolo}. Consulte o status.`
+							: "Retransmissão pendente de confirmação — consulte o status."),
 				);
 			} else {
-				toast.warning("Retransmissão concluída — consulte o status");
+				toast.error("Retransmissão rejeitada", {
+					description: motivoErro || "A NFS-e foi rejeitada pelo provedor",
+				});
 			}
 			invalidateLista();
 		},

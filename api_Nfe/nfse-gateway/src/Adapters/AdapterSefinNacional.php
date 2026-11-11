@@ -45,8 +45,11 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         string $senha,
         array $payloadNfse,
     ): array {
+        $idInfDps = null;
+        $xmlAssinado = null;
         try {
             [$idInfDps, $xmlDps] = $this->dpsBuilder->montar($payloadNfse, $configJson);
+            $xmlAssinado = $xmlDps;
             $certificate = CertificadoService::lerCertificado($pfxBase64, $senha);
             $xmlAssinado = AssinadorXmlService::assinar($xmlDps, $certificate, $idInfDps);
             $xmlAssinado = AssinadorXmlService::reposicionarSignatureNoPai($xmlAssinado, 'DPS');
@@ -64,12 +67,13 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                     $idInfDps,
                     $xmlAssinado,
                     (string) ($resposta['erro'] ?? 'Falha de rede na emissão Sefin'),
+                    (int) ($resposta['errno'] ?? 0),
                 );
             }
 
             return $this->mapearRespostaEmissao($resposta, $idInfDps, $xmlAssinado);
         } catch (\Throwable $e) {
-            return $this->erroBase($e->getMessage());
+            return $this->erroBase($e->getMessage(), $idInfDps, $xmlAssinado);
         }
     }
 
@@ -222,10 +226,12 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                     return [
                         ...$this->baseMeta(),
                         'sucesso' => false,
+                        'pendente' => false,
                         'idDps' => (string) ($json['idDps'] ?? $idDps),
                         'chaveAcesso' => $chave !== '' ? $chave : null,
                         'codigoVerificacao' => $chave !== '' ? $chave : null,
                         'xmlEnviado' => $xmlEnviado,
+                        'erro' => '[GUNZIP] ' . $e->getMessage(),
                         'erros' => [['codigo' => 'GUNZIP', 'mensagem' => $e->getMessage()]],
                     ];
                 }
@@ -243,30 +249,44 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                 'numeroNfse' => $numeroNfse,
                 'xml' => $nfseXml,
                 'xmlEnviado' => $xmlEnviado,
-                'alertas' => $this->mapearMensagens($json['alertas'] ?? []),
+                'alertas' => $this->mapearMensagens($json['alertas'] ?? $json['Alertas'] ?? []),
                 'erros' => [],
             ];
         }
 
-        if ($status === 403) {
+        if ($status === 401 || $status === 403) {
+            $mensagemPadraoMtls = $status === 401
+                ? 'Certificado digital de cliente ausente ou rejeitado pela Sefin Nacional (mTLS HTTP 401)'
+                : 'Certificado digital da transmissão inválido ou fora dos padrões da NFS-e (mTLS)';
+            $erros = $this->extrairErrosDaRespostaSefin(
+                $resposta,
+                'CERTIFICADO_MTLS',
+                $mensagemPadraoMtls,
+            );
+            foreach ($erros as &$itemErro) {
+                if ($itemErro['codigo'] === (string) $status || $itemErro['codigo'] === 'SEFIN') {
+                    $itemErro['codigo'] = 'CERTIFICADO_MTLS';
+                }
+            }
+            unset($itemErro);
+
             return [
                 ...$this->baseMeta(),
                 'sucesso' => false,
                 'pendente' => false,
                 'idDps' => $idDps,
                 'xmlEnviado' => $xmlEnviado,
-                'erros' => [[
-                    'codigo' => 'CERTIFICADO_MTLS',
-                    'mensagem' => 'Certificado digital da transmissão inválido ou fora dos padrões da NFS-e (mTLS)',
-                ]],
+                'erros' => $erros,
+                'erro' => $this->formatarResumoErros($erros),
             ];
         }
 
-        if ($status === 400 || $status === 500) {
+        if ($status === 404) {
+            $urlChamada = (string) ($resposta['url'] ?? '/nfse');
             $erros = $this->extrairErrosDaRespostaSefin(
                 $resposta,
-                (string) $status,
-                'Rejeição Sefin Nacional sem detalhe',
+                'HTTP_404',
+                "Endpoint não encontrado na Sefin Nacional (HTTP 404 em {$urlChamada}). Verifique a URL base nas configurações de NFS-e.",
             );
 
             return [
@@ -276,21 +296,61 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                 'idDps' => (string) ($json['idDPS'] ?? $json['idDps'] ?? $idDps),
                 'xmlEnviado' => $xmlEnviado,
                 'erros' => $erros,
-                'erro' => $erros[0]['mensagem'] ?? null,
+                'erro' => $this->formatarResumoErros($erros),
             ];
         }
 
-        // Timeout / 5xx sem corpo / status inesperado → tenta reconciliar
+        if ($status === 502 || $status === 503 || $status === 504) {
+            $erros = $this->extrairErrosDaRespostaSefin(
+                $resposta,
+                'HTTP_' . $status,
+                "Serviço da Sefin Nacional indisponível (HTTP {$status}). Consulte a DPS pelo Id antes de reemitir.",
+            );
+
+            return [
+                ...$this->baseMeta(),
+                'sucesso' => false,
+                'pendente' => true,
+                'idDps' => (string) ($json['idDPS'] ?? $json['idDps'] ?? $idDps),
+                'xmlEnviado' => $xmlEnviado,
+                'erros' => $erros,
+                'erro' => $this->formatarResumoErros($erros),
+            ];
+        }
+
+        if ($status >= 400) {
+            $erros = $this->extrairErrosDaRespostaSefin(
+                $resposta,
+                (string) $status,
+                "Rejeição Sefin Nacional sem detalhe (HTTP {$status})",
+            );
+
+            return [
+                ...$this->baseMeta(),
+                'sucesso' => false,
+                'pendente' => false,
+                'idDps' => (string) ($json['idDPS'] ?? $json['idDps'] ?? $idDps),
+                'xmlEnviado' => $xmlEnviado,
+                'erros' => $erros,
+                'erro' => $this->formatarResumoErros($erros),
+            ];
+        }
+
+        // Status inesperado fora de 201 e >=400 → tenta extrair detalhe e marca para consulta
+        $errosInesperados = $this->extrairErrosDaRespostaSefin(
+            $resposta,
+            'HTTP_' . $status,
+            "Resposta inesperada da Sefin (HTTP {$status}). Consulte a DPS pelo Id antes de reemitir.",
+        );
+
         return [
             ...$this->baseMeta(),
             'sucesso' => false,
             'pendente' => true,
             'idDps' => $idDps,
             'xmlEnviado' => $xmlEnviado,
-            'erros' => [[
-                'codigo' => 'HTTP_' . $status,
-                'mensagem' => 'Resposta inesperada da Sefin. Consulte a DPS pelo Id antes de reemitir.',
-            ]],
+            'erros' => $errosInesperados,
+            'erro' => $this->formatarResumoErros($errosInesperados),
         ];
     }
 
@@ -315,6 +375,7 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                         'chaveAcesso' => $chave,
                         'codigoVerificacao' => $chave,
                         'xmlEnviado' => $xmlEnviado,
+                        'erro' => '[GUNZIP] ' . $e->getMessage(),
                         'erros' => [['codigo' => 'GUNZIP', 'mensagem' => $e->getMessage()]],
                     ];
                 }
@@ -332,11 +393,11 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             ];
         }
 
-        if ($status === 400 || $status === 401 || $status === 403) {
+        if ($status >= 400 && $status !== 502 && $status !== 503 && $status !== 504) {
             $erros = $this->extrairErrosDaRespostaSefin(
                 $resposta,
                 (string) $status,
-                'Falha ao registrar evento de cancelamento na Sefin',
+                "Falha ao registrar evento de cancelamento na Sefin (HTTP {$status})",
             );
 
             return [
@@ -347,9 +408,15 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                 'codigoVerificacao' => $chave,
                 'xmlEnviado' => $xmlEnviado,
                 'erros' => $erros,
-                'erro' => $erros[0]['mensagem'] ?? null,
+                'erro' => $this->formatarResumoErros($erros),
             ];
         }
+
+        $errosPendentes = $this->extrairErrosDaRespostaSefin(
+            $resposta,
+            'HTTP_' . $status,
+            "Resposta inesperada no cancelamento (HTTP {$status}). Consulte os eventos da NFS-e.",
+        );
 
         return [
             ...$this->baseMeta(),
@@ -358,10 +425,8 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             'chaveAcesso' => $chave,
             'codigoVerificacao' => $chave,
             'xmlEnviado' => $xmlEnviado,
-            'erros' => [[
-                'codigo' => 'HTTP_' . $status,
-                'mensagem' => 'Resposta inesperada no cancelamento. Consulte os eventos da NFS-e.',
-            ]],
+            'erros' => $errosPendentes,
+            'erro' => $this->formatarResumoErros($errosPendentes),
         ];
     }
 
@@ -406,6 +471,7 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         $status = (int) ($resposta['status'] ?? 0);
 
         if ($status === 0) {
+            $msgRede = (string) ($resposta['erro'] ?? 'Falha de rede');
             return [
                 ...$this->baseMeta(),
                 'sucesso' => false,
@@ -413,10 +479,10 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                 'idDps' => $idDps,
                 'chaveAcesso' => $chave,
                 'codigoVerificacao' => $chave,
-                'erro' => (string) ($resposta['erro'] ?? 'Falha de rede'),
+                'erro' => "[REDE] {$msgRede}",
                 'erros' => [[
                     'codigo' => 'REDE',
-                    'mensagem' => (string) ($resposta['erro'] ?? 'Falha de rede'),
+                    'mensagem' => $msgRede,
                 ]],
             ];
         }
@@ -425,7 +491,7 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             404 => 'Chave de acesso ou DPS não encontrada',
             403 => 'Consulta não permitida para este certificado',
             401 => 'Não foi possível obter o certificado de cliente',
-            default => 'Falha na consulta Sefin Nacional',
+            default => "Falha na consulta Sefin Nacional (HTTP {$status})",
         };
         $erros = $this->extrairErrosDaRespostaSefin($resposta, (string) $status, $fallback);
 
@@ -437,14 +503,14 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             'chaveAcesso' => $chave,
             'codigoVerificacao' => $chave,
             'erros' => $erros,
-            'erro' => $erros[0]['mensagem'] ?? null,
+            'erro' => $this->formatarResumoErros($erros),
         ];
     }
 
     /**
      * Extrai erros da resposta Sefin em vários formatos conhecidos.
      *
-     * Ordem: erros[] → erro (objeto/string) → campos top-level → body bruto → fallback.
+     * Ordem: erros[]/Erros[] → erro/Erro → validation errors (RFC 7807) → campos top-level → body bruto → fallback.
      *
      * @param array{status?: int, json?: array<string, mixed>|null, body?: string, erro?: string} $resposta
      * @return list<array{codigo: string, mensagem: string}>
@@ -457,17 +523,23 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         $json = is_array($resposta['json'] ?? null) ? $resposta['json'] : [];
 
         $candidatos = [];
-        if (isset($json['erros'])) {
-            $candidatos[] = $json['erros'];
+        if ($json !== [] && array_is_list($json)) {
+            $candidatos[] = $json;
         }
-        if (array_key_exists('erro', $json)) {
-            $candidatos[] = $json['erro'];
+        foreach (['erros', 'Erros', 'erro', 'Erro', 'mensagens', 'Mensagens', 'messages', 'Messages', 'alertas', 'Alertas'] as $chaveCandidata) {
+            if (array_key_exists($chaveCandidata, $json)) {
+                $candidatos[] = $json[$chaveCandidata];
+            }
         }
-        if (isset($json['mensagens'])) {
-            $candidatos[] = $json['mensagens'];
-        }
-        if (isset($json['messages'])) {
-            $candidatos[] = $json['messages'];
+        foreach (['processamento', 'Processamento', 'resultado', 'Resultado', 'data', 'Data'] as $wrapperKey) {
+            if (isset($json[$wrapperKey]) && is_array($json[$wrapperKey])) {
+                $sub = $json[$wrapperKey];
+                foreach (['erros', 'Erros', 'erro', 'Erro', 'mensagens', 'Mensagens'] as $subKey) {
+                    if (array_key_exists($subKey, $sub)) {
+                        $candidatos[] = $sub[$subKey];
+                    }
+                }
+            }
         }
 
         foreach ($candidatos as $candidato) {
@@ -477,24 +549,76 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             }
         }
 
+        // Suporte a ValidationProblemDetails (ASP.NET Core): {"errors": {"campo": ["msg1", "msg2"]}}
+        $validationErrors = $json['errors'] ?? $json['Errors'] ?? null;
+        if (is_array($validationErrors) && $validationErrors !== []) {
+            $errosValidacao = $this->mapearMensagens($validationErrors);
+            if ($errosValidacao !== []) {
+                return $errosValidacao;
+            }
+            $saidaValidacao = [];
+            foreach ($validationErrors as $campo => $listaMensagens) {
+                $prefixoCampo = is_string($campo) && $campo !== '' && $campo !== '$' ? "{$campo}: " : '';
+                if (is_string($listaMensagens) && trim($listaMensagens) !== '') {
+                    $saidaValidacao[] = [
+                        'codigo' => $codigoFallback,
+                        'mensagem' => $prefixoCampo . trim($listaMensagens),
+                    ];
+                } elseif (is_array($listaMensagens)) {
+                    foreach ($listaMensagens as $msgItem) {
+                        if (is_string($msgItem) && trim($msgItem) !== '') {
+                            $saidaValidacao[] = [
+                                'codigo' => $codigoFallback,
+                                'mensagem' => $prefixoCampo . trim($msgItem),
+                            ];
+                        }
+                    }
+                }
+            }
+            if ($saidaValidacao !== []) {
+                return $saidaValidacao;
+            }
+        }
+
         $codigoTop = trim((string) (
             $json['codigo']
+            ?? $json['Codigo']
             ?? $json['codigoStatus']
+            ?? $json['CodigoStatus']
             ?? $json['code']
+            ?? $json['Code']
             ?? ''
         ));
-        $mensagemTop = trim((string) (
+        $mensagemPrincipalTop = trim((string) (
             $json['descricao']
+            ?? $json['Descricao']
             ?? $json['motivoStatus']
+            ?? $json['MotivoStatus']
             ?? $json['mensagem']
+            ?? $json['Mensagem']
             ?? $json['message']
-            ?? $json['title']
-            ?? $json['detail']
+            ?? $json['Message']
             ?? ''
         ));
-        $complementoTop = trim((string) ($json['complemento'] ?? ''));
-        if ($mensagemTop !== '' || $complementoTop !== '') {
-            $mensagem = $mensagemTop;
+        $titleTop = trim((string) ($json['title'] ?? $json['Title'] ?? ''));
+        $detailTop = trim((string) ($json['detail'] ?? $json['Detail'] ?? ''));
+        if ($mensagemPrincipalTop === '') {
+            if ($titleTop !== '' && $detailTop !== '' && $titleTop !== $detailTop) {
+                $mensagemPrincipalTop = "{$titleTop}: {$detailTop}";
+            } else {
+                $mensagemPrincipalTop = $detailTop !== '' ? $detailTop : $titleTop;
+            }
+        }
+
+        $complementoTop = trim((string) (
+            $json['complemento']
+            ?? $json['Complemento']
+            ?? $json['solucao']
+            ?? $json['Solucao']
+            ?? ''
+        ));
+        if ($mensagemPrincipalTop !== '' || $complementoTop !== '') {
+            $mensagem = $mensagemPrincipalTop;
             if ($complementoTop !== '') {
                 $mensagem = $mensagem !== ''
                     ? "{$mensagem} — {$complementoTop}"
@@ -531,6 +655,32 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         ]];
     }
 
+    /**
+     * @param list<array{codigo: string, mensagem: string}> $erros
+     */
+    private function formatarResumoErros(array $erros): ?string
+    {
+        if ($erros === []) {
+            return null;
+        }
+
+        $partes = [];
+        foreach ($erros as $erro) {
+            $codigo = trim((string) ($erro['codigo'] ?? ''));
+            $mensagem = trim((string) ($erro['mensagem'] ?? ''));
+            if ($mensagem === '') {
+                continue;
+            }
+            if ($codigo !== '' && $codigo !== 'SEFIN' && !str_contains($mensagem, $codigo)) {
+                $partes[] = "[{$codigo}] {$mensagem}";
+            } else {
+                $partes[] = $mensagem;
+            }
+        }
+
+        return $partes !== [] ? implode('; ', $partes) : null;
+    }
+
     private function resumirCorpoResposta(string $body): string
     {
         $limpo = preg_replace('/\s+/', ' ', $body) ?? $body;
@@ -550,9 +700,26 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         string $idDps,
         string $xmlEnviado,
         string $mensagemRede,
+        int $errno = 0,
     ): array {
+        // Erros cURL antes de enviar payload (DNS=6, conexão recusada=7, handshake SSL/mTLS=35,58,59,60,83):
+        // a requisição não chegou na Sefin, portanto não deve ficar pendente.
+        $errosPreEnvio = [6, 7, 35, 58, 59, 60, 83];
+        if (in_array($errno, $errosPreEnvio, true)) {
+            return [
+                ...$this->baseMeta(),
+                'sucesso' => false,
+                'pendente' => false,
+                'idDps' => $idDps,
+                'xmlEnviado' => $xmlEnviado,
+                'erro' => "[REDE] {$mensagemRede}",
+                'erros' => [['codigo' => 'REDE', 'mensagem' => $mensagemRede]],
+            ];
+        }
+
         $head = $client->head('/dps/' . rawurlencode($idDps));
-        if (($head['status'] ?? 0) === 200) {
+        $statusHead = (int) ($head['status'] ?? 0);
+        if ($statusHead === 200) {
             $get = $client->get('/dps/' . rawurlencode($idDps));
             if (($get['status'] ?? 0) === 200) {
                 $json = is_array($get['json'] ?? null) ? $get['json'] : [];
@@ -567,16 +734,30 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
                 }
             }
 
+            $msgComDps = $mensagemRede . ' A DPS parece ter sido aceita — consulte pelo Id.';
             return [
                 ...$this->baseMeta(),
                 'sucesso' => false,
                 'pendente' => true,
                 'idDps' => $idDps,
                 'xmlEnviado' => $xmlEnviado,
+                'erro' => "[REDE_COM_DPS] {$msgComDps}",
                 'erros' => [[
                     'codigo' => 'REDE_COM_DPS',
-                    'mensagem' => $mensagemRede . ' A DPS parece ter sido aceita — consulte pelo Id.',
+                    'mensagem' => $msgComDps,
                 ]],
+            ];
+        }
+
+        if ($statusHead === 404) {
+            return [
+                ...$this->baseMeta(),
+                'sucesso' => false,
+                'pendente' => false,
+                'idDps' => $idDps,
+                'xmlEnviado' => $xmlEnviado,
+                'erro' => "[REDE] {$mensagemRede}",
+                'erros' => [['codigo' => 'REDE', 'mensagem' => $mensagemRede]],
             ];
         }
 
@@ -586,7 +767,7 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             'pendente' => true,
             'idDps' => $idDps,
             'xmlEnviado' => $xmlEnviado,
-            'erro' => $mensagemRede,
+            'erro' => "[REDE] {$mensagemRede}",
             'erros' => [['codigo' => 'REDE', 'mensagem' => $mensagemRede]],
         ];
     }
@@ -633,10 +814,17 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         $ehLista = array_is_list($mensagens);
         if (!$ehLista && (
             isset($mensagens['codigo'])
+            || isset($mensagens['Codigo'])
+            || isset($mensagens['code'])
+            || isset($mensagens['Code'])
             || isset($mensagens['descricao'])
+            || isset($mensagens['Descricao'])
             || isset($mensagens['mensagem'])
+            || isset($mensagens['Mensagem'])
             || isset($mensagens['message'])
+            || isset($mensagens['Message'])
             || isset($mensagens['complemento'])
+            || isset($mensagens['Complemento'])
         )) {
             $mensagens = [$mensagens];
         } elseif (!$ehLista) {
@@ -656,29 +844,54 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             if (!is_array($item)) {
                 continue;
             }
-            $codigo = (string) (
+            $codigo = trim((string) (
                 $item['codigo']
-                ?? $item['code']
                 ?? $item['Codigo']
+                ?? $item['code']
+                ?? $item['Code']
+                ?? $item['id']
+                ?? $item['Id']
                 ?? ''
-            );
+            ));
             $descricao = trim((string) (
                 $item['descricao']
+                ?? $item['Descricao']
                 ?? $item['mensagem']
+                ?? $item['Mensagem']
                 ?? $item['message']
+                ?? $item['Message']
                 ?? $item['motivo']
-                ?? $item['title']
+                ?? $item['Motivo']
                 ?? $item['detail']
+                ?? $item['Detail']
+                ?? $item['title']
+                ?? $item['Title']
+                ?? $item['erro']
+                ?? $item['Erro']
                 ?? ''
             ));
             $complemento = trim((string) (
                 $item['complemento']
                 ?? $item['Complemento']
+                ?? $item['detalhe']
+                ?? $item['Detalhe']
+                ?? $item['campo']
+                ?? $item['Campo']
+                ?? ''
+            ));
+            $solucao = trim((string) (
+                $item['solucao']
+                ?? $item['Solucao']
+                ?? $item['orientacao']
+                ?? $item['Orientacao']
                 ?? ''
             ));
             $mensagem = $descricao;
             if ($complemento !== '') {
                 $mensagem = $mensagem !== '' ? "{$mensagem} — {$complemento}" : $complemento;
+            }
+            if ($solucao !== '') {
+                $mensagem = $mensagem !== '' ? "{$mensagem} (Solução: {$solucao})" : $solucao;
             }
             if ($codigo === '' && $mensagem === '') {
                 continue;
@@ -707,13 +920,18 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
     /**
      * @return array<string, mixed>
      */
-    private function erroBase(string $mensagem): array
-    {
+    private function erroBase(
+        string $mensagem,
+        ?string $idDps = null,
+        ?string $xmlEnviado = null,
+    ): array {
         return [
             ...$this->baseMeta(),
             'sucesso' => false,
             'pendente' => false,
-            'erro' => $mensagem,
+            ...($idDps !== null ? ['idDps' => $idDps] : []),
+            ...($xmlEnviado !== null ? ['xmlEnviado' => $xmlEnviado] : []),
+            'erro' => "[ADAPTER] {$mensagem}",
             'erros' => [['codigo' => 'ADAPTER', 'mensagem' => $mensagem]],
         ];
     }

@@ -39,13 +39,23 @@ final class SefinHttpClient
     ): self {
         $ambiente = (int) ($configJson['ambiente'] ?? 2);
         $urlOverride = trim((string) ($configJson['urlwsdl'] ?? ''));
-        if ($urlOverride !== '') {
+        if ($urlOverride !== '' && !self::urlPareceWsdlLegado($urlOverride)) {
             $baseUrl = rtrim($urlOverride, '/');
         } else {
             $baseUrl = $ambiente === 1 ? self::URL_PRODUCAO : self::URL_HOMOLOGACAO;
         }
 
         return new self($baseUrl, $pfxBase64, $senha);
+    }
+
+    private static function urlPareceWsdlLegado(string $url): bool
+    {
+        $u = strtolower(trim($url));
+
+        return str_ends_with($u, '.wsdl')
+            || str_contains($u, '?wsdl')
+            || str_contains($u, 'betha.cloud')
+            || str_contains($u, 'betha.com.br');
     }
 
     public function obterBaseUrl(): string
@@ -167,11 +177,13 @@ final class SefinHttpClient
             if ($errno !== 0 || $body === false) {
                 return [
                     'status' => 0,
+                    'errno' => $errno,
+                    'url' => $url,
                     'json' => null,
                     'body' => '',
                     'erro' => $erroCurl !== ''
-                        ? "Falha de conexão com Sefin Nacional: {$erroCurl}"
-                        : 'Falha de conexão com Sefin Nacional',
+                        ? "Falha de conexão com Sefin Nacional ({$url}) [cURL #{$errno}]: {$erroCurl}"
+                        : "Falha de conexão com Sefin Nacional ({$url})",
                 ];
             }
 
@@ -186,6 +198,7 @@ final class SefinHttpClient
 
             return [
                 'status' => $status,
+                'url' => $url,
                 'json' => $decoded,
                 'body' => $corpo,
             ];
@@ -205,10 +218,18 @@ final class SefinHttpClient
             throw new \InvalidArgumentException('PFX base64 inválido para mTLS Sefin');
         }
 
+        while (openssl_error_string() !== false) {
+            // Limpa fila de erros OpenSSL anteriores
+        }
+
         $certs = [];
         if (!openssl_pkcs12_read($pfxContent, $certs, $this->senha)) {
+            $detalheSsl = openssl_error_string();
+            $sufixo = is_string($detalheSsl) && trim($detalheSsl) !== ''
+                ? ' Detalhe OpenSSL: ' . trim($detalheSsl)
+                : '';
             throw new \RuntimeException(
-                'Não foi possível ler o PFX para mTLS. Verifique senha e suporte OpenSSL (legacy provider).',
+                'Não foi possível ler o PFX para mTLS. Verifique senha e suporte OpenSSL (legacy provider).' . $sufixo,
             );
         }
 

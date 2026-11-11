@@ -344,6 +344,79 @@ assertTrue(
     '400 com body não usa fallback sem detalhe',
 );
 
+$res400Pascal = $mapearEmissao->invoke(
+    $adapterSefin,
+    [
+        'status' => 400,
+        'json' => [
+            'Erros' => [
+                ['Codigo' => 'E1235', 'Descricao' => 'Elemento inválido', 'Complemento' => 'finNFSe'],
+                ['Codigo' => 'E014', 'Descricao' => 'Município não conveniado'],
+            ],
+        ],
+        'body' => '',
+    ],
+    $idInf,
+    '<DPS/>',
+);
+assertTrue(
+    ($res400Pascal['erros'][0]['codigo'] ?? '') === 'E1235',
+    '400 lê Erros/Codigo/Descricao em PascalCase',
+);
+assertTrue(
+    str_contains((string) ($res400Pascal['erro'] ?? ''), '[E1235]')
+    && str_contains((string) ($res400Pascal['erro'] ?? ''), '[E014]'),
+    '400 concatena múltiplos erros com seus códigos em erro',
+);
+
+$res400ValidationProblem = $mapearEmissao->invoke(
+    $adapterSefin,
+    [
+        'status' => 400,
+        'json' => [
+            'title' => 'One or more validation errors occurred.',
+            'status' => 400,
+            'errors' => [
+                'dpsXmlGZipB64' => ['O campo dpsXmlGZipB64 é obrigatório.'],
+            ],
+        ],
+        'body' => '',
+    ],
+    $idInf,
+    '<DPS/>',
+);
+assertTrue(
+    str_contains((string) ($res400ValidationProblem['erro'] ?? ''), 'dpsXmlGZipB64'),
+    '400 extrai ValidationProblemDetails (errors por campo) em vez de apenas title',
+);
+
+$res404Emissao = $mapearEmissao->invoke(
+    $adapterSefin,
+    [
+        'status' => 404,
+        'url' => 'https://sefin.producaorestrita.nfse.gov.br/SefinNacional/nfse',
+        'json' => null,
+        'body' => '',
+    ],
+    $idInf,
+    '<DPS/>',
+);
+assertTrue(($res404Emissao['pendente'] ?? true) === false, '404 na emissão não fica pendente');
+assertTrue(
+    str_contains((string) ($res404Emissao['erro'] ?? ''), 'HTTP 404'),
+    '404 na emissão informa HTTP 404 e URL chamada',
+);
+
+$clientWsdlLegado = SefinHttpClient::criarAPartirConfig(
+    ['ambiente' => 2, 'urlwsdl' => 'https://nota-eletronica.betha.cloud/dps/ws/service.wsdl'],
+    base64_encode('fake'),
+    'x',
+);
+assertTrue(
+    $clientWsdlLegado->obterBaseUrl() === SefinHttpClient::URL_HOMOLOGACAO,
+    'urlwsdl legado da Betha/WSDL é ignorado na Sefin Nacional',
+);
+
 $mapearErro = $ref->getMethod('mapearRespostaErroGenerico');
 $mapearErro->setAccessible(true);
 $res404 = $mapearErro->invoke(

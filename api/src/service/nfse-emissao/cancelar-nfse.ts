@@ -18,6 +18,7 @@ import {
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
+	formatarMensagemErroGatewayNfse,
 	isLayoutNfseDps,
 } from "@/util/validar-pre-requisitos-emissao-nfse.js";
 
@@ -128,9 +129,7 @@ export async function cancelarNfseService({
 
 	if (!resposta.sucesso) {
 		return httpBadRequest(
-			resposta.erro ??
-				resposta.erros?.map((e) => e.mensagem).join("; ") ??
-				"Falha ao cancelar NFS-e",
+			formatarMensagemErroGatewayNfse(resposta, "Falha ao cancelar NFS-e"),
 		);
 	}
 
@@ -163,7 +162,8 @@ export async function cancelarNfseService({
 		dadosimportacao: {
 			...(emissaoSalva ?? {}),
 			...(modoDps ? { modo: "dps" as const } : {}),
-			protocoloCancelamento: resposta.protocolo ?? emissaoSalva?.protocoloCancelamento ?? null,
+			protocoloCancelamento:
+				resposta.protocolo ?? emissaoSalva?.protocoloCancelamento ?? null,
 		} as unknown as Record<string, unknown>,
 	});
 

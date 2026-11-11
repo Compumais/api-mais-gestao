@@ -20,6 +20,7 @@ import {
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
+	formatarMensagemErroGatewayNfse,
 	isLayoutNfseDps,
 	isProvedorSefinNacional,
 } from "@/util/validar-pre-requisitos-emissao-nfse.js";
@@ -144,8 +145,7 @@ export async function consultarNfseService({
 		| "EMISSAO"
 		| "CANCELAMENTO"
 		| "CANCELAMENTO_POR_SUBSTITUICAO" = "EMISSAO";
-	let protocolo =
-		emissaoSalva?.protocolo?.trim() || protocoloMensagem || null;
+	let protocolo = emissaoSalva?.protocolo?.trim() || protocoloMensagem || null;
 
 	if (
 		nota.status === NFE_STATUS.AUTORIZADA &&
@@ -168,10 +168,7 @@ export async function consultarNfseService({
 	) {
 		tipoIntegracao = "CANCELAMENTO_POR_SUBSTITUICAO";
 		protocolo = protocoloSubstituicao;
-	} else if (
-		nota.status === NFE_STATUS.AUTORIZADA &&
-		protocoloCancelamento
-	) {
+	} else if (nota.status === NFE_STATUS.AUTORIZADA && protocoloCancelamento) {
 		tipoIntegracao = "CANCELAMENTO";
 		protocolo = protocoloCancelamento;
 	}
@@ -226,36 +223,36 @@ export async function consultarNfseService({
 						: {}),
 				}
 			: modoDps
-			? {
-					protocolo,
-					tipoIntegracao,
-					prestador: {
-						cnpj: credenciais.empresa.cnpj.replace(/\D/g, ""),
-						im:
-							credenciais.empresaFiscal.inscricaomunicipal?.replace(
-								/\D/g,
-								"",
-							) ?? "",
-						municipioIbge:
-							String(credenciais.configJson.codigomunicipioibge ?? "") ||
-							undefined,
+				? {
+						protocolo,
+						tipoIntegracao,
+						prestador: {
+							cnpj: credenciais.empresa.cnpj.replace(/\D/g, ""),
+							im:
+								credenciais.empresaFiscal.inscricaomunicipal?.replace(
+									/\D/g,
+									"",
+								) ?? "",
+							municipioIbge:
+								String(credenciais.configJson.codigomunicipioibge ?? "") ||
+								undefined,
+						},
+					}
+				: {
+						rps: {
+							numero: nota.numeronotafiscal ?? nota.numero,
+							serie: nota.serie ?? "1",
+							tipo: "1",
+						},
+						prestador: {
+							cnpj: credenciais.empresa.cnpj.replace(/\D/g, ""),
+							im:
+								credenciais.empresaFiscal.inscricaomunicipal?.replace(
+									/\D/g,
+									"",
+								) ?? "",
+						},
 					},
-				}
-			: {
-					rps: {
-						numero: nota.numeronotafiscal ?? nota.numero,
-						serie: nota.serie ?? "1",
-						tipo: "1",
-					},
-					prestador: {
-						cnpj: credenciais.empresa.cnpj.replace(/\D/g, ""),
-						im:
-							credenciais.empresaFiscal.inscricaomunicipal?.replace(
-								/\D/g,
-								"",
-							) ?? "",
-					},
-				},
 	});
 
 	const consultaEvento =
@@ -268,9 +265,10 @@ export async function consultarNfseService({
 
 	if (!resposta.sucesso && !pendente) {
 		return httpBadRequest(
-			resposta.erro ??
-				resposta.erros?.map((e) => e.mensagem).join("; ") ??
+			formatarMensagemErroGatewayNfse(
+				resposta,
 				"Consulta NFS-e não retornou resultado",
+			),
 		);
 	}
 

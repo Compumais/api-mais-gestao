@@ -1,13 +1,6 @@
 import { IconDotsVertical } from "@tabler/icons-react";
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
-import {
-	Ban,
-	Copy,
-	Eye,
-	Pencil,
-	RefreshCw,
-	Search,
-} from "lucide-react";
+import { Ban, Copy, Eye, Pencil, RefreshCw, Search } from "lucide-react";
 import Link from "next/link";
 import {
 	CabecalhoColunaTabela,
@@ -163,9 +156,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = COLUNA_PARA_ORDENAR_NF_SERVICO[def.id] ?? def.id;
 	const ordenacao: OrdenacaoColunaTabela =
-		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
-			? opcoes.ordem
-			: false;
+		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem ? opcoes.ordem : false;
 
 	return (
 		<CabecalhoColunaTabela
@@ -225,9 +216,7 @@ export function criarColunasNotaFiscalServico(
 										</Link>
 									</DropdownMenuItem>
 									{podeConsultar ? (
-										<DropdownMenuItem
-											onClick={() => opcoes.onConsultar(nota)}
-										>
+										<DropdownMenuItem onClick={() => opcoes.onConsultar(nota)}>
 											<Search className="size-4" />
 											Consultar
 										</DropdownMenuItem>
@@ -251,9 +240,7 @@ export function criarColunasNotaFiscalServico(
 										</DropdownMenuItem>
 									) : null}
 									<DropdownMenuItem asChild>
-										<Link
-											href={`/nota-fiscal-servico/nova?origem=${nota.id}`}
-										>
+										<Link href={`/nota-fiscal-servico/nova?origem=${nota.id}`}>
 											<Copy className="size-4" />
 											Duplicar
 										</Link>
@@ -358,8 +345,7 @@ export function criarColunasNotaFiscalServico(
 					header,
 					meta,
 					cell: ({ row }) =>
-						NFE_STATUS_LABELS[row.original.status ?? 90] ??
-						row.original.status,
+						NFE_STATUS_LABELS[row.original.status ?? 90] ?? row.original.status,
 				});
 				break;
 			default:

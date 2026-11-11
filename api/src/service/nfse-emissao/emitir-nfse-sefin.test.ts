@@ -133,9 +133,12 @@ describe("emitirNfseService — Sefin Nacional", () => {
 
 		const resultado = await emitirNfseService(paramsBase as never);
 		expect(resultado.success).toBe(true);
+		expect(resultado.body?.status).toBe(NFE_STATUS.PENDENTE);
+		expect(resultado.body?.pendente).toBe(true);
 		const notaCriada = vi.mocked(criarNotaFiscalComItens).mock.calls[0]?.[0];
 		expect(notaCriada?.status).toBe(NFE_STATUS.PENDENTE);
 		expect(notaCriada?.mensagemtransmissaonfe).toMatch(/Id DPS/i);
+		expect(notaCriada?.mensagemtransmissaonfe).toMatch(/\[REDE\] timeout/i);
 	});
 
 	it("rejeita com erros do gateway", async () => {
@@ -148,9 +151,13 @@ describe("emitirNfseService — Sefin Nacional", () => {
 			erros: [{ codigo: "E999", mensagem: "rejeicao teste" }],
 		});
 
-		await emitirNfseService(paramsBase as never);
+		const resultado = await emitirNfseService(paramsBase as never);
+		expect(resultado.body?.status).toBe(NFE_STATUS.REJEITADA);
+		expect(resultado.body?.mensagemErro).toContain("[E999] rejeicao teste");
 		const notaCriada = vi.mocked(criarNotaFiscalComItens).mock.calls[0]?.[0];
 		expect(notaCriada?.status).toBe(NFE_STATUS.REJEITADA);
-		expect(notaCriada?.mensagemtransmissaonfe).toMatch(/rejeicao teste/i);
+		expect(notaCriada?.mensagemtransmissaonfe).toContain(
+			"[E999] rejeicao teste",
+		);
 	});
 });

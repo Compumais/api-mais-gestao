@@ -13,9 +13,7 @@ export type PendenciaNfse = {
 	mensagem: string;
 };
 
-export function isProvedorSefinNacional(
-	provedor?: string | null,
-): boolean {
+export function isProvedorSefinNacional(provedor?: string | null): boolean {
 	const p = (provedor ?? "").toLowerCase().trim();
 	return p === "sefin_nacional" || p === "sefin-nacional" || p === "adn";
 }
@@ -29,6 +27,45 @@ export function isLayoutNfseDps(
 	}
 	const v = (versaolayout ?? "").toLowerCase();
 	return v.includes("dps") || v.includes("nacional");
+}
+
+export function formatarMensagemErroGatewayNfse(
+	resposta: {
+		erro?: string | null;
+		erros?: Array<{ codigo?: string | null; mensagem?: string | null }> | null;
+	},
+	mensagemFallback: string,
+): string {
+	const listaErros = (resposta.erros ?? [])
+		.map((item) => {
+			const codigo = (item.codigo ?? "").trim();
+			const mensagem = (item.mensagem ?? "").trim();
+			if (!mensagem) {
+				return "";
+			}
+			if (
+				codigo &&
+				codigo !== "SEFIN" &&
+				!mensagem.includes(`[${codigo}]`) &&
+				!mensagem.startsWith(`${codigo}:`) &&
+				!mensagem.startsWith(`${codigo} `)
+			) {
+				return `[${codigo}] ${mensagem}`;
+			}
+			return mensagem;
+		})
+		.filter(Boolean);
+
+	if (listaErros.length > 0) {
+		return listaErros.join("; ");
+	}
+
+	const erroSimples = (resposta.erro ?? "").trim();
+	if (erroSimples) {
+		return erroSimples;
+	}
+
+	return mensagemFallback;
 }
 
 function urlPareceDps(url?: string | null): boolean {

@@ -7,9 +7,15 @@ export interface ResultadoEmissaoNfse {
 	serie: string;
 	numeroNfse?: string | null;
 	codigoVerificacao?: string | null;
+	chaveAcesso?: string | null;
+	idDps?: string | null;
 	link?: string | null;
 	protocolo?: string | null;
+	status?: number;
+	pendente?: boolean;
 	ambiente?: number;
+	mensagemErro?: string | null;
+	alertas?: Array<{ codigo: string; mensagem: string }>;
 	erros?: Array<{ codigo: string; mensagem: string }>;
 	integracao?: {
 		parcelasGeradas: number;
