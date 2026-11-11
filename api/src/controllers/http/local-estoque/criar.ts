@@ -4,7 +4,7 @@ import z from "zod";
 import { criarLocalEstoqueService } from "@/service/local-estoque/criar-local-estoque.js";
 
 const criarLocalEstoqueBodySchema = z.object({
-	idempresa: z.string().uuid(),
+	idempresa: z.string().uuid().optional(),
 	codigo: z.string().max(5).optional().nullable(),
 	descricao: z.string().max(50).optional().nullable(),
 	inativo: z.number().int().min(0).max(1).optional().nullable(),
@@ -27,10 +27,29 @@ export async function criarLocalEstoque(
 
 		const idusuario = request.user.id;
 		const dadosValidados = criarLocalEstoqueBodySchema.parse(request.body);
+		const idempresa =
+			dadosValidados.idempresa || request.empresaContext?.idempresa;
+
+		if (!idempresa) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				message: "idempresa é obrigatório",
+				details: [
+					{
+						path: ["idempresa"],
+						message: "idempresa é obrigatório",
+					},
+				],
+			});
+		}
 
 		const dadosLocalEstoque = {
 			id: uuidv4(),
 			...dadosValidados,
+			idempresa,
+			tipo: dadosValidados.tipo ?? 1,
+			posse: dadosValidados.posse || "P",
 		};
 
 		const resultado = await criarLocalEstoqueService({

@@ -56,7 +56,7 @@ export function LocalEstoqueForm({
 			codigo: valoresIniciais?.codigo ?? "",
 			descricao: valoresIniciais?.descricao ?? "",
 			posse: valoresIniciais?.posse ?? "P",
-			tipo: valoresIniciais?.tipo ?? 0,
+			tipo: valoresIniciais?.tipo ? Number(valoresIniciais.tipo) : 1,
 			inativo: valoresIniciais?.inativo ?? 0,
 			padrao: valoresIniciais?.padrao ?? 0,
 		},
@@ -88,18 +88,12 @@ export function LocalEstoqueForm({
 			router.push("/locais-estoque");
 		},
 		onError: (err: unknown) => {
+			const errObj = err as { message?: string; response?: { data?: { error?: string; message?: string } } };
 			const msg =
-				err &&
-				typeof err === "object" &&
-				"response" in err &&
-				err.response &&
-				typeof err.response === "object" &&
-				"data" in err.response &&
-				err.response.data &&
-				typeof err.response.data === "object" &&
-				"error" in err.response.data
-					? String(err.response.data.error)
-					: "Erro ao criar local de estoque";
+				errObj?.response?.data?.message ||
+				errObj?.response?.data?.error ||
+				errObj?.message ||
+				"Erro ao criar local de estoque";
 			toast.error(msg);
 		},
 	});
@@ -114,18 +108,12 @@ export function LocalEstoqueForm({
 			router.push("/locais-estoque");
 		},
 		onError: (err: unknown) => {
+			const errObj = err as { message?: string; response?: { data?: { error?: string; message?: string } } };
 			const msg =
-				err &&
-				typeof err === "object" &&
-				"response" in err &&
-				err.response &&
-				typeof err.response === "object" &&
-				"data" in err.response &&
-				err.response.data &&
-				typeof err.response.data === "object" &&
-				"error" in err.response.data
-					? String(err.response.data.error)
-					: "Erro ao atualizar local de estoque";
+				errObj?.response?.data?.message ||
+				errObj?.response?.data?.error ||
+				errObj?.message ||
+				"Erro ao atualizar local de estoque";
 			toast.error(msg);
 		},
 	});
@@ -141,9 +129,13 @@ export function LocalEstoqueForm({
 			criarMutation.mutate({
 				...dados,
 				idempresa: dados.idempresa || idempresa || "",
+				tipo: dados.tipo ? Number(dados.tipo) : 1,
 			});
 		} else {
-			atualizarMutation.mutate(dados);
+			atualizarMutation.mutate({
+				...dados,
+				tipo: dados.tipo ? Number(dados.tipo) : 1,
+			});
 		}
 	}
 
@@ -161,8 +153,8 @@ export function LocalEstoqueForm({
 								<FieldLabel htmlFor="codigo">Código</FieldLabel>
 								<Input
 									id="codigo"
-									placeholder="Ex: EST-01"
-									maxLength={15}
+									placeholder="Ex: 01"
+									maxLength={5}
 									aria-invalid={!!errors.codigo}
 									{...field}
 									value={field.value ?? ""}
@@ -181,7 +173,7 @@ export function LocalEstoqueForm({
 								<Input
 									id="descricao"
 									placeholder="Ex: Estoque Principal, Depósito, Loja..."
-									maxLength={30}
+									maxLength={50}
 									aria-invalid={!!errors.descricao}
 									{...field}
 									value={field.value ?? ""}

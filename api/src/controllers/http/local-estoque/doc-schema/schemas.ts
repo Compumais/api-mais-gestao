@@ -55,7 +55,6 @@ export const criarLocalEstoqueSchema: FastifySchema = {
 			posse: { type: "string", maxLength: 1, nullable: true },
 			tipo: { type: "number", nullable: true },
 		},
-		required: ["idempresa"],
 	},
 	response: {
 		201: { type: "object", additionalProperties: true },
@@ -78,7 +77,6 @@ export const listarLocaisEstoqueSchema: FastifySchema = {
 			descricao: { type: "string" },
 			codigo: { type: "string" },
 		},
-		required: ["idempresa"],
 	},
 	response: {
 		200: { type: "object", additionalProperties: true },
