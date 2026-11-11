@@ -3,19 +3,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
+	Field,
+	FieldDescription,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -47,7 +46,8 @@ export function LocalEstoqueForm({
 }: LocalEstoqueFormProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { idempresa } = useEmpresa();
+	const { localStorageEmpresa } = useEmpresa();
+	const idempresa = localStorageEmpresa?.id ?? "";
 
 	const form = useForm<CriarLocalEstoqueForm>({
 		resolver: zodResolver(criarLocalEstoqueSchema),
@@ -61,6 +61,20 @@ export function LocalEstoqueForm({
 			padrao: valoresIniciais?.padrao ?? 0,
 		},
 	});
+
+	const {
+		control,
+		handleSubmit,
+		setValue,
+		getValues,
+		formState: { errors },
+	} = form;
+
+	useEffect(() => {
+		if (idempresa && !getValues("idempresa")) {
+			setValue("idempresa", idempresa);
+		}
+	}, [idempresa, getValues, setValue]);
 
 	const criarMutation = useMutation({
 		mutationFn: (dados: CriarLocalEstoqueForm) =>
@@ -95,6 +109,7 @@ export function LocalEstoqueForm({
 			localEstoqueService.atualizar(localId as string, dados),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["locais-estoque"] });
+			queryClient.invalidateQueries({ queryKey: ["local-estoque", localId] });
 			toast.success("Local de estoque atualizado com sucesso!");
 			router.push("/locais-estoque");
 		},
@@ -117,7 +132,9 @@ export function LocalEstoqueForm({
 
 	function onSubmit(dados: CriarLocalEstoqueForm) {
 		if (!dados.descricao?.trim() && !dados.codigo?.trim()) {
-			toast.error("Informe ao menos o código ou a descrição do local de estoque");
+			toast.error(
+				"Informe ao menos o código ou a descrição do local de estoque",
+			);
 			return;
 		}
 		if (modo === "criar") {
@@ -133,120 +150,119 @@ export function LocalEstoqueForm({
 	const isLoading = criarMutation.isPending || atualizarMutation.isPending;
 
 	return (
-		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+		<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+			<FieldGroup>
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-					<FormField
-						control={form.control}
+					<Controller
+						control={control}
 						name="codigo"
 						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Código</FormLabel>
-								<FormControl>
-									<Input
-										placeholder="Ex: EST-01"
-										maxLength={15}
-										{...field}
-										value={field.value ?? ""}
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
+							<Field data-invalid={!!errors.codigo}>
+								<FieldLabel htmlFor="codigo">Código</FieldLabel>
+								<Input
+									id="codigo"
+									placeholder="Ex: EST-01"
+									maxLength={15}
+									aria-invalid={!!errors.codigo}
+									{...field}
+									value={field.value ?? ""}
+								/>
+								<FieldError errors={errors.codigo ? [errors.codigo] : []} />
+							</Field>
 						)}
 					/>
 
-					<FormField
-						control={form.control}
+					<Controller
+						control={control}
 						name="descricao"
 						render={({ field }) => (
-							<FormItem className="md:col-span-2">
-								<FormLabel>Descrição *</FormLabel>
-								<FormControl>
-									<Input
-										placeholder="Ex: Estoque Principal, Depósito, Loja..."
-										maxLength={30}
-										{...field}
-										value={field.value ?? ""}
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
+							<Field className="md:col-span-2" data-invalid={!!errors.descricao}>
+								<FieldLabel htmlFor="descricao">Descrição *</FieldLabel>
+								<Input
+									id="descricao"
+									placeholder="Ex: Estoque Principal, Depósito, Loja..."
+									maxLength={30}
+									aria-invalid={!!errors.descricao}
+									{...field}
+									value={field.value ?? ""}
+								/>
+								<FieldError
+									errors={errors.descricao ? [errors.descricao] : []}
+								/>
+							</Field>
 						)}
 					/>
 
-					<FormField
-						control={form.control}
+					<Controller
+						control={control}
 						name="posse"
 						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Posse</FormLabel>
+							<Field data-invalid={!!errors.posse}>
+								<FieldLabel>Posse</FieldLabel>
 								<Select
 									onValueChange={(value) => field.onChange(value)}
 									value={field.value ?? "P"}
 								>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Selecione" />
-										</SelectTrigger>
-									</FormControl>
+									<SelectTrigger>
+										<SelectValue placeholder="Selecione" />
+									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="P">Próprio</SelectItem>
 										<SelectItem value="T">De terceiros</SelectItem>
 										<SelectItem value="E">Em terceiros</SelectItem>
 									</SelectContent>
 								</Select>
-								<FormMessage />
-							</FormItem>
+								<FieldError errors={errors.posse ? [errors.posse] : []} />
+							</Field>
 						)}
 					/>
 
-					<FormField
-						control={form.control}
+					<Controller
+						control={control}
 						name="inativo"
 						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Situação</FormLabel>
+							<Field data-invalid={!!errors.inativo}>
+								<FieldLabel>Situação</FieldLabel>
 								<Select
 									onValueChange={(value) => field.onChange(Number(value))}
 									value={String(field.value ?? 0)}
 								>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Selecione" />
-										</SelectTrigger>
-									</FormControl>
+									<SelectTrigger>
+										<SelectValue placeholder="Selecione" />
+									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="0">Ativo</SelectItem>
 										<SelectItem value="1">Inativo</SelectItem>
 									</SelectContent>
 								</Select>
-								<FormMessage />
-							</FormItem>
+								<FieldError errors={errors.inativo ? [errors.inativo] : []} />
+							</Field>
 						)}
 					/>
 
-					<FormField
-						control={form.control}
+					<Controller
+						control={control}
 						name="padrao"
 						render={({ field }) => (
-							<FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md border p-4 md:col-span-3">
-								<FormControl>
-									<Checkbox
-										checked={field.value === 1}
-										onCheckedChange={(checked) =>
-											field.onChange(checked ? 1 : 0)
-										}
-									/>
-								</FormControl>
+							<div className="flex flex-row items-start space-y-0 space-x-3 rounded-md border p-4 md:col-span-3">
+								<Checkbox
+									id="padrao"
+									checked={field.value === 1}
+									onCheckedChange={(checked) =>
+										field.onChange(checked ? 1 : 0)
+									}
+								/>
 								<div className="space-y-1 leading-none">
-									<FormLabel>Definir como local de estoque padrão</FormLabel>
-									<FormDescription>
+									<FieldLabel htmlFor="padrao">
+										Definir como local de estoque padrão
+									</FieldLabel>
+									<FieldDescription>
 										Será utilizado automaticamente como padrão no cadastro de
 										produtos, notas fiscais de compra e movimentações de estoque
 										da empresa.
-									</FormDescription>
+									</FieldDescription>
 								</div>
-							</FormItem>
+							</div>
 						)}
 					/>
 				</div>
@@ -263,7 +279,7 @@ export function LocalEstoqueForm({
 						Cancelar
 					</Button>
 				</div>
-			</form>
-		</Form>
+			</FieldGroup>
+		</form>
 	);
 }

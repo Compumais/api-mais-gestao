@@ -20,13 +20,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-	Pagination,
-	PaginationContent,
-	PaginationItem,
-	PaginationNext,
-	PaginationPrevious,
-} from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -46,7 +39,8 @@ const POSSE_LABELS: Record<string, string> = {
 };
 
 export default function LocaisEstoquePage() {
-	const { idempresa } = useEmpresa();
+	const { localStorageEmpresa } = useEmpresa();
+	const idempresa = localStorageEmpresa?.id ?? "";
 	const queryClient = useQueryClient();
 	const [page, setPage] = useState(1);
 	const [limit] = useState(10);
@@ -313,34 +307,26 @@ export default function LocaisEstoquePage() {
 							Total: {data.paginacao.total} registros — Página{" "}
 							{data.paginacao.page} de {data.paginacao.totalPages}
 						</span>
-						<Pagination>
-							<PaginationContent>
-								<PaginationItem>
-									<PaginationPrevious
-										onClick={() => setPage((p) => Math.max(1, p - 1))}
-										className={
-											page <= 1
-												? "pointer-events-none opacity-50"
-												: "cursor-pointer"
-										}
-									/>
-								</PaginationItem>
-								<PaginationItem>
-									<PaginationNext
-										onClick={() =>
-											setPage((p) =>
-												Math.min(data.paginacao.totalPages, p + 1),
-											)
-										}
-										className={
-											page >= data.paginacao.totalPages
-												? "pointer-events-none opacity-50"
-												: "cursor-pointer"
-										}
-									/>
-								</PaginationItem>
-							</PaginationContent>
-						</Pagination>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setPage((p) => Math.max(1, p - 1))}
+								disabled={page <= 1}
+							>
+								Anterior
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() =>
+									setPage((p) => Math.min(data.paginacao.totalPages, p + 1))
+								}
+								disabled={page >= data.paginacao.totalPages}
+							>
+								Próxima
+							</Button>
+						</div>
 					</div>
 				)}
 			</div>
