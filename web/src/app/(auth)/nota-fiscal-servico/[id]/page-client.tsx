@@ -40,7 +40,7 @@ function extrairDetalhesErroNfse(mensagem?: string | null): {
 		return { codigo: null, motivo: "—", instrucao: null };
 	}
 
-	const matchColchete = texto.match(/^\[([A-Za-z0-9_-]+)\]\s*(.*)$/s);
+	const matchColchete = texto.match(/^\[([A-Za-z0-9_-]+)\]\s*([\s\S]*)$/);
 	const matchCodigoInline = texto.match(
 		/\b(E\d{3,4}|CERTIFICADO_MTLS|HTTP_\d{3}|REDE_COM_DPS|REDE|ADAPTER)\b/,
 	);
