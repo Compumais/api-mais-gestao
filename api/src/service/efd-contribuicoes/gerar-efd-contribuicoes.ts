@@ -27,10 +27,11 @@ import {
 import {
 	codigoSituacaoDocumento,
 	montarRegistroC100 as montarC100Icms,
-	montarRegistroC170 as montarC170Icms,
 } from "@/service/efd-icms/registros/bloco-c.js";
 import type {
+	ContribuinteEfd,
 	GerarEfdIcmsParametros,
+	ItemEfd,
 	ResultadoGeracaoEfd,
 } from "@/service/efd-icms/tipos-efd-icms.js";
 import { validarPeriodoEfd } from "@/service/efd-icms/validar-efd-icms.js";
@@ -40,6 +41,7 @@ import {
 	campoDecimal,
 	campoNumerico,
 	campoTexto,
+	formatarCstIcmsEfd,
 	montarLinhaPipe,
 	parseNumeroEfd,
 } from "@/util/efd/formatador-pipe.js";
@@ -47,6 +49,142 @@ import { codigoVersaoEfdContribuicoes } from "@/util/efd/vigencia.js";
 
 export function crtPermiteEfdContribuicoes(crt: number | null): boolean {
 	return crt !== 1 && crt !== 2 && crt !== 4;
+}
+
+export function montarRegistro0000Contribuicoes(params: {
+	contribuinte: ContribuinteEfd;
+	dataInicio: string;
+	dataFim: string;
+	codVer: string;
+	finalidade?: string;
+}): string {
+	const { contribuinte } = params;
+	const cnpj = campoCnpjCpf(contribuinte.cnpj).padStart(14, "0");
+	const codMun = campoNumerico(contribuinte.codigoMunicipioIbge)
+		.padStart(7, "0")
+		.slice(-7);
+	const indAtiv = String(contribuinte.indativ ?? 2);
+
+	return montarLinhaPipe([
+		"0000",
+		params.codVer,
+		params.finalidade ?? "0",
+		"",
+		"",
+		campoDataDdmmaaaa(params.dataInicio),
+		campoDataDdmmaaaa(params.dataFim),
+		campoTexto(contribuinte.razaosocial, 100),
+		cnpj,
+		campoTexto(contribuinte.uf, 2),
+		codMun,
+		"",
+		"00",
+		indAtiv,
+	]);
+}
+
+export function montarRegistroC170Contribuicoes(
+	item: ItemEfd,
+	numeroItem: number,
+): string {
+	const cstIcms = formatarCstIcmsEfd(item.origem, item.cstIcms, item.csosn);
+	const cfop = campoNumerico(item.cfop).padStart(4, "0").slice(-4);
+
+	return montarLinhaPipe([
+		"C170",
+		String(numeroItem),
+		campoTexto(item.codigoProduto, 60),
+		campoTexto(item.descricao, 120),
+		campoDecimal(item.quantidade, 5),
+		campoTexto(item.unidade ?? "UN", 6),
+		campoDecimal(item.valorItem),
+		campoDecimal(item.desconto),
+		"0",
+		cstIcms,
+		cfop,
+		"",
+		campoDecimal(item.baseIcms),
+		campoDecimal(item.aliquotaIcms),
+		campoDecimal(item.valorIcms),
+		campoDecimal(item.baseIcmsSt),
+		campoDecimal(item.aliquotaIcmsSt),
+		campoDecimal(item.valorIcmsSt),
+		"0",
+		campoTexto(item.cstIpi, 2),
+		"",
+		"0,00",
+		"0,00",
+		campoDecimal(item.valorIpi),
+		campoTexto(item.cstPis, 2),
+		campoDecimal(item.basePis),
+		campoDecimal(item.aliquotaPis, 4),
+		"",
+		"",
+		campoDecimal(item.valorPis),
+		campoTexto(item.cstCofins, 2),
+		campoDecimal(item.baseCofins),
+		campoDecimal(item.aliquotaCofins, 4),
+		"",
+		"",
+		campoDecimal(item.valorCofins),
+		"",
+	]);
+}
+
+export function montarRegistroM210Contribuicoes(params: {
+	codCont: string;
+	baseCalculo: number;
+	aliquota: number;
+	valorApurado: number;
+	valorRecolher: number;
+}): string {
+	const { codCont, baseCalculo, aliquota, valorApurado, valorRecolher } = params;
+	return montarLinhaPipe([
+		"M210",
+		codCont,
+		campoDecimal(baseCalculo),
+		campoDecimal(baseCalculo),
+		"0,00",
+		"0,00",
+		campoDecimal(baseCalculo),
+		campoDecimal(aliquota, 4),
+		"",
+		"",
+		campoDecimal(valorApurado),
+		"0,00",
+		"0,00",
+		"0,00",
+		"0,00",
+		campoDecimal(valorRecolher),
+	]);
+}
+
+export function montarRegistroM610Contribuicoes(params: {
+	codCont: string;
+	baseCalculo: number;
+	aliquota: number;
+	valorApurado: number;
+	valorRecolher: number;
+}): string {
+	const { codCont, baseCalculo, aliquota, valorApurado, valorRecolher } = params;
+	return montarLinhaPipe([
+		"M610",
+		codCont,
+		campoDecimal(baseCalculo),
+		campoDecimal(baseCalculo),
+		"0,00",
+		"0,00",
+		campoDecimal(baseCalculo),
+		campoDecimal(aliquota, 4),
+		"",
+		"",
+		campoDecimal(valorApurado),
+		"0,00",
+		"0,00",
+		"0,00",
+		"0,00",
+		campoDecimal(valorRecolher),
+	]);
 }
 
 class EscritorEfd {
@@ -110,31 +248,39 @@ export async function gerarArquivoEfdContribuicoes(
 	};
 
 	const cnpj = campoCnpjCpf(contribuinte.cnpj).padStart(14, "0");
+	const codVer = codigoVersaoEfdContribuicoes(params.dataInicio);
+
 	escrever(
-		montarLinhaPipe([
-			"0000",
-			codigoVersaoEfdContribuicoes(params.dataInicio),
-			params.finalidade ?? "0",
-			"0",
-			"",
-			campoDataDdmmaaaa(params.dataInicio),
-			campoDataDdmmaaaa(params.dataFim),
-			campoTexto(contribuinte.razaosocial, 100),
-			cnpj,
-			campoTexto(contribuinte.uf, 2),
-			campoTexto(contribuinte.inscricaoEstadual, 14),
-			campoNumerico(contribuinte.codigoMunicipioIbge)
-				.padStart(7, "0")
-				.slice(-7),
-			campoTexto(contribuinte.inscricaoMunicipal, 15),
-			"",
-			"00",
-			"0",
-		]),
+		montarRegistro0000Contribuicoes({
+			contribuinte,
+			dataInicio: params.dataInicio,
+			dataFim: params.dataFim,
+			codVer,
+			finalidade: params.finalidade ?? "0",
+		}),
 		"0000",
 	);
 	escrever(montarRegistro0001("0"), "0001");
-	escrever(montarLinhaPipe(["0110", "2", "", "", "2"]), "0110");
+
+	// Determina o regime de apuração com base nas alíquotas observadas
+	let temAliquotaNaoCumulativa = false;
+	for (const item of itens) {
+		const aliqPis = parseNumeroEfd(item.aliquotaPis);
+		const aliqCofins = parseNumeroEfd(item.aliquotaCofins);
+		if (aliqPis > 1.0 || aliqCofins > 4.0) {
+			temAliquotaNaoCumulativa = true;
+			break;
+		}
+	}
+
+	if (temAliquotaNaoCumulativa) {
+		// 1 - Apuração exclusivamente no regime não-cumulativo (Lucro Real)
+		escrever(montarLinhaPipe(["0110", "1", "1", "1", ""]), "0110");
+	} else {
+		// 2 - Apuração exclusivamente no regime cumulativo (Lucro Presumido - Competência)
+		escrever(montarLinhaPipe(["0110", "2", "", "", "2"]), "0110");
+	}
+
 	escrever(
 		montarLinhaPipe([
 			"0140",
@@ -206,16 +352,43 @@ export async function gerarArquivoEfdContribuicoes(
 
 	let totalPis = 0;
 	let totalCofins = 0;
+	let baseCalculoPisTotal = 0;
+	let baseCalculoCofinsTotal = 0;
+	let somaAliqPis = 0;
+	let somaAliqCofins = 0;
+	let qtdItensPis = 0;
+	let qtdItensCofins = 0;
+
 	for (const nota of notas) {
 		const situacao = codigoSituacaoDocumento(nota);
 		escrever(montarC100Icms(nota, situacao === "00"), "C100");
 		const itensNota = itensPorNota.get(nota.id) ?? [];
 		if (situacao === "00") {
 			itensNota.forEach((item, indice) => {
-				escrever(montarC170Icms(item, indice + 1), "C170");
+				escrever(montarRegistroC170Contribuicoes(item, indice + 1), "C170");
 				if (nota.tipoorigem !== 0) {
-					totalPis += parseNumeroEfd(item.valorPis);
-					totalCofins += parseNumeroEfd(item.valorCofins);
+					const vPis = parseNumeroEfd(item.valorPis);
+					const vCofins = parseNumeroEfd(item.valorCofins);
+					const bPis = parseNumeroEfd(item.basePis);
+					const bCofins = parseNumeroEfd(item.baseCofins);
+					const aPis = parseNumeroEfd(item.aliquotaPis);
+					const aCofins = parseNumeroEfd(item.aliquotaCofins);
+
+					totalPis += vPis;
+					totalCofins += vCofins;
+					baseCalculoPisTotal +=
+						bPis > 0 ? bPis : vPis > 0 ? parseNumeroEfd(item.valorItem) : 0;
+					baseCalculoCofinsTotal +=
+						bCofins > 0 ? bCofins : vCofins > 0 ? parseNumeroEfd(item.valorItem) : 0;
+
+					if (aPis > 0) {
+						somaAliqPis += aPis;
+						qtdItensPis += 1;
+					}
+					if (aCofins > 0) {
+						somaAliqCofins += aCofins;
+						qtdItensCofins += 1;
+					}
 				}
 			});
 		}
@@ -241,6 +414,20 @@ export async function gerarArquivoEfdContribuicoes(
 	const pisRecolher = Math.max(0, totalPis + ajPis);
 	const cofinsRecolher = Math.max(0, totalCofins + ajCofins);
 
+	const codContribuicao = temAliquotaNaoCumulativa ? "01" : "51";
+	const aliqPisMedia =
+		qtdItensPis > 0
+			? somaAliqPis / qtdItensPis
+			: temAliquotaNaoCumulativa
+				? 1.65
+				: 0.65;
+	const aliqCofinsMedia =
+		qtdItensCofins > 0
+			? somaAliqCofins / qtdItensCofins
+			: temAliquotaNaoCumulativa
+				? 7.6
+				: 3.0;
+
 	escrever(
 		montarLinhaPipe([
 			"M200",
@@ -259,6 +446,20 @@ export async function gerarArquivoEfdContribuicoes(
 		]),
 		"M200",
 	);
+
+	if (totalPis > 0 || pisRecolher > 0) {
+		escrever(
+			montarRegistroM210Contribuicoes({
+				codCont: codContribuicao,
+				baseCalculo: baseCalculoPisTotal,
+				aliquota: aliqPisMedia,
+				valorApurado: totalPis,
+				valorRecolher: pisRecolher,
+			}),
+			"M210",
+		);
+	}
+
 	escrever(
 		montarLinhaPipe([
 			"M600",
@@ -277,6 +478,20 @@ export async function gerarArquivoEfdContribuicoes(
 		]),
 		"M600",
 	);
+
+	if (totalCofins > 0 || cofinsRecolher > 0) {
+		escrever(
+			montarRegistroM610Contribuicoes({
+				codCont: codContribuicao,
+				baseCalculo: baseCalculoCofinsTotal,
+				aliquota: aliqCofinsMedia,
+				valorApurado: totalCofins,
+				valorRecolher: cofinsRecolher,
+			}),
+			"M610",
+		);
+	}
+
 	escrever(montarLinhaPipe(["M990", String(linhasBloco + 1)]), "M990");
 
 	escrever(montarRegistro9001(), "9001");
@@ -285,7 +500,7 @@ export async function gerarArquivoEfdContribuicoes(
 		escritor.escrever(linha);
 		contador.incrementar("9900");
 	}
-	escrever(montarRegistro9990(2 + linhas9900.length + 1), "9990");
+	escrever(montarRegistro9990(linhas9900.length + 2), "9990");
 	escrever(montarRegistro9999(escritor.linhas + 1), "9999");
 
 	const conteudo = await escritor.finalizar();

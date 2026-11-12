@@ -19,13 +19,13 @@ export function ResumoDestinatarioNfe({
 
 	if (variant === "compact") {
 		return (
-			<div className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+			<div className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
 				{campos.map((campo) => (
 					<div
 						key={campo.label}
 						className={cn(
 							"min-w-0 overflow-hidden",
-							campo.fullWidth && "sm:col-span-2 lg:col-span-3",
+							campo.fullWidth && "sm:col-span-2 lg:col-span-4",
 						)}
 					>
 						<span className="block text-xs font-medium uppercase text-muted-foreground">
@@ -46,13 +46,13 @@ export function ResumoDestinatarioNfe({
 	}
 
 	return (
-		<div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+		<div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
 			{campos.map((campo) => (
 				<div
 					key={campo.label}
 					className={cn(
 						"min-w-0 overflow-hidden",
-						campo.fullWidth && "sm:col-span-2 lg:col-span-3",
+						campo.fullWidth && "sm:col-span-2 lg:col-span-4",
 					)}
 				>
 					<p className="text-xs font-medium uppercase text-muted-foreground">

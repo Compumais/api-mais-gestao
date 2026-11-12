@@ -54,7 +54,7 @@ export function ModalPreviewDanfeNfe({
 
 	return (
 		<Dialog open={open} onOpenChange={(aberto) => !aberto && handleClose()}>
-			<DialogContent className="flex max-h-[90vh] w-[min(96vw,56rem)] max-w-5xl flex-col gap-3 overflow-hidden p-4 sm:p-6">
+			<DialogContent className="flex max-h-[90vh] w-[min(96vw,72rem)] max-w-6xl flex-col gap-3 overflow-hidden p-4 sm:p-6">
 				<DialogHeader>
 					<DialogTitle>Pré-visualização do DANFE</DialogTitle>
 				</DialogHeader>
@@ -69,10 +69,10 @@ export function ModalPreviewDanfeNfe({
 						<iframe
 							title="Pré-visualização DANFE"
 							src={objectUrl}
-							className="h-[min(70vh,720px)] w-full"
+							className="h-[min(75vh,800px)] w-full"
 						/>
 					) : (
-						<div className="flex h-[min(70vh,720px)] items-center justify-center text-sm text-muted-foreground">
+						<div className="flex h-[min(75vh,800px)] items-center justify-center text-sm text-muted-foreground">
 							PDF indisponível
 						</div>
 					)}

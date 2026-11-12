@@ -347,7 +347,7 @@ export default function DetalheNfePage({
 
 	return (
 		<PageContainer>
-			<div className="flex flex-col gap-5 py-4 md:py-6 max-w-5xl mx-auto px-4">
+			<div className="flex flex-col gap-5 py-4 md:py-6 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center gap-3">
 					<Link href="/nota-fiscal-venda">
 						<Button variant="ghost" size="icon">
@@ -452,7 +452,7 @@ export default function DetalheNfePage({
 					<CardHeader>
 						<CardTitle className="text-base">Dados da Nota</CardTitle>
 					</CardHeader>
-					<CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3 text-sm">
+					<CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
 						<div>
 							<p className="text-muted-foreground text-xs font-medium uppercase">
 								Série / Número
@@ -484,7 +484,7 @@ export default function DetalheNfePage({
 							</p>
 							<p className="font-mono text-xs">{nf.protocolonfe ?? "—"}</p>
 						</div>
-						<div className="col-span-2 sm:col-span-3">
+						<div className="col-span-2 sm:col-span-2 lg:col-span-4">
 							<p className="text-muted-foreground text-xs font-medium uppercase">
 								Chave de Acesso
 							</p>

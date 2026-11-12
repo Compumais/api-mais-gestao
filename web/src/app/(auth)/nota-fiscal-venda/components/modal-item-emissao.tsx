@@ -446,7 +446,7 @@ export function ModalItemEmissao({
 
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-visible">
+			<DialogContent className="w-full sm:max-w-3xl lg:max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
 				<DialogHeader>
 					<DialogTitle>
 						{itemParaEditar ? "Editar item" : "Adicionar item"}
@@ -626,7 +626,7 @@ export function ModalItemEmissao({
 						/>
 					) : null}
 
-					<div className="grid grid-cols-1 gap-3">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<div className="space-y-1">
 							<span className="text-sm font-medium text-muted-foreground block">
 								GTIN / Código de barras (cEAN)
@@ -672,8 +672,8 @@ export function ModalItemEmissao({
 						</div>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						<div className="space-y-1 min-w-0">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+						<div className="space-y-1 min-w-0 sm:col-span-1 lg:col-span-1">
 							<span className="text-sm font-medium text-muted-foreground block">
 								NCM
 							</span>
@@ -687,7 +687,7 @@ export function ModalItemEmissao({
 							/>
 						</div>
 
-						<div className="space-y-1 min-w-0">
+						<div className="space-y-1 min-w-0 sm:col-span-1 lg:col-span-1">
 							<span className="text-sm font-medium text-muted-foreground block">
 								CEST
 								{itemEmissaoRequerCest(item) && (
@@ -710,10 +710,8 @@ export function ModalItemEmissao({
 									</p>
 								)}
 						</div>
-					</div>
 
-					<div className="grid grid-cols-1 gap-3">
-						<div className="space-y-1 min-w-0">
+						<div className="space-y-1 min-w-0 sm:col-span-2 lg:col-span-4">
 							<span className="text-sm font-medium text-muted-foreground block">
 								CFOP
 							</span>
@@ -739,7 +737,7 @@ export function ModalItemEmissao({
 							)}
 						</p>
 
-						<div className="space-y-3">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 							<div className="space-y-1">
 								<span className="text-sm font-medium text-muted-foreground block">
 									Origem
@@ -813,54 +811,52 @@ export function ModalItemEmissao({
 								)}
 							</div>
 
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-								<div className="space-y-1">
-									<span className="text-sm font-medium text-muted-foreground block">
-										CST PIS
-									</span>
-									<Select
-										value={item.cstPis ?? "none"}
-										onValueChange={(v) =>
-											atualizarCampo("cstPis", v === "none" ? undefined : v)
-										}
-									>
-										<SelectTrigger className="w-full">
-											<SelectValue placeholder="Selecione" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="none">Nenhum</SelectItem>
-											{OPCOES_CST_PIS_COFINS.map((opcao) => (
-												<SelectItem key={opcao.value} value={opcao.value}>
-													{opcao.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
+							<div className="space-y-1">
+								<span className="text-sm font-medium text-muted-foreground block">
+									CST PIS
+								</span>
+								<Select
+									value={item.cstPis ?? "none"}
+									onValueChange={(v) =>
+										atualizarCampo("cstPis", v === "none" ? undefined : v)
+									}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Selecione" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none">Nenhum</SelectItem>
+										{OPCOES_CST_PIS_COFINS.map((opcao) => (
+											<SelectItem key={opcao.value} value={opcao.value}>
+												{opcao.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
 
-								<div className="space-y-1">
-									<span className="text-sm font-medium text-muted-foreground block">
-										CST COFINS
-									</span>
-									<Select
-										value={item.cstCofins ?? "none"}
-										onValueChange={(v) =>
-											atualizarCampo("cstCofins", v === "none" ? undefined : v)
-										}
-									>
-										<SelectTrigger className="w-full">
-											<SelectValue placeholder="Selecione" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="none">Nenhum</SelectItem>
-											{OPCOES_CST_PIS_COFINS.map((opcao) => (
-												<SelectItem key={opcao.value} value={opcao.value}>
-													{opcao.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
+							<div className="space-y-1">
+								<span className="text-sm font-medium text-muted-foreground block">
+									CST COFINS
+								</span>
+								<Select
+									value={item.cstCofins ?? "none"}
+									onValueChange={(v) =>
+										atualizarCampo("cstCofins", v === "none" ? undefined : v)
+									}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Selecione" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none">Nenhum</SelectItem>
+										{OPCOES_CST_PIS_COFINS.map((opcao) => (
+											<SelectItem key={opcao.value} value={opcao.value}>
+												{opcao.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 						</div>
 
@@ -931,7 +927,7 @@ export function ModalItemEmissao({
 							<ChevronDown className="h-4 w-4 text-muted-foreground" />
 						</CollapsibleTrigger>
 						<CollapsibleContent className="px-3 pb-3">
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
 								<div className="space-y-1">
 									<span className="text-sm font-medium text-muted-foreground block">
 										MVA ST (%)

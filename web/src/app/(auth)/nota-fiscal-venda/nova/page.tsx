@@ -2371,66 +2371,68 @@ export default function NovaEmissaoNfePage() {
 	return (
 		<div className="flex flex-1 flex-col">
 			{/* ── Cabeçalho da página ─────────────────────────────────────────── */}
-			<div className="border-b bg-background px-4 sm:px-6 py-4 flex items-center gap-3">
-				<Button variant="ghost" size="icon" asChild>
-					<Link
-						href={
-							pedidoId
-								? `/pedidos/${pedidoId}`
-								: isLotePedidos
-									? "/pedidos"
-									: "/nota-fiscal-venda"
-						}
-					>
-						<ArrowLeft className="h-5 w-5" />
-					</Link>
-				</Button>
-				<div className="flex-1 min-w-0">
-					<h1 className="text-lg font-semibold leading-tight">
-						{rascunhoId && notaRascunho
-							? "Continuar rascunho de NF-e"
-							: clonarId && notaClonar
-								? `Clonar NF-e ${[notaClonar.serie, notaClonar.numeronotafiscal].filter(Boolean).join("-")}`
-								: reemitirId && notaReemitir
-									? `Reemitir NF-e ${notaReemitir.serie}-${notaReemitir.numeronotafiscal}`
+			<div className="border-b bg-background px-4 sm:px-6 lg:px-8 py-4">
+				<div className="max-w-7xl mx-auto flex items-center gap-3">
+					<Button variant="ghost" size="icon" asChild>
+						<Link
+							href={
+								pedidoId
+									? `/pedidos/${pedidoId}`
 									: isLotePedidos
-										? `Emitir NF-e de ${pedidosIds.length} pedidos`
-										: pedidoId
-											? "Emitir NF-e do pedido"
-											: "Nova NF-e — Modelo 55"}
-					</h1>
-					<p className="text-xs text-muted-foreground truncate">
-						{rascunhoId && notaRascunho
-							? "Rascunho salvo — revise e emita quando estiver pronto"
-							: clonarId && notaClonar
-								? `Nova numeração · origem série ${notaClonar.serie}, nº ${notaClonar.numeronotafiscal}`
-								: reemitirId && notaReemitir
-									? `Mesma numeração: série ${notaReemitir.serie}, nº ${notaReemitir.numeronotafiscal}`
-									: isLotePedidos
-										? contextoLote?.codigosPedidos?.length
-											? `Pedidos ${contextoLote.codigosPedidos.join(", ")} · revise e transmita a NF-e`
-											: `${pedidosIds.length} pedidos · revise e transmita a NF-e`
-										: pedidoId
-											? `Pedido ${pedidoId.slice(0, 8)} · revise e transmita a NF-e`
-											: serieSelecionada
-												? `Série ${serieSelecionada.serie} · Próximo nº ${serieSelecionada.numeroproximo}`
-												: "Nenhuma série selecionada"}
-						{" · "}
-						<span
-							className={
-								nfeConfiguracao?.ambiente === 1
-									? "text-red-600 font-medium"
-									: "text-yellow-600 font-medium"
+										? "/pedidos"
+										: "/nota-fiscal-venda"
 							}
 						>
-							{ambienteLabel}
-						</span>
-					</p>
+							<ArrowLeft className="h-5 w-5" />
+						</Link>
+					</Button>
+					<div className="flex-1 min-w-0">
+						<h1 className="text-lg font-semibold leading-tight">
+							{rascunhoId && notaRascunho
+								? "Continuar rascunho de NF-e"
+								: clonarId && notaClonar
+									? `Clonar NF-e ${[notaClonar.serie, notaClonar.numeronotafiscal].filter(Boolean).join("-")}`
+									: reemitirId && notaReemitir
+										? `Reemitir NF-e ${notaReemitir.serie}-${notaReemitir.numeronotafiscal}`
+										: isLotePedidos
+											? `Emitir NF-e de ${pedidosIds.length} pedidos`
+											: pedidoId
+												? "Emitir NF-e do pedido"
+												: "Nova NF-e — Modelo 55"}
+						</h1>
+						<p className="text-xs text-muted-foreground truncate">
+							{rascunhoId && notaRascunho
+								? "Rascunho salvo — revise e emita quando estiver pronto"
+								: clonarId && notaClonar
+									? `Nova numeração · origem série ${notaClonar.serie}, nº ${notaClonar.numeronotafiscal}`
+									: reemitirId && notaReemitir
+										? `Mesma numeração: série ${notaReemitir.serie}, nº ${notaReemitir.numeronotafiscal}`
+										: isLotePedidos
+											? contextoLote?.codigosPedidos?.length
+												? `Pedidos ${contextoLote.codigosPedidos.join(", ")} · revise e transmita a NF-e`
+												: `${pedidosIds.length} pedidos · revise e transmita a NF-e`
+											: pedidoId
+												? `Pedido ${pedidoId.slice(0, 8)} · revise e transmita a NF-e`
+												: serieSelecionada
+													? `Série ${serieSelecionada.serie} · Próximo nº ${serieSelecionada.numeroproximo}`
+													: "Nenhuma série selecionada"}
+							{" · "}
+							<span
+								className={
+									nfeConfiguracao?.ambiente === 1
+										? "text-red-600 font-medium"
+										: "text-yellow-600 font-medium"
+								}
+							>
+								{ambienteLabel}
+							</span>
+						</p>
+					</div>
 				</div>
 			</div>
 
 			{/* ── Conteúdo rolável ────────────────────────────────────────────── */}
-			<div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 pb-24 space-y-0">
+			<div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 pb-24 space-y-0">
 				{(pedidoId || isLotePedidos) && (
 					<div
 						className={`mb-6 rounded-lg border p-4 text-sm space-y-2 ${
@@ -2586,154 +2588,162 @@ export default function NovaEmissaoNfePage() {
 					<FieldGroup>
 						<FieldSet>
 							<FieldLegend>1. Identificação</FieldLegend>
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-								<Field>
-									<FieldLabel>Série NF-e</FieldLabel>
-									<Controller
-										control={form.control}
-										name="idserienfe"
-										render={({ field }) => (
-											<Select
-												value={
-													uuidValido(field.value) ? field.value : "_padrao"
-												}
-												onValueChange={(valor) =>
-													field.onChange(uuidValido(valor) ? valor : undefined)
-												}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder="Usar série padrão" />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="_padrao">
-														Usar série padrão
-													</SelectItem>
-													{seriesAtivas.map((s) => (
-														<SelectItem key={s.id} value={s.id}>
-															Série {s.serie}
-															{s.padrao && " (padrão)"}
-															{" — próximo nº "}
-															{s.numeroproximo}
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+								<div className="lg:col-span-4">
+									<Field>
+										<FieldLabel>Série NF-e</FieldLabel>
+										<Controller
+											control={form.control}
+											name="idserienfe"
+											render={({ field }) => (
+												<Select
+													value={
+														uuidValido(field.value) ? field.value : "_padrao"
+													}
+													onValueChange={(valor) =>
+														field.onChange(uuidValido(valor) ? valor : undefined)
+													}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Usar série padrão" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="_padrao">
+															Usar série padrão
 														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										)}
-									/>
-								</Field>
+														{seriesAtivas.map((s) => (
+															<SelectItem key={s.id} value={s.id}>
+																Série {s.serie}
+																{s.padrao && " (padrão)"}
+																{" — próximo nº "}
+																{s.numeroproximo}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											)}
+										/>
+									</Field>
+								</div>
 
-								<Field data-invalid={!cfopSaida}>
-									<FieldLabel>
-										{isDevolucaoVenda
-											? "Natureza da operação (CFOP de entrada — devolução)"
-											: "Natureza da operação (CFOP de saída)"}
-									</FieldLabel>
-									<Combobox
-										options={opcoesCfopOperacao}
-										value={cfopSaida}
-										onChange={selecionarCfopSaida}
-										placeholder="Selecionar CFOP de saída..."
-										searchPlaceholder="Buscar por código ou descrição..."
-										emptyMessage="Nenhum CFOP de saída encontrado."
-									/>
-									{form.watch("natOp") && (
-										<p className="text-xs text-muted-foreground mt-1">
-											{form.watch("natOp")}
-										</p>
-									)}
-									{!cfopSaida && (
-										<p className="text-xs text-destructive mt-1">
-											Selecione o CFOP de saída para definir a natureza da
-											operação.
-										</p>
-									)}
-								</Field>
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-								<Field>
-									<FieldLabel>
-										Forma de realização da venda (indPres)
-									</FieldLabel>
-									<Controller
-										control={form.control}
-										name="indPres"
-										render={({ field }) => (
-											<Select
-												value={String(field.value ?? IND_PRES_NFE_PADRAO)}
-												onValueChange={(valor) => field.onChange(Number(valor))}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder="Selecionar forma da venda" />
-												</SelectTrigger>
-												<SelectContent>
-													{OPCOES_IND_PRES_NFE.map((opcao) => (
-														<SelectItem key={opcao.value} value={opcao.value}>
-															{opcao.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										)}
-									/>
-									<p className="text-xs text-muted-foreground mt-1">
-										Indica como a venda ocorreu (balcão, internet, telefone
-										etc.). Contribuinte de outra UF só fica em operação interna
-										com presencial (indPres=1) e frete 9 — sem transporte. Com
-										frete ou venda não presencial, use idDest=2 e CFOP 6xxx.
-									</p>
-								</Field>
-
-								<Field>
-									<FieldLabel>Destino da operação (idDest)</FieldLabel>
-									<Controller
-										control={form.control}
-										name="idDest"
-										render={({ field }) => (
-											<Select
-												value={String(
-													field.value ??
-														idDestSugerido?.idDest ??
-														ID_DEST_NFE.INTERNA,
-												)}
-												onValueChange={(valor) => field.onChange(Number(valor))}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder="Selecionar destino" />
-												</SelectTrigger>
-												<SelectContent>
-													{OPCOES_ID_DEST_NFE.map((opcao) => (
-														<SelectItem key={opcao.value} value={opcao.value}>
-															{opcao.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										)}
-									/>
-									<p className="text-xs text-muted-foreground mt-1">
-										Preenchido automaticamente conforme presença, entrega e UF.
-										Você pode alterar manualmente; a API valida a coerência com
-										o CFOP.
-									</p>
-									{idDestSugerido &&
-										idDestForm != null &&
-										idDestForm !== idDestSugerido.idDest && (
-											<p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-												Sugestão automática: {idDestSugerido.idDest} —{" "}
-												{idDestSugerido.label}
+								<div className="lg:col-span-8">
+									<Field data-invalid={!cfopSaida}>
+										<FieldLabel>
+											{isDevolucaoVenda
+												? "Natureza da operação (CFOP de entrada — devolução)"
+												: "Natureza da operação (CFOP de saída)"}
+										</FieldLabel>
+										<Combobox
+											options={opcoesCfopOperacao}
+											value={cfopSaida}
+											onChange={selecionarCfopSaida}
+											placeholder="Selecionar CFOP de saída..."
+											searchPlaceholder="Buscar por código ou descrição..."
+											emptyMessage="Nenhum CFOP de saída encontrado."
+										/>
+										{form.watch("natOp") && (
+											<p className="text-xs text-muted-foreground mt-1">
+												{form.watch("natOp")}
 											</p>
 										)}
-									{idDestIncompativelCfop && (
-										<p className="text-xs text-destructive mt-1">
-											{idDestForm === 2
-												? "CFOP 5xxx incompatível com operação interestadual. Use CFOP 6xxx (ex.: 6102). Retirada no local só com indPres=1, frete 9 (sem transporte) e CFOP 5xxx."
-												: idDestForm === 1
-													? "CFOP incompatível com operação interna. Use CFOP 5xxx (ex.: 5102) ou ajuste o idDest."
-													: "CFOP incompatível com o idDest selecionado."}
+										{!cfopSaida && (
+											<p className="text-xs text-destructive mt-1">
+												Selecione o CFOP de saída para definir a natureza da
+												operação.
+											</p>
+										)}
+									</Field>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 mt-4">
+								<div className="lg:col-span-6">
+									<Field>
+										<FieldLabel>
+											Forma de realização da venda (indPres)
+										</FieldLabel>
+										<Controller
+											control={form.control}
+											name="indPres"
+											render={({ field }) => (
+												<Select
+													value={String(field.value ?? IND_PRES_NFE_PADRAO)}
+													onValueChange={(valor) => field.onChange(Number(valor))}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Selecionar forma da venda" />
+													</SelectTrigger>
+													<SelectContent>
+														{OPCOES_IND_PRES_NFE.map((opcao) => (
+															<SelectItem key={opcao.value} value={opcao.value}>
+																{opcao.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											)}
+										/>
+										<p className="text-xs text-muted-foreground mt-1">
+											Indica como a venda ocorreu (balcão, internet, telefone
+											etc.). Contribuinte de outra UF só fica em operação interna
+											com presencial (indPres=1) e frete 9 — sem transporte. Com
+											frete ou venda não presencial, use idDest=2 e CFOP 6xxx.
 										</p>
-									)}
-								</Field>
+									</Field>
+								</div>
+
+								<div className="lg:col-span-6">
+									<Field>
+										<FieldLabel>Destino da operação (idDest)</FieldLabel>
+										<Controller
+											control={form.control}
+											name="idDest"
+											render={({ field }) => (
+												<Select
+													value={String(
+														field.value ??
+															idDestSugerido?.idDest ??
+															ID_DEST_NFE.INTERNA,
+													)}
+													onValueChange={(valor) => field.onChange(Number(valor))}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Selecionar destino" />
+													</SelectTrigger>
+													<SelectContent>
+														{OPCOES_ID_DEST_NFE.map((opcao) => (
+															<SelectItem key={opcao.value} value={opcao.value}>
+																{opcao.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											)}
+										/>
+										<p className="text-xs text-muted-foreground mt-1">
+											Preenchido automaticamente conforme presença, entrega e UF.
+											Você pode alterar manualmente; a API valida a coerência com
+											o CFOP.
+										</p>
+										{idDestSugerido &&
+											idDestForm != null &&
+											idDestForm !== idDestSugerido.idDest && (
+												<p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+													Sugestão automática: {idDestSugerido.idDest} —{" "}
+													{idDestSugerido.label}
+												</p>
+											)}
+										{idDestIncompativelCfop && (
+											<p className="text-xs text-destructive mt-1">
+												{idDestForm === 2
+													? "CFOP 5xxx incompatível com operação interestadual. Use CFOP 6xxx (ex.: 6102). Retirada no local só com indPres=1, frete 9 (sem transporte) e CFOP 5xxx."
+													: idDestForm === 1
+														? "CFOP incompatível com operação interna. Use CFOP 5xxx (ex.: 5102) ou ajuste o idDest."
+														: "CFOP incompatível com o idDest selecionado."}
+											</p>
+										)}
+									</Field>
+								</div>
 							</div>
 
 							{exigeLocalEntregaInterestadual && (
@@ -2749,9 +2759,9 @@ export default function NovaEmissaoNfePage() {
 										</p>
 									</div>
 
-									<div className="grid gap-4 md:grid-cols-2">
+									<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 										<Field
-											className="md:col-span-2"
+											className="md:col-span-2 lg:col-span-2"
 											data-invalid={!!errors.localEntrega?.nomeEvento}
 										>
 											<FieldLabel htmlFor="local-entrega-evento">
@@ -2810,7 +2820,7 @@ export default function NovaEmissaoNfePage() {
 										</Field>
 
 										<Field
-											className="md:col-span-2"
+											className="md:col-span-2 lg:col-span-4"
 											data-invalid={!!errors.localEntrega?.fundamentoLegal}
 										>
 											<FieldLabel htmlFor="local-entrega-fundamento">
@@ -2835,7 +2845,10 @@ export default function NovaEmissaoNfePage() {
 											/>
 										</Field>
 
-										<Field data-invalid={!!errors.localEntrega?.nome}>
+										<Field
+											className="col-span-1 lg:col-span-2"
+											data-invalid={!!errors.localEntrega?.nome}
+										>
 											<FieldLabel htmlFor="local-entrega-nome">
 												Nome do local/recebedor
 											</FieldLabel>
@@ -2853,7 +2866,10 @@ export default function NovaEmissaoNfePage() {
 											/>
 										</Field>
 
-										<Field data-invalid={!!errors.localEntrega?.cnpjcpf}>
+										<Field
+											className="col-span-1 lg:col-span-2"
+											data-invalid={!!errors.localEntrega?.cnpjcpf}
+										>
 											<FieldLabel htmlFor="local-entrega-documento">
 												CNPJ/CPF do recebedor
 											</FieldLabel>
@@ -2888,7 +2904,10 @@ export default function NovaEmissaoNfePage() {
 											/>
 										</Field>
 
-										<Field data-invalid={!!errors.localEntrega?.logradouro}>
+										<Field
+											className="md:col-span-2 lg:col-span-2"
+											data-invalid={!!errors.localEntrega?.logradouro}
+										>
 											<FieldLabel htmlFor="local-entrega-logradouro">
 												Logradouro
 											</FieldLabel>
@@ -3186,143 +3205,153 @@ export default function NovaEmissaoNfePage() {
 						<FieldSet>
 							<FieldLegend>3. Produtos / Serviços</FieldLegend>
 
-							{/* Cabeçalho da tabela */}
-							{itensValue.length > 0 && (
+							{/* Lista de itens com rolagem sincronizada de cabeçalho e linhas */}
+							<div className="overflow-x-auto -mx-1 px-1">
 								<div
 									className={
 										empresaUsaCsosn(empresaFiscal?.crt)
-											? "hidden lg:grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_4.5rem] gap-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide"
-											: "hidden lg:grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_5rem_5rem_4.5rem] gap-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide"
+											? "min-w-[720px] space-y-2"
+											: "min-w-[940px] space-y-2"
 									}
 								>
-									<span>#</span>
-									<span>Produto</span>
-									<span className="text-center">UN</span>
-									<span className="text-right">Qtd</span>
-									<span className="text-right">Vlr Unit.</span>
-									{!empresaUsaCsosn(empresaFiscal?.crt) && (
-										<>
-											<span className="text-right">BC ICMS</span>
-											<span className="text-right">ICMS</span>
-										</>
-									)}
-									<span className="text-right">Líquido</span>
-									<span />
-								</div>
-							)}
-
-							{/* Lista de itens */}
-							<div className="space-y-2">
-								{itensValue.length === 0 && (
-									<div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
-										Nenhum item adicionado.{" "}
-										<button
-											type="button"
-											className="underline hover:text-foreground transition-colors"
-											onClick={abrirModalItem}
-										>
-											Adicionar primeiro item
-										</button>
-									</div>
-								)}
-
-								{itensValue.map((item, index) => {
-									const linhaDesconto = distribuicaoDescontos.linhas[index];
-									const bruto =
-										linhaDesconto?.bruto ??
-										(item.quantidade || 0) * (item.valorUnitario || 0);
-									const liquido = linhaDesconto?.liquido ?? bruto;
-									const descontoLinha = linhaDesconto?.descontoEfetivo ?? 0;
-									const usaCsosn = empresaUsaCsosn(empresaFiscal?.crt);
-									const icms = calcularIcmsItemEmissao(
-										empresaFiscal?.crt ?? 3,
-										item,
-										liquido,
-									);
-									return (
+									{/* Cabeçalho da tabela */}
+									{itensValue.length > 0 && (
 										<div
-											// biome-ignore lint/suspicious/noArrayIndexKey: itens não têm id estável
-											key={index}
 											className={
-												usaCsosn
-													? "grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_4.5rem] gap-2 items-center rounded-lg border bg-card px-3 py-2"
-													: "grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_5rem_5rem_4.5rem] gap-2 items-center rounded-lg border bg-card px-3 py-2"
+												empresaUsaCsosn(empresaFiscal?.crt)
+													? "grid grid-cols-[2.5rem_minmax(12rem,1fr)_3.5rem_5rem_6.5rem_7rem_4.5rem] gap-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide"
+													: "grid grid-cols-[2.5rem_minmax(12rem,1fr)_3.5rem_5rem_6.5rem_6.5rem_6.5rem_7rem_4.5rem] gap-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide"
 											}
 										>
-											<span className="text-xs text-muted-foreground font-medium text-center">
-												{index + 1}
-											</span>
-											<div className="min-w-0">
-												<p className="text-sm font-medium truncate">
-													{item.descricao}
-												</p>
-												{(item.cfop || item.ncm || item.csosn || item.cst) && (
-													<p className="text-xs text-muted-foreground">
-														{[
-															item.cfop ? `CFOP ${item.cfop}` : null,
-															item.ncm ? `NCM ${item.ncm}` : null,
-															usaCsosn && item.csosn
-																? `CSOSN ${item.csosn}`
-																: !usaCsosn && item.cst
-																	? `CST ${item.cst}`
-																	: null,
-														]
-															.filter(Boolean)
-															.join(" · ")}
-													</p>
-												)}
-												{descontoLinha > 0 && (
-													<p className="text-xs text-muted-foreground">
-														Bruto {formatarMoeda(bruto)} · Desconto{" "}
-														{formatarMoeda(descontoLinha)}
-													</p>
-												)}
-											</div>
-											<span className="text-sm text-center text-muted-foreground">
-												{item.unidade}
-											</span>
-											<span className="text-sm text-right">
-												{item.quantidade}
-											</span>
-											<span className="text-sm text-right">
-												{formatarMoeda(item.valorUnitario)}
-											</span>
-											{!usaCsosn && (
+											<span>#</span>
+											<span>Produto</span>
+											<span className="text-center">UN</span>
+											<span className="text-right">Qtd</span>
+											<span className="text-right">Vlr Unit.</span>
+											{!empresaUsaCsosn(empresaFiscal?.crt) && (
 												<>
-													<span className="text-sm text-right text-muted-foreground">
-														{formatarMoeda(icms.base)}
-													</span>
-													<span className="text-sm text-right text-muted-foreground">
-														{formatarMoeda(icms.valor)}
-													</span>
+													<span className="text-right">BC ICMS</span>
+													<span className="text-right">ICMS</span>
 												</>
 											)}
-											<span className="text-sm font-semibold text-right">
-												{formatarMoeda(liquido)}
-											</span>
-											<div className="flex items-center justify-end gap-1">
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="h-7 w-7 text-muted-foreground hover:text-foreground"
-													onClick={() => abrirEdicao(index)}
-												>
-													<Pencil className="h-3.5 w-3.5" />
-												</Button>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="h-7 w-7 text-muted-foreground hover:text-destructive"
-													onClick={() => removerItem(index)}
-												>
-													<Trash2 className="h-3.5 w-3.5" />
-												</Button>
-											</div>
+											<span className="text-right">Líquido</span>
+											<span />
 										</div>
-									);
-								})}
+									)}
+
+									{itensValue.length === 0 && (
+										<div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+											Nenhum item adicionado.{" "}
+											<button
+												type="button"
+												className="underline hover:text-foreground transition-colors"
+												onClick={abrirModalItem}
+											>
+												Adicionar primeiro item
+											</button>
+										</div>
+									)}
+
+									{itensValue.map((item, index) => {
+										const linhaDesconto = distribuicaoDescontos.linhas[index];
+										const bruto =
+											linhaDesconto?.bruto ??
+											(item.quantidade || 0) * (item.valorUnitario || 0);
+										const liquido = linhaDesconto?.liquido ?? bruto;
+										const descontoLinha = linhaDesconto?.descontoEfetivo ?? 0;
+										const usaCsosn = empresaUsaCsosn(empresaFiscal?.crt);
+										const icms = calcularIcmsItemEmissao(
+											empresaFiscal?.crt ?? 3,
+											item,
+											liquido,
+										);
+										return (
+											<div
+												// biome-ignore lint/suspicious/noArrayIndexKey: itens não têm id estável
+												key={index}
+												className={
+													usaCsosn
+														? "grid grid-cols-[2.5rem_minmax(12rem,1fr)_3.5rem_5rem_6.5rem_7rem_4.5rem] gap-2 items-center rounded-lg border bg-card px-3 py-2"
+														: "grid grid-cols-[2.5rem_minmax(12rem,1fr)_3.5rem_5rem_6.5rem_6.5rem_6.5rem_7rem_4.5rem] gap-2 items-center rounded-lg border bg-card px-3 py-2"
+												}
+											>
+												<span className="text-xs text-muted-foreground font-medium text-center">
+													{index + 1}
+												</span>
+												<div className="min-w-0">
+													<p className="text-sm font-medium truncate">
+														{item.descricao}
+													</p>
+													{(item.cfop || item.ncm || item.csosn || item.cst) && (
+														<p className="text-xs text-muted-foreground">
+															{[
+																item.cfop ? `CFOP ${item.cfop}` : null,
+																item.ncm ? `NCM ${item.ncm}` : null,
+																usaCsosn && item.csosn
+																	? `CSOSN ${item.csosn}`
+																	: !usaCsosn && item.cst
+																		? `CST ${item.cst}`
+																		: null,
+															]
+																.filter(Boolean)
+																.join(" · ")}
+														</p>
+													)}
+													{descontoLinha > 0 && (
+														<p className="text-xs text-muted-foreground">
+															Bruto {formatarMoeda(bruto)} · Desconto{" "}
+															{formatarMoeda(descontoLinha)}
+														</p>
+													)}
+												</div>
+												<span className="text-sm text-center text-muted-foreground">
+													{item.unidade}
+												</span>
+												<span className="text-sm text-right">
+													{item.quantidade}
+												</span>
+												<span className="text-sm text-right">
+													{formatarMoeda(item.valorUnitario)}
+												</span>
+												{!usaCsosn && (
+													<>
+														<span className="text-sm text-right text-muted-foreground">
+															{formatarMoeda(icms.base)}
+														</span>
+														<span className="text-sm text-right text-muted-foreground">
+															{formatarMoeda(icms.valor)}
+														</span>
+													</>
+												)}
+												<span className="text-sm font-semibold text-right">
+													{formatarMoeda(liquido)}
+												</span>
+												<div className="flex items-center justify-end gap-1">
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														aria-label="Editar item"
+														className="h-7 w-7 text-muted-foreground hover:text-foreground"
+														onClick={() => abrirEdicao(index)}
+													>
+														<Pencil className="h-3.5 w-3.5" />
+													</Button>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														aria-label="Remover item"
+														className="h-7 w-7 text-muted-foreground hover:text-destructive"
+														onClick={() => removerItem(index)}
+													>
+														<Trash2 className="h-3.5 w-3.5" />
+													</Button>
+												</div>
+											</div>
+										);
+									})}
+								</div>
 							</div>
 
 							{/* Botão adicionar */}
@@ -3375,7 +3404,7 @@ export default function NovaEmissaoNfePage() {
 					<FieldGroup>
 						<FieldSet>
 							<FieldLegend>5. Totais</FieldLegend>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 								<Field>
 									<FieldLabel>Frete</FieldLabel>
 									<Controller
@@ -3402,7 +3431,7 @@ export default function NovaEmissaoNfePage() {
 										)}
 									/>
 								</Field>
-								<Field>
+								<Field className="sm:col-span-2 lg:col-span-1">
 									<FieldLabel>Outras Despesas</FieldLabel>
 									<Controller
 										control={form.control}
@@ -3420,6 +3449,7 @@ export default function NovaEmissaoNfePage() {
 									name="totais.desconto"
 									render={({ field }) => (
 										<CampoDescontoTotalNfe
+											className="sm:col-span-2 lg:col-span-2"
 											desconto={field.value ?? 0}
 											onDescontoChange={field.onChange}
 											crt={empresaFiscal?.crt ?? 3}
@@ -3452,6 +3482,22 @@ export default function NovaEmissaoNfePage() {
 												</strong>
 											</span>
 										)}
+										{totaisFiscais.seguro > 0 && (
+											<span>
+												Seguro:{" "}
+												<strong className="text-foreground">
+													{formatarMoeda(totaisFiscais.seguro)}
+												</strong>
+											</span>
+										)}
+										{totaisFiscais.outrasDespesas > 0 && (
+											<span>
+												Outras Despesas:{" "}
+												<strong className="text-foreground">
+													{formatarMoeda(totaisFiscais.outrasDespesas)}
+												</strong>
+											</span>
+										)}
 										{totalDesconto > 0 && (
 											<span className="text-red-600">
 												Desconto:{" "}
@@ -3473,7 +3519,7 @@ export default function NovaEmissaoNfePage() {
 					<FieldGroup>
 						<FieldSet>
 							<FieldLegend>6. Transporte</FieldLegend>
-							<Field className="max-w-xs">
+							<Field className="w-full max-w-md">
 								<FieldLabel>Modalidade do frete</FieldLabel>
 								<Controller
 									control={form.control}
@@ -3539,7 +3585,7 @@ export default function NovaEmissaoNfePage() {
 									</p>
 								)}
 								{informarEnderecoEntregaManual && (
-									<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+									<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 										<Field data-invalid={!!errors.enderecoEntrega?.cep}>
 											<FieldLabel htmlFor="endereco-entrega-cep">
 												CEP
@@ -3556,7 +3602,10 @@ export default function NovaEmissaoNfePage() {
 												}
 											/>
 										</Field>
-										<Field data-invalid={!!errors.enderecoEntrega?.logradouro}>
+										<Field
+											className="sm:col-span-2 lg:col-span-2"
+											data-invalid={!!errors.enderecoEntrega?.logradouro}
+										>
 											<FieldLabel htmlFor="endereco-entrega-logradouro">
 												Logradouro
 											</FieldLabel>
@@ -3696,7 +3745,7 @@ export default function NovaEmissaoNfePage() {
 					<FieldGroup>
 						<FieldSet>
 							<FieldLegend>7. Pagamento</FieldLegend>
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 								<Field>
 									<FieldLabel>Forma de pagamento</FieldLabel>
 									<Select
@@ -3882,8 +3931,8 @@ export default function NovaEmissaoNfePage() {
 			</div>
 
 			{/* ── Barra de ação sticky (rodapé) ───────────────────────────────── */}
-			<div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur border-t px-4 sm:px-6 py-3">
-				<div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+			<div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur border-t px-4 sm:px-6 lg:px-8 py-3">
+				<div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
 					<div className="text-sm text-muted-foreground">
 						{itensValue.length > 0 ? (
 							<>
@@ -4027,7 +4076,7 @@ export default function NovaEmissaoNfePage() {
 			/>
 
 			<AlertDialog open={cfopDialogAberto} onOpenChange={setCfopDialogAberto}>
-				<AlertDialogContent>
+				<AlertDialogContent className="sm:max-w-md lg:max-w-lg">
 					<AlertDialogHeader>
 						<AlertDialogTitle>
 							Aplicar CFOP da natureza aos itens?
