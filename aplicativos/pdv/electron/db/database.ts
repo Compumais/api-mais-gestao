@@ -842,6 +842,27 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			  AND status IN ('pendente', 'processando')
 		`);
 	}
+
+	await database.query(`
+		CREATE TABLE IF NOT EXISTS sangria_caixa (
+			id TEXT PRIMARY KEY NOT NULL,
+			idcaixaturno TEXT NOT NULL,
+			idempresa TEXT NOT NULL,
+			numeropdv INTEGER NOT NULL,
+			idusuario TEXT,
+			username TEXT,
+			valor DOUBLE PRECISION NOT NULL,
+			motivo TEXT,
+			criadoem TEXT NOT NULL,
+			sync_status TEXT NOT NULL DEFAULT 'pendente'
+		)
+	`);
+	await database.query(
+		"CREATE INDEX IF NOT EXISTS idx_sangria_caixaturno ON sangria_caixa(idcaixaturno)",
+	);
+	await database.query(
+		"CREATE INDEX IF NOT EXISTS idx_sangria_criadoem ON sangria_caixa(criadoem DESC)",
+	);
 }
 
 const API_URL_PADRAO = "https://apimaisgestao.compumais.com";

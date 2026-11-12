@@ -6,6 +6,8 @@ import {
 	montarTextoComprovanteFechamentoCaixa,
 	type DadosItensVendidosTurno,
 	montarTextoItensVendidosTurno,
+	type DadosComprovanteSangria,
+	montarTextoComprovanteSangriaCaixa,
 } from "./comprovante-caixa";
 import { linhasPagamentoCupom } from "./cupom-pagamentos";
 import {
@@ -237,6 +239,12 @@ export async function imprimirComprovanteFechamentoCaixa(
 	dados: DadosComprovanteFechamentoCaixa,
 ): Promise<{ ok: boolean; modo: string }> {
 	return enviarParaImpressora(montarTextoComprovanteFechamentoCaixa(dados));
+}
+
+export async function imprimirComprovanteSangriaCaixa(
+	dados: DadosComprovanteSangria,
+): Promise<{ ok: boolean; modo: string }> {
+	return enviarParaImpressora(montarTextoComprovanteSangriaCaixa(dados));
 }
 
 export async function imprimirItensVendidosTurno(

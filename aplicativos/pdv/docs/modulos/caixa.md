@@ -6,13 +6,15 @@ Um turno por operador e número de PDV. Sem turno aberto a venda é recusada. O 
 
 ## Onde vive
 
-- **Main:** `abrirCaixa`, `fecharCaixa`, `caixaAberto`, `calcularResumoTurno` em `electron/db/repos.ts`; conferência em `electron/db/resumo-turno-caixa.ts`; itens do turno em `electron/db/itens-vendidos-turno.ts`.
-- **Renderer:** `src/ui/pages/abertura-caixa-page.tsx`, `src/ui/components/dialog-fechar-caixa.tsx`, guard `src/ui/guards/require-caixa.tsx`.
-- **SQL:** `caixa_turno`.
+- **Main:** `abrirCaixa`, `fecharCaixa`, `caixaAberto`, `calcularResumoTurno`, `registrarSangriaCaixa`, `listarSangriasTurnoAberto` em `electron/db/repos.ts`; conferência em `electron/db/resumo-turno-caixa.ts`; itens do turno em `electron/db/itens-vendidos-turno.ts`; impressão em `electron/impressora/escpos.ts` e `electron/impressora/comprovante-caixa.ts`.
+- **Renderer:** `src/ui/pages/abertura-caixa-page.tsx`, `src/ui/components/dialog-fechar-caixa.tsx`, `src/ui/components/dialog-sangria-caixa.tsx`, guard `src/ui/guards/require-caixa.tsx`.
+- **SQL:** `caixa_turno`, `sangria_caixa`.
 
 Abertura: insert `status = 'aberto'`, `sync_status = 'pendente'`, outbox `abrir_caixa`. Se já houver turno aberto deste operador neste `numeropdv`, devolve o existente.
 
-O resumo soma `venda` com `status = 'fechada'`, mesmo `numeropdv` e `criadoem >= abertoem`. Dinheiro/PIX/cartão preferem a tabela `pagamento`; cartão com `formapagamentonfe` `04` é débito.
+Sangria / Retirada: insert em `sangria_caixa` com `idcaixaturno`, `valor`, `motivo`, `criadoem`. Exige senha gerencial (`exigirSenhaGerencial`), valida saldo em dinheiro disponível na gaveta e emite comprovante impresso via ESC/POS. A sangria desconta diretamente do saldo esperado em dinheiro na gaveta (`saldoCaixaFisico = suprimento + vendasDinheiro - sangrias`).
+
+O resumo soma `venda` com `status = 'fechada'`, mesmo `numeropdv` e `criadoem >= abertoem`, e desconta as sangrias registradas no período. Dinheiro/PIX/cartão preferem a tabela `pagamento`; cartão com `formapagamentonfe` `04` é débito.
 
 Fechamento: grava `fechado`, `valorfechamento`, outbox `fechamento_caixa` com saldo apurado, informado, sobra e falta. Em seguida a UI dispara `processarOutbox` e um backup com motivo `caixa` (só gera arquivo se o backup estiver habilitado e a frequência for `caixa`).
 
@@ -34,7 +36,8 @@ Worker, prioridade 100 (depois de `criar_venda` e de contingência):
 
 ## Dados locais que não podem ser apagados no schema
 
-`caixa_turno`: `id`, `idempresa`, `numeropdv`, `idusuario`, `username`, `abertoem`, `fechadoem`, `valorabertura`, `valorfechamento`, `status`, `idremoto`, `sync_status`.
+- `caixa_turno`: `id`, `idempresa`, `numeropdv`, `idusuario`, `username`, `abertoem`, `fechadoem`, `valorabertura`, `valorfechamento`, `status`, `idremoto`, `sync_status`.
+- `sangria_caixa`: `id`, `idcaixaturno`, `idempresa`, `numeropdv`, `idusuario`, `username`, `valor`, `motivo`, `criadoem`, `sync_status`.
 
 Apagar turno aberto no meio do dia some o vínculo das vendas (elas não têm FK para o turno; o vínculo é `numeropdv` + `criadoem >= abertoem`). Recriar o turno muda o intervalo e o fechamento mente.
 

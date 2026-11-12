@@ -39,6 +39,7 @@ import {
 } from "@/ui/components/aviso-secundario";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
+import { DialogSangriaCaixa } from "@/ui/components/dialog-sangria-caixa";
 import { DialogObservacaoItem } from "@/ui/components/dialog-observacao-item";
 import {
 	DialogPagamentoMisto,
@@ -97,6 +98,7 @@ export function BalcaoPage() {
 	const [produtoPeso, setProdutoPeso] = useState<ProdutoLocal | null>(null);
 	const [obsFilaChave, setObsFilaChave] = useState<string | null>(null);
 	const [fechando, setFechando] = useState(false);
+	const [sangriaAberta, setSangriaAberta] = useState(false);
 	const [iniciarComDesconto, setIniciarComDesconto] = useState(false);
 	const [layoutCatalogo, setLayoutCatalogo] =
 		useState<LayoutCatalogoProdutos>("grade");
@@ -485,6 +487,13 @@ export function BalcaoPage() {
 							},
 						]
 					: []),
+				{
+					key: "sangria",
+					label: "Sangria",
+					variant: "secondary" as const,
+					disabled: pagando,
+					onClick: () => setSangriaAberta(true),
+				},
 				{
 					key: "fechar-caixa",
 					label: "Fechar caixa",
@@ -940,6 +949,14 @@ export function BalcaoPage() {
 						// Sync best-effort; logout segue mesmo se a fila falhar.
 					}
 					await sair();
+				}}
+			/>
+
+			<DialogSangriaCaixa
+				aberto={sangriaAberta}
+				onFechar={() => setSangriaAberta(false)}
+				onSucesso={async () => {
+					await refresh();
 				}}
 			/>
 		</PdvShell>

@@ -155,6 +155,48 @@ describe("montarResumoTurnoCaixa", () => {
 		assert.equal(resumo.qtdVendas, 0);
 		assert.equal(resumo.saldoapurado, 0);
 		assert.equal(resumo.saldoCaixaFisico, 50.5);
+		assert.equal(resumo.sangria, 0);
+	});
+
+	it("desconta sangrias do saldo físico esperado na gaveta", () => {
+		const resumo = montarResumoTurnoCaixa({
+			valorabertura: 100,
+			sangria: 40,
+			vendas: [
+				{
+					valortotal: 50,
+					valordinheiro: 50,
+					valorpix: 0,
+					valorcartao: 0,
+					valortroco: 0,
+				},
+			],
+		});
+		assert.equal(resumo.suprimento, 100);
+		assert.equal(resumo.sangria, 40);
+		assert.equal(resumo.pagamentos.dinheiro, 50);
+		// 100 suprimento + 50 dinheiro - 40 sangria = 110 esperado
+		assert.equal(resumo.saldoCaixaFisico, 110);
+	});
+
+	it("retirada total do suprimento inicial deixa na gaveta apenas as vendas em dinheiro", () => {
+		const resumo = montarResumoTurnoCaixa({
+			valorabertura: 100,
+			sangria: 100,
+			vendas: [
+				{
+					valortotal: 80,
+					valordinheiro: 80,
+					valorpix: 0,
+					valorcartao: 0,
+					valortroco: 0,
+				},
+			],
+		});
+		assert.equal(resumo.suprimento, 100);
+		assert.equal(resumo.sangria, 100);
+		// 100 suprimento + 80 dinheiro - 100 sangria = 80 esperado na gaveta
+		assert.equal(resumo.saldoCaixaFisico, 80);
 	});
 });
 

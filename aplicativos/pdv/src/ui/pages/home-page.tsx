@@ -21,6 +21,7 @@ import {
 } from "@/ui/components/aviso-secundario";
 import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
+import { DialogSangriaCaixa } from "@/ui/components/dialog-sangria-caixa";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { SideNav } from "@/ui/components/side-nav";
 import { StatusBar } from "@/ui/components/status-bar";
@@ -123,6 +124,7 @@ export function HomePage() {
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [fechando, setFechando] = useState(false);
+	const [sangriaAberta, setSangriaAberta] = useState(false);
 	const [filtro, setFiltro] = useState<FiltroMesa>("todos");
 	const [apenasAbertas, setApenasAbertas] = useState(false);
 	const [novaNumero, setNovaNumero] = useState("");
@@ -705,6 +707,14 @@ export function HomePage() {
 				}}
 			/>
 
+			<DialogSangriaCaixa
+				aberto={sangriaAberta}
+				onFechar={() => setSangriaAberta(false)}
+				onSucesso={async () => {
+					await refresh();
+				}}
+			/>
+
 			<StatusBar
 				items={[
 					{
@@ -799,6 +809,12 @@ export function HomePage() {
 								},
 							]
 						: []),
+					{
+						key: "sangria",
+						label: "Sangria",
+						variant: "secondary",
+						onClick: () => setSangriaAberta(true),
+					},
 					{
 						key: "fechar-caixa",
 						label: "Fechar caixa",

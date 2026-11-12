@@ -1,4 +1,5 @@
 import {
+	ArrowDownToLine,
 	Bike,
 	ClipboardList,
 	Printer,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/pdv-types";
 import { cn } from "@/lib/utils";
 import { secundarioDesconectado } from "@/ui/components/aviso-secundario";
+import { DialogSangriaCaixa } from "@/ui/components/dialog-sangria-caixa";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
 import { useSidebarState } from "@/ui/hooks/use-sidebar-state";
@@ -111,6 +113,7 @@ export function SideNav({
 	const [dialogoEmergencia, setDialogoEmergencia] =
 		useState<DialogoEmergencia>(null);
 	const [imprimindoEmergencia, setImprimindoEmergencia] = useState(false);
+	const [sangriaAberta, setSangriaAberta] = useState(false);
 	const deliveryAtivo = path === "/delivery" || path.startsWith("/delivery/");
 
 	useEscapeFechaModal(dialogoEmergencia !== null && !imprimindoEmergencia, () => {
@@ -288,6 +291,15 @@ export function SideNav({
 						navigate("/vendas");
 					}}
 				/>
+				{status?.caixa ? (
+					<SideButton
+						label="Sangria / Retirada"
+						icon={ArrowDownToLine}
+						active={false}
+						recolhida={recolhida}
+						onClick={() => setSangriaAberta(true)}
+					/>
+				) : null}
 				{status?.podeConfigurar ? (
 					<SideButton
 						label="Configurações"
@@ -423,6 +435,13 @@ export function SideNav({
 						document.body,
 					)
 				: null}
+			<DialogSangriaCaixa
+				aberto={sangriaAberta}
+				onFechar={() => setSangriaAberta(false)}
+				onSucesso={async () => {
+					await ctx?.refresh?.();
+				}}
+			/>
 		</aside>
 	);
 }

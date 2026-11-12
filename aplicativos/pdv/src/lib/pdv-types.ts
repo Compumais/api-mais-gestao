@@ -104,8 +104,21 @@ export type ResumoTurnoCaixa = {
 	pagamentos: PagamentosResumoTurno;
 	totalVendas: number;
 	suprimento: number;
+	sangria: number;
 	saldoapurado: number;
 	saldoCaixaFisico: number;
+};
+
+export type SangriaCaixa = {
+	id: string;
+	idcaixaturno: string;
+	idempresa: string;
+	numeropdv: number;
+	idusuario: string | null;
+	username: string | null;
+	valor: number;
+	motivo: string | null;
+	criadoem: string;
 };
 
 export type ItemVendidoTurnoAgrupado = {
