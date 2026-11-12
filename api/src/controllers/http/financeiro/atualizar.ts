@@ -121,7 +121,7 @@ export async function atualizarFinanceiro(
 		const parsed = atualizarFinanceiroBodySchema.parse(request.body);
 		const { apropriacoesCentroCusto, idcriteriorateio, ...dados } = parsed;
 
-		const resultado = await atualizarFinanceiroService({ id, dados });
+		const resultado = await atualizarFinanceiroService({ id, dados, idusuario: request.user.id });
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);

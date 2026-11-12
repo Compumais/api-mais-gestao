@@ -13,7 +13,7 @@ export async function excluirFinanceiro(
 	try {
 		const { id } = excluirFinanceiroParamsSchema.parse(request.params);
 
-		const resultado = await excluirFinanceiroService(id);
+		const resultado = await excluirFinanceiroService({ id, idusuario: request.user.id });
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
