@@ -390,18 +390,18 @@ export async function buscarTopDespesasPorCategoria({
 	const result = await db.execute(sql`
 		SELECT 
 			ccl.idplanocontas,
-			pc.codigo,
-			pc.nome,
+			COALESCE(pc.codigo, 'SEM-COD') as codigo,
+			COALESCE(pc.nome, 'Não categorizado') as nome,
 			SUM(ccl.valor::numeric) as total
 		FROM contacorrentelancamento ccl
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
-		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN ('S', 'D')
 			AND ccl.idplanocontas IS NOT NULL
 			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
-		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome
+		GROUP BY ccl.idplanocontas, COALESCE(pc.codigo, 'SEM-COD'), COALESCE(pc.nome, 'Não categorizado')
 		ORDER BY total DESC
 		LIMIT 5
 	`);
@@ -439,18 +439,18 @@ export async function buscarTopReceitasPorCategoria({
 	const result = await db.execute(sql`
 		SELECT 
 			ccl.idplanocontas,
-			pc.codigo,
-			pc.nome,
+			COALESCE(pc.codigo, 'SEM-COD') as codigo,
+			COALESCE(pc.nome, 'Não categorizado') as nome,
 			SUM(ccl.valor::numeric) as total
 		FROM contacorrentelancamento ccl
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
-		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN ('E', 'C')
 			AND ccl.idplanocontas IS NOT NULL
 			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
-		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome
+		GROUP BY ccl.idplanocontas, COALESCE(pc.codigo, 'SEM-COD'), COALESCE(pc.nome, 'Não categorizado')
 		ORDER BY total DESC
 		LIMIT 5
 	`);
@@ -757,13 +757,13 @@ export async function buscarTopDespesasValor({
 	const result = await db.execute(sql`
 		SELECT
 			ccl.id,
-			COALESCE(ccl.historico, pc.nome, 'Sem descriÃ§Ã£o') as descricao,
+			COALESCE(ccl.historico, pc.nome, 'Sem descrição') as descricao,
 			ccl.valor::numeric as valor,
 			ccl.datahora as data,
-			pc.nome as plano_contas
+			COALESCE(pc.nome, 'Não categorizado') as plano_contas
 		FROM contacorrentelancamento ccl
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
-		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN ('S', 'D')
 			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
@@ -986,21 +986,21 @@ async function buscarMovimentacoesPlanoContasPorMes(
 	const result = await db.execute(sql`
 		SELECT
 			ccl.idplanocontas,
-			pc.codigo,
-			pc.nome,
+			COALESCE(pc.codigo, 'SEM-COD') as codigo,
+			COALESCE(pc.nome, 'Não categorizado') as nome,
 			pc.tipoconta,
 			EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::int as mes,
 			COALESCE(SUM(ccl.valor::numeric), 0) as total
 		FROM contacorrentelancamento ccl
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
-		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN (${sql.join(tipos.map((t) => sql`${t}`), sql`, `)})
 			AND ccl.idplanocontas IS NOT NULL
 			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
-		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome, pc.tipoconta, EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
-		ORDER BY pc.codigo, mes
+		GROUP BY ccl.idplanocontas, COALESCE(pc.codigo, 'SEM-COD'), COALESCE(pc.nome, 'Não categorizado'), pc.tipoconta, EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
+		ORDER BY codigo, mes
 	`);
 
 	return (result.rows || result) as {

@@ -6,6 +6,7 @@ import { listarFinanceirosService } from "@/service/financeiro/listar-financeiro
 const textoOpcional = z.string().optional().nullable();
 
 const listarFinanceirosQuerySchema = z.object({
+	idempresa: z.string().uuid().optional().nullable(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 	saldo: textoOpcional,
@@ -39,9 +40,14 @@ export async function listarFinanceiros(
 
 		const idusuario = request.user.id;
 		const query = listarFinanceirosQuerySchema.parse(request.query);
+		const idempresa =
+			query.idempresa ||
+			(request.headers["x-empresa-id"] as string | undefined) ||
+			request.empresaContext?.idempresa;
 
 		const resultado = await listarFinanceirosService({
 			idusuario,
+			idempresa,
 			...query,
 		});
 

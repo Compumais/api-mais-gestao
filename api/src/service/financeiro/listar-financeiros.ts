@@ -9,6 +9,7 @@ import { httpOk } from "@/util/http-util.js";
 
 type ListarFinanceirosParametros = {
 	idusuario: string;
+	idempresa?: string | null | undefined;
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
 	documento?: string | null | undefined;
@@ -44,6 +45,7 @@ type ListarFinanceirosResposta = {
 
 export async function listarFinanceirosService({
 	idusuario,
+	idempresa,
 	saldo,
 	emissao,
 	documento,
@@ -78,8 +80,27 @@ export async function listarFinanceirosService({
 		});
 	}
 
+	let empresasParaBuscar: string[] = [];
+
+	if (idempresa) {
+		if (!idempresas.includes(idempresa)) {
+			return httpOk<ListarFinanceirosResposta>({
+				data: [],
+				paginacao: {
+					page,
+					limit,
+					total: 0,
+					totalPages: 0,
+				},
+			});
+		}
+		empresasParaBuscar = [idempresa];
+	} else {
+		empresasParaBuscar = idempresas;
+	}
+
 	const { financeiros, total } = await listarFinanceiro({
-		idempresas,
+		idempresas: empresasParaBuscar,
 		saldo,
 		emissao,
 		documento,

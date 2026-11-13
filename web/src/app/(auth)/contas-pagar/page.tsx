@@ -217,6 +217,7 @@ export default function ContasAPagarPage() {
 				throw new Error("Empresa não selecionada");
 			}
 			return await financeiroService.listar({
+				idempresa: empresa.id,
 				tipo: "P",
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,

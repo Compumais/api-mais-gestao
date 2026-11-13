@@ -434,28 +434,44 @@ describe("listarFinanceirosService", () => {
 		);
 	});
 
-	it("deve retornar estrutura de resposta correta com data e paginacao", async () => {
+	it("deve filtrar estritamente pela empresa informada quando idempresa for fornecido", async () => {
 		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
-			"empresa-123",
+			"empresa-1",
+			"empresa-2",
 		]);
 		vi.mocked(financeiroRepository.listarFinanceiro).mockResolvedValue({
-			financeiros: financeirosMock,
-			total: 2,
+			financeiros: [financeirosMock[0]!],
+			total: 1,
 		});
 
 		const resultado = await listarFinanceirosService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-2",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(financeiroRepository.listarFinanceiro).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempresas: ["empresa-2"],
+			}),
+		);
+	});
+
+	it("deve retornar vazio se idempresa informado não pertencer ao usuário", async () => {
+		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
+			"empresa-1",
+		]);
+
+		const resultado = await listarFinanceirosService({
+			idusuario: "usuario-123",
+			idempresa: "empresa-invasora",
 		});
 
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {
-			expect(resultado.body).toHaveProperty("data");
-			expect(resultado.body).toHaveProperty("paginacao");
-			expect(resultado.body?.paginacao).toHaveProperty("page");
-			expect(resultado.body?.paginacao).toHaveProperty("limit");
-			expect(resultado.body?.paginacao).toHaveProperty("total");
-			expect(resultado.body?.paginacao).toHaveProperty("totalPages");
-			expect(Array.isArray(resultado.body?.data)).toBe(true);
+			expect(resultado.body?.data).toEqual([]);
+			expect(resultado.body?.paginacao.total).toBe(0);
 		}
+		expect(financeiroRepository.listarFinanceiro).not.toHaveBeenCalled();
 	});
 });

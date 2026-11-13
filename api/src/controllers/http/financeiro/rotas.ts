@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { resolveEmpresaContext } from "../../middleware/resolve-empresa-context.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { atualizarFinanceiro } from "./atualizar.js";
 import { buscarFinanceiro } from "./buscar.js";
@@ -12,10 +13,12 @@ export async function financeiroRotas(app: FastifyInstance) {
 
 	app.post("/financeiro", {
 		schema: schema.criarFinanceiroSchema,
+		preHandler: [resolveEmpresaContext],
 		handler: criarFinanceiro,
 	});
 	app.get("/financeiro", {
 		schema: schema.listarFinanceirosSchema,
+		preHandler: [resolveEmpresaContext],
 		handler: listarFinanceiros,
 	});
 	app.get("/financeiro/:id", {
