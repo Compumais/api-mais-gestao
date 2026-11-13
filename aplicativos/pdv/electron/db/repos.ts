@@ -1649,60 +1649,196 @@ export async function atualizarCaixaIdRemoto(
 }
 
 export async function calcularResumoTurno(caixa: {
+	id?: string;
 	numeropdv: number;
 	abertoem: string;
 	valorabertura: number;
 }): Promise<ResumoTurnoCaixa> {
-	const vendas = await query<VendaParaResumoTurno>(
-		`SELECT
-			v.valortotal,
-			v.valordinheiro,
-			v.valorpix,
-			v.valorcartao,
-			v.valortroco,
-			COALESCE((
-				SELECT SUM(p.valor) FROM pagamento p
-				WHERE p.idvenda = v.id
-					AND p.meio = 'DINHEIRO'
-					AND COALESCE(p.status, 'ok') = 'ok'
-			), 0) AS lanc_dinheiro,
-			COALESCE((
-				SELECT SUM(p.valor) FROM pagamento p
-				WHERE p.idvenda = v.id
-					AND p.meio = 'PIX'
-					AND COALESCE(p.status, 'ok') = 'ok'
-			), 0) AS lanc_pix,
-			COALESCE((
-				SELECT SUM(p.valor) FROM pagamento p
-				WHERE p.idvenda = v.id
-					AND p.meio = 'CARTAO'
-					AND COALESCE(p.status, 'ok') = 'ok'
-					AND lpad(
-						regexp_replace(COALESCE(p.formapagamentonfe, ''), '[^0-9]', '', 'g'),
-						2,
-						'0'
-					) = '04'
-			), 0) AS lanc_cartaodebito,
-			COALESCE((
-				SELECT SUM(p.valor) FROM pagamento p
-				WHERE p.idvenda = v.id
-					AND p.meio = 'CARTAO'
-					AND COALESCE(p.status, 'ok') = 'ok'
-					AND lpad(
-						regexp_replace(COALESCE(p.formapagamentonfe, ''), '[^0-9]', '', 'g'),
-						2,
-						'0'
-					) IS DISTINCT FROM '04'
-			), 0) AS lanc_cartaocredito
-		 FROM venda v
-		 WHERE v.numeropdv = $1 AND v.criadoem >= $2 AND v.status = 'fechada'
-		 ORDER BY v.criadoem`,
-		[caixa.numeropdv, caixa.abertoem],
-	);
+	const [vendas, sangriasRow] = await Promise.all([
+		query<VendaParaResumoTurno>(
+			`SELECT
+				v.valortotal,
+				v.valordinheiro,
+				v.valorpix,
+				v.valorcartao,
+				v.valortroco,
+				COALESCE((
+					SELECT SUM(p.valor) FROM pagamento p
+					WHERE p.idvenda = v.id
+						AND p.meio = 'DINHEIRO'
+						AND COALESCE(p.status, 'ok') = 'ok'
+				), 0) AS lanc_dinheiro,
+				COALESCE((
+					SELECT SUM(p.valor) FROM pagamento p
+					WHERE p.idvenda = v.id
+						AND p.meio = 'PIX'
+						AND COALESCE(p.status, 'ok') = 'ok'
+				), 0) AS lanc_pix,
+				COALESCE((
+					SELECT SUM(p.valor) FROM pagamento p
+					WHERE p.idvenda = v.id
+						AND p.meio = 'CARTAO'
+						AND COALESCE(p.status, 'ok') = 'ok'
+						AND lpad(
+							regexp_replace(COALESCE(p.formapagamentonfe, ''), '[^0-9]', '', 'g'),
+							2,
+							'0'
+						) = '04'
+				), 0) AS lanc_cartaodebito,
+				COALESCE((
+					SELECT SUM(p.valor) FROM pagamento p
+					WHERE p.idvenda = v.id
+						AND p.meio = 'CARTAO'
+						AND COALESCE(p.status, 'ok') = 'ok'
+						AND lpad(
+							regexp_replace(COALESCE(p.formapagamentonfe, ''), '[^0-9]', '', 'g'),
+							2,
+							'0'
+						) IS DISTINCT FROM '04'
+				), 0) AS lanc_cartaocredito
+			 FROM venda v
+			 WHERE v.numeropdv = $1 AND v.criadoem >= $2 AND v.status = 'fechada'
+			 ORDER BY v.criadoem`,
+			[caixa.numeropdv, caixa.abertoem],
+		),
+		caixa.id
+			? queryOne<{ total: number }>(
+					`SELECT COALESCE(SUM(valor), 0) AS total
+					 FROM sangria_caixa
+					 WHERE idcaixaturno = $1 OR (numeropdv = $2 AND criadoem >= $3)`,
+					[caixa.id, caixa.numeropdv, caixa.abertoem],
+				)
+			: queryOne<{ total: number }>(
+					`SELECT COALESCE(SUM(valor), 0) AS total
+					 FROM sangria_caixa
+					 WHERE numeropdv = $1 AND criadoem >= $2`,
+					[caixa.numeropdv, caixa.abertoem],
+				),
+	]);
 	return montarResumoTurnoCaixa({
 		valorabertura: caixa.valorabertura,
+		sangria: Number(sangriasRow?.total ?? 0),
 		vendas,
 	});
+}
+
+export type SangriaCaixaLocal = {
+	id: string;
+	idcaixaturno: string;
+	idempresa: string;
+	numeropdv: number;
+	idusuario: string | null;
+	username: string | null;
+	valor: number;
+	motivo: string | null;
+	criadoem: string;
+	sync_status: string;
+};
+
+export async function listarSangriasTurno(caixa: {
+	id?: string;
+	numeropdv: number;
+	abertoem: string;
+}): Promise<SangriaCaixaLocal[]> {
+	if (caixa.id) {
+		return query<SangriaCaixaLocal>(
+			`SELECT id, idcaixaturno, idempresa, numeropdv, idusuario, username, valor, motivo, criadoem, sync_status
+			 FROM sangria_caixa
+			 WHERE idcaixaturno = $1 OR (numeropdv = $2 AND criadoem >= $3)
+			 ORDER BY criadoem ASC`,
+			[caixa.id, caixa.numeropdv, caixa.abertoem],
+		);
+	}
+	return query<SangriaCaixaLocal>(
+		`SELECT id, idcaixaturno, idempresa, numeropdv, idusuario, username, valor, motivo, criadoem, sync_status
+		 FROM sangria_caixa
+		 WHERE numeropdv = $1 AND criadoem >= $2
+		 ORDER BY criadoem ASC`,
+		[caixa.numeropdv, caixa.abertoem],
+	);
+}
+
+export async function listarSangriasTurnoAberto(): Promise<SangriaCaixaLocal[]> {
+	const caixa = await caixaAberto();
+	if (!caixa) {
+		throw new Error("Nenhum caixa aberto para este operador");
+	}
+	return listarSangriasTurno(caixa);
+}
+
+export async function registrarSangriaCaixa(params: {
+	valor: number;
+	motivo?: string | null;
+	senha?: string;
+}): Promise<{
+	sangria: SangriaCaixaLocal;
+	resumo: ResumoTurnoCaixa;
+	saldoRestanteGaveta: number;
+	nomeempresa: string | null;
+}> {
+	const caixa = await caixaAberto();
+	if (!caixa) {
+		throw new Error("Nenhum caixa aberto para este operador");
+	}
+	const valor = Number(params.valor);
+	if (!Number.isFinite(valor) || valor <= 0) {
+		throw new Error("O valor da retirada deve ser maior que zero");
+	}
+	await exigirSenhaGerencial(params.senha);
+
+	const resumoAtual = await calcularResumoTurno(caixa);
+	if (valor > resumoAtual.saldoCaixaFisico) {
+		const saldoFormatado = resumoAtual.saldoCaixaFisico.toLocaleString("pt-BR", {
+			style: "currency",
+			currency: "BRL",
+		});
+		throw new Error(
+			`Valor da retirada excede o saldo em dinheiro disponível na gaveta (${saldoFormatado})`,
+		);
+	}
+
+	const sessao = await obterSessao();
+	const id = uuidv4();
+	const agora = new Date().toISOString();
+	const motivo = params.motivo?.trim() || null;
+
+	await execute(
+		`INSERT INTO sangria_caixa (
+			id, idcaixaturno, idempresa, numeropdv, idusuario, username, valor, motivo, criadoem, sync_status
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente')`,
+		[
+			id,
+			caixa.id,
+			sessao.idempresa || caixa.idempresa,
+			caixa.numeropdv,
+			sessao.userid || caixa.idusuario,
+			sessao.username || caixa.username,
+			valor,
+			motivo,
+			agora,
+		],
+	);
+
+	const resumoNovo = await calcularResumoTurno(caixa);
+	const sangria: SangriaCaixaLocal = {
+		id,
+		idcaixaturno: caixa.id,
+		idempresa: sessao.idempresa || caixa.idempresa,
+		numeropdv: caixa.numeropdv,
+		idusuario: sessao.userid || caixa.idusuario,
+		username: sessao.username || caixa.username,
+		valor,
+		motivo,
+		criadoem: agora,
+		sync_status: "pendente",
+	};
+
+	return {
+		sangria,
+		resumo: resumoNovo,
+		saldoRestanteGaveta: resumoNovo.saldoCaixaFisico,
+		nomeempresa: sessao.nomeempresa ?? null,
+	};
 }
 
 export async function listarItensVendidosTurnoAberto(): Promise<
@@ -1833,6 +1969,12 @@ export async function fecharCaixa(params: {
 	);
 	const agora = new Date().toISOString();
 	const observacao = params.observacao?.trim() || null;
+	const obsSangria =
+		resumo.sangria > 0
+			? `[Sangrias: ${resumo.sangria.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}]`
+			: null;
+	const observacaoOutbox =
+		[observacao, obsSangria].filter(Boolean).join(" ") || null;
 	await execute(
 		`UPDATE caixa_turno SET status = 'fechado', fechadoem = $1, valorfechamento = $2, sync_status = 'pendente' WHERE id = $3`,
 		[agora, conferencia.saldoinformado, caixa.id],
@@ -1845,6 +1987,7 @@ export async function fecharCaixa(params: {
 		idusuario: caixa.idusuario,
 		numeropdv: caixa.numeropdv,
 		valorabertura: caixa.valorabertura,
+		sangria: resumo.sangria,
 		abertoem: caixa.abertoem,
 		fechadoem: agora,
 		saldoinformado: conferencia.saldoinformado,
@@ -1853,7 +1996,7 @@ export async function fecharCaixa(params: {
 		saldoCaixaFisico: resumo.saldoCaixaFisico,
 		sobra: conferencia.sobra,
 		falta: conferencia.falta,
-		observacao,
+		observacao: observacaoOutbox,
 		qtdVendas: resumo.qtdVendas,
 		pagamentos: resumo.pagamentos,
 		valorfechamento: conferencia.saldoinformado,

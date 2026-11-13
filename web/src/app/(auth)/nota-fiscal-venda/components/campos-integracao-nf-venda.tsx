@@ -277,7 +277,7 @@ export function CamposIntegracaoNfVenda({
 	);
 
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 			{variante === "pedido" ? (
 				<>
 					{campoCondicaoPagamento}
@@ -340,7 +340,7 @@ export function CamposIntegracaoNfVenda({
 				</Select>
 			</Field>
 
-			<div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row sm:gap-6">
+			<div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-3 sm:flex-row sm:gap-6">
 				{mostrarFlagsIntegracao && (
 					<>
 						<div className="flex items-center gap-2">

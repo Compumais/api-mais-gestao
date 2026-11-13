@@ -109,6 +109,19 @@ CREATE TABLE IF NOT EXISTS caixa_turno (
 	sync_status TEXT NOT NULL DEFAULT 'pendente'
 );
 
+CREATE TABLE IF NOT EXISTS sangria_caixa (
+	id TEXT PRIMARY KEY NOT NULL,
+	idcaixaturno TEXT NOT NULL,
+	idempresa TEXT NOT NULL,
+	numeropdv INTEGER NOT NULL,
+	idusuario TEXT,
+	username TEXT,
+	valor DOUBLE PRECISION NOT NULL,
+	motivo TEXT,
+	criadoem TEXT NOT NULL,
+	sync_status TEXT NOT NULL DEFAULT 'pendente'
+);
+
 CREATE TABLE IF NOT EXISTS mesa (
 	numero INTEGER PRIMARY KEY NOT NULL,
 	status TEXT NOT NULL DEFAULT 'livre',
@@ -321,3 +334,5 @@ CREATE INDEX IF NOT EXISTS idx_cliente_nome ON cliente(nome);
 CREATE INDEX IF NOT EXISTS idx_cliente_cnpjcpf ON cliente(cnpjcpf);
 CREATE INDEX IF NOT EXISTS idx_bandeira_descricao ON bandeira_cartao(descricao);
 CREATE INDEX IF NOT EXISTS idx_meio_pagamento_descricao ON meio_pagamento(descricao);
+CREATE INDEX IF NOT EXISTS idx_sangria_caixaturno ON sangria_caixa(idcaixaturno);
+CREATE INDEX IF NOT EXISTS idx_sangria_criadoem ON sangria_caixa(criadoem DESC);

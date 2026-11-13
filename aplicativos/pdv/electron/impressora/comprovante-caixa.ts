@@ -44,6 +44,9 @@ export function montarTextoComprovanteFechamentoCaixa(
 	linhas.push(`Fechamento: ${dataHora(dados.fechadoem)}`);
 	linhas.push("--------------------------------");
 	linhas.push(`Suprimento: ${money(resumo.suprimento)}`);
+	if (resumo.sangria > 0) {
+		linhas.push(`Sangrias: -${money(resumo.sangria)}`);
+	}
 	linhas.push(`Vendas (${resumo.qtdVendas}): ${money(resumo.saldoapurado)}`);
 	linhas.push(`  Dinheiro: ${money(resumo.pagamentos.dinheiro)}`);
 	linhas.push(`  PIX: ${money(resumo.pagamentos.pix)}`);
@@ -111,6 +114,53 @@ export function montarTextoItensVendidosTurno(
 			);
 		}
 	}
+	linhas.push("================================");
+	linhas.push("\n\n\n");
+	return linhas.join("\n");
+}
+
+export type DadosComprovanteSangria = {
+	nomeempresa?: string | null;
+	username?: string | null;
+	numeropdv: number;
+	datahora: string;
+	valor: number;
+	motivo?: string | null;
+	saldoRestanteGaveta?: number;
+};
+
+export function montarTextoComprovanteSangriaCaixa(
+	dados: DadosComprovanteSangria,
+): string {
+	const linhas: string[] = [];
+	linhas.push("================================");
+	linhas.push("  SANGRIA / RETIRADA DE CAIXA   ");
+	linhas.push("================================");
+	if (dados.nomeempresa?.trim()) {
+		linhas.push(dados.nomeempresa.trim().slice(0, 32));
+	}
+	linhas.push(`PDV: ${dados.numeropdv}`);
+	if (dados.username?.trim()) {
+		linhas.push(`Operador: ${dados.username.trim().slice(0, 22)}`);
+	}
+	linhas.push(`Data/Hora: ${dataHora(dados.datahora)}`);
+	linhas.push("--------------------------------");
+	linhas.push(`VALOR RETIRADO: ${money(dados.valor)}`);
+	if (dados.motivo?.trim()) {
+		linhas.push(`Motivo: ${dados.motivo.trim().slice(0, 64)}`);
+	}
+	if (typeof dados.saldoRestanteGaveta === "number") {
+		linhas.push("--------------------------------");
+		linhas.push(`Saldo restante gaveta: ${money(dados.saldoRestanteGaveta)}`);
+	}
+	linhas.push("--------------------------------");
+	linhas.push("Assinatura Operador:");
+	linhas.push("");
+	linhas.push("________________________________");
+	linhas.push("");
+	linhas.push("Assinatura Supervisor:");
+	linhas.push("");
+	linhas.push("________________________________");
 	linhas.push("================================");
 	linhas.push("\n\n\n");
 	return linhas.join("\n");

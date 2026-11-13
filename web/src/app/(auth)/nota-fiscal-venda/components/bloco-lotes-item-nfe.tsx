@@ -242,40 +242,42 @@ export function BlocoLotesItemNfe({
 			) : null}
 
 			{criando ? (
-				<div className="grid grid-cols-[1fr_7rem_7rem_auto] gap-2 items-end rounded-md border border-dashed p-2">
-					<div className="space-y-1">
-						<span className="text-xs text-muted-foreground">Novo lote</span>
-						<Input
-							value={numeroNovo}
-							maxLength={20}
-							placeholder="Número"
-							onChange={(e) => setNumeroNovo(e.target.value)}
-						/>
+				<div className="overflow-x-auto min-w-0 pb-1">
+					<div className="min-w-[460px] grid grid-cols-[1fr_7rem_7rem_auto] gap-2 items-end rounded-md border border-dashed p-2">
+						<div className="space-y-1">
+							<span className="text-xs text-muted-foreground">Novo lote</span>
+							<Input
+								value={numeroNovo}
+								maxLength={20}
+								placeholder="Número"
+								onChange={(e) => setNumeroNovo(e.target.value)}
+							/>
+						</div>
+						<div className="space-y-1">
+							<span className="text-xs text-muted-foreground">Fabricação</span>
+							<Input
+								type="date"
+								value={fabNovo}
+								onChange={(e) => setFabNovo(e.target.value)}
+							/>
+						</div>
+						<div className="space-y-1">
+							<span className="text-xs text-muted-foreground">Validade</span>
+							<Input
+								type="date"
+								value={valNovo}
+								onChange={(e) => setValNovo(e.target.value)}
+							/>
+						</div>
+						<Button
+							type="button"
+							size="sm"
+							disabled={!numeroNovo.trim() || criarLote.isPending || !item.idproduto}
+							onClick={() => criarLote.mutate()}
+						>
+							{criarLote.isPending ? "Salvando..." : "Salvar"}
+						</Button>
 					</div>
-					<div className="space-y-1">
-						<span className="text-xs text-muted-foreground">Fabricação</span>
-						<Input
-							type="date"
-							value={fabNovo}
-							onChange={(e) => setFabNovo(e.target.value)}
-						/>
-					</div>
-					<div className="space-y-1">
-						<span className="text-xs text-muted-foreground">Validade</span>
-						<Input
-							type="date"
-							value={valNovo}
-							onChange={(e) => setValNovo(e.target.value)}
-						/>
-					</div>
-					<Button
-						type="button"
-						size="sm"
-						disabled={!numeroNovo.trim() || criarLote.isPending || !item.idproduto}
-						onClick={() => criarLote.mutate()}
-					>
-						{criarLote.isPending ? "Salvando..." : "Salvar"}
-					</Button>
 				</div>
 			) : null}
 
@@ -285,70 +287,72 @@ export function BlocoLotesItemNfe({
 					com a quantidade do item.
 				</p>
 			) : (
-				<div className="space-y-2">
-					{rastros.map((rastro, indice) => (
-						<div
-							key={`${rastro.idlote ?? "novo"}-${indice}`}
-							className="grid grid-cols-[1fr_5.5rem_7rem_7rem_auto] gap-2 items-end"
-						>
-							<div className="space-y-1">
-								<span className="text-xs text-muted-foreground">Número</span>
-								<Input
-									value={rastro.nLote}
-									maxLength={20}
-									onChange={(e) =>
-										atualizarRastro(indice, "nLote", e.target.value)
-									}
-								/>
-							</div>
-							<div className="space-y-1">
-								<span className="text-xs text-muted-foreground">Qtd</span>
-								<Input
-									type="number"
-									min="0.001"
-									step="0.001"
-									value={rastro.qLote}
-									onChange={(e) =>
-										atualizarRastro(
-											indice,
-											"qLote",
-											parseFloat(e.target.value) || 0,
-										)
-									}
-								/>
-							</div>
-							<div className="space-y-1">
-								<span className="text-xs text-muted-foreground">Fabricação</span>
-								<Input
-									type="date"
-									value={rastro.dFab ?? ""}
-									onChange={(e) =>
-										atualizarRastro(indice, "dFab", e.target.value || undefined)
-									}
-								/>
-							</div>
-							<div className="space-y-1">
-								<span className="text-xs text-muted-foreground">Validade</span>
-								<Input
-									type="date"
-									value={rastro.dVal ?? ""}
-									onChange={(e) =>
-										atualizarRastro(indice, "dVal", e.target.value || undefined)
-									}
-								/>
-							</div>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								onClick={() =>
-									onChange(rastros.filter((_, atual) => atual !== indice))
-								}
+				<div className="overflow-x-auto min-w-0 pb-1">
+					<div className="min-w-[460px] space-y-2">
+						{rastros.map((rastro, indice) => (
+							<div
+								key={`${rastro.idlote ?? "novo"}-${indice}`}
+								className="grid grid-cols-[1fr_5.5rem_7rem_7rem_auto] gap-2 items-end"
 							>
-								<Trash2 className="size-4" />
-							</Button>
-						</div>
-					))}
+								<div className="space-y-1">
+									<span className="text-xs text-muted-foreground">Número</span>
+									<Input
+										value={rastro.nLote}
+										maxLength={20}
+										onChange={(e) =>
+											atualizarRastro(indice, "nLote", e.target.value)
+										}
+									/>
+								</div>
+								<div className="space-y-1">
+									<span className="text-xs text-muted-foreground">Qtd</span>
+									<Input
+										type="number"
+										min="0.001"
+										step="0.001"
+										value={rastro.qLote}
+										onChange={(e) =>
+											atualizarRastro(
+												indice,
+												"qLote",
+												parseFloat(e.target.value) || 0,
+											)
+										}
+									/>
+								</div>
+								<div className="space-y-1">
+									<span className="text-xs text-muted-foreground">Fabricação</span>
+									<Input
+										type="date"
+										value={rastro.dFab ?? ""}
+										onChange={(e) =>
+											atualizarRastro(indice, "dFab", e.target.value || undefined)
+										}
+									/>
+								</div>
+								<div className="space-y-1">
+									<span className="text-xs text-muted-foreground">Validade</span>
+									<Input
+										type="date"
+										value={rastro.dVal ?? ""}
+										onChange={(e) =>
+											atualizarRastro(indice, "dVal", e.target.value || undefined)
+										}
+									/>
+								</div>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									onClick={() =>
+										onChange(rastros.filter((_, atual) => atual !== indice))
+									}
+								>
+									<Trash2 className="size-4" />
+								</Button>
+							</div>
+						))}
+					</div>
 				</div>
 			)}
 

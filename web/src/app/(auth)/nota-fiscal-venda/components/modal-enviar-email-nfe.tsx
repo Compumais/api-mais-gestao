@@ -76,7 +76,7 @@ export function ModalEnviarEmailNfe({
 				if (!v && !isPending) onConcluir();
 			}}
 		>
-			<DialogContent className="max-w-md">
+			<DialogContent className="w-full sm:max-w-lg lg:max-w-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Mail className="h-5 w-5" />
@@ -109,7 +109,7 @@ export function ModalEnviarEmailNfe({
 						)}
 					</div>
 
-					<div className="flex flex-col gap-2">
+					<div className="flex flex-wrap items-center gap-6">
 						<div className="flex items-center gap-2">
 							<Checkbox
 								id="email-nfe-xml"

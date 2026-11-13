@@ -52,7 +52,7 @@ export function ModalEventoNfe({
 				if (!aberto) handleClose();
 			}}
 		>
-			<AlertDialogContent>
+			<AlertDialogContent className="w-full sm:max-w-lg lg:max-w-2xl">
 				<AlertDialogHeader>
 					<AlertDialogTitle>{titulo}</AlertDialogTitle>
 					<AlertDialogDescription>{descricao}</AlertDialogDescription>

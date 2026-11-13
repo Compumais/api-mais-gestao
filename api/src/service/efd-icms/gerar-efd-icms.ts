@@ -292,7 +292,7 @@ export async function gerarArquivoEfdIcms(
 		escritor.escrever(linha);
 		contador.incrementar("9900");
 	}
-	escrever(montarRegistro9990(2 + linhas9900.length + 1), "9990");
+	escrever(montarRegistro9990(linhas9900.length + 2), "9990");
 	escrever(montarRegistro9999(escritor.linhas + 1), "9999");
 
 	const conteudo = await escritor.finalizar();

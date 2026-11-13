@@ -11,6 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import {
 	calcularTotaisFiscaisEmissaoNfe,
 	type ItemTributacaoEmissaoNfe,
@@ -49,6 +50,7 @@ type CampoDescontoTotalNfeProps = {
 	descontoTotal?: number;
 	disabled?: boolean;
 	rotuloDocumento?: "NF-e" | "pedido";
+	className?: string;
 };
 
 export function CampoDescontoTotalNfe({
@@ -64,6 +66,7 @@ export function CampoDescontoTotalNfe({
 	descontoTotal = 0,
 	disabled = false,
 	rotuloDocumento = "NF-e",
+	className,
 }: CampoDescontoTotalNfeProps) {
 	const [modo, setModo] = useState<ModoDescontoTotalNfe>("desconto");
 	const [percentualTexto, setPercentualTexto] = useState("");
@@ -156,9 +159,9 @@ export function CampoDescontoTotalNfe({
 	}
 
 	return (
-		<Field className="sm:col-span-2">
+		<Field className={cn("sm:col-span-2", className)}>
 			<FieldLabel>Desconto no total</FieldLabel>
-			<div className="grid gap-2 sm:grid-cols-[200px_minmax(0,180px)]">
+			<div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
 				<Select
 					value={modo}
 					onValueChange={(valor) => alterarModo(valor as ModoDescontoTotalNfe)}

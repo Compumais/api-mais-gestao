@@ -120,6 +120,8 @@ import {
 	listarPizzasLocal,
 	listarProdutosPorGrupo,
 	listarProdutosPorGrupoGourmet,
+	listarSangriasTurnoAberto,
+	registrarSangriaCaixa,
 	LIMITE_HISTORICO_VENDAS,
 	listarVendas,
 	listarVendasNaoSincronizadas,
@@ -185,6 +187,7 @@ import {
 } from "../fiscal/reemitir-contingencia-nova-numeracao";
 import {
 	imprimirComprovanteFechamentoCaixa,
+	imprimirComprovanteSangriaCaixa,
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
 	imprimirEmergenciaContas as enviarImpressaoEmergenciaContas,
@@ -1633,6 +1636,60 @@ export const localApi = {
 				descricao: item.descricao,
 				quantidade: item.quantidade,
 			})),
+		});
+	},
+
+	async registrarSangria(params: {
+		valor: number;
+		motivo?: string | null;
+		senha?: string;
+		imprimir?: boolean;
+	}) {
+		const resultado = await registrarSangriaCaixa({
+			valor: params.valor,
+			motivo: params.motivo,
+			senha: params.senha,
+		});
+		if (params.imprimir !== false) {
+			try {
+				await imprimirComprovanteSangriaCaixa({
+					nomeempresa: resultado.nomeempresa,
+					username: resultado.sangria.username,
+					numeropdv: resultado.sangria.numeropdv,
+					datahora: resultado.sangria.criadoem,
+					valor: resultado.sangria.valor,
+					motivo: resultado.sangria.motivo,
+					saldoRestanteGaveta: resultado.saldoRestanteGaveta,
+				});
+			} catch (err) {
+				console.error(
+					"Falha ao imprimir comprovante de sangria:",
+					err instanceof Error ? err.message : err,
+				);
+			}
+		}
+		return resultado;
+	},
+
+	async listarSangriasTurno() {
+		return listarSangriasTurnoAberto();
+	},
+
+	async imprimirComprovanteSangria(dados: {
+		valor: number;
+		motivo?: string | null;
+		datahora?: string;
+		saldoRestanteGaveta?: number;
+	}) {
+		const [caixa, sessao] = await Promise.all([caixaAberto(), obterSessao()]);
+		return imprimirComprovanteSangriaCaixa({
+			nomeempresa: sessao.nomeempresa,
+			username: sessao.username ?? caixa?.username,
+			numeropdv: caixa?.numeropdv ?? 1,
+			datahora: dados.datahora ?? new Date().toISOString(),
+			valor: dados.valor,
+			motivo: dados.motivo,
+			saldoRestanteGaveta: dados.saldoRestanteGaveta,
 		});
 	},
 

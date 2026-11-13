@@ -29,6 +29,7 @@ export type ResumoTurnoCaixa = {
 	pagamentos: PagamentosResumoTurno;
 	totalVendas: number;
 	suprimento: number;
+	sangria: number;
 	saldoapurado: number;
 	saldoCaixaFisico: number;
 };
@@ -114,6 +115,7 @@ export function pagamentosVendaTurno(
 export function montarResumoTurnoCaixa(params: {
 	valorabertura: number;
 	vendas: VendaParaResumoTurno[];
+	sangria?: number;
 }): ResumoTurnoCaixa {
 	const pagamentos: PagamentosResumoTurno = {
 		dinheiro: 0,
@@ -147,14 +149,18 @@ export function montarResumoTurnoCaixa(params: {
 	}
 
 	const suprimento = numero(params.valorabertura);
+	const sangria = numero(params.sangria ?? 0);
 	const saldoapurado = pagamentos.total;
-	const saldoCaixaFisico = arredondarDinheiro(suprimento + pagamentos.dinheiro);
+	const saldoCaixaFisico = arredondarDinheiro(
+		suprimento + pagamentos.dinheiro - sangria,
+	);
 
 	return {
 		qtdVendas: params.vendas.length,
 		pagamentos,
 		totalVendas: pagamentos.total,
 		suprimento,
+		sangria,
 		saldoapurado,
 		saldoCaixaFisico,
 	};

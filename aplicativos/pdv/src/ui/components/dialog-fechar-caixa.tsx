@@ -342,6 +342,13 @@ export function DialogFecharCaixa({
 				) : resumo ? (
 					<div className="space-y-3 rounded-lg border bg-muted/40 p-3 text-sm">
 						<LinhaResumo label="Suprimento inicial" valor={resumo.suprimento} />
+						{resumo.sangria > 0 ? (
+							<LinhaResumo
+								label="(-) Sangrias / Retiradas"
+								valor={resumo.sangria}
+								extra="(saídas da gaveta)"
+							/>
+						) : null}
 						<LinhaResumo
 							label="Total vendido no turno"
 							valor={resumo.saldoapurado}
