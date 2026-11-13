@@ -134,6 +134,9 @@ export function Combobox({
 				createPortal(
 					<div
 						ref={dropdownRef}
+						data-combobox-dropdown="true"
+						onPointerDown={(e) => e.stopPropagation()}
+						onMouseDown={(e) => e.stopPropagation()}
 						style={{
 							position: "absolute",
 							top: `${dropdownCoords.top + 4}px`,
