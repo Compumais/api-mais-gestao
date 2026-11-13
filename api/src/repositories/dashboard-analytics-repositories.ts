@@ -1314,12 +1314,12 @@ export async function buscarDreAvancado({
 				COALESCE(SUM(ccl.valor::numeric), 0) as total
 			FROM contacorrentelancamento ccl
 			JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
-			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
 			WHERE cc.idempresa = ${idempresa}
 				AND TRIM(ccl.tipo) IN ('E', 'C')
 				AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
-			GROUP BY COALESCE(ccl.idplanocontas::text, 'sem-plano'), pc.nome
+			GROUP BY COALESCE(ccl.idplanocontas::text, 'sem-plano'), COALESCE(pc.nome, 'Sem plano de contas')
 			ORDER BY total DESC
 		`),
 		db.execute(sql`
@@ -1329,12 +1329,12 @@ export async function buscarDreAvancado({
 				COALESCE(SUM(ccl.valor::numeric), 0) as total
 			FROM contacorrentelancamento ccl
 			JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
-			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
 			WHERE cc.idempresa = ${idempresa}
 				AND TRIM(ccl.tipo) IN ('S', 'D')
 				AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
-			GROUP BY COALESCE(ccl.idplanocontas::text, 'sem-plano'), pc.nome
+			GROUP BY COALESCE(ccl.idplanocontas::text, 'sem-plano'), COALESCE(pc.nome, 'Sem plano de contas')
 			ORDER BY total DESC
 		`),
 	]);

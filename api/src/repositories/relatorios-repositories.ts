@@ -330,14 +330,18 @@ export async function buscarDespesasPorCategoria({
 }: BuscarPorCategoriaParams): Promise<DespesasPorCategoriaItem[]> {
 	const rows = await db.execute(
 		sql`
-			SELECT pc.codigo, pc.nome, COALESCE(SUM(ccl.valor::numeric), 0) AS total
+			SELECT 
+				COALESCE(pc.codigo, 'SEM-COD') AS codigo,
+				COALESCE(pc.nome, 'Não categorizado') AS nome,
+				COALESCE(SUM(ccl.valor::numeric), 0) AS total
 			FROM contacorrentelancamento ccl
 			JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
-			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
 			WHERE cc.idempresa = ${idempresa}
 				AND TRIM(ccl.tipo) IN ('S', 'D') AND ccl.idplanocontas IS NOT NULL
 				AND ccl.datahora >= ${dataInicio}::date AND ccl.datahora <= ${dataFim}::date
-			GROUP BY pc.codigo, pc.nome ORDER BY total DESC
+			GROUP BY COALESCE(pc.codigo, 'SEM-COD'), COALESCE(pc.nome, 'Não categorizado')
+			ORDER BY total DESC
 		`,
 	);
 	return (rows.rows as Record<string, unknown>[]).map((row) => ({
@@ -354,14 +358,18 @@ export async function buscarReceitasPorCategoria({
 }: BuscarPorCategoriaParams): Promise<ReceitasPorCategoriaItem[]> {
 	const rows = await db.execute(
 		sql`
-			SELECT pc.codigo, pc.nome, COALESCE(SUM(ccl.valor::numeric), 0) AS total
+			SELECT 
+				COALESCE(pc.codigo, 'SEM-COD') AS codigo,
+				COALESCE(pc.nome, 'Não categorizado') AS nome,
+				COALESCE(SUM(ccl.valor::numeric), 0) AS total
 			FROM contacorrentelancamento ccl
 			JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
-			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
 			WHERE cc.idempresa = ${idempresa}
 				AND TRIM(ccl.tipo) IN ('E', 'C') AND ccl.idplanocontas IS NOT NULL
 				AND ccl.datahora >= ${dataInicio}::date AND ccl.datahora <= ${dataFim}::date
-			GROUP BY pc.codigo, pc.nome ORDER BY total DESC
+			GROUP BY COALESCE(pc.codigo, 'SEM-COD'), COALESCE(pc.nome, 'Não categorizado')
+			ORDER BY total DESC
 		`,
 	);
 	return (rows.rows as Record<string, unknown>[]).map((row) => ({

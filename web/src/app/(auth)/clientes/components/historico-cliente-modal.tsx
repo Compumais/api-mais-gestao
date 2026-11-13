@@ -73,6 +73,7 @@ export function HistoricoClienteModal({
 		queryKey: ["historico-cliente", cliente?.id, page],
 		queryFn: () =>
 			financeiroService.listar({
+				idempresa: cliente?.idempresa,
 				identidade: cliente?.id,
 				tipo: "R",
 				page,

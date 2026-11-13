@@ -245,6 +245,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 				},
 			},
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioFluxoCaixaController,
 	});
 
@@ -310,6 +311,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioContasPagarController,
 	});
 
@@ -322,6 +324,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioContasReceberController,
 	});
 
@@ -334,6 +337,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioDespesasPorCategoriaController,
 	});
 
@@ -346,6 +350,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioDreGerencialController,
 	});
 
@@ -406,6 +411,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioReceitasPorCategoriaController,
 	});
 
@@ -418,6 +424,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioInadimplenciaController,
 	});
 
@@ -430,6 +437,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioFormasDePagamentoController,
 	});
 
@@ -438,6 +446,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			tags: ["relatorios"],
 			summary: "Gerar relatório de centro de custos",
 		},
+		preHandler: [resolveEmpresaContext],
 		handler: gerarRelatorioCentroCustosController,
 	});
 

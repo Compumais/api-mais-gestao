@@ -119,6 +119,7 @@ export interface ListarFinanceirosResponse {
 }
 
 export interface ListarFinanceirosParams {
+	idempresa?: string | null;
 	page?: number;
 	limit?: number;
 	saldo?: string | null;
