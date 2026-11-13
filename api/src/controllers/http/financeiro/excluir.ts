@@ -11,9 +11,19 @@ export async function excluirFinanceiro(
 	reply: FastifyReply,
 ) {
 	try {
+		if (!request.user) {
+			return reply.status(401).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED",
+			});
+		}
+
 		const { id } = excluirFinanceiroParamsSchema.parse(request.params);
 
-		const resultado = await excluirFinanceiroService({ id, idusuario: request.user.id });
+		const resultado = await excluirFinanceiroService({
+			id,
+			idusuario: request.user.id,
+		});
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
