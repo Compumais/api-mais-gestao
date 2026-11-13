@@ -1,0 +1,148 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+    --ifm-color-primary: #2e8555;
+    --ifm-color-primary-dark: #29784c;
+    --ifm-color-primary-darker: #277148;
+    --ifm-color-primary-darkest: #205d3b;
+    --ifm-color-primary-light: #33925d;
+    --ifm-color-primary-lighter: #359962;
+    --ifm-color-primary-lightest: #3cad6e;
+    --ifm-code-font-size: 95%;
+    --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme="dark"] {
+    --ifm-color-primary: #25c2a0;
+    --ifm-color-primary-dark: #21af90;
+    --ifm-color-primary-darker: #1fa588;
+    --ifm-color-primary-darkest: #1a8870;
+    --ifm-color-primary-light: #29d5b0;
+    --ifm-color-primary-lighter: #32d8b4;
+    --ifm-color-primary-lightest: #4fddbf;
+    --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.heroBanner {
+    padding: 4rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(
+        135deg,
+        var(--ifm-color-primary) 0%,
+        var(--ifm-color-primary-darker) 100%
+    );
+}
+
+.buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.features {
+    display: flex;
+    align-items: center;
+    padding: 2rem 0;
+    width: 100%;
+}
+
+.featureSvg {
+    height: 200px;
+    width: 200px;
+}
+
+.devBanner {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 123, 255, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 100px;
+    box-shadow: 0 15px 50px 0 rgba(0, 123, 255, 0.3);
+    max-width: 90%;
+    width: auto;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    font-weight: 500;
+}
+
+.devBanner__text {
+    flex: 1;
+}
+
+.devBanner__close {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    opacity: 0.8;
+    transition: opacity 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.devBanner__close:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translate(-50%, 150%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+[data-theme="dark"] .devBanner {
+    background-color: rgba(0, 86, 179, 0.9);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 15px 50px 0 rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .devBanner__close {
+    color: #ffffff;
+}
+
+/* ============================================
+   SEARCH STYLES
+   ============================================ */
+
+/* Highlight search terms */
+mark {
+    background-color: rgba(46, 133, 85, 0.2);
+    color: var(--ifm-color-primary-darker);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+[data-theme="dark"] mark {
+    background-color: rgba(37, 194, 160, 0.2);
+    color: var(--ifm-color-primary-lighter);
+}

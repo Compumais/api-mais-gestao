@@ -1,0 +1,279 @@
+<?php
+
+namespace Nfse\Http\Client;
+
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\RequestOptions;
+use Nfse\Dto\Http\ConsultaDpsResponse;
+use Nfse\Dto\Http\ConsultaEventoResponse;
+use Nfse\Dto\Http\ConsultaNfseResponse;
+use Nfse\Dto\Http\EmissaoNfseResponse;
+use Nfse\Dto\Http\EventoDto;
+use Nfse\Dto\Http\MensagemProcessamentoDto;
+use Nfse\Dto\Http\RegistroEventoResponse;
+use Nfse\Http\Contracts\SefinNacionalInterface;
+use Nfse\Http\Exceptions\NfseApiException;
+use Nfse\Http\NfseContext;
+use Nfse\Http\Retry;
+use Nfse\Support\SefinEndpointResolver;
+
+class SefinClient implements SefinNacionalInterface
+{
+    private Client $httpClient;
+
+    private string $baseUrl;
+
+    private ?string $tempCertFile = null;
+
+    public function __construct(private NfseContext $context)
+    {
+        $resolver = new SefinEndpointResolver;
+        $this->baseUrl = $resolver->resolve($this->context);
+        $this->httpClient = $this->createHttpClient();
+    }
+
+    public function __destruct()
+    {
+        if ($this->tempCertFile !== null && file_exists($this->tempCertFile)) {
+            unlink($this->tempCertFile);
+        }
+    }
+
+    private function resolveCertificatePath(): string
+    {
+        if ($this->context->certificatePath !== null) {
+            return $this->context->certificatePath;
+        }
+
+        $this->tempCertFile = tempnam(sys_get_temp_dir(), 'nfse_cert_');
+        file_put_contents($this->tempCertFile, $this->context->certificateContent);
+
+        return $this->tempCertFile;
+    }
+
+    private function createHttpClient(): Client
+    {
+        $curlOptions = [
+            // Endpoints municipais publicados por IP: o nome do certificado é fixado
+            // no IP original para que a verificação de host funcione.
+            CURLOPT_RESOLVE => SefinEndpointResolver::pinnedHosts(),
+        ];
+
+        if ($this->context->nssCertificateSelector !== null) {
+            // O Guzzle exige que a opção `cert` seja um arquivo existente; o seletor NSS não é, então segue cru para o cURL.
+            $curlOptions[CURLOPT_SSLCERTTYPE] = 'ENG';
+            $curlOptions[CURLOPT_SSLCERT] = $this->context->nssCertificateSelector;
+            $certificateOptions = [];
+        } else {
+            $certificateOptions = [
+                RequestOptions::CERT => [$this->resolveCertificatePath(), $this->context->certificatePassword],
+                RequestOptions::CERT_TYPE => 'P12',
+            ];
+        }
+
+        return new Client([
+            'base_uri' => rtrim($this->baseUrl, '/').'/',
+            'handler' => Retry::stack(),
+            ...$certificateOptions,
+            'curl' => $curlOptions,
+            RequestOptions::FORCE_IP_RESOLVE => 'v4',
+            // Com o Retry (3 tentativas), um host inacessível segura a requisição
+            // por até 3x o connect timeout; 10s basta para o handshake.
+            RequestOptions::CONNECT_TIMEOUT => 10,
+            RequestOptions::TIMEOUT => 60,
+            RequestOptions::VERSION => '1.1',
+            RequestOptions::HEADERS => [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ],
+        ]);
+
+    }
+
+    private function post(string $endpoint, array $data): array
+    {
+        try {
+            $response = $this->httpClient->post($endpoint, [
+                RequestOptions::JSON => $data,
+            ]);
+
+            $body = $response->getBody()->getContents();
+            $decoded = json_decode($body, true);
+
+            if (! is_array($decoded)) {
+                throw NfseApiException::responseError('Resposta inválida da API: não foi possível decodificar JSON.');
+            }
+
+            return $decoded;
+        } catch (GuzzleException $e) {
+            $this->handleException($e);
+        }
+    }
+
+    private function get(string $endpoint): array
+    {
+        try {
+            $response = $this->httpClient->get($endpoint);
+
+            return json_decode($response->getBody()->getContents(), true);
+        } catch (GuzzleException $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function emitirNfse(string $dpsXmlGZipB64): EmissaoNfseResponse
+    {
+        $response = $this->post('nfse', ['dpsXmlGZipB64' => $dpsXmlGZipB64]);
+
+        return new EmissaoNfseResponse(
+            tipoAmbiente: $response['tipoAmbiente'] ?? null,
+            versaoAplicativo: $response['versaoAplicativo'] ?? null,
+            dataHoraProcessamento: $response['dataHoraProcessamento'] ?? null,
+            idDps: $response['idDps'] ?? null,
+            chaveAcesso: $response['chaveAcesso'] ?? null,
+            nfseXmlGZipB64: $response['nfseXmlGZipB64'] ?? null,
+            alertas: $this->mapMensagens($response['alertas'] ?? []),
+            erros: $this->mapMensagens($response['erros'] ?? [])
+        );
+    }
+
+    public function consultarNfse(string $chaveAcesso): ConsultaNfseResponse
+    {
+        $response = $this->get("nfse/{$chaveAcesso}");
+
+        return new ConsultaNfseResponse(
+            tipoAmbiente: $response['tipoAmbiente'] ?? null,
+            versaoAplicativo: $response['versaoAplicativo'] ?? null,
+            dataHoraProcessamento: $response['dataHoraProcessamento'] ?? null,
+            chaveAcesso: $response['chaveAcesso'] ?? null,
+            nfseXmlGZipB64: $response['nfseXmlGZipB64'] ?? null
+        );
+    }
+
+    public function consultarDps(string $idDps): ConsultaDpsResponse
+    {
+        $response = $this->get("dps/{$idDps}");
+
+        return new ConsultaDpsResponse(
+            tipoAmbiente: $response['tipoAmbiente'] ?? null,
+            versaoAplicativo: $response['versaoAplicativo'] ?? null,
+            dataHoraProcessamento: $response['dataHoraProcessamento'] ?? null,
+            idDps: $response['idDps'] ?? null,
+            chaveAcesso: $response['chaveAcesso'] ?? null
+        );
+    }
+
+    public function registrarEvento(string $chaveAcesso, string $eventoXmlGZipB64): RegistroEventoResponse
+    {
+        $response = $this->post("nfse/{$chaveAcesso}/eventos", [
+            'pedidoRegistroEventoXmlGZipB64' => $eventoXmlGZipB64,
+        ]);
+
+        return new RegistroEventoResponse(
+            tipoAmbiente: $response['tipoAmbiente'] ?? null,
+            versaoAplicativo: $response['versaoAplicativo'] ?? null,
+            dataHoraProcessamento: $response['dataHoraProcessamento'] ?? null,
+            eventoXmlGZipB64: $response['eventoXmlGZipB64'] ?? null
+        );
+    }
+
+    public function consultarEvento(string $chaveAcesso, int $tipoEvento, int $numSeqEvento): ConsultaEventoResponse
+    {
+        $response = $this->get("nfse/{$chaveAcesso}/eventos/{$tipoEvento}/{$numSeqEvento}");
+
+        $eventos = array_map(
+            fn (array $evento): EventoDto => new EventoDto(
+                chaveAcesso: $evento['chaveAcesso'] ?? null,
+                tipoEvento: $evento['tipoEvento'] ?? null,
+                numeroPedidoRegistroEvento: $evento['numeroPedidoRegistroEvento'] ?? null,
+                dataHoraRecebimento: $evento['dataHoraRecebimento'] ?? null,
+                arquivoXml: $evento['arquivoXml'] ?? null
+            ),
+            $response['eventos'] ?? []
+        );
+
+        return new ConsultaEventoResponse(
+            tipoAmbiente: $response['tipoAmbiente'] ?? null,
+            versaoAplicativo: $response['versaoAplicativo'] ?? null,
+            dataHoraProcessamento: $response['dataHoraProcessamento'] ?? null,
+            eventos: $eventos
+        );
+    }
+
+    public function verificarDps(string $idDps): bool
+    {
+        try {
+            $this->httpClient->head("dps/{$idDps}");
+
+            return true;
+        } catch (GuzzleException $e) {
+            if ($e->getCode() === 404) {
+                return false;
+            }
+            throw NfseApiException::requestError($e->getMessage(), $e->getCode());
+        }
+    }
+
+    /**
+     * @deprecated A API do Sefin Nacional não expõe listagem de eventos: o
+     *             endpoint `eventos` só aceita POST (registro) e
+     *             `eventos/{tipo}` responde 404. Use {@see self::consultarEvento()}
+     *             com o tipo e a sequência.
+     */
+    public function listarEventos(string $chaveAcesso): array
+    {
+        throw new \BadMethodCallException(
+            'A API do Sefin Nacional não expõe listagem de eventos. Use consultarEvento() com o tipo e a sequência do evento.'
+        );
+    }
+
+    /**
+     * @deprecated Ver {@see self::listarEventos()}.
+     */
+    public function listarEventosPorTipo(string $chaveAcesso, int $tipoEvento): array
+    {
+        throw new \BadMethodCallException(
+            'A API do Sefin Nacional não expõe listagem de eventos. Use consultarEvento() com o tipo e a sequência do evento.'
+        );
+    }
+
+    private function mapMensagens(array $mensagens): array
+    {
+        return array_map(fn ($m) => new MensagemProcessamentoDto(
+            mensagem: $m['mensagem'] ?? $m['Mensagem'] ?? null,
+            parametros: $m['parametros'] ?? $m['Parametros'] ?? null,
+            codigo: $m['codigo'] ?? $m['Codigo'] ?? null,
+            descricao: $m['descricao'] ?? $m['Descricao'] ?? null,
+            complemento: $m['complemento'] ?? $m['Complemento'] ?? null
+        ), $mensagens);
+    }
+
+    /**
+     * @return mixed
+     *
+     * @throws NfseApiException
+     */
+    private function handleException(\Exception|GuzzleException $e)
+    {
+        $errorBody = '';
+        if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->getResponse()) {
+            $errorBody = $e->getResponse()->getBody()->getContents();
+        }
+
+        $parsedErrors = [];
+        if ($errorBody) {
+            $decoded = json_decode($errorBody, true);
+            if (is_array($decoded) && isset($decoded['erros']) && is_array($decoded['erros'])) {
+                $parsedErrors = $this->mapMensagens($decoded['erros']);
+            }
+        }
+
+        throw NfseApiException::requestError(
+            $e->getMessage().($errorBody ? "\nResposta: ".$errorBody : ''),
+            $e->getCode(),
+            $errorBody ?: null,
+            $parsedErrors
+        );
+    }
+}

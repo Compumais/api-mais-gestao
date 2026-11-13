@@ -76,7 +76,7 @@ export const notafiscal = pgTable(
 		cepobra: varchar({ length: 9 }),
 		cfopconhecimentotransporte: varchar({ length: 5 }),
 		chavedocumentoreferenciado: varchar({ length: 44 }),
-		chavenfe: varchar({ length: 44 }),
+		chavenfe: varchar({ length: 60 }),
 		cheque: numeric({ precision: 12, scale: 2 }),
 		cidade: varchar({ length: 50 }),
 		cidadetransportadora: varchar({ length: 50 }),

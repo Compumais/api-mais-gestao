@@ -16,7 +16,7 @@ export const notafiscalxml = pgTable(
 		id: text().primaryKey().notNull(),
 		idnotafiscal: text().notNull().unique(),
 		idempresa: text().notNull(),
-		chavenfe: varchar({ length: 44 }),
+		chavenfe: varchar({ length: 60 }),
 		protocolonfe: varchar({ length: 18 }),
 		hashsha256: varchar({ length: 64 }),
 		tamanhobytes: integer(),

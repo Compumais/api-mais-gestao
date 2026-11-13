@@ -4,12 +4,20 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Combobox } from "@/components/ui/combobox";
 import { FieldError } from "@/components/ui/field";
+import { SUGESTOES_LC116_FISCAL } from "@/constants/nfse-emissao";
 import { servicosNfseService } from "@/services/servicos-nfse.service";
+
+type SugestaoFiscal = {
+	cTribNac: string;
+	cNbsPadrao?: string;
+	cIndOpPadrao?: string;
+};
 
 type CampoItemLc116NfseProps = {
 	value?: string;
 	onChange: (codigo: string) => void;
 	onDescricaoSugerida?: (descricao: string) => void;
+	onSugestaoFiscal?: (sugestao: SugestaoFiscal) => void;
 	error?: { message?: string };
 };
 
@@ -21,6 +29,7 @@ export function CampoItemLc116Nfse({
 	value,
 	onChange,
 	onDescricaoSugerida,
+	onSugestaoFiscal,
 	error,
 }: CampoItemLc116NfseProps) {
 	const { data: servicos = [], isLoading } = useQuery({
@@ -53,6 +62,15 @@ export function CampoItemLc116Nfse({
 					const servico = servicos.find((item) => item.codigo === codigo);
 					if (servico && onDescricaoSugerida) {
 						onDescricaoSugerida(servico.descricao);
+					}
+					if (onSugestaoFiscal) {
+						const prefixo = codigo.slice(0, 5);
+						const sugestao =
+							SUGESTOES_LC116_FISCAL[codigo] ||
+							SUGESTOES_LC116_FISCAL[prefixo] || {
+								cTribNac: codigo.replace(/\D/g, "").padEnd(6, "0").slice(0, 6),
+							};
+						onSugestaoFiscal(sugestao);
 					}
 				}}
 				placeholder={

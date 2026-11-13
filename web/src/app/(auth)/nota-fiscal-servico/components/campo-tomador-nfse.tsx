@@ -59,10 +59,41 @@ export function CampoTomadorNfse({
 			/>
 			<FieldError errors={error ? [{ message: error.message }] : []} />
 			{tomadorSelecionado ? (
-				<div className="rounded-lg border bg-muted/40 px-4 py-3">
-					<p className="text-xs font-medium uppercase text-muted-foreground mb-2">
-						Dados do tomador
-					</p>
+				<div className="rounded-lg border bg-muted/40 px-4 py-3 space-y-2">
+					<div className="flex items-center justify-between">
+						<p className="text-xs font-medium uppercase text-muted-foreground">
+							Dados do tomador
+						</p>
+						{(() => {
+							const doc = tomadorSelecionado.cnpjcpf?.replace(/\D/g, "") ?? "";
+							const cep = tomadorSelecionado.cep?.replace(/\D/g, "") ?? "";
+							const temDoc = doc.length === 11 || doc.length === 14;
+							const temEnd = Boolean(
+								(tomadorSelecionado.idcidade || tomadorSelecionado.endereco) &&
+									cep,
+							);
+
+							if (!temDoc) {
+								return (
+									<span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+										⚠️ CPF/CNPJ pendente
+									</span>
+								);
+							}
+							if (!temEnd) {
+								return (
+									<span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+										⚠️ Endereço/CEP incompleto
+									</span>
+								);
+							}
+							return (
+								<span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+									✓ Cadastro apto para emissão
+								</span>
+							);
+						})()}
+					</div>
 					<ResumoDestinatarioNfe dados={tomadorSelecionado} variant="compact" />
 				</div>
 			) : null}

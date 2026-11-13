@@ -163,6 +163,20 @@ export type NfseGatewayCancelamentoResposta = NfseGatewayEmissaoResposta;
 
 export type NfseGatewayConsultaResposta = NfseGatewayEmissaoResposta;
 
+export type NfseGatewayConvenioResposta = NfseGatewayRespostaBase & {
+	conveniado?: boolean;
+	codigoMunicipio?: string;
+	ambiente?: number;
+	mensagem?: string | null;
+	parametrosConvenio?: Record<string, unknown> | null;
+};
+
+export type NfseGatewayDanfseResposta = NfseGatewayRespostaBase & {
+	chaveAcesso?: string;
+	contentType?: string;
+	pdfBase64?: string;
+};
+
 export type DadosEmissaoNfseSalvos = {
 	idordemservico?: string;
 	gerarFinanceiro?: boolean;

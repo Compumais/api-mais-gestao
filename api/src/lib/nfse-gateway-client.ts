@@ -1,6 +1,8 @@
 import type {
 	NfseGatewayCancelamentoResposta,
 	NfseGatewayConsultaResposta,
+	NfseGatewayConvenioResposta,
+	NfseGatewayDanfseResposta,
 	NfseGatewayEmissaoResposta,
 	NfseGatewayRespostaBase,
 	PayloadNfse,
@@ -191,6 +193,27 @@ export async function consultarNfsePorRpsGateway(payload: {
 		"/nfse/consultar-rps",
 		payload,
 	);
+}
+
+export async function consultarConvenioNfseGateway(payload: {
+	configJson: Record<string, unknown>;
+	pfxBase64: string;
+	senha: string;
+	codigoMunicipio?: string;
+}): Promise<NfseGatewayConvenioResposta> {
+	return chamarNfseGateway<NfseGatewayConvenioResposta>(
+		"/nfse/convenio",
+		payload,
+	);
+}
+
+export async function baixarDanfseGateway(payload: {
+	configJson: Record<string, unknown>;
+	pfxBase64: string;
+	senha: string;
+	chaveAcesso: string;
+}): Promise<NfseGatewayDanfseResposta> {
+	return chamarNfseGateway<NfseGatewayDanfseResposta>("/nfse/danfse", payload);
 }
 
 export async function verificarSaudeNfseGateway(): Promise<boolean> {

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+	<infDPS Id="DPS231400310000667299238300001000000000000046">
+		<tpAmb>1</tpAmb>
+		<dhEmi>2025-12-15T11:11:09-03:00</dhEmi>
+		<verAplic>Sistema NFS-e</verAplic>
+		<serie>00001</serie>
+		<nDPS>46</nDPS>
+		<dCompet>2025-12-15</dCompet>
+		<tpEmit>1</tpEmit>
+		<cLocEmi>2314003</cLocEmi>
+		<prest>
+			<CPF>06672992383</CPF>
+			<email>naoinformado@gmail.com</email>
+			<regTrib>
+				<opSimpNac>1</opSimpNac>
+				<regEspTrib>0</regEspTrib>
+			</regTrib>
+		</prest>
+		<toma>
+			<CNPJ>10237604000100</CNPJ>
+			<xNome>FUNDO MUNICIPAL DE SAUDE - VARZEA ALEGRE</xNome>
+			<end>
+				<endNac>
+					<cMun>2314003</cMun>
+					<CEP>63540000</CEP>
+				</endNac>
+				<xLgr>RUA DEP LUIZ OTACILIO CORREIA, 153</xLgr>
+				<nro>-</nro>
+				<xBairro>CENTRO</xBairro>
+			</end>
+		</toma>
+		<serv>
+			<locPrest>
+				<cLocPrestacao>2314003</cLocPrestacao>
+			</locPrest>
+			<cServ>
+				<cTribNac>040601</cTribNac>
+				<xDescServ>(VALOR EMPENHADO PARA ATENDER DESPESAS COM CREDENCIAMENTO DE PROFISSIONAIS ESPECIALIZADOS COMO  TECNICA DE ENFERMAGEM PARA COMPLEMENTAR A EQUIPE DE ATENÇÃO DOMICILIAR (EMAD) E A EQUIPE MULTIPROFISSIONAL  DE APOIO (EMAP), NO ÂMBITO DO SISTEMA ÚNICO DE SAÚDE (SUS), CONFORME TERMO DE REFERÊNCIA, A SEREM PRESTADOS  NESTA CIDADE, ATRAVÉS DA SECRETARIA MUNICIPAL DE SAÚDE DE VÁRZEA ALEGRE/CE,CONFORME PROCESSO DE Nº003-2024 E  CONTRATO DE Nº2024.03.06.1,) </xDescServ>
+				<cNBS>123019100</cNBS>
+			</cServ>
+		</serv>
+		<valores>
+			<vServPrest>
+				<vServ>1850.00</vServ>
+			</vServPrest>
+			<trib>
+				<tribMun>
+					<tribISSQN>1</tribISSQN>
+					<tpRetISSQN>2</tpRetISSQN>
+				</tribMun>
+				<totTrib>
+					<indTotTrib>0</indTotTrib>
+				</totTrib>
+			</trib>
+		</valores>
+	</infDPS>
+</DPS>

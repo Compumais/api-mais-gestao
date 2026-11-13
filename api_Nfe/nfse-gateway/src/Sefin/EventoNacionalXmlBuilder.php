@@ -38,7 +38,8 @@ final class EventoNacionalXmlBuilder
         $tpAmb = (string) ((int) ($configJson['ambiente'] ?? 2));
         $tz = new \DateTimeZone('America/Sao_Paulo');
         $dhEvento = (new \DateTimeImmutable('now', $tz))->format('Y-m-d\TH:i:sP');
-        $idInfPed = 'PRE' . $chNfse;
+        // TSIdPedRegEvt = PRE[0-9]{56}: PRE + chave (50) + tipo do evento (6). Sem nPedRegEvento.
+        $idInfPed = 'PRE' . $chNfse . self::TIPO_CANCELAMENTO;
 
         $xml = new DOMDocument('1.0', 'UTF-8');
         $xml->formatOutput = false;

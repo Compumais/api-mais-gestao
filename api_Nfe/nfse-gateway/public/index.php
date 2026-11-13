@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use MaisGestao\NfseGateway\Middleware\AuthMiddleware;
+use MaisGestao\NfseGateway\Sefin\AdnClient;
 use MaisGestao\NfseGateway\Services\CertificadoService;
 use MaisGestao\NfseGateway\Services\NfseCancelamentoService;
 use MaisGestao\NfseGateway\Services\NfseConsultaService;
@@ -101,6 +102,44 @@ try {
             'sucesso' => (bool) ($resultado['sucesso'] ?? false),
             ...$resultado,
         ]);
+    }
+
+    if ($method === 'POST' && $path === '/nfse/convenio') {
+        $configJson = is_array($body['configJson'] ?? null) ? $body['configJson'] : [];
+        $pfxBase64 = (string) ($body['pfxBase64'] ?? '');
+        $senha = (string) ($body['senha'] ?? '');
+        $codigoMunicipio = (string) ($body['codigoMunicipio'] ?? $configJson['codigomunicipioibge'] ?? '');
+
+        $adn = new AdnClient($configJson, $pfxBase64, $senha);
+        $resultado = $adn->consultarParametrosConvenio($codigoMunicipio);
+
+        jsonResponse($resultado);
+    }
+
+    if ($method === 'POST' && $path === '/nfse/aliquota') {
+        $configJson = is_array($body['configJson'] ?? null) ? $body['configJson'] : [];
+        $pfxBase64 = (string) ($body['pfxBase64'] ?? '');
+        $senha = (string) ($body['senha'] ?? '');
+        $codigoMunicipio = (string) ($body['codigoMunicipio'] ?? $configJson['codigomunicipioibge'] ?? '');
+        $codigoServico = (string) ($body['codigoServico'] ?? '');
+        $competencia = (string) ($body['competencia'] ?? date('Y-m-d'));
+
+        $adn = new AdnClient($configJson, $pfxBase64, $senha);
+        $resultado = $adn->consultarAliquota($codigoMunicipio, $codigoServico, $competencia);
+
+        jsonResponse($resultado);
+    }
+
+    if ($method === 'POST' && $path === '/nfse/danfse') {
+        $configJson = is_array($body['configJson'] ?? null) ? $body['configJson'] : [];
+        $pfxBase64 = (string) ($body['pfxBase64'] ?? '');
+        $senha = (string) ($body['senha'] ?? '');
+        $chaveAcesso = (string) ($body['chaveAcesso'] ?? '');
+
+        $adn = new AdnClient($configJson, $pfxBase64, $senha);
+        $resultado = $adn->obterDanfsePdf($chaveAcesso);
+
+        jsonResponse($resultado);
     }
 
     jsonResponse(['sucesso' => false, 'erro' => 'Rota não encontrada'], 404);

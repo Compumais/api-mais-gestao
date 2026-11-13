@@ -848,6 +848,13 @@
 			"when": 1791400000000,
 			"tag": "0116_notafiscalitem_descricao_255",
 			"breakpoints": true
+		},
+		{
+			"idx": 120,
+			"version": "7",
+			"when": 1791500000000,
+			"tag": "0118_chavenfe_varchar_60",
+			"breakpoints": true
 		}
 	]
 }

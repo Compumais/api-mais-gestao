@@ -11,8 +11,10 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use MaisGestao\NfseGateway\Adapters\AdapterSefinNacional;
 use MaisGestao\NfseGateway\Factory\ProvedorFactory;
+use MaisGestao\NfseGateway\Sefin\DpsNacionalValidator;
 use MaisGestao\NfseGateway\Sefin\DpsNacionalXmlBuilder;
 use MaisGestao\NfseGateway\Sefin\EventoNacionalXmlBuilder;
+use MaisGestao\NfseGateway\Sefin\SefinEndpointResolver;
 use MaisGestao\NfseGateway\Sefin\SefinHttpClient;
 
 $falhas = 0;
@@ -103,24 +105,23 @@ assertTrue(str_contains($xml, '<vTotTribMun>0.00</vTotTribMun>'), 'vTotTribMun p
 assertTrue(!str_contains($xml, '<indTotTrib>'), 'indTotTrib não é mais usado');
 assertTrue(str_contains($xml, '<pAliq>2.00</pAliq>'), 'pAliq emitido quando > 0');
 
-// NT 009: cServ — cNBS antes de xDescServ
+// Schema oficial DPS_v1.01.xsd (TCCServ): cTribNac -> xDescServ -> cNBS
 assertTrue(
     (bool) preg_match(
-        '/<cTribNac>010101<\/cTribNac>\s*<cNBS>115021000<\/cNBS>\s*<xDescServ>/',
+        '/<cTribNac>010101<\/cTribNac>\s*<xDescServ>[\s\S]*?<\/xDescServ>\s*<cNBS>115021000<\/cNBS>/',
         $xml,
     ),
-    'cServ: cTribNac → cNBS → xDescServ (NT 009)',
+    'cServ: cTribNac → xDescServ → cNBS (Schema DPS_v1.01.xsd)',
 );
 assertTrue(
-    !preg_match('/<xDescServ>[\s\S]*?<cNBS>/', $xml),
-    'cNBS não pode aparecer depois de xDescServ',
+    !preg_match('/<cNBS>[\s\S]*?<xDescServ>/', $xml),
+    'cNBS não pode aparecer antes de xDescServ no schema DPS_v1.01',
 );
 
-// NT 009: finNFSe em infDPS após tpEmit e antes de cLocEmi
-assertTrue(str_contains($xml, '<finNFSe>0</finNFSe>'), 'finNFSe=0 em infDPS');
+// finNFSe não pertence ao infDPS (pertence ao grupo IBSCBS)
 assertTrue(
-    (bool) preg_match('/<tpEmit>1<\/tpEmit>\s*<finNFSe>0<\/finNFSe>\s*<cLocEmi>/', $xml),
-    'finNFSe fica entre tpEmit e cLocEmi',
+    (bool) preg_match('/<tpEmit>1<\/tpEmit>\s*<cLocEmi>/', $xml),
+    'infDPS segue sequência tpEmit -> cLocEmi',
 );
 
 // Simples com cIndOp: IBSCBS obrigatório (portal nacional)
@@ -140,18 +141,10 @@ $payloadSnIbs['servico']['ibsCbs'] = [
 ]);
 assertTrue(str_contains($xmlSnIbs, '<IBSCBS>'), 'IBSCBS emitido para Simples com cIndOp');
 assertTrue(str_contains($xmlSnIbs, '<cIndOp>050101</cIndOp>'), 'cIndOp 050101 no IBSCBS');
+assertTrue(str_contains($xmlSnIbs, '<finNFSe>0</finNFSe>'), 'finNFSe=0 presente no grupo IBSCBS');
 assertTrue(
-    (bool) preg_match('/<trib>\s*<CST>000<\/CST>\s*<cClassTrib>000001<\/cClassTrib>/', $xmlSnIbs),
-    'CST/cClassTrib diretos em trib (sem gIBSCBS)',
-);
-assertTrue(!str_contains($xmlSnIbs, '<gIBSCBS>'), 'gIBSCBS removido no NT 009');
-assertTrue(
-    (bool) preg_match('/<tpEmit>1<\/tpEmit>\s*<finNFSe>0<\/finNFSe>\s*<cLocEmi>/', $xmlSnIbs),
-    'finNFSe permanece em infDPS no XML com IBSCBS',
-);
-assertTrue(
-    !preg_match('/<IBSCBS>[\s\S]*<finNFSe>/', $xmlSnIbs),
-    'finNFSe não aparece dentro de IBSCBS',
+    (bool) preg_match('/<trib>\s*<gIBSCBS>\s*<CST>000<\/CST>\s*<cClassTrib>000001<\/cClassTrib>\s*<\/gIBSCBS>\s*<\/trib>/', $xmlSnIbs),
+    'CST/cClassTrib encapsulados em gIBSCBS no schema DPS_v1.01',
 );
 
 // Aliquota zero: omite pAliq
@@ -180,6 +173,10 @@ $chave50 = str_repeat('1', 50);
     ],
 );
 assertTrue(str_starts_with($idPed, 'PRE'), 'Id do pedido de evento começa com PRE');
+assertTrue(
+    (bool) preg_match('/^PRE[0-9]{56}$/', $idPed) && str_ends_with($idPed, '101101'),
+    'Id do pedido de evento segue TSIdPedRegEvt (PRE + chave 50 + tipo 101101)',
+);
 assertTrue(str_contains($xmlEvento, '<pedRegEvento'), 'Raiz pedRegEvento');
 assertTrue(str_contains($xmlEvento, '<e101101>'), 'Evento e101101 presente');
 assertTrue(str_contains($xmlEvento, '<chNFSe>' . $chave50 . '</chNFSe>'), 'chNFSe no evento');
@@ -427,6 +424,74 @@ $res404 = $mapearErro->invoke(
 );
 assertTrue(($res404['sucesso'] ?? true) === false, '404 consulta = falha');
 assertTrue(str_contains((string) ($res404['erros'][0]['mensagem'] ?? ''), 'não encontrada'), '404 mensagem clara');
+
+// --- Omissão de <IM> quando omitirImPrestador = true ---
+[, $xmlSemIm] = $builder->montar(payloadNfseMinimo(), [
+    'ambiente' => 2,
+    'cnpj' => '12345678000195',
+    'codigomunicipioibge' => '3550308',
+    'omitirImPrestador' => true,
+]);
+assertTrue(!str_contains($xmlSemIm, '<IM>'), 'omitirImPrestador omite tag <IM> do prestador');
+
+// --- Sanitização de quebras de linha em xDescServ ---
+$payloadMultilinha = payloadNfseMinimo();
+$payloadMultilinha['servico']['discriminacao'] = "Linha 1\r\nLinha 2\nLinha 3";
+[, $xmlMultilinha] = $builder->montar($payloadMultilinha, [
+    'ambiente' => 2,
+    'cnpj' => '12345678000195',
+    'codigomunicipioibge' => '3550308',
+]);
+assertTrue(
+    str_contains($xmlMultilinha, '<xDescServ>Linha 1 Linha 2 Linha 3</xDescServ>'),
+    'xDescServ sanitiza quebras de linha para espaço simples',
+);
+
+// --- SefinEndpointResolver ---
+assertTrue(
+    SefinEndpointResolver::resolveSefinBaseUrl(['ambiente' => 2, 'codigomunicipioibge' => '3511102'])
+    === 'https://catanduva.prefeitura.rlz.com.br/nota/nacional',
+    'SefinEndpointResolver resolve endpoint municipal específico (Catanduva homologação)',
+);
+assertTrue(
+    SefinEndpointResolver::resolveAdnBaseUrl(['ambiente' => 1]) === 'https://adn.nfse.gov.br',
+    'SefinEndpointResolver resolve ADN produção',
+);
+assertTrue(
+    SefinEndpointResolver::resolveAdnBaseUrl(['ambiente' => 2]) === 'https://adn.producaorestrita.nfse.gov.br',
+    'SefinEndpointResolver resolve ADN homologação',
+);
+assertTrue(
+    count(SefinEndpointResolver::pinnedHosts()) >= 1,
+    'SefinEndpointResolver retorna pinnedHosts para CURLOPT_RESOLVE',
+);
+
+// --- DpsNacionalValidator ---
+$errosValidos = DpsNacionalValidator::validar(payloadNfseMinimo(), ['ambiente' => 2]);
+assertTrue($errosValidos === [], 'DpsNacionalValidator aprova payload válido');
+
+$payloadInvalido = payloadNfseMinimo();
+$payloadInvalido['prestador']['municipioIbge'] = '123';
+$payloadInvalido['servico']['valores']['servicos'] = 0;
+$errosInvalidos = DpsNacionalValidator::validar($payloadInvalido, ['ambiente' => 2]);
+assertTrue(count($errosInvalidos) >= 2, 'DpsNacionalValidator detecta cLocEmi inválido e valor <= 0');
+
+// --- Detecção de rejeição de IM no CNC ---
+$detectarImCnc = $ref->getMethod('respostaIndicaRejeicaoImCnc');
+$detectarImCnc->setAccessible(true);
+$ehErroIm = $detectarImCnc->invoke($adapterSefin, [
+    'status' => 400,
+    'json' => [
+        'erros' => [
+            [
+                'codigo' => 'E0120',
+                'descricao' => 'IM do prestador não deve ser informado, pois não existem informações complementares registradas no CNC NFS-e do município emissor informado na DPS.',
+            ],
+        ],
+    ],
+    'body' => '',
+]);
+assertTrue($ehErroIm === true, 'Detecta rejeição de IM não cadastrada no CNC para auto-fallback');
 
 echo "\n";
 if ($falhas > 0) {

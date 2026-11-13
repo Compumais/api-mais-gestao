@@ -94,18 +94,13 @@ final class DpsNacionalXmlBuilder
         $this->appendText($xml, $inf, 'tpAmb', $tpAmb);
         $this->appendText($xml, $inf, 'dhEmi', $dhEmi);
         $this->appendText($xml, $inf, 'verAplic', 'mais-gestao_1.0');
-        // Elemento serie sem pad (Id usa seriePad de 5 dígitos).
-        $this->appendText($xml, $inf, 'serie', ltrim($serie, '0') !== '' ? ltrim($serie, '0') : '0');
+        // TSSerieDPS: ^0{0,4}\d{1,5}$ (até 5 dígitos numéricos)
+        $serieNum = preg_replace('/\D/', '', (string) $serie) ?: '1';
+        $serieFormatada = substr($serieNum, -5);
+        $this->appendText($xml, $inf, 'serie', $serieFormatada);
         $this->appendText($xml, $inf, 'nDPS', $nDps);
         $this->appendText($xml, $inf, 'dCompet', substr($dCompet, 0, 10));
         $this->appendText($xml, $inf, 'tpEmit', '1');
-        // NT 009: finNFSe é filho direto de infDPS (após tpEmit), não de IBSCBS.
-        $ibsPayload = is_array($servico['ibsCbs'] ?? null) ? $servico['ibsCbs'] : [];
-        $finNFSe = preg_replace('/\D/', '', (string) ($ibsPayload['finNFSe'] ?? '0')) ?? '0';
-        if ($finNFSe === '' || !in_array($finNFSe, ['0', '1', '2'], true)) {
-            $finNFSe = '0';
-        }
-        $this->appendText($xml, $inf, 'finNFSe', $finNFSe);
         $this->appendText($xml, $inf, 'cLocEmi', $cLocEmi);
 
         $prest = $xml->createElementNS(self::NS, 'prest');
@@ -114,7 +109,10 @@ final class DpsNacionalXmlBuilder
         } else {
             $this->appendText($xml, $prest, 'CNPJ', $cnpj);
         }
-        $imPrestador = preg_replace('/\D/', '', (string) ($prestador['im'] ?? $configJson['im'] ?? ''));
+        $omitirIm = !empty($configJson['omitirImPrestador']) || !empty($prestador['omitirIm']);
+        $imPrestador = $omitirIm
+            ? ''
+            : (preg_replace('/\D/', '', (string) ($prestador['im'] ?? $configJson['im'] ?? '')) ?? '');
         if ($imPrestador !== '') {
             $this->appendText($xml, $prest, 'IM', (string) $imPrestador);
         }
@@ -137,7 +135,7 @@ final class DpsNacionalXmlBuilder
         $inf->appendChild($prest);
 
         $toma = $xml->createElementNS(self::NS, 'toma');
-        $docTomador = preg_replace('/\D/', '', (string) ($tomador['cnpjCpf'] ?? ''));
+        $docTomador = preg_replace('/\D/', '', (string) ($tomador['cnpjCpf'] ?? $tomador['cpf'] ?? $tomador['cnpj'] ?? ''));
         if (strlen((string) $docTomador) === 11) {
             $this->appendText($xml, $toma, 'CPF', (string) $docTomador);
         } else {
@@ -177,14 +175,18 @@ final class DpsNacionalXmlBuilder
         $locPrest = $xml->createElementNS(self::NS, 'locPrest');
         $this->appendText($xml, $locPrest, 'cLocPrestacao', $cLocPrestacao);
         $serv->appendChild($locPrest);
-        // NT 009: cTribNac → cTribMun? → cNBS? → cAtvSN? → cIntContrib? → xDescServ
+        // Ordem do Schema Nacional (tiposComplexos_v1.01.xsd -> TCCServ):
+        // cTribNac -> cTribMun? -> xDescServ -> cNBS? -> cIntContrib?
         $cServ = $xml->createElementNS(self::NS, 'cServ');
         $this->appendText($xml, $cServ, 'cTribNac', $cTribNac);
         $cTribMun = preg_replace('/\D/', '', (string) ($servico['codigoTributacaoMunicipio'] ?? ''));
         if ($cTribMun !== null && strlen($cTribMun) === 3) {
             $this->appendText($xml, $cServ, 'cTribMun', $cTribMun);
         }
-        $this->appendText($xml, $cServ, 'cNBS', $cNbs);
+        $this->appendText($xml, $cServ, 'xDescServ', (string) ($servico['discriminacao'] ?? 'Servico'));
+        if ($cNbs !== '') {
+            $this->appendText($xml, $cServ, 'cNBS', $cNbs);
+        }
         $cAtvSN = preg_replace('/\D/', '', (string) ($servico['codigoAtividadeSN'] ?? $servico['cAtvSN'] ?? ''));
         if ($cAtvSN !== null && $cAtvSN !== '') {
             $this->appendText($xml, $cServ, 'cAtvSN', $cAtvSN);
@@ -193,7 +195,6 @@ final class DpsNacionalXmlBuilder
         if ($cIntContrib !== '') {
             $this->appendText($xml, $cServ, 'cIntContrib', $cIntContrib);
         }
-        $this->appendText($xml, $cServ, 'xDescServ', (string) ($servico['discriminacao'] ?? 'Servico'));
         $serv->appendChild($cServ);
         $inf->appendChild($serv);
 
@@ -308,14 +309,18 @@ final class DpsNacionalXmlBuilder
             );
         }
 
+        // Schema Nacional (tiposComplexos_v1.01.xsd -> TCRTCInfoIBSCBS):
+        // finNFSe -> indFinal? -> cIndOp -> tpOper? -> gRefNFSe? -> tpEnteGov? -> indDest -> dest? -> imovel? -> valores
         $indFinal = (string) ($ibs['indFinal'] ?? 0);
         $indDest = (string) ($ibs['indDest'] ?? 0);
+        $finNFSe = (string) ($ibs['finNFSe'] ?? 0);
         $cst = preg_replace('/\D/', '', (string) ($ibs['cst'] ?? '000')) ?? '000';
         $cst = str_pad(substr($cst, 0, 3), 3, '0', STR_PAD_LEFT);
         $cClassTrib = preg_replace('/\D/', '', (string) ($ibs['cClassTrib'] ?? '000001')) ?? '000001';
         $cClassTrib = str_pad(substr($cClassTrib, 0, 6), 6, '0', STR_PAD_LEFT);
 
         $ibsCbs = $xml->createElementNS(self::NS, 'IBSCBS');
+        $this->appendText($xml, $ibsCbs, 'finNFSe', $finNFSe);
         $this->appendText($xml, $ibsCbs, 'indFinal', $indFinal);
         $this->appendText($xml, $ibsCbs, 'cIndOp', $cIndOp);
         if (isset($ibs['tpOper'])) {
@@ -323,11 +328,13 @@ final class DpsNacionalXmlBuilder
         }
         $this->appendText($xml, $ibsCbs, 'indDest', $indDest);
 
-        // NT 009: trib espera CST/cClassTrib diretos (sem wrapper gIBSCBS).
+        // TCRTCInfoValoresIBSCBS -> trib -> gIBSCBS -> (CST, cClassTrib)
         $valoresIbs = $xml->createElementNS(self::NS, 'valores');
         $tribIbs = $xml->createElementNS(self::NS, 'trib');
-        $this->appendText($xml, $tribIbs, 'CST', $cst);
-        $this->appendText($xml, $tribIbs, 'cClassTrib', $cClassTrib);
+        $gIbsCbs = $xml->createElementNS(self::NS, 'gIBSCBS');
+        $this->appendText($xml, $gIbsCbs, 'CST', $cst);
+        $this->appendText($xml, $gIbsCbs, 'cClassTrib', $cClassTrib);
+        $tribIbs->appendChild($gIbsCbs);
         $valoresIbs->appendChild($tribIbs);
         $ibsCbs->appendChild($valoresIbs);
         $inf->appendChild($ibsCbs);
@@ -335,8 +342,9 @@ final class DpsNacionalXmlBuilder
 
     private function appendText(DOMDocument $xml, DOMElement $parent, string $tag, string $valor): void
     {
+        $sanitizado = preg_replace('/[\r\n]+/', ' ', $valor) ?? $valor;
         $el = $xml->createElementNS(self::NS, $tag);
-        $el->appendChild($xml->createTextNode($valor));
+        $el->appendChild($xml->createTextNode(trim($sanitizado)));
         $parent->appendChild($el);
     }
 

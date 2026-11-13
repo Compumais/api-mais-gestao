@@ -2,6 +2,15 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+	AlertTriangle,
+	Calculator,
+	ChevronDown,
+	FileText,
+	Info,
+	Sparkles,
+	User,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -12,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
+	FieldError,
 	FieldGroup,
 	FieldLabel,
 	FieldLegend,
@@ -22,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { NFE_STATUS } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { emissaoNfseSchema } from "@/schemas/nfse-emissao.schema";
+import { empresaFiscalService } from "@/services/empresa-fiscal.service";
 import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
 import {
 	buscarNfsePorId,
@@ -33,7 +44,9 @@ import {
 	type PrepararNfseOsResposta,
 } from "@/services/ordem-servico.service";
 import { PageContainer } from "../../components/page-container";
+import { CampoIndicadorOperacaoNfse } from "../components/campo-indicador-operacao-nfse";
 import { CampoItemLc116Nfse } from "../components/campo-item-lc116-nfse";
+import { CampoNbsNfse } from "../components/campo-nbs-nfse";
 import { CampoTomadorNfse } from "../components/campo-tomador-nfse";
 import { CardErroNfse } from "../components/card-erro-nfse";
 
@@ -116,12 +129,22 @@ export default function NovaNfsePage() {
 	} | null>(null);
 	const [origemAplicada, setOrigemAplicada] = useState<string | null>(null);
 	const [osAplicada, setOsAplicada] = useState<string | null>(null);
+	const [avancadoAberto, setAvancadoAberto] = useState(false);
 
 	const { data: config } = useQuery({
 		queryKey: ["nfse-configuracao", empresa?.id],
 		queryFn: () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
 			return nfseConfiguracaoService.buscar(empresa.id);
+		},
+		enabled: !!empresa?.id,
+	});
+
+	const { data: empresaFiscal } = useQuery({
+		queryKey: ["empresa-fiscal-nfse", empresa?.id],
+		queryFn: () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return empresaFiscalService.buscar(empresa.id);
 		},
 		enabled: !!empresa?.id,
 	});
@@ -159,7 +182,7 @@ export default function NovaNfsePage() {
 			discriminacao: "",
 			codigoTributacaoNacional: "",
 			codigoNbs: "",
-			codigoIndicadorOperacao: "",
+			codigoIndicadorOperacao: "100301",
 			exigibilidadeIss: "1",
 			issRetido: "2",
 			valores: { servicos: 0, iss: 0, aliquota: 0 },
@@ -168,6 +191,21 @@ export default function NovaNfsePage() {
 		},
 	});
 
+	const { errors } = form.formState;
+
+	const valorServicos = form.watch("valores.servicos") || 0;
+	const aliquotaIss = form.watch("valores.aliquota") || 0;
+	const issRetidoValor = form.watch("issRetido");
+	const isRetido = issRetidoValor === "1";
+
+	// Recálculo automático do ISS em tempo real
+	useEffect(() => {
+		const valorIssCalculado = Number(
+			((Number(valorServicos) * Number(aliquotaIss)) / 100).toFixed(2),
+		);
+		form.setValue("valores.iss", valorIssCalculado, { shouldValidate: false });
+	}, [valorServicos, aliquotaIss, form]);
+
 	useEffect(() => {
 		if (!origemDetalhe || !origemId || origemAplicada === origemId) return;
 		form.reset({
@@ -175,7 +213,7 @@ export default function NovaNfsePage() {
 			discriminacao: "",
 			codigoTributacaoNacional: "",
 			codigoNbs: "",
-			codigoIndicadorOperacao: "",
+			codigoIndicadorOperacao: "100301",
 			exigibilidadeIss: "1",
 			issRetido: "2",
 			valores: { servicos: 0, iss: 0, aliquota: 0 },
@@ -195,7 +233,7 @@ export default function NovaNfsePage() {
 			discriminacao: "",
 			codigoTributacaoNacional: "",
 			codigoNbs: "",
-			codigoIndicadorOperacao: "",
+			codigoIndicadorOperacao: "100301",
 			exigibilidadeIss: "1",
 			issRetido: "2",
 			valores: { servicos: 0, iss: 0, aliquota: 0 },
@@ -289,13 +327,22 @@ export default function NovaNfsePage() {
 			provedor === "adn"
 		);
 	})();
-	const { errors } = form.formState;
+
+	const isSimplesOuMei =
+		empresaFiscal?.crt === 1 ||
+		empresaFiscal?.crt === 2 ||
+		empresaFiscal?.crt === 4;
+
+	const valorIssCalculado = form.watch("valores.iss") || 0;
+	const valorLiquido = isRetido
+		? Math.max(0, Number(valorServicos) - Number(valorIssCalculado))
+		: Number(valorServicos);
 
 	return (
 		<PageContainer>
-			<main className="flex flex-col gap-6 py-4 px-4 max-w-3xl">
+			<div className="py-4 px-4 max-w-6xl mx-auto space-y-6">
 				<header>
-					<h1 className="text-2xl font-bold">
+					<h1 className="text-2xl font-bold tracking-tight">
 						{ordemServicoId
 							? "Revisar NFS-e da Ordem de Serviço"
 							: origemId
@@ -307,7 +354,7 @@ export default function NovaNfsePage() {
 							? "Revise os serviços, impostos e tomador antes de transmitir"
 							: origemId
 								? "Formulário pré-preenchido — a emissão gera um novo RPS/NFS-e"
-								: "Emissão manual de serviço (RPS → NFS-e)"}
+								: "Emissão de Nota Fiscal de Serviço (Portal Nacional / Sefin)"}
 					</p>
 				</header>
 
@@ -333,7 +380,7 @@ export default function NovaNfsePage() {
 				) : null}
 
 				<form
-					className="space-y-6"
+					id={fid("form-nfse")}
 					onSubmit={form.handleSubmit((dados) => {
 						setErroEmissao(null);
 						if (layoutDps) {
@@ -347,7 +394,7 @@ export default function NovaNfsePage() {
 										"cIndOp obrigatório no portal nacional (6 dígitos, Anexo VII)",
 								});
 								toast.error(
-									"Informe o cIndOp IBS/CBS (6 dígitos) para emitir no portal nacional",
+									"Informe o indicador de operação IBS/CBS (6 dígitos)",
 								);
 								return;
 							}
@@ -355,176 +402,387 @@ export default function NovaNfsePage() {
 						emitirMutation.mutate(dados);
 					})}
 				>
-					<FieldGroup>
-						<FieldSet>
-							<FieldLegend>1. Tomador do serviço</FieldLegend>
-							<Field data-invalid={!!errors.iddestinatario}>
-								<FieldLabel>Cliente</FieldLabel>
-								<Controller
-									control={form.control}
-									name="iddestinatario"
-									render={({ field }) => (
-										<CampoTomadorNfse
-											idempresa={empresa.id}
-											value={field.value}
-											onChange={field.onChange}
-											error={errors.iddestinatario}
-										/>
-									)}
-								/>
-							</Field>
-						</FieldSet>
+					<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+						{/* Coluna Principal: Formulário */}
+						<div className="lg:col-span-8 space-y-6">
+							{/* 1. Tomador */}
+							<div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+								<div className="flex items-center gap-2 border-b pb-3">
+									<User className="h-5 w-5 text-primary" />
+									<h2 className="font-semibold text-base">
+										1. Tomador do Serviço (Cliente)
+									</h2>
+								</div>
+								<Field data-invalid={!!errors.iddestinatario}>
+									<FieldLabel>Cliente</FieldLabel>
+									<Controller
+										control={form.control}
+										name="iddestinatario"
+										render={({ field }) => (
+											<CampoTomadorNfse
+												idempresa={empresa.id}
+												value={field.value}
+												onChange={field.onChange}
+												error={errors.iddestinatario}
+											/>
+										)}
+									/>
+								</Field>
+							</div>
 
-						<FieldSet>
-							<FieldLegend>2. Serviço prestado</FieldLegend>
-							<Field data-invalid={!!errors.itemListaServico}>
-								<FieldLabel>Item LC 116</FieldLabel>
-								<Controller
-									control={form.control}
-									name="itemListaServico"
-									render={({ field }) => (
-										<CampoItemLc116Nfse
-											value={field.value}
-											onChange={field.onChange}
-											onDescricaoSugerida={(descricao) => {
-												if (!form.getValues("discriminacao")) {
-													form.setValue("discriminacao", descricao);
-												}
-											}}
-											error={errors.itemListaServico}
-										/>
-									)}
-								/>
-							</Field>
+							{/* 2. Serviço */}
+							<div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+								<div className="flex items-center gap-2 border-b pb-3">
+									<FileText className="h-5 w-5 text-primary" />
+									<h2 className="font-semibold text-base">
+										2. Serviço Prestado
+									</h2>
+								</div>
 
-							<Field>
-								<FieldLabel htmlFor={fid("discriminacao")}>
-									Discriminação
-								</FieldLabel>
-								<Textarea
-									id={fid("discriminacao")}
-									rows={4}
-									{...form.register("discriminacao")}
-								/>
-							</Field>
+								<Field data-invalid={!!errors.itemListaServico}>
+									<FieldLabel>Item da Lista de Serviços (LC 116/03)</FieldLabel>
+									<Controller
+										control={form.control}
+										name="itemListaServico"
+										render={({ field }) => (
+											<CampoItemLc116Nfse
+												value={field.value}
+												onChange={field.onChange}
+												onDescricaoSugerida={(descricao) => {
+													if (!form.getValues("discriminacao")) {
+														form.setValue("discriminacao", descricao);
+													}
+												}}
+												onSugestaoFiscal={(sugestao) => {
+													if (!form.getValues("codigoTributacaoNacional")) {
+														form.setValue(
+															"codigoTributacaoNacional",
+															sugestao.cTribNac,
+														);
+													}
+													if (
+														sugestao.cNbsPadrao &&
+														!form.getValues("codigoNbs")
+													) {
+														form.setValue(
+															"codigoNbs",
+															sugestao.cNbsPadrao,
+														);
+													}
+													if (
+														sugestao.cIndOpPadrao &&
+														!form.getValues("codigoIndicadorOperacao")
+													) {
+														form.setValue(
+															"codigoIndicadorOperacao",
+															sugestao.cIndOpPadrao,
+														);
+													}
+												}}
+												error={errors.itemListaServico}
+											/>
+										)}
+									/>
+								</Field>
 
-							{layoutDps ? (
+								<Field data-invalid={!!errors.discriminacao}>
+									<FieldLabel htmlFor={fid("discriminacao")}>
+										Discriminação detalhada do serviço
+									</FieldLabel>
+									<Textarea
+										id={fid("discriminacao")}
+										rows={4}
+										placeholder="Descreva detalhadamente o serviço executado..."
+										{...form.register("discriminacao")}
+									/>
+									<FieldError
+										errors={
+											errors.discriminacao
+												? [{ message: errors.discriminacao.message }]
+												: []
+										}
+									/>
+								</Field>
+							</div>
+
+							{/* 3. Valores e Tributação */}
+							<div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+								<div className="flex items-center justify-between border-b pb-3">
+									<div className="flex items-center gap-2">
+										<Calculator className="h-5 w-5 text-primary" />
+										<h2 className="font-semibold text-base">
+											3. Valores e ISS
+										</h2>
+									</div>
+									{isSimplesOuMei ? (
+										<span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
+											<Sparkles className="h-3 w-3" /> Simples Nacional / MEI
+										</span>
+									) : null}
+								</div>
+
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-									<Field data-invalid={!!errors.codigoTributacaoNacional}>
-										<FieldLabel htmlFor={fid("codigoTributacaoNacional")}>
-											cTribNac (6 dígitos)
+									<Field data-invalid={!!errors.valores?.servicos}>
+										<FieldLabel htmlFor={fid("valorServicos")}>
+											Valor dos serviços (R$)
 										</FieldLabel>
 										<Input
-											id={fid("codigoTributacaoNacional")}
-											inputMode="numeric"
-											maxLength={6}
-											placeholder="Ex.: 010101"
-											{...form.register("codigoTributacaoNacional")}
+											id={fid("valorServicos")}
+											type="number"
+											step="0.01"
+											min="0"
+											placeholder="0,00"
+											{...form.register("valores.servicos", {
+												valueAsNumber: true,
+											})}
 										/>
 									</Field>
-									<Field data-invalid={!!errors.codigoNbs}>
-										<FieldLabel htmlFor={fid("codigoNbs")}>
-											cNBS (9 dígitos)
+
+									<Field data-invalid={!!errors.valores?.aliquota}>
+										<FieldLabel htmlFor={fid("aliquotaIss")}>
+											Alíquota ISS (%)
 										</FieldLabel>
 										<Input
-											id={fid("codigoNbs")}
-											inputMode="numeric"
-											maxLength={9}
-											placeholder="Ex.: 115021000"
-											{...form.register("codigoNbs")}
+											id={fid("aliquotaIss")}
+											type="number"
+											step="0.01"
+											min="0"
+											placeholder="0.00"
+											{...form.register("valores.aliquota", {
+												valueAsNumber: true,
+											})}
 										/>
 									</Field>
-									<Field data-invalid={!!errors.codigoIndicadorOperacao}>
-										<FieldLabel htmlFor={fid("codigoIndicadorOperacao")}>
-											cIndOp IBS/CBS (obrigatório)
+
+									<Field>
+										<FieldLabel htmlFor={fid("valorIss")}>
+											Valor ISS (R$)
 										</FieldLabel>
 										<Input
-											id={fid("codigoIndicadorOperacao")}
-											inputMode="numeric"
-											maxLength={6}
-											placeholder="Ex.: 050101 ou 100301"
-											{...form.register("codigoIndicadorOperacao")}
+											id={fid("valorIss")}
+											type="number"
+											step="0.01"
+											min="0"
+											className="bg-muted/50"
+											{...form.register("valores.iss", {
+												valueAsNumber: true,
+											})}
 										/>
-										<p className="text-muted-foreground text-xs mt-1">
-											Obrigatório no portal nacional (Anexo VII), inclusive
-											Simples. Não confundir com cTribNac. TI remoto: 100301.
-										</p>
 									</Field>
 								</div>
+
+								{/* Retenção de ISS */}
+								<div className="flex items-center justify-between pt-2 border-t">
+									<div className="flex items-center gap-2">
+										<Checkbox
+											id={fid("issRetidoCheckbox")}
+											checked={isRetido}
+											onCheckedChange={(checked) =>
+												form.setValue("issRetido", checked ? "1" : "2")
+											}
+										/>
+										<FieldLabel
+											htmlFor={fid("issRetidoCheckbox")}
+											className="cursor-pointer"
+										>
+											ISS retido na fonte pelo tomador
+										</FieldLabel>
+									</div>
+									{isSimplesOuMei && !isRetido ? (
+										<p className="text-xs text-muted-foreground flex items-center gap-1">
+											<Info className="h-3.5 w-3.5" /> ISS recolhido na guia do
+											DAS
+										</p>
+									) : null}
+								</div>
+							</div>
+
+							{/* 4. Configurações Fiscais Avançadas (Portal Nacional) */}
+							{layoutDps ? (
+								<div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+									<button
+										type="button"
+										onClick={() => setAvancadoAberto((prev) => !prev)}
+										className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/40 transition-colors text-left"
+									>
+										<div className="space-y-0.5">
+											<p className="font-semibold text-sm">
+												Configurações Fiscais do Portal Nacional (DPS)
+											</p>
+											<p className="text-xs text-muted-foreground">
+												cTribNac, cNBS e Indicador de Operação IBS/CBS
+											</p>
+										</div>
+										<ChevronDown
+											className={`h-4 w-4 text-muted-foreground transition-transform ${
+												avancadoAberto ? "rotate-180" : ""
+											}`}
+										/>
+									</button>
+
+									{avancadoAberto ? (
+										<div className="p-5 border-t space-y-4">
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+												<Field data-invalid={!!errors.codigoTributacaoNacional}>
+													<FieldLabel htmlFor={fid("codigoTributacaoNacional")}>
+														cTribNac (6 dígitos)
+													</FieldLabel>
+													<Input
+														id={fid("codigoTributacaoNacional")}
+														inputMode="numeric"
+														maxLength={6}
+														placeholder="Ex.: 010701"
+														{...form.register("codigoTributacaoNacional")}
+													/>
+													<p className="text-[11px] text-muted-foreground mt-1">
+														Código de Tributação Nacional correspondente à LC
+														116.
+													</p>
+												</Field>
+
+												<Field data-invalid={!!errors.codigoNbs}>
+													<FieldLabel>
+														Código NBS (9 dígitos)
+													</FieldLabel>
+													<Controller
+														control={form.control}
+														name="codigoNbs"
+														render={({ field }) => (
+															<CampoNbsNfse
+																value={field.value}
+																onChange={field.onChange}
+																error={errors.codigoNbs}
+															/>
+														)}
+													/>
+												</Field>
+											</div>
+
+											<Field data-invalid={!!errors.codigoIndicadorOperacao}>
+												<FieldLabel>
+													Indicador da Operação IBS/CBS (cIndOp)
+												</FieldLabel>
+												<Controller
+													control={form.control}
+													name="codigoIndicadorOperacao"
+													render={({ field }) => (
+														<CampoIndicadorOperacaoNfse
+															value={field.value}
+															onChange={field.onChange}
+															error={errors.codigoIndicadorOperacao}
+														/>
+													)}
+												/>
+											</Field>
+										</div>
+									) : null}
+								</div>
 							) : null}
-
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-								<Field>
-									<FieldLabel htmlFor={fid("valorServicos")}>
-										Valor serviços
-									</FieldLabel>
-									<Input
-										id={fid("valorServicos")}
-										type="number"
-										step="0.01"
-										min="0"
-										{...form.register("valores.servicos", {
-											valueAsNumber: true,
-										})}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel htmlFor={fid("aliquotaIss")}>
-										Alíquota ISS (%)
-									</FieldLabel>
-									<Input
-										id={fid("aliquotaIss")}
-										type="number"
-										step="0.01"
-										min="0"
-										{...form.register("valores.aliquota", {
-											valueAsNumber: true,
-										})}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel htmlFor={fid("valorIss")}>Valor ISS</FieldLabel>
-									<Input
-										id={fid("valorIss")}
-										type="number"
-										step="0.01"
-										min="0"
-										{...form.register("valores.iss", { valueAsNumber: true })}
-									/>
-								</Field>
-							</div>
-						</FieldSet>
-
-						{producao ? (
-							<div className="flex items-center gap-2">
-								<Checkbox
-									id={fid("confirmarProducao")}
-									checked={form.watch("confirmarProducao")}
-									onCheckedChange={(v) =>
-										form.setValue("confirmarProducao", v === true)
-									}
-								/>
-								<FieldLabel htmlFor={fid("confirmarProducao")}>
-									Confirmo emissão em produção
-								</FieldLabel>
-							</div>
-						) : null}
-
-						<div className="flex gap-2">
-							<Button type="submit" disabled={emitirMutation.isPending}>
-								{emitirMutation.isPending ? "Emitindo..." : "Emitir NFS-e"}
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => router.back()}
-							>
-								Cancelar
-							</Button>
 						</div>
-					</FieldGroup>
+
+						{/* Coluna Lateral: Resumo Sticky e Ações */}
+						<div className="lg:col-span-4 sticky top-6 space-y-4">
+							<div className="rounded-xl border bg-card p-5 shadow-sm space-y-5">
+								<div className="flex items-center justify-between border-b pb-3">
+									<h3 className="font-semibold text-base">Resumo da Nota</h3>
+									<span
+										className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+											producao
+												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+												: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+										}`}
+									>
+										{producao ? "🟢 Produção" : "🟡 Homologação"}
+									</span>
+								</div>
+
+								<div className="space-y-3 text-sm">
+									<div className="flex justify-between">
+										<span className="text-muted-foreground">Subtotal Serviços:</span>
+										<span className="font-medium">
+											R$ {Number(valorServicos).toFixed(2)}
+										</span>
+									</div>
+
+									<div className="flex justify-between">
+										<span className="text-muted-foreground">
+											ISS ({String(aliquotaIss)}%):
+										</span>
+										<span className="font-medium">
+											R$ {Number(valorIssCalculado).toFixed(2)}
+										</span>
+									</div>
+
+									{isRetido ? (
+										<div className="flex justify-between text-amber-600 dark:text-amber-400">
+											<span>(-) ISS Retido na fonte:</span>
+											<span>- R$ {Number(valorIssCalculado).toFixed(2)}</span>
+										</div>
+									) : null}
+
+									<div className="border-t pt-3 flex justify-between items-baseline">
+										<span className="font-semibold text-base">
+											Valor Líquido:
+										</span>
+										<span className="font-bold text-xl text-primary">
+											R$ {Number(valorLiquido).toFixed(2)}
+										</span>
+									</div>
+								</div>
+
+								{producao ? (
+									<div className="rounded-lg border border-amber-200 bg-amber-500/10 p-3 space-y-2">
+										<div className="flex items-start gap-2">
+											<AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+											<p className="text-xs text-amber-900 dark:text-amber-200">
+												Atenção: A nota será emitida em ambiente oficial com
+												validade jurídica.
+											</p>
+										</div>
+										<div className="flex items-center gap-2 pt-1">
+											<Checkbox
+												id={fid("confirmarProducaoSide")}
+												checked={form.watch("confirmarProducao")}
+												onCheckedChange={(v) =>
+													form.setValue("confirmarProducao", v === true)
+												}
+											/>
+											<label
+												htmlFor={fid("confirmarProducaoSide")}
+												className="text-xs font-medium cursor-pointer"
+											>
+												Confirmo emissão em produção
+											</label>
+										</div>
+									</div>
+								) : null}
+
+								<div className="space-y-2 pt-2">
+									<Button
+										type="submit"
+										form={fid("form-nfse")}
+										className="w-full font-semibold h-11"
+										disabled={
+											emitirMutation.isPending ||
+											(producao && !form.watch("confirmarProducao"))
+										}
+									>
+										{emitirMutation.isPending ? "Transmitindo NFS-e..." : "Emitir NFS-e"}
+									</Button>
+									<Button
+										type="button"
+										variant="outline"
+										className="w-full"
+										onClick={() => router.back()}
+									>
+										Cancelar
+									</Button>
+								</div>
+							</div>
+						</div>
+					</div>
 				</form>
-			</main>
+			</div>
 		</PageContainer>
 	);
 }

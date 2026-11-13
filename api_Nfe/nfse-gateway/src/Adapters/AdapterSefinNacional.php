@@ -6,6 +6,7 @@ namespace MaisGestao\NfseGateway\Adapters;
 
 use DOMDocument;
 use MaisGestao\NfseGateway\Contract\NfseProvedorAdapter;
+use MaisGestao\NfseGateway\Sefin\DpsNacionalValidator;
 use MaisGestao\NfseGateway\Sefin\DpsNacionalXmlBuilder;
 use MaisGestao\NfseGateway\Sefin\EventoNacionalXmlBuilder;
 use MaisGestao\NfseGateway\Sefin\SefinHttpClient;
@@ -48,6 +49,11 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         $idInfDps = null;
         $xmlAssinado = null;
         try {
+            $errosValidacao = DpsNacionalValidator::validar($payloadNfse, $configJson);
+            if ($errosValidacao !== []) {
+                return $this->erroBase(implode(' ', $errosValidacao));
+            }
+
             [$idInfDps, $xmlDps] = $this->dpsBuilder->montar($payloadNfse, $configJson);
             $xmlAssinado = $xmlDps;
             $certificate = CertificadoService::lerCertificado($pfxBase64, $senha);
@@ -60,6 +66,24 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
             ];
 
             $resposta = $client->post('/nfse', $payload);
+
+            // Auto-fallback: se a Sefin rejeitar apenas porque a <IM> foi informada sem registro complementar no CNC,
+            // reconstrói, assina e reenvia omitindo a <IM> do prestador.
+            if (
+                ($resposta['status'] ?? 0) === 400
+                && str_contains($xmlDps, '<IM>')
+                && empty($configJson['omitirImPrestador'])
+                && $this->respostaIndicaRejeicaoImCnc($resposta)
+            ) {
+                $configSemIm = [...$configJson, 'omitirImPrestador' => true];
+                [$idInfDps, $xmlDpsSemIm] = $this->dpsBuilder->montar($payloadNfse, $configSemIm);
+                $xmlAssinado = AssinadorXmlService::assinar($xmlDpsSemIm, $certificate, $idInfDps);
+                $xmlAssinado = AssinadorXmlService::reposicionarSignatureNoPai($xmlAssinado, 'DPS');
+
+                $resposta = $client->post('/nfse', [
+                    'dpsXmlGZipB64' => SefinHttpClient::gzipBase64($xmlAssinado),
+                ]);
+            }
 
             if (($resposta['status'] ?? 0) === 0) {
                 return $this->tentarReconciliarAposFalhaRede(
@@ -75,6 +99,28 @@ final class AdapterSefinNacional implements NfseProvedorAdapter
         } catch (\Throwable $e) {
             return $this->erroBase($e->getMessage(), $idInfDps, $xmlAssinado);
         }
+    }
+
+    /**
+     * Detecta se a rejeição HTTP 400 da Sefin refere-se exclusivamente à presença indevida de <IM> no CNC.
+     *
+     * @param array{status?: int, json?: array<string, mixed>|null, body?: string} $resposta
+     */
+    private function respostaIndicaRejeicaoImCnc(array $resposta): bool
+    {
+        $erros = $this->extrairErrosDaRespostaSefin($resposta, '400', '');
+        foreach ($erros as $erro) {
+            $msg = mb_strtolower((string) ($erro['mensagem'] ?? ''), 'UTF-8');
+            if (
+                str_contains($msg, 'im do prestador não deve ser informado')
+                || str_contains($msg, 'im do prestador nao deve ser informado')
+                || (str_contains($msg, 'cnc nfs-e') && str_contains($msg, 'im do prestador'))
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
