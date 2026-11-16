@@ -71,7 +71,7 @@ export default function CobrancaBancariaPage() {
 		queryFn: () =>
 			contasCorrentesService.listar({
 				idempresa: idempresa!,
-				limit: 200,
+				limit: 100,
 			}),
 	});
 

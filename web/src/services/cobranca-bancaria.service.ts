@@ -84,7 +84,7 @@ export const cobrancaBancariaService = {
 				total: number;
 				totalPages: number;
 			};
-		}>("/financeiros", {
+		}>("/financeiro", {
 			params: {
 				...params,
 				permiteBoleto: params.permiteBoleto ? "true" : undefined,
