@@ -333,7 +333,7 @@ export async function buscarDespesasPorCategoria({
 			SELECT 
 				COALESCE(pc.codigo, 'SEM-COD') AS codigo,
 				COALESCE(pc.nome, 'Não categorizado') AS nome,
-				COALESCE(SUM(ccl.valor::numeric), 0) AS total
+				ABS(COALESCE(SUM(ccl.valor::numeric), 0)) AS total
 			FROM contacorrentelancamento ccl
 			JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
 			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas AND pc.idempresa = ${idempresa}
