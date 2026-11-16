@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+const camposCobranca = {
+	carteira: z.string().max(6).optional().nullable(),
+	codigocedente: z.string().max(20).optional().nullable(),
+	codigocedentedv: z.string().max(1).optional().nullable(),
+	agenciadv: z.string().max(1).optional().nullable(),
+	contadv: z.string().max(2).optional().nullable(),
+	layoutarquivoremessa: z.string().max(100).optional().nullable(),
+	nossonumeroseq: z.coerce.number().int().nonnegative().optional().nullable(),
+	sequenciaremessa: z.coerce.number().int().nonnegative().optional().nullable(),
+};
+
 export const criarContaCorrenteSchema = z.object({
 	idempresa: z.string().min(1, "ID da empresa é obrigatório"),
 	descricao: z
@@ -41,6 +52,7 @@ export const criarContaCorrenteSchema = z.object({
 		.positive("Código deve ser um número positivo")
 		.optional(),
 	idbanco: z.string().uuid("ID do banco deve ser um UUID válido").optional(),
+	...camposCobranca,
 });
 
 export const atualizarContaCorrenteSchema = z.object({
@@ -87,6 +99,7 @@ export const atualizarContaCorrenteSchema = z.object({
 		.uuid("ID do banco deve ser um UUID válido")
 		.optional()
 		.nullable(),
+	...camposCobranca,
 });
 
 export type CriarContaCorrenteFormData = z.infer<

@@ -13,12 +13,14 @@ import { executarRelatoriosAutomaticos } from "./jobs/relatorios-automaticos.js"
 import { executarSaldoBaixo } from "./jobs/saldo-baixo.js";
 import { executarSyncDominio } from "./jobs/sync-dominio.js";
 import { executarSyncInboundInvoices } from "./jobs/sync-inbound-invoices.js";
+import { executarConsultarNfseContratos } from "./jobs/consultar-nfse-contratos.js";
 import { executarVerificarCiclosPlano } from "./jobs/verificar-ciclos-plano.js";
 import {
 	LOCK_AGENDADOR_AUTOMACOES,
 	LOCK_AGENDADOR_DOMINIO,
 	LOCK_AGENDADOR_INBOUND_NFE,
 	LOCK_AGENDADOR_NFCE,
+	LOCK_AGENDADOR_NFSE_CONTRATOS,
 	LOCK_AGENDADOR_PRINCIPAL,
 } from "./types.js";
 
@@ -163,6 +165,29 @@ async function executarCicloDominio() {
 	}
 }
 
+async function executarCicloNfseContratos() {
+	const adquiriu = await tentarAdquirirLockAgendador(
+		LOCK_AGENDADOR_NFSE_CONTRATOS,
+	);
+	if (!adquiriu) {
+		return;
+	}
+
+	try {
+		await executarJob(
+			"consultar_nfse_contratos",
+			executarConsultarNfseContratos,
+			{ agora: new Date() },
+			null,
+			180_000,
+		);
+	} catch (error) {
+		console.error("[agendador] Erro na consulta NFS-e de contratos:", error);
+	} finally {
+		await liberarLockAgendador(LOCK_AGENDADOR_NFSE_CONTRATOS);
+	}
+}
+
 export function iniciarAgendador() {
 	if (tarefasAgendadas.length > 0) {
 		return;
@@ -192,6 +217,10 @@ export function iniciarAgendador() {
 		void executarCicloConciliacaoNfce();
 	});
 
+	const cronNfseContratos = cron.schedule("*/5 * * * *", () => {
+		void executarCicloNfseContratos();
+	});
+
 	tarefasAgendadas = [
 		cronAlertas,
 		cronPlanos,
@@ -199,9 +228,10 @@ export function iniciarAgendador() {
 		cronAutomacoes,
 		cronDominio,
 		cronNfce,
+		cronNfseContratos,
 	];
 	console.log(
-		"[agendador] Iniciado — alertas/automações a cada 5 min, ciclos de plano às 06:00, inbound NF-e a cada 10 min, Domínio a cada 2 min",
+		"[agendador] Iniciado — alertas/automações a cada 5 min, ciclos de plano às 06:00, inbound NF-e a cada 10 min, Domínio a cada 2 min, NFS-e contratos a cada 5 min",
 	);
 }
 
@@ -267,6 +297,14 @@ export const JOBS_DISPONIVEIS = {
 		executarJob(
 			"conciliar_nfce",
 			executarConciliacaoNfcePendentes,
+			{ agora: new Date() },
+			null,
+			180_000,
+		),
+	consultarNfseContratos: () =>
+		executarJob(
+			"consultar_nfse_contratos",
+			executarConsultarNfseContratos,
 			{ agora: new Date() },
 			null,
 			180_000,

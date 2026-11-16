@@ -40,6 +40,8 @@ import { contasMesaRotas } from "./controllers/http/conta-mesa/rotas.js";
 import { contasMesaItemRotas } from "./controllers/http/conta-mesa-item/rotas.js";
 import { contabilidadeRotas } from "./controllers/http/contabilidade/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
+import { contratosRotas } from "./controllers/http/contrato/rotas.js";
+import { contratoFaturamentoRotas } from "./controllers/http/contrato-faturamento/rotas.js";
 import { cotacoesCompraRotas } from "./controllers/http/cotacoes-compra/rotas.js";
 import { custosProdutoRotas } from "./controllers/http/custo-produto/rotas.js";
 import { dashboardRotas } from "./controllers/http/dashboard/rotas.js";
@@ -99,6 +101,7 @@ import { bancoImagemRotas } from "./controllers/http/banco-imagem/rotas.js";
 import { produtosRotas } from "./controllers/http/produtos/rotas.js";
 import { receitasSemContribuicaoRotas } from "./controllers/http/receita-sem-contribuicao/rotas.js";
 import { regraFiscalRotas } from "./controllers/http/regra-fiscal/rotas.js";
+import { remessaBancariaRotas } from "./controllers/http/remessa-bancaria/rotas.js";
 import { relatoriosRotas } from "./controllers/http/relatorios/rotas.js";
 import { saldosEstoqueRotas } from "./controllers/http/saldo-estoque/rotas.js";
 import { servicosNfseRotas } from "./controllers/http/servicos-nfse/rotas.js";
@@ -107,6 +110,8 @@ import { tarefasRotas } from "./controllers/http/tarefas/rotas.js";
 import { taxaUfRotas } from "./controllers/http/taxauf/rotas.js";
 import { terminalPdvRotas } from "./controllers/http/terminal-pdv/rotas.js";
 import { tiposCobrancaRotas } from "./controllers/http/tipo-cobranca/rotas.js";
+import { gruposContratoRotas } from "./controllers/http/grupo-contrato/rotas.js";
+import { tiposContratoRotas } from "./controllers/http/tipo-contrato/rotas.js";
 import { tiposDocumentoFinanceiroRotas } from "./controllers/http/tipo-documento-financeiro/rotas.js";
 import { tiposOrdemServicoEventoRotas } from "./controllers/http/tipo-ordem-servico-evento/rotas.js";
 import { tiposProblemaRotas } from "./controllers/http/tipo-problema/rotas.js";
@@ -166,6 +171,14 @@ await app.register(swagger, {
 			{
 				name: "financeiro",
 				description: "Operações com registros financeiros",
+			},
+			{
+				name: "contratos",
+				description: "Gestão de contratos e faturamento em lote",
+			},
+			{
+				name: "remessas-bancarias",
+				description: "Remessas CNAB de cobrança",
 			},
 			{
 				name: "financeiro-lancamentos",
@@ -563,6 +576,9 @@ app.register(contaCorrenteRotas);
 app.register(contaCorrenteLancamentoRotas);
 app.register(financeiroRotas);
 app.register(financeiroLancamentoRotas);
+app.register(contratosRotas);
+app.register(contratoFaturamentoRotas);
+app.register(remessaBancariaRotas);
 app.register(bancosRotas);
 app.register(budgetsRotas);
 app.register(budgetsCentroCustoRotas);
@@ -622,6 +638,8 @@ app.register(movimentosEstoqueRotas);
 app.register(motivosRebaixaRotas);
 app.register(receitasSemContribuicaoRotas);
 app.register(tiposCobrancaRotas);
+app.register(tiposContratoRotas);
+app.register(gruposContratoRotas);
 app.register(tiposDocumentoFinanceiroRotas);
 app.register(bandeirasCartaoRotas);
 app.register(fatoresConversaoRotas);

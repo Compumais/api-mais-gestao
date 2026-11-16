@@ -1,6 +1,6 @@
 {
-  "id": "109cce70-b4b7-4573-9ec5-494568e89168",
-  "prevId": "9ab23b83-b702-48d1-b0c6-d8c92da0eca7",
+  "id": "f6f4e8a9-f5ce-458e-b1de-54ad379151d9",
+  "prevId": "109cce70-b4b7-4573-9ec5-494568e89168",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -8289,6 +8289,702 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contrato": {
+      "name": "contrato",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "identidade": {
+          "name": "identidade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idtipocontrato": {
+          "name": "idtipocontrato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "situacao": {
+          "name": "situacao",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ativo'"
+        },
+        "datainicio": {
+          "name": "datainicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "datafim": {
+          "name": "datafim",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor": {
+          "name": "valor",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "periodicidade": {
+          "name": "periodicidade",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'mensal'"
+        },
+        "diavencimento": {
+          "name": "diavencimento",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "regracompetencia": {
+          "name": "regracompetencia",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'mes_atual'"
+        },
+        "fluxofaturamento": {
+          "name": "fluxofaturamento",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discriminacao": {
+          "name": "discriminacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "itemlistaservico": {
+          "name": "itemlistaservico",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "codigonbs": {
+          "name": "codigonbs",
+          "type": "varchar(9)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "codigotributacaonacional": {
+          "name": "codigotributacaonacional",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idcondicaopagto": {
+          "name": "idcondicaopagto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idtipodocumento": {
+          "name": "idtipodocumento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idplanocontas": {
+          "name": "idplanocontas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idcontacorrente": {
+          "name": "idcontacorrente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idtipocobranca": {
+          "name": "idtipocobranca",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observacao": {
+          "name": "observacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criadoem": {
+          "name": "criadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "atualizadoem": {
+          "name": "atualizadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "contrato_idempresa_idx": {
+          "name": "contrato_idempresa_idx",
+          "columns": [
+            {
+              "expression": "idempresa",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contrato_identidade_idx": {
+          "name": "contrato_identidade_idx",
+          "columns": [
+            {
+              "expression": "identidade",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contrato_situacao_idx": {
+          "name": "contrato_situacao_idx",
+          "columns": [
+            {
+              "expression": "situacao",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "contrato_idempresa_fkey": {
+          "name": "contrato_idempresa_fkey",
+          "tableFrom": "contrato",
+          "tableTo": "empresas",
+          "columnsFrom": [
+            "idempresa"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "contrato_identidade_fkey": {
+          "name": "contrato_identidade_fkey",
+          "tableFrom": "contrato",
+          "tableTo": "entidade",
+          "columnsFrom": [
+            "identidade"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "contrato_idtipocontrato_fkey": {
+          "name": "contrato_idtipocontrato_fkey",
+          "tableFrom": "contrato",
+          "tableTo": "tipocontrato",
+          "columnsFrom": [
+            "idtipocontrato"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "contrato_idcondicaopagto_fkey": {
+          "name": "contrato_idcondicaopagto_fkey",
+          "tableFrom": "contrato",
+          "tableTo": "condicaopagamento",
+          "columnsFrom": [
+            "idcondicaopagto"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "contrato_idtipodocumento_fkey": {
+          "name": "contrato_idtipodocumento_fkey",
+          "tableFrom": "contrato",
+          "tableTo": "tipodocumentofinanceiro",
+          "columnsFrom": [
+            "idtipodocumento"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "contrato_idplanocontas_fkey": {
+          "name": "contrato_idplanocontas_fkey",
+          "tableFrom": "contrato",
+          "tableTo": "planocontas",
+          "columnsFrom": [
+            "idplanocontas"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "contrato_idcontacorrente_fkey": {
+          "name": "contrato_idcontacorrente_fkey",
+          "tableFrom": "contrato",
+          "tableTo": "contacorrente",
+          "columnsFrom": [
+            "idcontacorrente"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "contrato_idtipocobranca_fkey": {
+          "name": "contrato_idtipocobranca_fkey",
+          "tableFrom": "contrato",
+          "tableTo": "tipocobranca",
+          "columnsFrom": [
+            "idtipocobranca"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contrato_cobranca": {
+      "name": "contrato_cobranca",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idcontrato": {
+          "name": "idcontrato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idlote": {
+          "name": "idlote",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "competencia": {
+          "name": "competencia",
+          "type": "varchar(7)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor": {
+          "name": "valor",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vencimento": {
+          "name": "vencimento",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fluxofaturamento": {
+          "name": "fluxofaturamento",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discriminacao": {
+          "name": "discriminacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "statusfaturamento": {
+          "name": "statusfaturamento",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'elegivel'"
+        },
+        "etapaatual": {
+          "name": "etapaatual",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ultimoerro": {
+          "name": "ultimoerro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tentativas": {
+          "name": "tentativas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "idnotafiscal": {
+          "name": "idnotafiscal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idfinanceiro": {
+          "name": "idfinanceiro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idremessaitem": {
+          "name": "idremessaitem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criadoem": {
+          "name": "criadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "atualizadoem": {
+          "name": "atualizadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "contrato_cobranca_empresa_contrato_competencia_uidx": {
+          "name": "contrato_cobranca_empresa_contrato_competencia_uidx",
+          "columns": [
+            {
+              "expression": "idempresa",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "idcontrato",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "competencia",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contrato_cobranca_idlote_idx": {
+          "name": "contrato_cobranca_idlote_idx",
+          "columns": [
+            {
+              "expression": "idlote",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contrato_cobranca_status_idx": {
+          "name": "contrato_cobranca_status_idx",
+          "columns": [
+            {
+              "expression": "statusfaturamento",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "contrato_cobranca_idempresa_fkey": {
+          "name": "contrato_cobranca_idempresa_fkey",
+          "tableFrom": "contrato_cobranca",
+          "tableTo": "empresas",
+          "columnsFrom": [
+            "idempresa"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "contrato_cobranca_idcontrato_fkey": {
+          "name": "contrato_cobranca_idcontrato_fkey",
+          "tableFrom": "contrato_cobranca",
+          "tableTo": "contrato",
+          "columnsFrom": [
+            "idcontrato"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "contrato_cobranca_idlote_fkey": {
+          "name": "contrato_cobranca_idlote_fkey",
+          "tableFrom": "contrato_cobranca",
+          "tableTo": "contrato_faturamento_lote",
+          "columnsFrom": [
+            "idlote"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "contrato_cobranca_idnotafiscal_fkey": {
+          "name": "contrato_cobranca_idnotafiscal_fkey",
+          "tableFrom": "contrato_cobranca",
+          "tableTo": "notafiscal",
+          "columnsFrom": [
+            "idnotafiscal"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "contrato_cobranca_idfinanceiro_fkey": {
+          "name": "contrato_cobranca_idfinanceiro_fkey",
+          "tableFrom": "contrato_cobranca",
+          "tableTo": "financeiro",
+          "columnsFrom": [
+            "idfinanceiro"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contrato_faturamento_lote": {
+      "name": "contrato_faturamento_lote",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competencia": {
+          "name": "competencia",
+          "type": "varchar(7)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "idusuario": {
+          "name": "idusuario",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "observacao": {
+          "name": "observacao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criadoem": {
+          "name": "criadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "atualizadoem": {
+          "name": "atualizadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "contrato_faturamento_lote_idempresa_idx": {
+          "name": "contrato_faturamento_lote_idempresa_idx",
+          "columns": [
+            {
+              "expression": "idempresa",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contrato_faturamento_lote_competencia_idx": {
+          "name": "contrato_faturamento_lote_competencia_idx",
+          "columns": [
+            {
+              "expression": "competencia",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "contrato_faturamento_lote_idempresa_fkey": {
+          "name": "contrato_faturamento_lote_idempresa_fkey",
+          "tableFrom": "contrato_faturamento_lote",
+          "tableTo": "empresas",
+          "columnsFrom": [
+            "idempresa"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "contrato_faturamento_lote_idusuario_fkey": {
+          "name": "contrato_faturamento_lote_idusuario_fkey",
+          "tableFrom": "contrato_faturamento_lote",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "idusuario"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "cascade"
         }
       },
@@ -31165,6 +31861,280 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.remessa_bancaria": {
+      "name": "remessa_bancaria",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idcontacorrente": {
+          "name": "idcontacorrente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sequencia": {
+          "name": "sequencia",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "layout": {
+          "name": "layout",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'cnab240'"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'aberta'"
+        },
+        "nomearquivo": {
+          "name": "nomearquivo",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conteudo": {
+          "name": "conteudo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idusuario": {
+          "name": "idusuario",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criadoem": {
+          "name": "criadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "atualizadoem": {
+          "name": "atualizadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "enviadaem": {
+          "name": "enviadaem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "remessa_bancaria_idempresa_idx": {
+          "name": "remessa_bancaria_idempresa_idx",
+          "columns": [
+            {
+              "expression": "idempresa",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "remessa_bancaria_conta_status_idx": {
+          "name": "remessa_bancaria_conta_status_idx",
+          "columns": [
+            {
+              "expression": "idcontacorrente",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "remessa_bancaria_idempresa_fkey": {
+          "name": "remessa_bancaria_idempresa_fkey",
+          "tableFrom": "remessa_bancaria",
+          "tableTo": "empresas",
+          "columnsFrom": [
+            "idempresa"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "remessa_bancaria_idcontacorrente_fkey": {
+          "name": "remessa_bancaria_idcontacorrente_fkey",
+          "tableFrom": "remessa_bancaria",
+          "tableTo": "contacorrente",
+          "columnsFrom": [
+            "idcontacorrente"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "remessa_bancaria_idusuario_fkey": {
+          "name": "remessa_bancaria_idusuario_fkey",
+          "tableFrom": "remessa_bancaria",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "idusuario"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.remessa_bancaria_item": {
+      "name": "remessa_bancaria_item",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idremessa": {
+          "name": "idremessa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idfinanceiro": {
+          "name": "idfinanceiro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idcobranca": {
+          "name": "idcobranca",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nossonumero": {
+          "name": "nossonumero",
+          "type": "varchar(25)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criadoem": {
+          "name": "criadoem",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "remessa_bancaria_item_idfinanceiro_uidx": {
+          "name": "remessa_bancaria_item_idfinanceiro_uidx",
+          "columns": [
+            {
+              "expression": "idfinanceiro",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "remessa_bancaria_item_idremessa_idx": {
+          "name": "remessa_bancaria_item_idremessa_idx",
+          "columns": [
+            {
+              "expression": "idremessa",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "remessa_bancaria_item_idremessa_fkey": {
+          "name": "remessa_bancaria_item_idremessa_fkey",
+          "tableFrom": "remessa_bancaria_item",
+          "tableTo": "remessa_bancaria",
+          "columnsFrom": [
+            "idremessa"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "remessa_bancaria_item_idfinanceiro_fkey": {
+          "name": "remessa_bancaria_item_idfinanceiro_fkey",
+          "tableFrom": "remessa_bancaria_item",
+          "tableTo": "financeiro",
+          "columnsFrom": [
+            "idfinanceiro"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.saldoestoque": {
       "name": "saldoestoque",
       "schema": "",
@@ -32210,6 +33180,133 @@
           "tableTo": "tipodocumentofinanceiro",
           "columnsFrom": [
             "idtipodocumentofinanceiro"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.grupocontrato": {
+      "name": "grupocontrato",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fk_grupocontrato_empresa": {
+          "name": "fk_grupocontrato_empresa",
+          "tableFrom": "grupocontrato",
+          "tableTo": "empresas",
+          "columnsFrom": [
+            "idempresa"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tipocontrato": {
+      "name": "tipocontrato",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idgrupocontrato": {
+          "name": "idgrupocontrato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor": {
+          "name": "valor",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fk_tipocontrato_empresa": {
+          "name": "fk_tipocontrato_empresa",
+          "tableFrom": "tipocontrato",
+          "tableTo": "empresas",
+          "columnsFrom": [
+            "idempresa"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_tipocontrato_grupocontrato": {
+          "name": "fk_tipocontrato_grupocontrato",
+          "tableFrom": "tipocontrato",
+          "tableTo": "grupocontrato",
+          "columnsFrom": [
+            "idgrupocontrato"
           ],
           "columnsTo": [
             "id"

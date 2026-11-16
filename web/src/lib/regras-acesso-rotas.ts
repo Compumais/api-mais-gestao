@@ -129,6 +129,27 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 		},
 	},
 	{
+		prefixo: "/grupos-contrato",
+		acesso: {
+			modulo: "contratos",
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
+		prefixo: "/tipos-contrato",
+		acesso: {
+			modulo: "contratos",
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
+		prefixo: "/contratos",
+		acesso: {
+			modulo: "contratos",
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
 		prefixo: "/contabilidade/efd-contribuicoes",
 		acesso: {
 			feature: "sped_efd",

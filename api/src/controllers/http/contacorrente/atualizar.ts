@@ -19,6 +19,14 @@ const atualizarContaCorrenteBodySchema = z.object({
 	telefonegerente: z.string().max(20).optional().nullable(),
 	codigo: z.number().int().positive().optional().nullable(),
 	idbanco: z.string().uuid().optional().nullable(),
+	carteira: z.string().max(6).optional().nullable(),
+	codigocedente: z.string().max(20).optional().nullable(),
+	codigocedentedv: z.string().max(1).optional().nullable(),
+	agenciadv: z.string().max(1).optional().nullable(),
+	contadv: z.string().max(2).optional().nullable(),
+	layoutarquivoremessa: z.string().max(100).optional().nullable(),
+	nossonumeroseq: z.coerce.number().int().nonnegative().optional().nullable(),
+	sequenciaremessa: z.coerce.number().int().nonnegative().optional().nullable(),
 });
 
 export async function atualizarContaCorrente(
@@ -49,6 +57,14 @@ export async function atualizarContaCorrente(
 			codigo: dados.codigo,
 			// Garantir que idbanco seja null quando undefined para permitir limpar o banco
 			idbanco: dados.idbanco ?? null,
+			carteira: dados.carteira,
+			codigocedente: dados.codigocedente,
+			codigocedentedv: dados.codigocedentedv,
+			agenciadv: dados.agenciadv,
+			contadv: dados.contadv,
+			layoutarquivoremessa: dados.layoutarquivoremessa,
+			nossonumeroseq: dados.nossonumeroseq,
+			sequenciaremessa: dados.sequenciaremessa,
 		};
 
 		const resultado = await atualizarContaCorrenteService({
