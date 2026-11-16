@@ -14,7 +14,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -29,6 +29,7 @@ import type { TipoOrdemServicoEvento } from "@/services/ordem-servico.service";
 import {
 	filtrarTiposTransicao,
 	formatarDataHoraOs,
+	listarErrosFormularioOs,
 	obterTipoPorStatus,
 } from "@/util/ordem-servico-ui";
 import { OrdemServicoStatusBadge } from "./ordem-servico-status-badge";
@@ -108,6 +109,15 @@ export function AbaEventosOs({
 		}
 	}
 
+	function onInvalid(erros: Record<string, unknown>) {
+		const mensagens = listarErrosFormularioOs(erros);
+		if (mensagens.length > 0) {
+			toast.error("Corrija os campos do evento", {
+				description: mensagens.join(" · "),
+			});
+		}
+	}
+
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-2">
@@ -170,30 +180,41 @@ export function AbaEventosOs({
 					<DialogHeader>
 						<DialogTitle>Registrar evento / status</DialogTitle>
 					</DialogHeader>
-					<form className="space-y-3" onSubmit={form.handleSubmit(onSubmit)}>
+					<form
+						className="space-y-3"
+						onSubmit={form.handleSubmit(onSubmit, onInvalid)}
+					>
 						<Field>
 							<FieldLabel>Novo status</FieldLabel>
 							<Controller
 								control={form.control}
 								name="idtipoevento"
-								render={({ field }) => (
-									<Combobox
-										options={tiposDisponiveis.map((tipo) => ({
-											value: tipo.id,
-											label: tipo.descricao ?? tipo.codigo,
-										}))}
-										value={field.value}
-										onChange={(value) => {
-											field.onChange(value);
-											const tipo = tiposDisponiveis.find((t) => t.id === value);
-											if (tipo?.descricao && !form.getValues("descricao")) {
-												form.setValue("descricao", tipo.descricao);
-											}
-										}}
-										placeholder="Selecione"
-										searchPlaceholder="Buscar status..."
-										emptyMessage="Nenhuma transição disponível."
-									/>
+								render={({ field, fieldState }) => (
+									<>
+										<Combobox
+											options={tiposDisponiveis.map((tipo) => ({
+												value: tipo.id,
+												label: tipo.descricao ?? tipo.codigo,
+											}))}
+											value={field.value ?? ""}
+											onChange={(value) => {
+												field.onChange(value);
+												const tipo = tiposDisponiveis.find((t) => t.id === value);
+												if (tipo?.descricao && !form.getValues("descricao")) {
+													form.setValue("descricao", tipo.descricao, {
+														shouldValidate: true,
+														shouldDirty: true,
+													});
+												}
+											}}
+											placeholder="Selecione"
+											searchPlaceholder="Buscar status..."
+											emptyMessage="Nenhuma transição disponível."
+										/>
+										{fieldState.error?.message && (
+											<FieldError errors={[fieldState.error]} />
+										)}
+									</>
 								)}
 							/>
 							{tiposDisponiveis.length === 0 && (
@@ -208,6 +229,9 @@ export function AbaEventosOs({
 						<Field>
 							<FieldLabel htmlFor={idDesc}>Descrição</FieldLabel>
 							<Textarea id={idDesc} rows={3} {...form.register("descricao")} />
+							{form.formState.errors.descricao?.message && (
+								<FieldError errors={[form.formState.errors.descricao]} />
+							)}
 						</Field>
 						<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 							<Field>

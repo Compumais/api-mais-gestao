@@ -38,7 +38,7 @@ export const camposServicoProdutoSchema = {
 	decimaispreco: z.number().int().min(0).max(6).optional().nullable(),
 	codigolistalc11603: z
 		.string()
-		.max(5)
+		.max(6)
 		.optional()
 		.nullable()
 		.transform((valor) => {

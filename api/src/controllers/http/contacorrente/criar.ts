@@ -19,6 +19,14 @@ const criarContaCorrenteBodySchema = z.object({
 	telefonegerente: z.string().max(20).optional(),
 	codigo: z.number().int().positive().optional(),
 	idbanco: z.string().uuid().optional(),
+	carteira: z.string().max(6).optional().nullable(),
+	codigocedente: z.string().max(20).optional().nullable(),
+	codigocedentedv: z.string().max(1).optional().nullable(),
+	agenciadv: z.string().max(1).optional().nullable(),
+	contadv: z.string().max(2).optional().nullable(),
+	layoutarquivoremessa: z.string().max(100).optional().nullable(),
+	nossonumeroseq: z.coerce.number().int().nonnegative().optional().nullable(),
+	sequenciaremessa: z.coerce.number().int().nonnegative().optional().nullable(),
 });
 
 export async function criarContaCorrente(
@@ -48,6 +56,14 @@ export async function criarContaCorrente(
 			telefonegerente: dadosValidados.telefonegerente ?? null,
 			codigo: dadosValidados.codigo ?? null,
 			idbanco: dadosValidados.idbanco ?? null,
+			carteira: dadosValidados.carteira ?? null,
+			codigocedente: dadosValidados.codigocedente ?? null,
+			codigocedentedv: dadosValidados.codigocedentedv ?? null,
+			agenciadv: dadosValidados.agenciadv ?? null,
+			contadv: dadosValidados.contadv ?? null,
+			layoutarquivoremessa: dadosValidados.layoutarquivoremessa ?? null,
+			nossonumeroseq: dadosValidados.nossonumeroseq ?? null,
+			sequenciaremessa: dadosValidados.sequenciaremessa ?? null,
 		};
 
 		const contaCorrente = await criarContaCorrenteService({

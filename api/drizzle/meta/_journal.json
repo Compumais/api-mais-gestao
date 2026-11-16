@@ -855,6 +855,34 @@
 			"when": 1791500000000,
 			"tag": "0118_chavenfe_varchar_60",
 			"breakpoints": true
+		},
+		{
+			"idx": 121,
+			"version": "7",
+			"when": 1791600000000,
+			"tag": "0119_produtos_codigolistalc11603_varchar_6",
+			"breakpoints": true
+		},
+		{
+			"idx": 122,
+			"version": "7",
+			"when": 1791700000000,
+			"tag": "0120_gestao_contratos",
+			"breakpoints": true
+		},
+		{
+			"idx": 123,
+			"version": "7",
+			"when": 1791800000000,
+			"tag": "0121_tipo_contrato",
+			"breakpoints": true
+		},
+		{
+			"idx": 124,
+			"version": "7",
+			"when": 1791900000000,
+			"tag": "0122_grupo_contrato_modulo",
+			"breakpoints": true
 		}
 	]
 }

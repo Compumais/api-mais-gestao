@@ -1,6 +1,6 @@
 import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Popover as PopoverPrimitive } from "radix-ui";
 import * as React from "react";
-import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 interface ComboboxProps {
@@ -33,62 +33,11 @@ export function Combobox({
 }: ComboboxProps) {
 	const [open, setOpen] = React.useState(false);
 	const [search, setSearch] = React.useState("");
-	const [dropdownCoords, setDropdownCoords] = React.useState<{
-		top: number;
-		left: number;
-		width: number;
-	} | null>(null);
-
-	const containerRef = React.useRef<HTMLDivElement>(null);
-	const dropdownRef = React.useRef<HTMLDivElement>(null);
 	const inputRef = React.useRef<HTMLInputElement>(null);
 
-	const updateCoords = React.useCallback(() => {
-		if (containerRef.current) {
-			const rect = containerRef.current.getBoundingClientRect();
-			setDropdownCoords({
-				top: rect.bottom + window.scrollY,
-				left: rect.left + window.scrollX,
-				width: rect.width,
-			});
-		}
-	}, []);
-
 	React.useEffect(() => {
-		if (!open) return;
-
-		updateCoords();
-
-		const handleClickOutside = (event: MouseEvent) => {
-			const target = event.target as Node;
-			if (
-				containerRef.current &&
-				!containerRef.current.contains(target) &&
-				dropdownRef.current &&
-				!dropdownRef.current.contains(target)
-			) {
-				setOpen(false);
-			}
-		};
-
-		const handleScrollOrResize = () => {
-			updateCoords();
-		};
-
-		document.addEventListener("mousedown", handleClickOutside);
-		window.addEventListener("scroll", handleScrollOrResize, true);
-		window.addEventListener("resize", handleScrollOrResize);
-
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			window.removeEventListener("scroll", handleScrollOrResize, true);
-			window.removeEventListener("resize", handleScrollOrResize);
-		};
-	}, [open, updateCoords]);
-
-	React.useEffect(() => {
-		if (open && inputRef.current) {
-			inputRef.current.focus();
+		if (!open) {
+			setSearch("");
 		}
 	}, [open]);
 
@@ -104,115 +53,119 @@ export function Combobox({
 		options.find((option) => option.value === value)?.label ??
 		(value ? value : undefined);
 
-	return (
-		<div className={cn("relative w-full", className)} ref={containerRef}>
-			<div
-				className={cn(
-					"flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer",
-					disabled && "cursor-not-allowed opacity-50",
-					!selectedLabel && "text-muted-foreground",
-				)}
-				onClick={() => {
-					if (!disabled) {
-						if (!open) {
-							updateCoords();
-						}
-						setOpen(!open);
-						setSearch("");
-					}
-				}}
-				role="combobox"
-				aria-expanded={open}
-			>
-				<span className="truncate">{selectedLabel || placeholder}</span>
-				<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-			</div>
+	const selecionarValor = (novoValor: string) => {
+		onChange(novoValor);
+		setOpen(false);
+	};
 
-			{open &&
-				dropdownCoords &&
-				typeof document !== "undefined" &&
-				createPortal(
-					<div
-						ref={dropdownRef}
-						style={{
-							position: "absolute",
-							top: `${dropdownCoords.top + 4}px`,
-							left: `${dropdownCoords.left}px`,
-							minWidth: `${Math.max(dropdownCoords.width, 280)}px`,
-						}}
+	return (
+		<PopoverPrimitive.Root
+			open={open}
+			onOpenChange={(nextOpen) => {
+				if (!disabled) {
+					setOpen(nextOpen);
+				}
+			}}
+		>
+			<div className={cn("relative w-full", className)}>
+				<PopoverPrimitive.Trigger asChild disabled={disabled}>
+					<button
+						type="button"
+						disabled={disabled}
+						role="combobox"
+						aria-expanded={open}
 						className={cn(
-							"z-[99999] rounded-md border bg-popover text-popover-foreground shadow-xl ring-1 ring-black/10 dark:ring-white/10",
-							dropdownClassName,
+							"flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer text-left",
+							disabled && "cursor-not-allowed opacity-50",
+							!selectedLabel && "text-muted-foreground",
 						)}
 					>
-						<div
-							className="flex items-center border-b px-3"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-							<input
-								ref={inputRef}
-								className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-								placeholder={searchPlaceholder}
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-							/>
-						</div>
-						<div className="max-h-[260px] overflow-y-auto p-1">
-							{exibirOpcaoVazia && (
-								<div
+						<span className="truncate">{selectedLabel || placeholder}</span>
+						<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+					</button>
+				</PopoverPrimitive.Trigger>
+			</div>
+
+			<PopoverPrimitive.Portal>
+				<PopoverPrimitive.Content
+					data-combobox-dropdown="true"
+					align="start"
+					sideOffset={4}
+					onOpenAutoFocus={(e) => {
+						e.preventDefault();
+						inputRef.current?.focus();
+					}}
+					style={{
+						minWidth: "max(var(--radix-popover-trigger-width), 280px)",
+					}}
+					className={cn(
+						"z-[99999] pointer-events-auto rounded-md border bg-popover text-popover-foreground shadow-xl ring-1 ring-black/10 dark:ring-white/10 outline-none",
+						dropdownClassName,
+					)}
+				>
+					<div
+						className="flex items-center border-b px-3"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+						<input
+							ref={inputRef}
+							className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+							placeholder={searchPlaceholder}
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+						/>
+					</div>
+					<div className="max-h-[260px] overflow-y-auto p-1">
+						{exibirOpcaoVazia && (
+							<button
+								type="button"
+								className={cn(
+									"relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground text-muted-foreground",
+									!value && "bg-accent text-accent-foreground",
+								)}
+								onClick={() => selecionarValor("")}
+							>
+								<Check
 									className={cn(
-										"relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-muted-foreground",
-										!value && "bg-accent text-accent-foreground",
+										"mr-2 h-4 w-4 shrink-0",
+										!value ? "opacity-100" : "opacity-0",
 									)}
-									onClick={() => {
-										onChange("");
-										setOpen(false);
-									}}
+								/>
+								<span className="break-words">{emptyLabel}</span>
+							</button>
+						)}
+						{filteredOptions.length === 0 && !exibirOpcaoVazia ? (
+							<div className="py-6 text-center text-sm text-muted-foreground">
+								{emptyMessage}
+							</div>
+						) : (
+							filteredOptions.map((option) => (
+								<button
+									key={option.value}
+									type="button"
+									className={cn(
+										"relative flex w-full cursor-pointer select-none items-start rounded-sm px-2 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+										value === option.value &&
+											"bg-accent text-accent-foreground",
+									)}
+									onClick={() => selecionarValor(option.value)}
 								>
 									<Check
 										className={cn(
-											"mr-2 h-4 w-4 shrink-0",
-											!value ? "opacity-100" : "opacity-0",
+											"mr-2 mt-0.5 h-4 w-4 shrink-0",
+											value === option.value ? "opacity-100" : "opacity-0",
 										)}
 									/>
-									<span className="break-words">{emptyLabel}</span>
-								</div>
-							)}
-							{filteredOptions.length === 0 && !exibirOpcaoVazia ? (
-								<div className="py-6 text-center text-sm text-muted-foreground">
-									{emptyMessage}
-								</div>
-							) : (
-								filteredOptions.map((option) => (
-									<div
-										key={option.value}
-										className={cn(
-											"relative flex cursor-pointer select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-											value === option.value &&
-												"bg-accent text-accent-foreground",
-										)}
-										onClick={() => {
-											onChange(option.value);
-											setOpen(false);
-										}}
-									>
-										<Check
-											className={cn(
-												"mr-2 mt-0.5 h-4 w-4 shrink-0",
-												value === option.value ? "opacity-100" : "opacity-0",
-											)}
-										/>
-										<span className="leading-snug break-words">
-											{option.label}
-										</span>
-									</div>
-								))
-							)}
-						</div>
-					</div>,
-					document.body,
-				)}
-		</div>
+									<span className="leading-snug break-words">
+										{option.label}
+									</span>
+								</button>
+							))
+						)}
+					</div>
+				</PopoverPrimitive.Content>
+			</PopoverPrimitive.Portal>
+		</PopoverPrimitive.Root>
 	);
 }

@@ -92,3 +92,45 @@ export async function buscarProximoCodigoCondicaoPagamento(
 ): Promise<string> {
 	return buscarProximoCodigoVarcharNumerico(schema.condicaopagamento, idempresa);
 }
+
+export async function buscarProximoCodigoTipoContrato(
+	idempresa: string,
+): Promise<number> {
+	const [resultado] = await db
+		.select({
+			proximo: sql<number>`COALESCE(MAX(${schema.tipocontrato.codigo}), 0) + 1`,
+		})
+		.from(schema.tipocontrato)
+		.where(eq(schema.tipocontrato.idempresa, idempresa));
+
+	return Number(resultado?.proximo ?? 1);
+}
+
+export async function buscarProximoCodigoGrupoContrato(
+	idempresa: string,
+): Promise<number> {
+	const [resultado] = await db
+		.select({
+			proximo: sql<number>`COALESCE(MAX(${schema.grupocontrato.codigo}), 0) + 1`,
+		})
+		.from(schema.grupocontrato)
+		.where(eq(schema.grupocontrato.idempresa, idempresa));
+
+	return Number(resultado?.proximo ?? 1);
+}
+
+export async function buscarProximoCodigoContrato(
+	idempresa: string,
+): Promise<string> {
+	const [resultado] = await db
+		.select({
+			proximo: sql<number>`COALESCE(
+				MAX(CAST(${schema.contrato.codigo} AS INTEGER)) FILTER (WHERE ${schema.contrato.codigo} ~ '^[0-9]+$'),
+				0
+			) + 1`,
+		})
+		.from(schema.contrato)
+		.where(eq(schema.contrato.idempresa, idempresa));
+
+	return String(resultado?.proximo ?? 1);
+}

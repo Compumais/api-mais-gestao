@@ -8,12 +8,12 @@ import {
 	FolderOpen,
 	GripVertical,
 	MoreVertical,
+	Pencil,
 	Plus,
 	Trash2,
-	X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -32,7 +32,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { cn } from "@/lib/utils";
 import { planoContasService } from "@/services/plano-contas.service";
@@ -55,12 +54,9 @@ export function TreeNode({
 }: TreeNodeProps) {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [isExpanded, setIsExpanded] = useState(false);
-	const [isEditing, setIsEditing] = useState(false);
-	const [editedName, setEditedName] = useState(node.nome || "");
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const inputRef = useRef<HTMLInputElement>(null);
 
 	const estaArrastandoEste = idArrastando === node.id;
 	const dropDesabilitado =
@@ -89,33 +85,9 @@ export function TreeNode({
 		router.push(`/plano-contas/novo?idplanocontas=${planId}`);
 	};
 
-	// Foca no input quando entrar em modo de edição
-	useEffect(() => {
-		if (isEditing && inputRef.current) {
-			inputRef.current.focus();
-			inputRef.current.select();
-		}
-	}, [isEditing]);
-
-	// Atualiza o nome editado quando o node mudar
-	useEffect(() => {
-		setEditedName(node.nome || "");
-	}, [node.nome]);
-
-	const updateMutation = useMutation({
-		mutationFn: (data: { nome?: string; inativo?: 0 | 1 }) =>
-			planoContasService.atualizar(node.id, data),
-		onSuccess: async () => {
-			// Invalida todas as queries de plano de contas para refletir mudanças em pai e filhos
-			await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
-			await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
-			toast.success("Plano de contas atualizado com sucesso");
-			setIsEditing(false);
-		},
-		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao atualizar plano de contas");
-		},
-	});
+	const navigateToEditPlan = (planId: string) => {
+		router.push(`/plano-contas/${planId}/editar`);
+	};
 
 	const deleteMutation = useMutation({
 		mutationFn: () => planoContasService.deletar(node.id),
@@ -129,35 +101,6 @@ export function TreeNode({
 			toast.error(error.message || "Erro ao excluir plano de contas");
 		},
 	});
-
-	const handleNameClick = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		if (!isEditing) {
-			setIsEditing(true);
-		}
-	};
-
-	const handleNameSave = () => {
-		if (editedName.trim() && editedName !== node.nome) {
-			updateMutation.mutate({ nome: editedName.trim() });
-		} else {
-			setEditedName(node.nome || "");
-			setIsEditing(false);
-		}
-	};
-
-	const handleNameCancel = () => {
-		setEditedName(node.nome || "");
-		setIsEditing(false);
-	};
-
-	const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === "Enter") {
-			handleNameSave();
-		} else if (e.key === "Escape") {
-			handleNameCancel();
-		}
-	};
 
 	// Função auxiliar para inativar filhos recursivamente
 	const inativarFilhosRecursivo = async (nodeId: string): Promise<void> => {
@@ -319,56 +262,31 @@ export function TreeNode({
 						<Folder className="h-4 w-4 text-primary" aria-hidden="true" />
 					)}
 
-					<div className="flex-1 flex items-center gap-2">
+					<div className="flex-1 flex items-center gap-2 min-w-0">
 						{node.codigo && (
-							<span className="text-muted-foreground text-sm">
+							<span className="text-muted-foreground text-sm shrink-0">
 								{node.codigo}
 							</span>
 						)}
-						{isEditing ? (
-							<div className="flex items-center gap-1 flex-1">
-								<Input
-									ref={inputRef}
-									value={editedName}
-									onChange={(e) => setEditedName(e.target.value)}
-									onBlur={handleNameSave}
-									onKeyDown={handleNameKeyDown}
-									className={cn("h-7 text-sm", getTextColorClass())}
-									onClick={(e) => e.stopPropagation()}
-								/>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										handleNameSave();
-									}}
-									className="h-7 w-7 flex items-center justify-center rounded hover:bg-muted"
-								>
-									<ChevronRight className="h-4 w-4" />
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										handleNameCancel();
-									}}
-									className="h-7 w-7 flex items-center justify-center rounded hover:bg-muted"
-								>
-									<X className="h-4 w-4" />
-								</button>
-							</div>
-						) : (
-							<button
-								type="button"
-								onClick={handleNameClick}
-								className={cn(
-									"text-sm font-medium text-left hover:underline focus:outline-none focus:underline",
-									getTextColorClass(),
-								)}
-							>
-								{node.nome || "Sem nome"}
-							</button>
-						)}
+						<span
+							className={cn(
+								"text-sm font-medium text-left truncate",
+								getTextColorClass(),
+							)}
+						>
+							{node.nome || "Sem nome"}
+						</span>
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								navigateToEditPlan(node.id);
+							}}
+							aria-label={`Editar ${node.nome || "plano de contas"}`}
+							className="h-7 w-7 shrink-0 flex items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+						>
+							<Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+						</button>
 					</div>
 
 					{node.inativo === 1 && (
@@ -388,6 +306,10 @@ export function TreeNode({
 							</button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => navigateToEditPlan(node.id)}>
+								<Pencil className="h-4 w-4 mr-2" />
+								Editar
+							</DropdownMenuItem>
 							<DropdownMenuItem onClick={handleInativar}>
 								{node.inativo === 1 ? "Ativar" : "Inativar"}
 							</DropdownMenuItem>
