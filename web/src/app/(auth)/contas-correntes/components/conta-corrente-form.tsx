@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +58,7 @@ export function ContaCorrenteForm(props: ContaCorrenteFormProps) {
 	>({
 		resolver: zodResolver(
 			isEdicao ? atualizarContaCorrenteSchema : criarContaCorrenteSchema,
-		),
+		) as Resolver<CriarContaCorrenteFormData | AtualizarContaCorrenteFormData>,
 		defaultValues: isEdicao
 			? {}
 			: {

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
@@ -54,7 +54,7 @@ export function ContratoForm({ modo, contrato }: Props) {
 	);
 
 	const form = useForm<ContratoFormData>({
-		resolver: zodResolver(contratoFormSchema),
+		resolver: zodResolver(contratoFormSchema) as Resolver<ContratoFormData>,
 		defaultValues: {
 			identidade: contrato?.identidade ?? "",
 			idtipocontrato: contrato?.idtipocontrato ?? "",
