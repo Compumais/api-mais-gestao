@@ -8,7 +8,9 @@ import {
 	gte,
 	ilike,
 	inArray,
+	isNull,
 	lte,
+	or,
 	type SQL,
 } from "drizzle-orm";
 import type { NovoFinanceiro } from "@/model/financeiro-model.js";
@@ -77,6 +79,36 @@ export async function buscarFinanceiroPorId(id: string) {
 		.where(eq(schema.financeiro.id, id));
 
 	return financeiro;
+}
+
+export async function buscarFinanceiroPorNossoNumero(params: {
+	idempresa: string;
+	nossonumero: string;
+}) {
+	const digitos = params.nossonumero.replace(/\D/g, "");
+	const candidatos = [
+		params.nossonumero.trim(),
+		digitos,
+		digitos.padStart(11, "0"),
+		digitos.replace(/^0+/, ""),
+	];
+	const unicos = [...new Set(candidatos.filter((c) => c.length > 0))];
+
+	for (const candidato of unicos) {
+		const [titulo] = await db
+			.select()
+			.from(schema.financeiro)
+			.where(
+				and(
+					eq(schema.financeiro.idempresa, params.idempresa),
+					eq(schema.financeiro.nossonumero, candidato),
+				),
+			)
+			.limit(1);
+		if (titulo) return titulo;
+	}
+
+	return undefined;
 }
 
 export async function deletarFinanceiro(id: string) {
@@ -153,6 +185,8 @@ interface ListarFinanceiroParametros {
 	tipo?: "P" | "R" | null | undefined;
 	identidade?: string | null | undefined;
 	idtipocobranca?: string | null | undefined;
+	remessagerada?: number | null | undefined;
+	permiteBoleto?: boolean | null | undefined;
 	ordenarPor?: OrdenarFinanceirosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 }
@@ -174,6 +208,8 @@ export async function listarFinanceiro({
 	tipo,
 	identidade,
 	idtipocobranca,
+	remessagerada,
+	permiteBoleto,
 	ordenarPor,
 	ordem = "desc",
 }: ListarFinanceiroParametros) {
@@ -227,6 +263,23 @@ export async function listarFinanceiro({
 
 	if (idtipocobranca?.trim()) {
 		where.push(eq(schema.financeiro.idtipocobranca, idtipocobranca.trim()));
+	}
+
+	if (remessagerada !== undefined && remessagerada !== null) {
+		if (remessagerada === 0) {
+			where.push(
+				or(
+					eq(schema.financeiro.remessagerada, 0),
+					isNull(schema.financeiro.remessagerada),
+				)!,
+			);
+		} else {
+			where.push(eq(schema.financeiro.remessagerada, remessagerada));
+		}
+	}
+
+	if (permiteBoleto === true) {
+		where.push(eq(schema.tipodocumentofinanceiro.permitegerarboleto, 1));
 	}
 
 	const ordenacao =

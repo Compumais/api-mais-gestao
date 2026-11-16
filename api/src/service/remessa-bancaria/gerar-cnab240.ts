@@ -31,9 +31,13 @@ export function montarArquivoCnab240(params: {
 	conta: ContaCorrente;
 	sequencia: number;
 	titulos: TituloRemessaCnab[];
+	codigoBanco?: string;
 }): string {
 	const { empresa, conta, sequencia, titulos } = params;
-	const banco = padLeft(somenteDigitos(conta.idbanco).slice(0, 3) || "000", 3);
+	const banco = padLeft(
+		somenteDigitos(params.codigoBanco ?? conta.idbanco).slice(0, 3) || "000",
+		3,
+	);
 	const lote = "0001";
 	const cnpjEmpresa = padLeft(somenteDigitos(empresa.cnpj), 14);
 	const agencia = padLeft(somenteDigitos(conta.agencia), 5);

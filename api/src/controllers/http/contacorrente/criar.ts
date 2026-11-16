@@ -24,7 +24,9 @@ const criarContaCorrenteBodySchema = z.object({
 	codigocedentedv: z.string().max(1).optional().nullable(),
 	agenciadv: z.string().max(1).optional().nullable(),
 	contadv: z.string().max(2).optional().nullable(),
-	layoutarquivoremessa: z.string().max(100).optional().nullable(),
+	layoutarquivoremessa: z.enum(["cnab240", "cnab400"]).optional().nullable(),
+	layoutarquivoretorno: z.enum(["cnab240", "cnab400"]).optional().nullable(),
+	localpagamentoboleto: z.string().max(200).optional().nullable(),
 	nossonumeroseq: z.coerce.number().int().nonnegative().optional().nullable(),
 	sequenciaremessa: z.coerce.number().int().nonnegative().optional().nullable(),
 });
@@ -62,6 +64,8 @@ export async function criarContaCorrente(
 			agenciadv: dadosValidados.agenciadv ?? null,
 			contadv: dadosValidados.contadv ?? null,
 			layoutarquivoremessa: dadosValidados.layoutarquivoremessa ?? null,
+			layoutarquivoretorno: dadosValidados.layoutarquivoretorno ?? null,
+			localpagamentoboleto: dadosValidados.localpagamentoboleto ?? null,
 			nossonumeroseq: dadosValidados.nossonumeroseq ?? null,
 			sequenciaremessa: dadosValidados.sequenciaremessa ?? null,
 		};

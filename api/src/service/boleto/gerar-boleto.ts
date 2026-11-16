@@ -1,4 +1,5 @@
 import type { HttpResponse } from "@/model/http-model.js";
+import { buscarBancoPorId } from "@/repositories/banco-repositories.js";
 import {
 	atualizaContaCorrente,
 	buscarContaCorrentePorId,
@@ -111,11 +112,13 @@ export async function gerarBoletoService({
 		25,
 		"0",
 	);
+	const banco = conta.idbanco ? await buscarBancoPorId(conta.idbanco) : null;
+	const codigobanco = somenteDigitos(banco?.codigo).padStart(3, "0").slice(0, 3) || "000";
 	const valorCentavos = String(
 		Math.round(Number(titulo.valor ?? 0) * 100),
 	).padStart(10, "0");
 	const { codigobarras, codigodigitado } = montarCodigoBarras({
-		codigobanco: "000",
+		codigobanco,
 		fatorVencimento: fatorVencimento(titulo.vencimento ?? ""),
 		valor: valorCentavos,
 		campoLivre,
