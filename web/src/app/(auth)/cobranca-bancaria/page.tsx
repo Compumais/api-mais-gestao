@@ -546,7 +546,7 @@ export default function CobrancaBancariaPage() {
 								<div className="space-y-1">
 									<Label className="text-xs">Conta corrente</Label>
 									<Select
-										value={idContaCobranca}
+										value={idContaCobranca || undefined}
 										onValueChange={setIdContaCobranca}
 									>
 										<SelectTrigger className="h-8">
@@ -675,7 +675,7 @@ export default function CobrancaBancariaPage() {
 								>
 									{gerarRemessa.isPending
 										? "Gerando..."
-										: "Gerar remessa e baixar"}
+										: "Gerar e baixar arquivo remessa"}
 								</Button>
 							</div>
 						</div>
@@ -688,7 +688,7 @@ export default function CobrancaBancariaPage() {
 								<div>
 									<Label>Conta corrente</Label>
 									<Select
-										value={idContaRetorno}
+										value={idContaRetorno || undefined}
 										onValueChange={setIdContaRetorno}
 									>
 										<SelectTrigger>

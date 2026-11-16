@@ -31,7 +31,7 @@ export async function processarRetornoBancario(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado.error ?? resultado);
+			return reply.status(resultado.status).send(resultado);
 		}
 
 		return reply.status(resultado.status).send(resultado.body);
