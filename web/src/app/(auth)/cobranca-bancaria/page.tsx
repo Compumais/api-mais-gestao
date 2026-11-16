@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,49 @@ function formatarMoeda(valor: string | number | null | undefined) {
 	return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+const OPCOES_CARTEIRA = [
+	{ value: "11", label: "11 - Simples" },
+	{ value: "17", label: "17 - Cobrança simples (BB)" },
+	{ value: "18", label: "18 - Cobrança simples" },
+	{ value: "09", label: "09 - Cobrança escritural" },
+	{ value: "1", label: "1 - Cobrança simples" },
+];
+
+const OPCOES_LAYOUT = [
+	{ value: "cnab240", label: "CNAB 240" },
+	{ value: "cnab400", label: "CNAB 400" },
+];
+
+const OPCOES_ACAO = [
+	{ value: "01", label: "01 - Entrada de Títulos" },
+	{ value: "02", label: "02 - Pedido de Baixa" },
+	{ value: "04", label: "04 - Concessão de Abatimento" },
+	{ value: "05", label: "05 - Cancelamento de Abatimento" },
+	{ value: "06", label: "06 - Alteração de Vencimento" },
+	{ value: "09", label: "09 - Protestar" },
+	{ value: "10", label: "10 - Sustar Protesto e Baixar" },
+	{ value: "31", label: "31 - Alteração de Outros Dados" },
+];
+
+const OPCOES_INSTRUCAO = [
+	{ value: "0", label: "Sem instrução" },
+	{ value: "1", label: "01 - Protestar" },
+	{ value: "2", label: "02 - Devolver" },
+	{ value: "3", label: "03 - Baixar" },
+	{ value: "5", label: "05 - Protestar após N dias" },
+	{ value: "6", label: "06 - Não protestar" },
+	{ value: "7", label: "07 - Não cobrar juros" },
+];
+
+const OPCOES_TIPO_DOCUMENTO = [
+	{ value: "DM", label: "DM - Duplicata Mercantil" },
+	{ value: "DS", label: "DS - Duplicata de Serviço" },
+	{ value: "NP", label: "NP - Nota Promissória" },
+	{ value: "RC", label: "RC - Recibo" },
+	{ value: "CH", label: "CH - Cheque" },
+	{ value: "OU", label: "OU - Outros" },
+];
+
 export default function CobrancaBancariaPage() {
 	const { empresa } = useEmpresa();
 	const queryClient = useQueryClient();
@@ -51,6 +94,11 @@ export default function CobrancaBancariaPage() {
 	const [cliente, setCliente] = useState("");
 	const [visualizar, setVisualizar] = useState<"sem" | "com">("sem");
 	const [idContaCobranca, setIdContaCobranca] = useState("");
+	const [carteira, setCarteira] = useState("");
+	const [layoutRemessa, setLayoutRemessa] = useState("cnab240");
+	const [acaoRemessa, setAcaoRemessa] = useState("01");
+	const [instrucao, setInstrucao] = useState("0");
+	const [tipoDocumento, setTipoDocumento] = useState("DM");
 	const [observacao, setObservacao] = useState("");
 	const [diasInstrucao, setDiasInstrucao] = useState(0);
 	const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
@@ -80,6 +128,27 @@ export default function CobrancaBancariaPage() {
 		enabled: Boolean(idContaCobranca),
 		queryFn: () => contasCorrentesService.buscar(idContaCobranca),
 	});
+
+	useEffect(() => {
+		if (!contaCobranca) return;
+		const carteiraConta = (contaCobranca.carteira || "").trim();
+		if (carteiraConta) setCarteira(carteiraConta);
+		const layoutConta = (
+			contaCobranca.layoutarquivoremessa || "cnab240"
+		).toLowerCase();
+		setLayoutRemessa(
+			layoutConta === "cnab400" || layoutConta === "400"
+				? "cnab400"
+				: "cnab240",
+		);
+	}, [contaCobranca]);
+
+	const opcoesCarteira = useMemo(() => {
+		const valor = carteira.trim();
+		if (!valor) return OPCOES_CARTEIRA;
+		if (OPCOES_CARTEIRA.some((o) => o.value === valor)) return OPCOES_CARTEIRA;
+		return [{ value: valor, label: `${valor} - Conta corrente` }, ...OPCOES_CARTEIRA];
+	}, [carteira]);
 
 	const filtrosTitulos = useMemo(
 		() => ({
@@ -131,8 +200,10 @@ export default function CobrancaBancariaPage() {
 				idsfinanceiros: [...selecionados],
 				dadosCobranca: {
 					diasinstrucaocobrancaboleto: diasInstrucao,
-					observacaoboleto: observacao || null,
-					instrucaocobrancaboleto: 0,
+					observacaoboleto: observacao
+						? `[${acaoRemessa}/${tipoDocumento}/${layoutRemessa}] ${observacao}`
+						: `[${acaoRemessa}/${tipoDocumento}/${layoutRemessa}]`,
+					instrucaocobrancaboleto: Number(instrucao) || 0,
 				},
 			});
 		},
@@ -371,30 +442,77 @@ export default function CobrancaBancariaPage() {
 								</div>
 								<div>
 									<Label>Carteira</Label>
-									<Input
-										value={contaCobranca?.carteira || ""}
-										readOnly
-										placeholder="Definida na conta corrente"
-									/>
+									<Select
+										value={carteira || undefined}
+										onValueChange={setCarteira}
+										disabled={!idContaCobranca}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Selecione a carteira" />
+										</SelectTrigger>
+										<SelectContent>
+											{opcoesCarteira.map((o) => (
+												<SelectItem key={o.value} value={o.value}>
+													{o.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</div>
 								<div>
 									<Label>Layout</Label>
-									<Input
-										value={(
-											contaCobranca?.layoutarquivoremessa || "cnab240"
-										).toUpperCase()}
-										readOnly
-									/>
+									<Select
+										value={layoutRemessa}
+										onValueChange={setLayoutRemessa}
+									>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{OPCOES_LAYOUT.map((o) => (
+												<SelectItem key={o.value} value={o.value}>
+													{o.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</div>
 								<div>
 									<Label>Ação</Label>
-									<Input value="01 - Entrada de Títulos" readOnly />
+									<Select value={acaoRemessa} onValueChange={setAcaoRemessa}>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{OPCOES_ACAO.map((o) => (
+												<SelectItem key={o.value} value={o.value}>
+													{o.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div>
+									<Label>Instrução</Label>
+									<Select value={instrucao} onValueChange={setInstrucao}>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{OPCOES_INSTRUCAO.map((o) => (
+												<SelectItem key={o.value} value={o.value}>
+													{o.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</div>
 								<div className="grid grid-cols-2 gap-2">
 									<div>
-										<Label>Instrução (dias)</Label>
+										<Label>Dias</Label>
 										<Input
 											type="number"
+											min={0}
 											value={diasInstrucao}
 											onChange={(e) =>
 												setDiasInstrucao(Number(e.target.value) || 0)
@@ -403,7 +521,21 @@ export default function CobrancaBancariaPage() {
 									</div>
 									<div>
 										<Label>Tipo</Label>
-										<Input value="DM" readOnly />
+										<Select
+											value={tipoDocumento}
+											onValueChange={setTipoDocumento}
+										>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{OPCOES_TIPO_DOCUMENTO.map((o) => (
+													<SelectItem key={o.value} value={o.value}>
+														{o.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 									</div>
 								</div>
 								<div>
