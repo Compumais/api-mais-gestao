@@ -7,6 +7,7 @@ export type TipoDocumentoFinanceiroPadrao = {
 	integracaixabanco: number;
 	aprazo: number;
 	prazodias?: number;
+	permitegerarboleto?: number;
 };
 
 export const TIPOS_DOCUMENTO_FINANCEIRO_PADRAO: TipoDocumentoFinanceiroPadrao[] =
@@ -49,6 +50,7 @@ export const TIPOS_DOCUMENTO_FINANCEIRO_PADRAO: TipoDocumentoFinanceiroPadrao[] 
 			integracaixabanco: 0,
 			aprazo: 1,
 			prazodias: 30,
+			permitegerarboleto: 1,
 		},
 		{
 			descricao: "Crediário",
@@ -74,6 +76,7 @@ export function montarTiposDocumentoFinanceiroPadrao(
 		formapagamentonfe: tipo.formapagamentonfe,
 		aprazo: tipo.aprazo,
 		prazodias: tipo.prazodias ?? null,
+		permitegerarboleto: tipo.permitegerarboleto ?? 0,
 		currenttimemillis: agora,
 	}));
 }

@@ -92,7 +92,6 @@ export default function CobrancaBancariaPage() {
 			vencimentoFim: vencimentoFim || undefined,
 			emitente: cliente || undefined,
 			remessagerada: visualizar === "sem" ? 0 : 1,
-			permiteBoleto: true,
 			page: 1,
 			limit: 100,
 		}),

@@ -279,7 +279,13 @@ export async function listarFinanceiro({
 	}
 
 	if (permiteBoleto === true) {
-		where.push(eq(schema.tipodocumentofinanceiro.permitegerarboleto, 1));
+		// Aceita flag explícita ou forma de pagamento NF-e 15 (boleto bancário).
+		where.push(
+			or(
+				eq(schema.tipodocumentofinanceiro.permitegerarboleto, 1),
+				eq(schema.tipodocumentofinanceiro.formapagamentonfe, "15"),
+			)!,
+		);
 	}
 
 	const ordenacao =
