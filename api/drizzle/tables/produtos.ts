@@ -232,7 +232,7 @@ export const produtos = pgTable(
 		venderpeloprecototal: integer(),
 		itemrapido: integer().default(0), // 0=Nao, 1=Sim
 		decimaispreco: smallint().default(2),
-		codigolistalc11603: varchar({ length: 5 }),
+		codigolistalc11603: varchar({ length: 6 }),
 		codigotributacaonacional: varchar({ length: 6 }),
 		codigonbs: varchar({ length: 9 }),
 		cicloposvenda: integer().default(0),

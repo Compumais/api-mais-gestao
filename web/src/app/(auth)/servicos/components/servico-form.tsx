@@ -413,6 +413,27 @@ export function ServicoForm(props: ServicoFormProps) {
 											<CampoItemLc116Nfse
 												value={field.value ?? undefined}
 												onChange={field.onChange}
+												onSugestaoFiscal={(sugestao) => {
+													if (
+														sugestao.cTribNac &&
+														!getValues("codigotributacaonacional")
+													) {
+														setValue(
+															"codigotributacaonacional",
+															sugestao.cTribNac,
+															{ shouldValidate: true, shouldDirty: true },
+														);
+													}
+													if (
+														sugestao.cNbsPadrao &&
+														!getValues("codigonbs")
+													) {
+														setValue("codigonbs", sugestao.cNbsPadrao, {
+															shouldValidate: true,
+															shouldDirty: true,
+														});
+													}
+												}}
 												error={errors.codigolistalc11603}
 											/>
 										)}
