@@ -525,7 +525,9 @@ export default function CobrancaBancariaPage() {
 														<TableCell>
 															{t.tipodocumentodescricao || "-"}
 														</TableCell>
-														<TableCell>{t.emitente || "-"}</TableCell>
+														<TableCell>
+															{t.nomecliente || t.emitente || "-"}
+														</TableCell>
 														<TableCell>{t.emissao || "-"}</TableCell>
 														<TableCell>{t.vencimento || "-"}</TableCell>
 														<TableCell>{formatarMoeda(t.valor)}</TableCell>

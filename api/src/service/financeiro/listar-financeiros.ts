@@ -33,6 +33,7 @@ type ListarFinanceirosParametros = {
 
 type FinanceiroListagem = Financeiro & {
 	tipodocumentodescricao: string | null;
+	nomecliente: string | null;
 };
 
 type ListarFinanceirosResposta = {

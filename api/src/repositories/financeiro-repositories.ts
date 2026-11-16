@@ -11,6 +11,7 @@ import {
 	isNull,
 	lte,
 	or,
+	sql,
 	type SQL,
 } from "drizzle-orm";
 import type { NovoFinanceiro } from "@/model/financeiro-model.js";
@@ -231,7 +232,16 @@ export async function listarFinanceiro({
 		schema.tipodocumentofinanceiro.descricao,
 		tipodocumentodescricao,
 	);
-	adicionarFiltroTexto(where, schema.financeiro.emitente, emitente);
+	if (emitente?.trim()) {
+		const termo = `%${emitente.trim()}%`;
+		where.push(
+			or(
+				ilike(schema.financeiro.emitente, termo),
+				ilike(schema.entidade.razaosocial, termo),
+				ilike(schema.entidade.nome, termo),
+			)!,
+		);
+	}
 
 	if (emissaoInicio) {
 		where.push(gte(schema.financeiro.emissao, emissaoInicio));
@@ -304,20 +314,28 @@ export async function listarFinanceiro({
 		schema.financeiro.idtipodocumentofinanceiro,
 		schema.tipodocumentofinanceiro.id,
 	);
+	const joinEntidade = eq(schema.financeiro.identidade, schema.entidade.id);
 
 	const [totalCount, financeiros] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(schema.financeiro)
 			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)
+			.leftJoin(schema.entidade, joinEntidade)
 			.where(condicao),
 		db
 			.select({
 				...getTableColumns(schema.financeiro),
 				tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
+				nomecliente: sql<string | null>`coalesce(
+					nullif(trim(${schema.entidade.razaosocial}), ''),
+					nullif(trim(${schema.entidade.nome}), ''),
+					nullif(trim(${schema.financeiro.emitente}), '')
+				)`,
 			})
 			.from(schema.financeiro)
 			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)
+			.leftJoin(schema.entidade, joinEntidade)
 			.where(condicao)
 			.orderBy(ordenacao)
 			.limit(limit)

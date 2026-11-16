@@ -188,6 +188,8 @@ export function formatNome(
 	financeiro: Financeiro,
 	variante: VarianteFinanceiroLista,
 ) {
+	const nomeCliente = financeiro.nomecliente?.trim();
+	if (nomeCliente) return nomeCliente;
 	if (variante === "pagar") {
 		return financeiro.emitente || "-";
 	}

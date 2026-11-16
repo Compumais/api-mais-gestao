@@ -11,6 +11,7 @@ export interface Financeiro {
 	documento: string | null;
 	idtipodocumentofinanceiro: string | null;
 	tipodocumentodescricao?: string | null;
+	nomecliente?: string | null;
 	status: string | null;
 	emissao: string | null;
 	vencimento: string | null;
