@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,6 +33,7 @@ import {
 	type RetornoBancarioItem,
 } from "@/services/cobranca-bancaria.service";
 import { contasCorrentesService } from "@/services/contas-correntes.service";
+import { entidadesService } from "@/services/entidades.service";
 
 function formatarMoeda(valor: string | number | null | undefined) {
 	const n = Number(valor ?? 0);
@@ -91,7 +93,7 @@ export default function CobrancaBancariaPage() {
 	const [vencimentoFim, setVencimentoFim] = useState("");
 	const [emissaoInicio, setEmissaoInicio] = useState("");
 	const [emissaoFim, setEmissaoFim] = useState("");
-	const [cliente, setCliente] = useState("");
+	const [idCliente, setIdCliente] = useState("");
 	const [visualizar, setVisualizar] = useState<"sem" | "com">("sem");
 	const [idContaCobranca, setIdContaCobranca] = useState("");
 	const [carteira, setCarteira] = useState("");
@@ -122,6 +124,32 @@ export default function CobrancaBancariaPage() {
 				limit: 100,
 			}),
 	});
+
+	const { data: clientesLista = [] } = useQuery({
+		queryKey: ["entidades-cobranca-clientes", idempresa],
+		enabled: Boolean(idempresa),
+		queryFn: () =>
+			entidadesService.listarTodos({
+				idempresa: idempresa!,
+				cliente: 1,
+			}),
+	});
+
+	const opcoesClientes = useMemo(
+		() =>
+			clientesLista.map((entidade) => {
+				const nome =
+					entidade.razaosocial?.trim() ||
+					entidade.nome?.trim() ||
+					"Sem nome";
+				const documento = entidade.cnpjcpf?.trim();
+				return {
+					value: entidade.id,
+					label: documento ? `${nome} — ${documento}` : nome,
+				};
+			}),
+		[clientesLista],
+	);
 
 	const { data: contaCobranca } = useQuery({
 		queryKey: ["conta-corrente", idContaCobranca],
@@ -159,7 +187,7 @@ export default function CobrancaBancariaPage() {
 			emissaoFim: emissaoFim || undefined,
 			vencimentoInicio: vencimentoInicio || undefined,
 			vencimentoFim: vencimentoFim || undefined,
-			emitente: cliente || undefined,
+			identidade: idCliente || undefined,
 			remessagerada: visualizar === "sem" ? 0 : 1,
 			page: 1,
 			limit: 100,
@@ -170,7 +198,7 @@ export default function CobrancaBancariaPage() {
 			emissaoFim,
 			vencimentoInicio,
 			vencimentoFim,
-			cliente,
+			idCliente,
 			visualizar,
 		],
 	);
@@ -400,11 +428,16 @@ export default function CobrancaBancariaPage() {
 										</div>
 										<div className="space-y-1">
 											<Label className="text-xs">Cliente</Label>
-											<Input
+											<Combobox
 												className="h-8"
-												value={cliente}
-												onChange={(e) => setCliente(e.target.value)}
-												placeholder="Nome do cliente"
+												options={opcoesClientes}
+												value={idCliente}
+												onChange={setIdCliente}
+												placeholder="Todos os clientes"
+												searchPlaceholder="Buscar cliente..."
+												emptyMessage="Nenhum cliente encontrado."
+												allowEmpty
+												emptyLabel="Todos os clientes"
 											/>
 										</div>
 										<div className="space-y-1">
