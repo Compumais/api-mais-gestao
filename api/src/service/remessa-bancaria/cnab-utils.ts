@@ -10,6 +10,20 @@ export function somenteDigitos(valor: string | null | undefined): string {
 	return (valor ?? "").replace(/\D/g, "");
 }
 
+/** Código FEBRABAN (3 dígitos). Retorna null se inválido (vazio ou 000). */
+export function codigoBancoFebraban(
+	valor: string | null | undefined,
+): string | null {
+	const codigo = padLeft(somenteDigitos(valor).slice(0, 3), 3);
+	if (!codigo || codigo === "000") return null;
+	return codigo;
+}
+
+/** Garante registro CNAB com tamanho fixo (corta ou completa com espaços). */
+export function linhaCnabFixa(tamanho: number, partes: string[]): string {
+	return padRight(partes.join(""), tamanho);
+}
+
 export function valorCentavos(
 	valor: string | null | undefined,
 	tamanho = 15,

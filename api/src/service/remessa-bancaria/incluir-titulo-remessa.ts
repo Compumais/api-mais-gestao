@@ -16,6 +16,7 @@ import {
 	criarRemessaBancariaItem,
 	listarItensRemessa,
 } from "@/repositories/remessa-bancaria-repositories.js";
+import { codigoBancoFebraban } from "@/service/remessa-bancaria/cnab-utils.js";
 import { montarArquivoRemessa } from "@/service/remessa-bancaria/montar-arquivo-remessa.js";
 import { buscarBancoPorId } from "@/repositories/banco-repositories.js";
 import { STATUS_REMESSA_BANCARIA } from "@/util/contrato-constants.js";
@@ -65,6 +66,14 @@ export async function incluirTituloRemessaService({
 	const conta = await buscarContaCorrentePorId({ id: idcontacorrente });
 	if (!conta || conta.idempresa !== idempresa) {
 		return httpBadRequest("Conta corrente não encontrada");
+	}
+
+	const bancoConta = conta.idbanco ? await buscarBancoPorId(conta.idbanco) : null;
+	const codigoBanco = codigoBancoFebraban(bancoConta?.codigo);
+	if (!codigoBanco) {
+		return httpBadRequest(
+			"Conta corrente sem banco FEBRABAN válido. Vincule um banco (ex.: 021 Banestes) — não use EM MÃOS (000).",
+		);
 	}
 
 	const layout = resolverLayoutRemessa(conta);
@@ -144,13 +153,12 @@ export async function incluirTituloRemessaService({
 		});
 	}
 
-	const banco = conta.idbanco ? await buscarBancoPorId(conta.idbanco) : null;
 	const arquivo = montarArquivoRemessa({
 		empresa,
 		conta,
 		sequencia: remessa.sequencia,
 		titulos: titulosRemessa,
-		codigoBanco: banco?.codigo,
+		codigoBanco,
 		layout,
 	});
 

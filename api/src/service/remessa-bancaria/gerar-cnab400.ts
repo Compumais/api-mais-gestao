@@ -3,7 +3,9 @@ import type { ContaCorrente } from "@/model/conta-corrente-model.js";
 import type { Empresa } from "@/model/empresa-model.js";
 import type { Financeiro } from "@/model/financeiro-model.js";
 import {
+	codigoBancoFebraban,
 	dataDdmmaa,
+	linhaCnabFixa,
 	padLeft,
 	padRight,
 	somenteDigitos,
@@ -25,21 +27,20 @@ export function montarArquivoCnab400(params: {
 	codigoBanco?: string;
 }): string {
 	const { empresa, conta, sequencia, titulos } = params;
-	const banco = padLeft(
-		somenteDigitos(params.codigoBanco ?? conta.idbanco).slice(0, 3) || "000",
-		3,
-	);
+	const banco =
+		codigoBancoFebraban(params.codigoBanco) ??
+		codigoBancoFebraban(conta.idbanco) ??
+		"000";
 	const cnpjEmpresa = padLeft(somenteDigitos(empresa.cnpj), 14);
 	const agencia = padLeft(somenteDigitos(conta.agencia), 4);
 	const contaNum = padLeft(somenteDigitos(conta.numeroconta), 8);
 	const nomeEmpresa = padRight((empresa.nome ?? "").toUpperCase(), 30);
 	const carteira = padLeft(somenteDigitos(conta.carteira) || "01", 3);
-	const cedente = padLeft(somenteDigitos(conta.codigocedente), 7);
 	const linhas: string[] = [];
 
 	// Header CNAB 400 (tipo 0)
 	linhas.push(
-		[
+		linhaCnabFixa(400, [
 			"0",
 			"1",
 			"REMESSA",
@@ -55,7 +56,7 @@ export function montarArquivoCnab400(params: {
 			padLeft(String(sequencia), 7),
 			padRight("", 277),
 			padLeft("1", 6),
-		].join(""),
+		]),
 	);
 
 	let sequenciaRegistro = 2;
@@ -73,7 +74,7 @@ export function montarArquivoCnab400(params: {
 
 		// Detalhe tipo 1
 		linhas.push(
-			[
+			linhaCnabFixa(400, [
 				"1",
 				"02",
 				cnpjEmpresa,
@@ -112,28 +113,18 @@ export function montarArquivoCnab400(params: {
 				"0",
 				padLeft("0", 60),
 				padLeft(String(sequenciaRegistro++), 6),
-			].join(""),
+			]),
 		);
 	}
 
-	const totalTitulos = titulos.length;
-	const valorTotal = valorCentavos(
-		String(titulos.reduce((acc, t) => acc + Number(t.titulo.valor ?? 0), 0)),
-		13,
-	);
-
 	// Trailer tipo 9
 	linhas.push(
-		[
+		linhaCnabFixa(400, [
 			"9",
 			padRight("", 393),
 			padLeft(String(sequenciaRegistro), 6),
-		].join(""),
+		]),
 	);
-
-	void cedente;
-	void totalTitulos;
-	void valorTotal;
 
 	return `${linhas.join("\r\n")}\r\n`;
 }

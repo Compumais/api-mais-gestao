@@ -2,22 +2,14 @@ import type { RemessaBancariaItem } from "@/model/contrato-model.js";
 import type { ContaCorrente } from "@/model/conta-corrente-model.js";
 import type { Empresa } from "@/model/empresa-model.js";
 import type { Financeiro } from "@/model/financeiro-model.js";
-
-function padRight(valor: string, tamanho: number): string {
-	return valor.slice(0, tamanho).padEnd(tamanho, " ");
-}
-
-function padLeft(valor: string, tamanho: number, char = "0"): string {
-	return valor.slice(-tamanho).padStart(tamanho, char);
-}
-
-function somenteDigitos(valor: string | null | undefined): string {
-	return (valor ?? "").replace(/\D/g, "");
-}
-
-function valorCentavos(valor: string | null | undefined): string {
-	return padLeft(String(Math.round(Number(valor ?? 0) * 100)), 15);
-}
+import {
+	codigoBancoFebraban,
+	linhaCnabFixa,
+	padLeft,
+	padRight,
+	somenteDigitos,
+	valorCentavos,
+} from "@/service/remessa-bancaria/cnab-utils.js";
 
 export type TituloRemessaCnab = {
 	titulo: Financeiro;
@@ -34,10 +26,10 @@ export function montarArquivoCnab240(params: {
 	codigoBanco?: string;
 }): string {
 	const { empresa, conta, sequencia, titulos } = params;
-	const banco = padLeft(
-		somenteDigitos(params.codigoBanco ?? conta.idbanco).slice(0, 3) || "000",
-		3,
-	);
+	const banco =
+		codigoBancoFebraban(params.codigoBanco) ??
+		codigoBancoFebraban(conta.idbanco) ??
+		"000";
 	const lote = "0001";
 	const cnpjEmpresa = padLeft(somenteDigitos(empresa.cnpj), 14);
 	const agencia = padLeft(somenteDigitos(conta.agencia), 5);
@@ -48,7 +40,7 @@ export function montarArquivoCnab240(params: {
 
 	// Header arquivo
 	linhas.push(
-		[
+		linhaCnabFixa(240, [
 			banco,
 			"0000",
 			"0",
@@ -76,12 +68,12 @@ export function montarArquivoCnab240(params: {
 			padRight("", 20),
 			padRight("", 20),
 			padRight("", 29),
-		].join(""),
+		]),
 	);
 
 	// Header lote
 	linhas.push(
-		[
+		linhaCnabFixa(240, [
 			banco,
 			lote,
 			"1",
@@ -105,19 +97,23 @@ export function montarArquivoCnab240(params: {
 			padLeft(new Date().toISOString().substring(0, 10).replace(/-/g, ""), 8),
 			padLeft("0", 8),
 			padRight("", 33),
-		].join(""),
+		]),
 	);
 
 	let seqLote = 1;
 	for (const item of titulos) {
-		const nossonumero = padRight(item.item.nossonumero ?? item.titulo.nossonumero ?? "", 20);
+		const nossonumero = padRight(
+			item.item.nossonumero ?? item.titulo.nossonumero ?? "",
+			20,
+		);
 		const vencimento = (item.titulo.vencimento ?? "").replace(/-/g, "");
 		const documento = padRight(item.titulo.documento ?? "", 15);
 		const sacadoDoc = padLeft(somenteDigitos(item.sacadoDocumento), 15);
-		const tipoPessoa = somenteDigitos(item.sacadoDocumento).length > 11 ? "2" : "1";
+		const tipoPessoa =
+			somenteDigitos(item.sacadoDocumento).length > 11 ? "2" : "1";
 
 		linhas.push(
-			[
+			linhaCnabFixa(240, [
 				banco,
 				lote,
 				"3",
@@ -159,11 +155,11 @@ export function montarArquivoCnab240(params: {
 				padLeft("0", 2),
 				padLeft("0", 10),
 				" ",
-			].join(""),
+			]),
 		);
 
 		linhas.push(
-			[
+			linhaCnabFixa(240, [
 				banco,
 				lote,
 				"3",
@@ -182,13 +178,13 @@ export function montarArquivoCnab240(params: {
 				padLeft("0", 3),
 				padRight("", 20),
 				padRight("", 8),
-			].join(""),
+			]),
 		);
 	}
 
 	const qtdRegistrosLote = String(titulos.length * 2 + 2);
 	linhas.push(
-		[
+		linhaCnabFixa(240, [
 			banco,
 			lote,
 			"5",
@@ -206,13 +202,13 @@ export function montarArquivoCnab240(params: {
 			padLeft("0", 15),
 			padRight("", 8),
 			padRight("", 117),
-		].join(""),
+		]),
 	);
 
 	const qtdLotes = "000001";
 	const qtdRegistros = padLeft(String(linhas.length + 1), 6);
 	linhas.push(
-		[
+		linhaCnabFixa(240, [
 			banco,
 			"9999",
 			"9",
@@ -221,7 +217,7 @@ export function montarArquivoCnab240(params: {
 			qtdRegistros,
 			padLeft("0", 6),
 			padRight("", 205),
-		].join(""),
+		]),
 	);
 
 	return `${linhas.join("\r\n")}\r\n`;

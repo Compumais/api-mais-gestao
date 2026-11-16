@@ -87,9 +87,15 @@ describe("geradores CNAB", () => {
 			titulos: [tituloFake],
 			codigoBanco: "001",
 		});
-		const linhas = conteudo.trim().split(/\r?\n/);
+		// Não usar trim(): espaços finais da última linha fazem parte do CNAB.
+		const linhas = conteudo.replace(/\r?\n$/, "").split(/\r?\n/);
 		expect(linhas.length).toBeGreaterThan(3);
-		expect(linhas[0]?.length).toBe(240);
+		for (const linha of linhas) {
+			expect(linha.length).toBe(240);
+		}
+		expect(linhas[0]?.startsWith("001")).toBe(true);
+		expect(linhas.some((l) => l.includes("NF100"))).toBe(true);
+		expect(linhas.some((l) => l.includes("CLIENTE TESTE"))).toBe(true);
 	});
 
 	it("gera arquivo CNAB 400 com header tipo 0", () => {
@@ -100,10 +106,13 @@ describe("geradores CNAB", () => {
 			titulos: [tituloFake],
 			codigoBanco: "001",
 		});
-		const linhas = conteudo.trim().split(/\r?\n/);
+		const linhas = conteudo.replace(/\r?\n$/, "").split(/\r?\n/);
 		expect(linhas[0]?.startsWith("0")).toBe(true);
 		expect(linhas.some((l) => l.startsWith("1"))).toBe(true);
 		expect(linhas.at(-1)?.startsWith("9")).toBe(true);
+		for (const linha of linhas) {
+			expect(linha.length).toBe(400);
+		}
 	});
 
 	it("registry escolhe layout da conta", () => {
