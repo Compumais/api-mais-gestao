@@ -330,105 +330,191 @@ export default function CobrancaBancariaPage() {
 
 	return (
 		<PageContainer>
-			<div className="flex items-center justify-between p-4">
+			<div className="flex items-center justify-between px-4 pt-3 pb-1">
 				<div>
-					<h1 className="text-2xl font-bold">Cobrança bancária</h1>
-					<p className="text-sm text-muted-foreground">
+					<h1 className="text-xl font-bold">Cobrança bancária</h1>
+					<p className="text-xs text-muted-foreground">
 						Emissão de remessa CNAB e processamento de retorno
 					</p>
 				</div>
 			</div>
 
-			<div className="px-4 pb-6">
+			<div className="px-4 pb-4">
 				<Tabs value={aba} onValueChange={setAba}>
 					<TabsList>
 						<TabsTrigger value="remessa">Remessa</TabsTrigger>
 						<TabsTrigger value="retorno">Retorno</TabsTrigger>
 					</TabsList>
 
-					<TabsContent value="remessa" className="space-y-4 mt-4">
-						<div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-							<div className="xl:col-span-2 rounded-lg border bg-card p-4 space-y-3">
-								<h2 className="font-semibold">Filtros</h2>
-								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-									<div>
-										<Label>Vencimento de</Label>
-										<Input
-											type="date"
-											value={vencimentoInicio}
-											onChange={(e) => setVencimentoInicio(e.target.value)}
-										/>
-									</div>
-									<div>
-										<Label>Vencimento até</Label>
-										<Input
-											type="date"
-											value={vencimentoFim}
-											onChange={(e) => setVencimentoFim(e.target.value)}
-										/>
-									</div>
-									<div>
-										<Label>Emissão de</Label>
-										<Input
-											type="date"
-											value={emissaoInicio}
-											onChange={(e) => setEmissaoInicio(e.target.value)}
-										/>
-									</div>
-									<div>
-										<Label>Emissão até</Label>
-										<Input
-											type="date"
-											value={emissaoFim}
-											onChange={(e) => setEmissaoFim(e.target.value)}
-										/>
-									</div>
-									<div>
-										<Label>Cliente</Label>
-										<Input
-											value={cliente}
-											onChange={(e) => setCliente(e.target.value)}
-											placeholder="Nome do cliente"
-										/>
-									</div>
-									<div>
-										<Label>Visualizar</Label>
-										<Select
-											value={visualizar}
-											onValueChange={(v) => setVisualizar(v as "sem" | "com")}
+					<TabsContent value="remessa" className="mt-4">
+						<div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-3 items-start">
+							<div className="space-y-3 min-w-0">
+								<div className="rounded-lg border bg-card p-3">
+									<div className="flex items-center justify-between gap-2 mb-2">
+										<h2 className="font-semibold text-sm">Filtros</h2>
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={() => refetchTitulos()}
+											disabled={carregandoTitulos}
 										>
-											<SelectTrigger>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="sem">
-													Duplicatas sem remessa
-												</SelectItem>
-												<SelectItem value="com">
-													Duplicatas com remessa
-												</SelectItem>
-											</SelectContent>
-										</Select>
+											Filtrar
+										</Button>
+									</div>
+									<div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+										<div className="space-y-1">
+											<Label className="text-xs">Vencimento de</Label>
+											<Input
+												type="date"
+												className="h-8"
+												value={vencimentoInicio}
+												onChange={(e) => setVencimentoInicio(e.target.value)}
+											/>
+										</div>
+										<div className="space-y-1">
+											<Label className="text-xs">Vencimento até</Label>
+											<Input
+												type="date"
+												className="h-8"
+												value={vencimentoFim}
+												onChange={(e) => setVencimentoFim(e.target.value)}
+											/>
+										</div>
+										<div className="space-y-1">
+											<Label className="text-xs">Emissão de</Label>
+											<Input
+												type="date"
+												className="h-8"
+												value={emissaoInicio}
+												onChange={(e) => setEmissaoInicio(e.target.value)}
+											/>
+										</div>
+										<div className="space-y-1">
+											<Label className="text-xs">Emissão até</Label>
+											<Input
+												type="date"
+												className="h-8"
+												value={emissaoFim}
+												onChange={(e) => setEmissaoFim(e.target.value)}
+											/>
+										</div>
+										<div className="space-y-1">
+											<Label className="text-xs">Cliente</Label>
+											<Input
+												className="h-8"
+												value={cliente}
+												onChange={(e) => setCliente(e.target.value)}
+												placeholder="Nome do cliente"
+											/>
+										</div>
+										<div className="space-y-1">
+											<Label className="text-xs">Visualizar</Label>
+											<Select
+												value={visualizar}
+												onValueChange={(v) =>
+													setVisualizar(v as "sem" | "com")
+												}
+											>
+												<SelectTrigger className="h-8">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="sem">
+														Duplicatas sem remessa
+													</SelectItem>
+													<SelectItem value="com">
+														Duplicatas com remessa
+													</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
 									</div>
 								</div>
-								<Button
-									variant="outline"
-									onClick={() => refetchTitulos()}
-									disabled={carregandoTitulos}
-								>
-									Filtrar
-								</Button>
+
+								<div className="rounded-lg border bg-card min-h-[min(60vh,560px)] flex flex-col">
+									<div className="p-3 border-b flex items-center justify-between shrink-0">
+										<h2 className="font-semibold">
+											Duplicatas ({titulos.length})
+										</h2>
+										<span className="text-sm text-muted-foreground">
+											{selecionados.size} selecionada(s)
+										</span>
+									</div>
+									<div className="overflow-auto flex-1">
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead className="w-10">
+														<Checkbox
+															checked={
+																titulos.length > 0 &&
+																selecionados.size === titulos.length
+															}
+															onCheckedChange={(v) =>
+																toggleTodosTitulos(Boolean(v))
+															}
+														/>
+													</TableHead>
+													<TableHead>Documento</TableHead>
+													<TableHead>Tipo</TableHead>
+													<TableHead>Cliente</TableHead>
+													<TableHead>Emissão</TableHead>
+													<TableHead>Vencimento</TableHead>
+													<TableHead>Valor</TableHead>
+													<TableHead>Nosso número</TableHead>
+													<TableHead>DV</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{carregandoTitulos && (
+													<TableRow>
+														<TableCell colSpan={9}>Carregando...</TableCell>
+													</TableRow>
+												)}
+												{!carregandoTitulos && titulos.length === 0 && (
+													<TableRow>
+														<TableCell colSpan={9}>
+															Nenhum título encontrado com os filtros.
+														</TableCell>
+													</TableRow>
+												)}
+												{titulos.map((t) => (
+													<TableRow key={t.id}>
+														<TableCell>
+															<Checkbox
+																checked={selecionados.has(t.id)}
+																onCheckedChange={(v) =>
+																	toggleTitulo(t.id, Boolean(v))
+																}
+															/>
+														</TableCell>
+														<TableCell>{t.documento || "-"}</TableCell>
+														<TableCell>
+															{t.tipodocumentodescricao || "-"}
+														</TableCell>
+														<TableCell>{t.emitente || "-"}</TableCell>
+														<TableCell>{t.emissao || "-"}</TableCell>
+														<TableCell>{t.vencimento || "-"}</TableCell>
+														<TableCell>{formatarMoeda(t.valor)}</TableCell>
+														<TableCell>{t.nossonumero || "-"}</TableCell>
+														<TableCell>{t.dvnossonumero || "-"}</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									</div>
+								</div>
 							</div>
 
-							<div className="rounded-lg border bg-card p-4 space-y-3">
-								<h2 className="font-semibold">Dados para cobrança</h2>
-								<div className="space-y-2">
-									<Label>Conta corrente</Label>
+							<div className="rounded-lg border bg-card p-3 space-y-2 xl:sticky xl:top-4">
+								<h2 className="font-semibold text-sm">Dados para cobrança</h2>
+								<div className="space-y-1">
+									<Label className="text-xs">Conta corrente</Label>
 									<Select
 										value={idContaCobranca}
 										onValueChange={setIdContaCobranca}
 									>
-										<SelectTrigger>
+										<SelectTrigger className="h-8">
 											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
@@ -440,14 +526,14 @@ export default function CobrancaBancariaPage() {
 										</SelectContent>
 									</Select>
 								</div>
-								<div>
-									<Label>Carteira</Label>
+								<div className="space-y-1">
+									<Label className="text-xs">Carteira</Label>
 									<Select
 										value={carteira || undefined}
 										onValueChange={setCarteira}
 										disabled={!idContaCobranca}
 									>
-										<SelectTrigger>
+										<SelectTrigger className="h-8">
 											<SelectValue placeholder="Selecione a carteira" />
 										</SelectTrigger>
 										<SelectContent>
@@ -459,13 +545,13 @@ export default function CobrancaBancariaPage() {
 										</SelectContent>
 									</Select>
 								</div>
-								<div>
-									<Label>Layout</Label>
+								<div className="space-y-1">
+									<Label className="text-xs">Layout</Label>
 									<Select
 										value={layoutRemessa}
 										onValueChange={setLayoutRemessa}
 									>
-										<SelectTrigger>
+										<SelectTrigger className="h-8">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -477,10 +563,10 @@ export default function CobrancaBancariaPage() {
 										</SelectContent>
 									</Select>
 								</div>
-								<div>
-									<Label>Ação</Label>
+								<div className="space-y-1">
+									<Label className="text-xs">Ação</Label>
 									<Select value={acaoRemessa} onValueChange={setAcaoRemessa}>
-										<SelectTrigger>
+										<SelectTrigger className="h-8">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -492,10 +578,10 @@ export default function CobrancaBancariaPage() {
 										</SelectContent>
 									</Select>
 								</div>
-								<div>
-									<Label>Instrução</Label>
+								<div className="space-y-1">
+									<Label className="text-xs">Instrução</Label>
 									<Select value={instrucao} onValueChange={setInstrucao}>
-										<SelectTrigger>
+										<SelectTrigger className="h-8">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -508,24 +594,25 @@ export default function CobrancaBancariaPage() {
 									</Select>
 								</div>
 								<div className="grid grid-cols-2 gap-2">
-									<div>
-										<Label>Dias</Label>
+									<div className="space-y-1">
+										<Label className="text-xs">Dias</Label>
 										<Input
 											type="number"
 											min={0}
+											className="h-8"
 											value={diasInstrucao}
 											onChange={(e) =>
 												setDiasInstrucao(Number(e.target.value) || 0)
 											}
 										/>
 									</div>
-									<div>
-										<Label>Tipo</Label>
+									<div className="space-y-1">
+										<Label className="text-xs">Tipo</Label>
 										<Select
 											value={tipoDocumento}
 											onValueChange={setTipoDocumento}
 										>
-											<SelectTrigger>
+											<SelectTrigger className="h-8">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -538,12 +625,12 @@ export default function CobrancaBancariaPage() {
 										</Select>
 									</div>
 								</div>
-								<div>
-									<Label>Observação</Label>
+								<div className="space-y-1">
+									<Label className="text-xs">Observação</Label>
 									<Textarea
 										value={observacao}
 										onChange={(e) => setObservacao(e.target.value)}
-										className="min-h-20"
+										className="min-h-16"
 									/>
 								</div>
 								<Button
@@ -556,74 +643,6 @@ export default function CobrancaBancariaPage() {
 										: "Gerar remessa e baixar"}
 								</Button>
 							</div>
-						</div>
-
-						<div className="rounded-lg border bg-card">
-							<div className="p-3 border-b flex items-center justify-between">
-								<h2 className="font-semibold">
-									Duplicatas ({titulos.length})
-								</h2>
-								<span className="text-sm text-muted-foreground">
-									{selecionados.size} selecionada(s)
-								</span>
-							</div>
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead className="w-10">
-											<Checkbox
-												checked={
-													titulos.length > 0 &&
-													selecionados.size === titulos.length
-												}
-												onCheckedChange={(v) => toggleTodosTitulos(Boolean(v))}
-											/>
-										</TableHead>
-										<TableHead>Documento</TableHead>
-										<TableHead>Tipo</TableHead>
-										<TableHead>Cliente</TableHead>
-										<TableHead>Emissão</TableHead>
-										<TableHead>Vencimento</TableHead>
-										<TableHead>Valor</TableHead>
-										<TableHead>Nosso número</TableHead>
-										<TableHead>DV</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{carregandoTitulos && (
-										<TableRow>
-											<TableCell colSpan={9}>Carregando...</TableCell>
-										</TableRow>
-									)}
-									{!carregandoTitulos && titulos.length === 0 && (
-										<TableRow>
-											<TableCell colSpan={9}>
-												Nenhum título encontrado com os filtros.
-											</TableCell>
-										</TableRow>
-									)}
-									{titulos.map((t) => (
-										<TableRow key={t.id}>
-											<TableCell>
-												<Checkbox
-													checked={selecionados.has(t.id)}
-													onCheckedChange={(v) =>
-														toggleTitulo(t.id, Boolean(v))
-													}
-												/>
-											</TableCell>
-											<TableCell>{t.documento || "-"}</TableCell>
-											<TableCell>{t.tipodocumentodescricao || "-"}</TableCell>
-											<TableCell>{t.emitente || "-"}</TableCell>
-											<TableCell>{t.emissao || "-"}</TableCell>
-											<TableCell>{t.vencimento || "-"}</TableCell>
-											<TableCell>{formatarMoeda(t.valor)}</TableCell>
-											<TableCell>{t.nossonumero || "-"}</TableCell>
-											<TableCell>{t.dvnossonumero || "-"}</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
 						</div>
 					</TabsContent>
 
