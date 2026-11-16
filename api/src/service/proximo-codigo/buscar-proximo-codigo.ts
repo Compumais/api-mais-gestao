@@ -4,8 +4,11 @@ import {
 	buscarProximoCodigoBanco,
 	buscarProximoCodigoCondicaoPagamento,
 	buscarProximoCodigoContaCorrente,
+	buscarProximoCodigoContrato,
+	buscarProximoCodigoGrupoContrato,
 	buscarProximoCodigoHierarquia,
 	buscarProximoCodigoProduto,
+	buscarProximoCodigoTipoContrato,
 	buscarProximoCodigoUnidadeMedida,
 } from "@/repositories/proximo-codigo-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
@@ -19,7 +22,10 @@ type BuscarProximoCodigoParametros = {
 		| "banco"
 		| "unidade-medida"
 		| "conta-corrente"
-		| "condicao-pagamento";
+		| "condicao-pagamento"
+		| "tipo-contrato"
+		| "contrato"
+		| "grupo-contrato";
 };
 
 type RespostaNumerica = { codigo: number };
@@ -64,6 +70,18 @@ export async function buscarProximoCodigoService({
 		}
 		case "condicao-pagamento": {
 			const codigo = await buscarProximoCodigoCondicaoPagamento(idempresa);
+			return httpOk({ codigo });
+		}
+		case "tipo-contrato": {
+			const codigo = await buscarProximoCodigoTipoContrato(idempresa);
+			return httpOk({ codigo });
+		}
+		case "contrato": {
+			const codigo = await buscarProximoCodigoContrato(idempresa);
+			return httpOk({ codigo });
+		}
+		case "grupo-contrato": {
+			const codigo = await buscarProximoCodigoGrupoContrato(idempresa);
 			return httpOk({ codigo });
 		}
 		default:

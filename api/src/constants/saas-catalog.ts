@@ -19,6 +19,7 @@ export const MODULOS_SAAS = {
 	GOURMET: "gourmet",
 	NFSE: "nfse",
 	IA_FINANCEIRA: "ia_financeira",
+	CONTRATOS: "contratos",
 } as const;
 
 export type ModuloSaasCodigo = (typeof MODULOS_SAAS)[keyof typeof MODULOS_SAAS];

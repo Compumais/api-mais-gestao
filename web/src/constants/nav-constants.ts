@@ -276,6 +276,51 @@ export const DATA = {
 		},
 	] satisfies NavItem[],
 
+	navContratos: [
+		{
+			title: "Contratos",
+			icon: IconFileInvoice,
+			acesso: {
+				modulo: "contratos",
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
+				{
+					title: "Grupos de contrato",
+					url: "/grupos-contrato",
+					acesso: {
+						modulo: "contratos",
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Tipos de contrato",
+					url: "/tipos-contrato",
+					acesso: {
+						modulo: "contratos",
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Contratos",
+					url: "/contratos",
+					acesso: {
+						modulo: "contratos",
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Faturamento",
+					url: "/contratos/faturamento",
+					acesso: {
+						modulo: "contratos",
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+			],
+		},
+	] satisfies NavItem[],
+
 	navFinanceiro: [
 		{
 			title: "Financeiro",
@@ -350,6 +395,13 @@ export const DATA = {
 				{
 					title: "Tipos de cobrança",
 					url: "/tipos-cobranca",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Remessas bancárias",
+					url: "/remessas-bancarias",
 					acesso: {
 						perfis: [...PERFIS_GESTAO],
 					},

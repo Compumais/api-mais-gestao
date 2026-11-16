@@ -14,6 +14,14 @@ export interface ContaCorrente {
 	telefonegerente?: string | null;
 	codigo?: number | null;
 	idbanco?: string | null;
+	carteira?: string | null;
+	codigocedente?: string | null;
+	codigocedentedv?: string | null;
+	agenciadv?: string | null;
+	contadv?: string | null;
+	layoutarquivoremessa?: string | null;
+	nossonumeroseq?: number | null;
+	sequenciaremessa?: number | null;
 	currenttimemillis?: number | null;
 }
 
@@ -21,6 +29,7 @@ export interface ContaCorrenteListItem {
 	id: string;
 	agencia?: string | null;
 	descricao?: string | null;
+	numeroconta?: string | null;
 	codigo?: number | null;
 }
 
@@ -47,6 +56,14 @@ export interface CriarContaCorrenteData {
 	telefonegerente?: string;
 	codigo?: number;
 	idbanco?: string;
+	carteira?: string | null;
+	codigocedente?: string | null;
+	codigocedentedv?: string | null;
+	agenciadv?: string | null;
+	contadv?: string | null;
+	layoutarquivoremessa?: string | null;
+	nossonumeroseq?: number | null;
+	sequenciaremessa?: number | null;
 }
 
 export interface AtualizarContaCorrenteData {
@@ -61,6 +78,14 @@ export interface AtualizarContaCorrenteData {
 	telefonegerente?: string | null;
 	codigo?: number | null;
 	idbanco?: string | null;
+	carteira?: string | null;
+	codigocedente?: string | null;
+	codigocedentedv?: string | null;
+	agenciadv?: string | null;
+	contadv?: string | null;
+	layoutarquivoremessa?: string | null;
+	nossonumeroseq?: number | null;
+	sequenciaremessa?: number | null;
 }
 
 export const contasCorrentesService = {
