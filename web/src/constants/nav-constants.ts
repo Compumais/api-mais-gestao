@@ -310,6 +310,14 @@ export const DATA = {
 					},
 				},
 				{
+					title: "Importar contratos",
+					url: "/contratos/importar",
+					acesso: {
+						modulo: "contratos",
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
 					title: "Faturamento",
 					url: "/contratos/faturamento",
 					acesso: {

@@ -5,16 +5,25 @@
 const { spawnSync } = require("node:child_process");
 const { randomBytes } = require("node:crypto");
 const path = require("node:path");
+const {
+	ensureLocalNextDirForBuild,
+	envComNodePath,
+	webRoot,
+} = require("./ensure-next-cache.cjs");
 
-const root = path.join(__dirname, "..");
-const nextBin = path.join(root, "node_modules", "next", "dist", "bin", "next");
+const nextBin = path.join(webRoot, "node_modules", "next", "dist", "bin", "next");
 const versao = process.env.WEB_BUILD_ID || randomBytes(8).toString("hex");
 
+// Build precisa de .next real no projeto (junção no C: quebra resolução de módulos).
+if (!process.env.NEXT_DIST_DIR || process.env.NEXT_DIST_DIR === ".next") {
+	ensureLocalNextDirForBuild();
+}
+
 const resultado = spawnSync(process.execPath, [nextBin, "build"], {
-	cwd: root,
+	cwd: webRoot,
 	stdio: "inherit",
 	env: {
-		...process.env,
+		...envComNodePath(),
 		WEB_BUILD_ID: versao,
 	},
 });

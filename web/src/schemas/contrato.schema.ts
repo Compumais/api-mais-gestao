@@ -58,4 +58,5 @@ export const contratoFormSchema = z
 		}
 	});
 
-export type ContratoFormData = z.infer<typeof contratoFormSchema>;
+export type ContratoFormData = z.output<typeof contratoFormSchema>;
+export type ContratoFormInput = z.input<typeof contratoFormSchema>;

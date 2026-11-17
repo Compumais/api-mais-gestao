@@ -7,8 +7,8 @@ const camposCobranca = {
 	agenciadv: z.string().max(1).optional().nullable(),
 	contadv: z.string().max(2).optional().nullable(),
 	layoutarquivoremessa: z.string().max(100).optional().nullable(),
-	nossonumeroseq: z.coerce.number().int().nonnegative().optional().nullable(),
-	sequenciaremessa: z.coerce.number().int().nonnegative().optional().nullable(),
+	nossonumeroseq: z.number().int().nonnegative().optional().nullable(),
+	sequenciaremessa: z.number().int().nonnegative().optional().nullable(),
 };
 
 export const criarContaCorrenteSchema = z.object({

@@ -9,7 +9,11 @@ import { buscarContrato } from "./buscar.js";
 import { criarContrato } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirContrato } from "./excluir.js";
+import { importarContratos } from "./importar.js";
+import { previewImportacaoContratos } from "./importar-preview.js";
 import { listarContratos } from "./listar.js";
+
+const LIMITE_BODY_IMPORTACAO = 20 * 1024 * 1024;
 
 export async function contratosRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -18,6 +22,16 @@ export async function contratosRotas(app: FastifyInstance) {
 	app.get("/contratos/proximo-codigo", {
 		schema: criarProximoCodigoSchema("contratos", "string"),
 		handler: criarHandlerProximoCodigo("contrato"),
+	});
+	app.post("/contratos/importar/preview", {
+		schema: schema.previewImportacaoContratosSchema,
+		bodyLimit: LIMITE_BODY_IMPORTACAO,
+		handler: previewImportacaoContratos,
+	});
+	app.post("/contratos/importar", {
+		schema: schema.importarContratosSchema,
+		bodyLimit: LIMITE_BODY_IMPORTACAO,
+		handler: importarContratos,
 	});
 	app.post("/contratos", {
 		schema: schema.criarContratoSchema,
