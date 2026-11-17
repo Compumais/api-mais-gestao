@@ -1,7 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { IconSettings } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, type Resolver, useForm } from "react-hook-form";
@@ -466,6 +468,25 @@ export function FinanceiroForm({
 		};
 	}, []);
 
+	const gerarDocumentoMutation = useMutation({
+		mutationFn: async () => {
+			if (!empresa?.id) {
+				throw new Error("Empresa não selecionada");
+			}
+			return financeiroService.buscarProximoDocumento({
+				idempresa: empresa.id,
+				tipo,
+			});
+		},
+		onSuccess: (resultado) => {
+			setValue("documento", resultado.codigo, { shouldValidate: true });
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Falha ao gerar número do documento");
+		},
+	});
+	const gerandoDocumento = gerarDocumentoMutation.isPending;
+
 	const criarMutation = useMutation({
 		mutationFn: async (data: CriarFinanceiroFormData) => {
 			if (!empresa) {
@@ -626,15 +647,34 @@ export function FinanceiroForm({
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<Field data-invalid={!!errors.documento}>
 							<FieldLabel htmlFor="documento">Documento</FieldLabel>
-							<Input
-								id="documento"
-								placeholder="Número do documento"
-								aria-invalid={!!errors.documento}
-								aria-describedby={
-									errors.documento ? "documento-error" : undefined
-								}
-								{...register("documento")}
-							/>
+							<div className="relative">
+								<Input
+									id="documento"
+									placeholder="Número do documento"
+									className="pr-10"
+									aria-invalid={!!errors.documento}
+									aria-describedby={
+										errors.documento ? "documento-error" : undefined
+									}
+									{...register("documento")}
+								/>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="absolute right-0.5 top-1/2 size-8 -translate-y-1/2 text-muted-foreground"
+									title="Gerar número sequencial"
+									aria-label="Gerar número sequencial do documento"
+									disabled={gerandoDocumento || !empresa?.id}
+									onClick={() => gerarDocumentoMutation.mutate()}
+								>
+									{gerandoDocumento ? (
+										<Loader2 className="size-4 animate-spin" />
+									) : (
+										<IconSettings className="size-4" />
+									)}
+								</Button>
+							</div>
 							<FieldError errors={errors.documento ? [errors.documento] : []} />
 						</Field>
 

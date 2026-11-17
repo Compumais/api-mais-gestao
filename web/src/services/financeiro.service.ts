@@ -285,6 +285,16 @@ export const financeiroService = {
 		await api.delete(`/financeiro/${id}`);
 	},
 
+	async buscarProximoDocumento(params: {
+		idempresa: string;
+		tipo: "P" | "R";
+	}): Promise<{ codigo: string }> {
+		const { data } = await api.get<{ codigo: string }>(
+			"/financeiro/proximo-documento",
+			{ params },
+		);
+		return data;
+	},
 };
 
 /** Título marcado como pago pelo atalho antigo, sem lançamento de baixa. */

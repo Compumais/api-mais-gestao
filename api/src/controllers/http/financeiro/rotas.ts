@@ -7,6 +7,7 @@ import { criarFinanceiro } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirFinanceiro } from "./excluir.js";
 import { listarFinanceiros } from "./listar-financeiros.js";
+import { proximoDocumentoFinanceiro } from "./proximo-documento.js";
 
 export async function financeiroRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -20,6 +21,10 @@ export async function financeiroRotas(app: FastifyInstance) {
 		schema: schema.listarFinanceirosSchema,
 		preHandler: [resolveEmpresaContext],
 		handler: listarFinanceiros,
+	});
+	app.get("/financeiro/proximo-documento", {
+		schema: schema.proximoDocumentoFinanceiroSchema,
+		handler: proximoDocumentoFinanceiro,
 	});
 	app.get("/financeiro/:id", {
 		schema: schema.buscarFinanceiroSchema,

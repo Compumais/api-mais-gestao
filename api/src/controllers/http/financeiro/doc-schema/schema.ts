@@ -429,3 +429,61 @@ export const excluirFinanceiroSchema: FastifySchema = {
 		},
 	},
 };
+
+export const proximoDocumentoFinanceiroSchema: FastifySchema = {
+	tags: ["financeiro"],
+	summary: "Buscar próximo número de documento",
+	description:
+		"Retorna o próximo número sequencial de documento (MAX + 1) para a empresa e tipo (P/R).",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string", description: "ID da empresa" },
+			tipo: {
+				type: "string",
+				enum: ["P", "R"],
+				description: "P = pagar, R = receber",
+			},
+		},
+		required: ["idempresa", "tipo"],
+	},
+	response: {
+		200: {
+			type: "object",
+			properties: {
+				codigo: { type: "string" },
+			},
+			required: ["codigo"],
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+				details: { type: "array" },
+			},
+		},
+		401: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		403: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		500: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+	},
+};

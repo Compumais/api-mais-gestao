@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -131,6 +131,30 @@ export async function buscarProximoCodigoContrato(
 		})
 		.from(schema.contrato)
 		.where(eq(schema.contrato.idempresa, idempresa));
+
+	return String(resultado?.proximo ?? 1);
+}
+
+export async function buscarProximoCodigoDocumentoFinanceiro(
+	idempresa: string,
+	tipo: "P" | "R",
+): Promise<string> {
+	const [resultado] = await db
+		.select({
+			proximo: sql<number>`COALESCE(
+				MAX(CAST(${schema.financeiro.documento} AS INTEGER)) FILTER (
+					WHERE ${schema.financeiro.documento} ~ '^[0-9]+$'
+				),
+				0
+			) + 1`,
+		})
+		.from(schema.financeiro)
+		.where(
+			and(
+				eq(schema.financeiro.idempresa, idempresa),
+				eq(schema.financeiro.tipo, tipo),
+			),
+		);
 
 	return String(resultado?.proximo ?? 1);
 }
