@@ -82,7 +82,7 @@ import {
 	type ConfigFiltroColunaFinanceiro,
 	criarColunasFinanceiro,
 	type FiltrosColunaFinanceiroState,
-	filtrosColunaFinanceiroVazios,
+	filtrosColunaFinanceiroIniciais,
 	podeDarBaixa,
 	STATUS_OPCOES_FILTRO,
 	visibilidadePadraoColunasFinanceiro,
@@ -118,7 +118,7 @@ export default function ContasAPagarPage() {
 		pageSize: 10,
 	});
 	const [filtrosColuna, setFiltrosColuna] =
-		useState<FiltrosColunaFinanceiroState>(filtrosColunaFinanceiroVazios);
+		useState<FiltrosColunaFinanceiroState>(filtrosColunaFinanceiroIniciais);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

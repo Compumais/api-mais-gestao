@@ -52,6 +52,12 @@ export const filtrosColunaFinanceiroVazios: FiltrosColunaFinanceiroState = {
 	vencimento: "",
 };
 
+/** Abertos e parciais. Quitado, pago e demais status só entram pelo filtro. */
+export const filtrosColunaFinanceiroIniciais: FiltrosColunaFinanceiroState = {
+	...filtrosColunaFinanceiroVazios,
+	status: "A",
+};
+
 export type CampoFiltroColunaFinanceiro = keyof FiltrosColunaFinanceiroState;
 
 export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
