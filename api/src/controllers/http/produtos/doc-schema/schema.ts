@@ -157,7 +157,7 @@ const propriedadesServicoProdutoBody = {
 		description: "Casas decimais do preço",
 	},
 	codigolistalc11603: {
-		anyOf: [{ type: "string", maxLength: 5 }, { type: "null" }],
+		anyOf: [{ type: "string", maxLength: 6 }, { type: "null" }],
 		description: "Código da lista LC 116/03",
 	},
 	codigotributacaonacional: {

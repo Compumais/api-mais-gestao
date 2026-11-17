@@ -45,7 +45,7 @@ export const notafiscalitem = pgTable(
 		cnpjconcessionaria: varchar({ length: 18 }),
 		cnpjemissor: varchar({ length: 14 }),
 		codigobeneficiofiscal: varchar({ length: 10 }),
-		codigolistalc11603: varchar({ length: 5 }),
+		codigolistalc11603: varchar({ length: 6 }),
 		codigomarcamodelo: numeric({ precision: 7, scale: 0, mode: "string" }),
 		condicaoveiculo: smallint(),
 		contador: smallint(),

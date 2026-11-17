@@ -22,6 +22,16 @@ type AtualizarContaCorrenteParametros = {
 		telefonegerente?: string | null | undefined;
 		codigo?: number | null | undefined;
 		idbanco?: string | null | undefined;
+		carteira?: string | null | undefined;
+		codigocedente?: string | null | undefined;
+		codigocedentedv?: string | null | undefined;
+		agenciadv?: string | null | undefined;
+		contadv?: string | null | undefined;
+		layoutarquivoremessa?: string | null | undefined;
+		layoutarquivoretorno?: string | null | undefined;
+		localpagamentoboleto?: string | null | undefined;
+		nossonumeroseq?: number | null | undefined;
+		sequenciaremessa?: number | null | undefined;
 	};
 };
 

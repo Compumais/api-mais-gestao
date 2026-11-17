@@ -24,7 +24,9 @@ const atualizarContaCorrenteBodySchema = z.object({
 	codigocedentedv: z.string().max(1).optional().nullable(),
 	agenciadv: z.string().max(1).optional().nullable(),
 	contadv: z.string().max(2).optional().nullable(),
-	layoutarquivoremessa: z.string().max(100).optional().nullable(),
+	layoutarquivoremessa: z.enum(["cnab240", "cnab400"]).optional().nullable(),
+	layoutarquivoretorno: z.enum(["cnab240", "cnab400"]).optional().nullable(),
+	localpagamentoboleto: z.string().max(200).optional().nullable(),
 	nossonumeroseq: z.coerce.number().int().nonnegative().optional().nullable(),
 	sequenciaremessa: z.coerce.number().int().nonnegative().optional().nullable(),
 });
@@ -63,6 +65,8 @@ export async function atualizarContaCorrente(
 			agenciadv: dados.agenciadv,
 			contadv: dados.contadv,
 			layoutarquivoremessa: dados.layoutarquivoremessa,
+			layoutarquivoretorno: dados.layoutarquivoretorno,
+			localpagamentoboleto: dados.localpagamentoboleto,
 			nossonumeroseq: dados.nossonumeroseq,
 			sequenciaremessa: dados.sequenciaremessa,
 		};

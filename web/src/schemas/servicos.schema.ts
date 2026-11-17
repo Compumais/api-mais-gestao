@@ -39,7 +39,7 @@ export const servicoFormSchema = z.object({
 		}, "Preço inválido"),
 	decimaispreco: z.number().int().min(0).max(6).default(2),
 	iat: z.enum(["A", "T"]).optional().nullable(),
-	codigolistalc11603: z.string().max(5).optional().nullable(),
+	codigolistalc11603: z.string().max(6).optional().nullable(),
 	codigotributacaonacional: z
 		.string()
 		.optional()

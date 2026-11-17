@@ -408,6 +408,13 @@ export const DATA = {
 					},
 				},
 				{
+					title: "Cobrança bancária",
+					url: "/cobranca-bancaria",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
 					title: "Remessas bancárias",
 					url: "/remessas-bancarias",
 					acesso: {

@@ -23,6 +23,8 @@ type ListarFinanceirosParametros = {
 	tipo?: "P" | "R" | null | undefined;
 	identidade?: string | null | undefined;
 	idtipocobranca?: string | null | undefined;
+	remessagerada?: number | null | undefined;
+	permiteBoleto?: boolean | null | undefined;
 	ordenarPor?: OrdenarFinanceirosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 	page?: number;
@@ -31,6 +33,7 @@ type ListarFinanceirosParametros = {
 
 type FinanceiroListagem = Financeiro & {
 	tipodocumentodescricao: string | null;
+	nomecliente: string | null;
 };
 
 type ListarFinanceirosResposta = {
@@ -59,6 +62,8 @@ export async function listarFinanceirosService({
 	tipo,
 	identidade,
 	idtipocobranca,
+	remessagerada,
+	permiteBoleto,
 	ordenarPor,
 	ordem,
 	page = 1,
@@ -114,6 +119,8 @@ export async function listarFinanceirosService({
 		tipo,
 		identidade,
 		idtipocobranca,
+		remessagerada,
+		permiteBoleto,
 		ordenarPor,
 		ordem,
 		page,

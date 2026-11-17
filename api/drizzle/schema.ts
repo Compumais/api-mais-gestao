@@ -144,6 +144,8 @@ export * from "./tables/registro-producao-item.js";
 export * from "./tables/regra-fiscal.js";
 export * from "./tables/remessa-bancaria.js";
 export * from "./tables/remessa-bancaria-item.js";
+export * from "./tables/retorno-bancario.js";
+export * from "./tables/retorno-bancario-item.js";
 export * from "./tables/saldo-estoque.js";
 export * from "./tables/servicos-nfse.js";
 export * from "./tables/sessoes.js";

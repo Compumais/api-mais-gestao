@@ -187,17 +187,32 @@ export function FinanceiroForm({
 		enabled: !!empresa?.id,
 	});
 
-	// Carregar entidades (clientes)
-	const { data: entidadesData } = useQuery({
-		queryKey: ["entidades", empresa?.id],
+	// Carregar todas as entidades (paginação completa — evita sumir cliente além da 1ª página)
+	const { data: entidadesLista = [] } = useQuery({
+		queryKey: ["entidades-financeiro", empresa?.id, tipo],
 		queryFn: () =>
-			entidadesService.listar({
+			entidadesService.listarTodos({
 				idempresa: empresa?.id!,
-				limit: 100,
-				page: 1,
+				...(tipo === "R" ? { cliente: 1 } : { fornecedor: 1 }),
 			}),
 		enabled: !!empresa?.id,
 	});
+
+	const opcoesEntidades = useMemo(
+		() =>
+			entidadesLista.map((entidade) => {
+				const nome =
+					entidade.razaosocial?.trim() ||
+					entidade.nome?.trim() ||
+					"Sem nome";
+				const documento = entidade.cnpjcpf?.trim();
+				return {
+					value: entidade.id,
+					label: documento ? `${nome} — ${documento}` : nome,
+				};
+			}),
+		[entidadesLista],
+	);
 
 	// Carregar planos de contas
 	const { data: planoContasData } = useQuery({
@@ -810,23 +825,32 @@ export function FinanceiroForm({
 						</Field>
 
 						<Field data-invalid={!!errors.identidade}>
-							<FieldLabel htmlFor="identidade">Cliente *</FieldLabel>
+							<FieldLabel htmlFor="identidade">
+								{tipo === "P" ? "Fornecedor" : "Cliente"} *
+							</FieldLabel>
 							<Controller
 								control={control}
 								name="identidade"
 								render={({ field }) => (
 									<Combobox
-										options={
-											entidadesData?.data.map((entidade) => ({
-												value: entidade.id,
-												label: entidade.nome,
-											})) || []
-										}
+										options={opcoesEntidades}
 										value={field.value || ""}
 										onChange={field.onChange}
-										placeholder="Selecione o cliente"
-										searchPlaceholder="Buscar cliente..."
-										emptyMessage="Nenhum cliente encontrado."
+										placeholder={
+											tipo === "P"
+												? "Selecione o fornecedor"
+												: "Selecione o cliente"
+										}
+										searchPlaceholder={
+											tipo === "P"
+												? "Buscar fornecedor..."
+												: "Buscar cliente..."
+										}
+										emptyMessage={
+											tipo === "P"
+												? "Nenhum fornecedor encontrado."
+												: "Nenhum cliente encontrado."
+										}
 									/>
 								)}
 							/>

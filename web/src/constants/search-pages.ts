@@ -402,6 +402,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["faturamento", "lote", "competência", "contratos"],
 	},
 	{
+		title: "Cobrança bancária",
+		url: "/cobranca-bancaria",
+		category: "Financeiro",
+		icon: IconCreditCard,
+		keywords: ["cobrança", "remessa", "retorno", "cnab", "boleto", "banco"],
+	},
+	{
 		title: "Remessas bancárias",
 		url: "/remessas-bancarias",
 		category: "Financeiro",

@@ -1,4 +1,5 @@
 import type { HttpResponse } from "@/model/http-model.js";
+import { buscarBancoPorId } from "@/repositories/banco-repositories.js";
 import {
 	atualizaContaCorrente,
 	buscarContaCorrentePorId,
@@ -7,6 +8,7 @@ import {
 	atualizarFinanceiro,
 	buscarFinanceiroPorId,
 } from "@/repositories/financeiro-repositories.js";
+import { codigoBancoFebraban } from "@/service/remessa-bancaria/cnab-utils.js";
 import { httpBadRequest, httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 type GerarBoletoParametros = {
@@ -111,11 +113,18 @@ export async function gerarBoletoService({
 		25,
 		"0",
 	);
+	const banco = conta.idbanco ? await buscarBancoPorId(conta.idbanco) : null;
+	const codigobanco = codigoBancoFebraban(banco?.codigo);
+	if (!codigobanco) {
+		return httpBadRequest(
+			"Conta corrente sem banco FEBRABAN válido. Vincule um banco (ex.: 021 Banestes) — não use EM MÃOS (000).",
+		);
+	}
 	const valorCentavos = String(
 		Math.round(Number(titulo.valor ?? 0) * 100),
 	).padStart(10, "0");
 	const { codigobarras, codigodigitado } = montarCodigoBarras({
-		codigobanco: "000",
+		codigobanco,
 		fatorVencimento: fatorVencimento(titulo.vencimento ?? ""),
 		valor: valorCentavos,
 		campoLivre,

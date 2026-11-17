@@ -1,14 +1,20 @@
 import { z } from "zod";
 
+export const LAYOUTS_CNAB = ["cnab240", "cnab400"] as const;
+
+const layoutCnabSchema = z.enum(LAYOUTS_CNAB).optional().nullable();
+
 const camposCobranca = {
 	carteira: z.string().max(6).optional().nullable(),
 	codigocedente: z.string().max(20).optional().nullable(),
 	codigocedentedv: z.string().max(1).optional().nullable(),
 	agenciadv: z.string().max(1).optional().nullable(),
 	contadv: z.string().max(2).optional().nullable(),
-	layoutarquivoremessa: z.string().max(100).optional().nullable(),
-	nossonumeroseq: z.number().int().nonnegative().optional().nullable(),
-	sequenciaremessa: z.number().int().nonnegative().optional().nullable(),
+	layoutarquivoremessa: layoutCnabSchema,
+	layoutarquivoretorno: layoutCnabSchema,
+	localpagamentoboleto: z.string().max(200).optional().nullable(),
+	nossonumeroseq: z.coerce.number().int().nonnegative().optional().nullable(),
+	sequenciaremessa: z.coerce.number().int().nonnegative().optional().nullable(),
 };
 
 export const criarContaCorrenteSchema = z.object({

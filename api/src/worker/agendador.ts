@@ -15,6 +15,7 @@ import { executarSyncDominio } from "./jobs/sync-dominio.js";
 import { executarSyncInboundInvoices } from "./jobs/sync-inbound-invoices.js";
 import { executarConsultarNfseContratos } from "./jobs/consultar-nfse-contratos.js";
 import { executarVerificarCiclosPlano } from "./jobs/verificar-ciclos-plano.js";
+import { executarLimpezaCnab } from "./jobs/cleanup_cnab_files.js";
 import {
 	LOCK_AGENDADOR_AUTOMACOES,
 	LOCK_AGENDADOR_DOMINIO,
