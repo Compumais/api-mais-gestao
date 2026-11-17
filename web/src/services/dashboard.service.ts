@@ -152,6 +152,11 @@ export type FinanceiroSaude = {
 	agingPagar: AgingBucket[];
 	topRecebimentos: TopTituloEntidade[];
 	topPagamentos: TopTituloEntidade[];
+	extratoContas: {
+		id: string;
+		nome: string;
+		saldo: number;
+	}[];
 	topInadimplentes: {
 		identidade: string | null;
 		nome: string;

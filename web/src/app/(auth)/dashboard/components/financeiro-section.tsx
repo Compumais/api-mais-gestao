@@ -17,16 +17,26 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useDashboardFilters } from "@/hooks/dashboard/dashboard-filters-context";
 import { useDashboardFinanceiroSaude } from "@/hooks/dashboard/use-dashboard-queries";
 import {
 	formatCurrency,
 	formatNumber,
 	formatPercent,
+	limitesPeriodo,
 } from "@/lib/dashboard-periodo";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import { TopTitulosFinanceiros } from "./top-titulos-financeiros";
 
 export function FinanceiroSection() {
+	const { periodoParams } = useDashboardFilters();
+	const dataFim = limitesPeriodo(periodoParams).fim;
 	const { data, isLoading } = useDashboardFinanceiroSaude();
+	const extratoContas = data?.extratoContas ?? [];
+	const saldoFinalExtrato = extratoContas.reduce(
+		(total, conta) => total + conta.saldo,
+		0,
+	);
 
 	if (isLoading || !data) {
 		return (
@@ -67,6 +77,61 @@ export function FinanceiroSection() {
 					valor={formatCurrency(data.valorVencidoPagar)}
 				/>
 			</div>
+
+			<VisualErrorBoundary>
+				<Card>
+					<CardHeader>
+						<CardTitle>Extrato</CardTitle>
+						<CardDescription>
+							Saldo final de cada conta corrente em{" "}
+							{formatDataCivilBrasilia(dataFim)}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Conta corrente</TableHead>
+									<TableHead className="text-right">Saldo final</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{extratoContas.length === 0 ? (
+									<TableRow>
+										<TableCell
+											colSpan={2}
+											className="text-center text-muted-foreground"
+										>
+											Nenhuma conta corrente cadastrada
+										</TableCell>
+									</TableRow>
+								) : (
+									<>
+										{extratoContas.map((conta) => (
+											<TableRow key={conta.id}>
+												<TableCell>{conta.nome}</TableCell>
+												<TableCell
+													className={`text-right tabular-nums ${conta.saldo < 0 ? "text-red-600" : ""}`}
+												>
+													{formatCurrency(conta.saldo)}
+												</TableCell>
+											</TableRow>
+										))}
+										<TableRow>
+											<TableCell className="font-medium">Total</TableCell>
+											<TableCell
+												className={`text-right font-medium tabular-nums ${saldoFinalExtrato < 0 ? "text-red-600" : ""}`}
+											>
+												{formatCurrency(saldoFinalExtrato)}
+											</TableCell>
+										</TableRow>
+									</>
+								)}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
+			</VisualErrorBoundary>
 
 			<div className="grid gap-4 lg:grid-cols-2">
 				<VisualErrorBoundary>

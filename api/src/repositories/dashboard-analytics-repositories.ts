@@ -134,6 +134,12 @@ export type TopTituloEntidade = {
 	quantidade: number;
 };
 
+export type ExtratoContaCorrente = {
+	id: string;
+	nome: string;
+	saldo: number;
+};
+
 export type FinanceiroSaude = {
 	receitas: number;
 	despesas: number;
@@ -148,6 +154,7 @@ export type FinanceiroSaude = {
 	agingPagar: AgingBucket[];
 	topRecebimentos: TopTituloEntidade[];
 	topPagamentos: TopTituloEntidade[];
+	extratoContas: ExtratoContaCorrente[];
 	topInadimplentes: {
 		identidade: string | null;
 		nome: string;
@@ -388,6 +395,40 @@ async function buscarSaldoAtualCaixa(idempresa: string): Promise<number> {
 		.where(eq(schema.contacorrente.idempresa, idempresa));
 
 	return buscarUltimosSaldos(contas.map((c) => c.id));
+}
+
+async function buscarExtratoContasPeriodo(
+	idempresa: string,
+	dataFimStr: string,
+): Promise<ExtratoContaCorrente[]> {
+	const result = await db.execute(sql`
+		SELECT
+			cc.id,
+			COALESCE(NULLIF(TRIM(cc.descricao), ''), 'Conta sem nome') as nome,
+			COALESCE(ult.saldoatual::numeric, 0) as saldo
+		FROM contacorrente cc
+		LEFT JOIN LATERAL (
+			SELECT ccl.saldoatual
+			FROM contacorrentelancamento ccl
+			WHERE ccl.idcontacorrente = cc.id
+				AND ccl.datahora IS NOT NULL
+				AND ccl.datahora <= ${dataFimStr}::date
+			ORDER BY ccl.datahora DESC, ccl.currenttimemillis DESC NULLS LAST
+			LIMIT 1
+		) ult ON true
+		WHERE cc.idempresa = ${idempresa}
+		ORDER BY nome
+	`);
+
+	return rowsOf<{
+		id: string;
+		nome: string;
+		saldo: string | number;
+	}>(result).map((row) => ({
+		id: row.id,
+		nome: row.nome,
+		saldo: toNumber(row.saldo),
+	}));
 }
 
 async function somarFinanceiroAberto(
@@ -1126,6 +1167,7 @@ export async function buscarFinanceiroSaude({
 		topPagamentos,
 		inadimplentesResult,
 		totalReceberHistoricoResult,
+		extratoContas,
 	] = await Promise.all([
 		somarMovimentacoesPorTipo(idempresa, ["E", "C"], dataInicioStr, dataFimStr),
 		somarMovimentacoesPorTipo(idempresa, ["S", "D"], dataInicioStr, dataFimStr),
@@ -1162,6 +1204,7 @@ export async function buscarFinanceiroSaude({
 				AND vencimento >= ${dataInicioStr}::date
 				AND vencimento <= ${dataFimStr}::date
 		`),
+		buscarExtratoContasPeriodo(idempresa, dataFimStr),
 	]);
 
 	const totalReceberHistorico = toNumber(
@@ -1185,6 +1228,7 @@ export async function buscarFinanceiroSaude({
 		agingPagar,
 		topRecebimentos,
 		topPagamentos,
+		extratoContas,
 		topInadimplentes: rowsOf<{
 			identidade: string | null;
 			nome: string;

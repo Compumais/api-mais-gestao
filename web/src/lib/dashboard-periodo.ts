@@ -119,6 +119,42 @@ export function periodoParaQuery(params: DashboardPeriodoParams) {
 	return query;
 }
 
+export function limitesPeriodo(params: DashboardPeriodoParams): {
+	inicio: string;
+	fim: string;
+} {
+	const hoje = hojeBrasiliaIsoDate();
+	switch (params.preset) {
+		case "hoje":
+			return { inicio: hoje, fim: hoje };
+		case "ontem": {
+			const ontem = adicionarDiasIso(hoje, -1);
+			return { inicio: ontem, fim: ontem };
+		}
+		case "7d":
+			return { inicio: adicionarDiasIso(hoje, -6), fim: hoje };
+		case "30d":
+			return { inicio: adicionarDiasIso(hoje, -29), fim: hoje };
+		case "mes_atual":
+			return { inicio: inicioFimMesBrasilia().inicio, fim: hoje };
+		case "mes_anterior": {
+			const mesAnt = inicioFimMesDe(
+				adicionarDiasIso(`${hoje.slice(0, 7)}-01`, -1),
+			);
+			return { inicio: mesAnt.inicio, fim: mesAnt.fim };
+		}
+		case "ano_atual":
+			return { inicio: `${hoje.slice(0, 4)}-01-01`, fim: hoje };
+		case "personalizado":
+			if (params.dataInicio && params.dataFim) {
+				return { inicio: params.dataInicio, fim: params.dataFim };
+			}
+			return { inicio: adicionarDiasIso(hoje, -29), fim: hoje };
+		default:
+			return { inicio: adicionarDiasIso(hoje, -29), fim: hoje };
+	}
+}
+
 export function intervaloExibido(params: DashboardPeriodoParams) {
 	const hoje = hojeBrasiliaIsoDate();
 	switch (params.preset) {
