@@ -1,7 +1,10 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
-import { resolverContratosImportacao } from "@/service/contrato/resolver-importacao-contratos.js";
+import {
+	agruparClientesPendentes,
+	resolverContratosImportacao,
+} from "@/service/contrato/resolver-importacao-contratos.js";
 import {
 	type FormatoArquivoImportacao,
 	validarArquivoImportacaoContratos,
@@ -29,6 +32,9 @@ export type ContratoPreviewImportacao = {
 	diavencimento: number | null;
 	criarGrupo: boolean;
 	criarTipo: boolean;
+	clientePendente: boolean;
+	identidadeSugerida: string | null;
+	nomeSugerido: string | null;
 	acao: "criar";
 	erros: string[];
 };
@@ -38,6 +44,7 @@ export type PreviewImportacaoContratosResposta = {
 	totalCriar: number;
 	totalGruposNovos: number;
 	totalTiposNovos: number;
+	totalClientesPendentes: number;
 	totalErros: number;
 	errosGerais: string[];
 	contratos: ContratoPreviewImportacao[];
@@ -91,6 +98,7 @@ export async function previewImportacaoContratosService({
 			totalCriar: 0,
 			totalGruposNovos: 0,
 			totalTiposNovos: 0,
+			totalClientesPendentes: 0,
 			totalErros: validacao.totalErros,
 			errosGerais: validacao.errosGerais,
 			contratos: [],
@@ -106,22 +114,27 @@ export async function previewImportacaoContratosService({
 		(total, item) => total + item.erros.length,
 		0,
 	);
+	const importaveis = resolvidos.filter(
+		(item) => item.erros.length === 0 && !item.clientePendente,
+	);
 	const gruposNovos = new Set(
-		resolvidos
+		importaveis
 			.filter((item) => item.criarGrupo && item.descricaoGrupo)
 			.map((item) => item.descricaoGrupo as string),
 	);
 	const tiposNovos = new Set(
-		resolvidos
+		importaveis
 			.filter((item) => item.criarTipo && item.descricaoTipo)
 			.map((item) => item.descricaoTipo as string),
 	);
+	const clientesPendentes = agruparClientesPendentes(resolvidos);
 
 	return httpOk({
 		totalContratos: resolvidos.length,
-		totalCriar: resolvidos.filter((item) => item.erros.length === 0).length,
+		totalCriar: importaveis.length,
 		totalGruposNovos: gruposNovos.size,
 		totalTiposNovos: tiposNovos.size,
+		totalClientesPendentes: clientesPendentes.length,
 		totalErros,
 		errosGerais: [],
 		contratos: resolvidos.map((item) => ({
@@ -135,6 +148,9 @@ export async function previewImportacaoContratosService({
 			diavencimento: item.diavencimento,
 			criarGrupo: item.criarGrupo,
 			criarTipo: item.criarTipo,
+			clientePendente: item.clientePendente,
+			identidadeSugerida: item.identidadeSugerida,
+			nomeSugerido: item.nomeSugerido,
 			acao: "criar" as const,
 			erros: item.erros,
 		})),

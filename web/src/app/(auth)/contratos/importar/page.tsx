@@ -3,10 +3,10 @@
 import { FileSpreadsheet, FileUp } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { ImportarContratosDialog } from "@/app/(auth)/contratos/components/importar-contratos-dialog";
 import { PageContainer } from "@/app/(auth)/components/page-container";
+import { ImportarContratosDialog } from "@/app/(auth)/contratos/components/importar-contratos-dialog";
 import { Button } from "@/components/ui/button";
-import { type FormatoImportacaoContratos } from "@/services/contrato.service";
+import type { FormatoImportacaoContratos } from "@/services/contrato.service";
 
 export default function ImportarContratosPage() {
 	const [formatoImportacao, setFormatoImportacao] =
@@ -19,7 +19,8 @@ export default function ImportarContratosPage() {
 					<h1 className="text-2xl font-bold">Importar contratos</h1>
 					<p className="text-sm text-muted-foreground mt-1">
 						Importe contratos via CSV ou XLSX. Grupo e tipo inexistentes são
-						cadastrados automaticamente.
+						cadastrados automaticamente. Cliente sem cadastro pode ser
+						cadastrado ou associado depois da importação.
 					</p>
 				</div>
 				<Button asChild variant="outline">
@@ -30,8 +31,8 @@ export default function ImportarContratosPage() {
 			<div className="px-4 pb-8">
 				<div className="rounded-lg border bg-card p-6 max-w-xl space-y-4">
 					<p className="text-sm text-muted-foreground">
-						Colunas esperadas: Código do cliente (CNPJ/CPF), Grupo contrato, Tipo
-						contrato, Descrição do contrato, Valor e Vencimento.
+						Colunas esperadas: Código do cliente (CNPJ/CPF), Grupo contrato,
+						Tipo contrato, Descrição do contrato, Valor e Vencimento.
 					</p>
 					<div className="flex flex-wrap gap-2">
 						<Button onClick={() => setFormatoImportacao("csv")}>

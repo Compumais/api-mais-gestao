@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle2, FileUp, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ResolverClientesImportacao } from "@/app/(auth)/contratos/components/resolver-clientes-importacao";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -34,10 +35,12 @@ import {
 } from "@/components/ui/select";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	type ClientePendenteImportacao,
+	contratoService,
 	type FormatoImportacaoContratos,
 	type ImportarContratosResponse,
 	type PreviewImportacaoContratosResponse,
-	contratoService,
+	type VincularClienteImportacaoResponse,
 } from "@/services/contrato.service";
 import { tipoDocumentoFinanceiroService } from "@/services/tipo-documento-financeiro.service";
 
@@ -46,7 +49,7 @@ interface ImportarContratosDialogProps {
 	onFechar: () => void;
 }
 
-type Etapa = "selecionar" | "preview" | "importando" | "concluido";
+type Etapa = "selecionar" | "preview" | "importando" | "clientes" | "concluido";
 
 async function lerArquivo(
 	arquivo: File,
@@ -77,6 +80,7 @@ export function ImportarContratosDialog({
 	const { empresa } = useEmpresa();
 	const queryClient = useQueryClient();
 	const inputArquivoRef = useRef<HTMLInputElement>(null);
+	const avisouPendentesRef = useRef(false);
 
 	const [etapa, setEtapa] = useState<Etapa>("selecionar");
 	const [arquivo, setArquivo] = useState<File | null>(null);
@@ -88,6 +92,9 @@ export function ImportarContratosDialog({
 	const [progressoUpload, setProgressoUpload] = useState(0);
 	const [resultadoImportacao, setResultadoImportacao] =
 		useState<ImportarContratosResponse | null>(null);
+	const [clientesPendentes, setClientesPendentes] = useState<
+		ClientePendenteImportacao[]
+	>([]);
 
 	const aberto = formato !== null;
 
@@ -100,6 +107,12 @@ export function ImportarContratosDialog({
 				inativo: 0,
 			}),
 	});
+
+	useEffect(() => {
+		if (aberto) {
+			avisouPendentesRef.current = false;
+		}
+	}, [aberto]);
 
 	useEffect(() => {
 		if (!aberto) return;
@@ -117,9 +130,20 @@ export function ImportarContratosDialog({
 		setMostrarConfirmacao(false);
 		setProgressoUpload(0);
 		setResultadoImportacao(null);
+		setClientesPendentes([]);
 	};
 
 	const fechar = () => {
+		if (
+			etapa === "clientes" &&
+			clientesPendentes.length > 0 &&
+			!avisouPendentesRef.current
+		) {
+			avisouPendentesRef.current = true;
+			toast.warning(
+				"Os contratos dos clientes sem cadastro não foram criados. Importe o arquivo de novo para vinculá-los.",
+			);
+		}
 		resetar();
 		onFechar();
 	};
@@ -156,11 +180,25 @@ export function ImportarContratosDialog({
 				setProgressoUpload,
 			),
 		onSuccess: async (resultado) => {
-			setResultadoImportacao(resultado);
-			setEtapa("concluido");
+			const pendentes = resultado.clientesPendentes ?? [];
+			setResultadoImportacao({
+				...resultado,
+				clientesPendentes: pendentes,
+			});
+			setClientesPendentes(pendentes);
 			await queryClient.invalidateQueries({ queryKey: ["contratos"] });
 			await queryClient.invalidateQueries({ queryKey: ["tipos-contrato"] });
 			await queryClient.invalidateQueries({ queryKey: ["grupos-contrato"] });
+			if (pendentes.length > 0) {
+				setEtapa("clientes");
+				toast.success(
+					resultado.totalCriados > 0
+						? `${resultado.totalCriados} contrato(s) importado(s). Resolva os clientes sem cadastro.`
+						: "Há clientes sem cadastro. Cadastre ou associe para criar os contratos.",
+				);
+				return;
+			}
+			setEtapa("concluido");
 			toast.success(
 				`Importação concluída: ${resultado.totalCriados} contrato(s)`,
 			);
@@ -206,11 +244,46 @@ export function ImportarContratosDialog({
 		}
 	};
 
+	const clientesSemCadastro = preview?.totalClientesPendentes ?? 0;
+	const contratosSemCadastro =
+		preview?.contratos.filter((item) => item.clientePendente).length ?? 0;
 	const importacaoBloqueada =
 		!preview ||
 		preview.totalErros > 0 ||
 		preview.errosGerais.length > 0 ||
-		!idtipodocumento;
+		!idtipodocumento ||
+		(preview.totalCriar === 0 && clientesSemCadastro === 0);
+
+	const resolverClientePendente = (
+		codigocliente: string,
+		resultado: VincularClienteImportacaoResponse,
+	) => {
+		setClientesPendentes((atual) => {
+			const restantes = atual.filter(
+				(item) => item.codigocliente !== codigocliente,
+			);
+			if (restantes.length === 0) {
+				setEtapa("concluido");
+			}
+			return restantes;
+		});
+		setResultadoImportacao((atual) =>
+			atual
+				? {
+						...atual,
+						totalImportados: atual.totalImportados + resultado.totalCriados,
+						totalCriados: atual.totalCriados + resultado.totalCriados,
+						totalGruposCriados:
+							atual.totalGruposCriados + resultado.totalGruposCriados,
+						totalTiposCriados:
+							atual.totalTiposCriados + resultado.totalTiposCriados,
+						clientesPendentes: atual.clientesPendentes.filter(
+							(item) => item.codigocliente !== codigocliente,
+						),
+					}
+				: atual,
+		);
+	};
 
 	const linhasComErro =
 		preview?.contratos.filter((item) => item.erros.length > 0) ?? [];
@@ -238,12 +311,14 @@ export function ImportarContratosDialog({
 				<DialogContent className="sm:max-w-3xl">
 					<DialogHeader>
 						<DialogTitle>
-							Importar contratos ({formato?.toUpperCase()})
+							{etapa === "clientes"
+								? "Clientes sem cadastro"
+								: `Importar contratos (${formato?.toUpperCase()})`}
 						</DialogTitle>
 						<DialogDescription>
-							Colunas: código do cliente (CNPJ/CPF), grupo contrato, tipo
-							contrato, descrição, valor e vencimento. Grupo e tipo inexistentes
-							são cadastrados automaticamente.
+							{etapa === "clientes"
+								? "Cadastre um cliente novo ou associe um cadastro existente para criar os contratos que ficaram pendentes."
+								: "Colunas: código do cliente (CNPJ/CPF), grupo contrato, tipo contrato, descrição, valor e vencimento. Grupo e tipo inexistentes são cadastrados automaticamente. Cliente sem cadastro é resolvido depois da importação."}
 						</DialogDescription>
 					</DialogHeader>
 
@@ -336,6 +411,10 @@ export function ImportarContratosDialog({
 									Tipos novos:{" "}
 									<span className="font-medium">{preview.totalTiposNovos}</span>
 								</span>
+								<span>
+									Sem cadastro:{" "}
+									<span className="font-medium">{clientesSemCadastro}</span>
+								</span>
 								<span
 									className={
 										preview.totalErros > 0
@@ -420,8 +499,21 @@ export function ImportarContratosDialog({
 															.filter(Boolean)
 															.join(" / ") || "-"}
 													</td>
-													<td className="px-3 py-2 text-destructive">
-														{item.erros.join("; ")}
+													<td className="px-3 py-2">
+														{item.clientePendente && (
+															<span className="text-amber-700 dark:text-amber-400">
+																Sem cadastro
+																{item.nomeSugerido
+																	? ` (${item.nomeSugerido})`
+																	: ""}
+															</span>
+														)}
+														{item.erros.length > 0 && (
+															<span className="text-destructive">
+																{item.clientePendente ? "; " : ""}
+																{item.erros.join("; ")}
+															</span>
+														)}
 													</td>
 												</tr>
 											))}
@@ -446,7 +538,9 @@ export function ImportarContratosDialog({
 									disabled={importacaoBloqueada}
 									onClick={() => setMostrarConfirmacao(true)}
 								>
-									Confirmar importação
+									{preview.totalCriar === 0
+										? "Resolver clientes"
+										: "Confirmar importação"}
 								</Button>
 							</DialogFooter>
 						</div>
@@ -469,6 +563,23 @@ export function ImportarContratosDialog({
 							<p className="text-xs text-muted-foreground">
 								Não feche esta janela durante a importação.
 							</p>
+						</div>
+					)}
+
+					{etapa === "clientes" && empresa?.id && idtipodocumento && (
+						<div className="flex flex-col gap-4">
+							<ResolverClientesImportacao
+								idempresa={empresa.id}
+								idtipodocumento={idtipodocumento}
+								clientes={clientesPendentes}
+								totalCriados={resultadoImportacao?.totalCriados ?? 0}
+								onResolvido={resolverClientePendente}
+							/>
+							<DialogFooter>
+								<Button variant="outline" onClick={fechar}>
+									Fechar
+								</Button>
+							</DialogFooter>
 						</div>
 					)}
 
@@ -502,7 +613,11 @@ export function ImportarContratosDialog({
 							(preview?.totalTiposNovos ?? 0) > 0
 								? `, com ${preview?.totalGruposNovos ?? 0} grupo(s) e ${preview?.totalTiposNovos ?? 0} tipo(s) novos`
 								: ""}
-							. Deseja continuar?
+							.
+							{clientesSemCadastro > 0
+								? ` ${clientesSemCadastro} cliente(s) sem cadastro (${contratosSemCadastro} contrato(s)) ficam para a próxima janela, onde é possível cadastrar ou associar.`
+								: ""}{" "}
+							Deseja continuar?
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

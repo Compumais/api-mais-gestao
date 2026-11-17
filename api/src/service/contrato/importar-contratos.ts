@@ -4,6 +4,8 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
+	agruparClientesPendentes,
+	type ClientePendenteImportacao,
 	persistirImportacaoContratos,
 	resolverContratosImportacao,
 } from "@/service/contrato/resolver-importacao-contratos.js";
@@ -28,6 +30,7 @@ export type ImportarContratosResposta = {
 	totalCriados: number;
 	totalGruposCriados: number;
 	totalTiposCriados: number;
+	clientesPendentes: ClientePendenteImportacao[];
 };
 
 export async function importarContratosService({
@@ -100,33 +103,41 @@ export async function importarContratosService({
 		};
 	}
 
-	const persistido = await persistirImportacaoContratos({
-		idempresa,
-		idtipodocumento,
-		resolvidos,
-	});
+	const importaveis = resolvidos.filter((item) => !item.clientePendente);
+	const clientesPendentes = agruparClientesPendentes(resolvidos);
+	const persistido =
+		importaveis.length > 0
+			? await persistirImportacaoContratos({
+					idempresa,
+					idtipodocumento,
+					resolvidos: importaveis,
+				})
+			: { criados: 0, gruposCriados: 0, tiposCriados: 0 };
 
-	const agora = new Date().toISOString();
-	await criarAuditoriaService({
-		id: uuidv4(),
-		acao: "importar_contratos",
-		idusuario,
-		recurso: "contrato",
-		idrecurso: idempresa,
-		idempresa,
-		criadoem: agora,
-		metadados: {
-			totalCriados: persistido.criados,
-			totalGruposCriados: persistido.gruposCriados,
-			totalTiposCriados: persistido.tiposCriados,
-			nomeArquivo: nomeArquivo ?? null,
-		},
-	});
+	if (persistido.criados > 0) {
+		const agora = new Date().toISOString();
+		await criarAuditoriaService({
+			id: uuidv4(),
+			acao: "importar_contratos",
+			idusuario,
+			recurso: "contrato",
+			idrecurso: idempresa,
+			idempresa,
+			criadoem: agora,
+			metadados: {
+				totalCriados: persistido.criados,
+				totalGruposCriados: persistido.gruposCriados,
+				totalTiposCriados: persistido.tiposCriados,
+				nomeArquivo: nomeArquivo ?? null,
+			},
+		});
+	}
 
 	return httpOk({
 		totalImportados: persistido.criados,
 		totalCriados: persistido.criados,
 		totalGruposCriados: persistido.gruposCriados,
 		totalTiposCriados: persistido.tiposCriados,
+		clientesPendentes,
 	});
 }

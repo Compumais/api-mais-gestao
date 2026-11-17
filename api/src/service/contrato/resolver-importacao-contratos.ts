@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import type { NovoContrato } from "@/model/contrato-model.js";
 import { db } from "@/repositories/connection.js";
@@ -29,6 +29,9 @@ export type ContratoImportacaoResolvido = LinhaImportacaoContrato & {
 	acao: "criar";
 	identidade: string | null;
 	nomeCliente: string | null;
+	clientePendente: boolean;
+	identidadeSugerida: string | null;
+	nomeSugerido: string | null;
 	idgrupocontrato: string | null;
 	criarGrupo: boolean;
 	descricaoGrupo: string | null;
@@ -37,6 +40,68 @@ export type ContratoImportacaoResolvido = LinhaImportacaoContrato & {
 	descricaoTipo: string | null;
 	codigoContrato: string | null;
 };
+
+export type ContratoPendenteImportacao = {
+	linha: number;
+	grupocontrato: string;
+	tipocontrato: string;
+	descricao: string;
+	valor: string;
+	diavencimento: number;
+};
+
+export type ClientePendenteImportacao = {
+	codigocliente: string;
+	identidadeSugerida: string | null;
+	nomeSugerido: string | null;
+	contratos: ContratoPendenteImportacao[];
+};
+
+export function chaveClienteImportacao(codigo: string): string {
+	const digitos = codigo.replace(/\D/g, "");
+	if (digitos.length === 11 || digitos.length === 14) return digitos;
+	return codigo.trim();
+}
+
+export function agruparClientesPendentes(
+	resolvidos: ContratoImportacaoResolvido[],
+): ClientePendenteImportacao[] {
+	const mapa = new Map<string, ClientePendenteImportacao>();
+
+	for (const item of resolvidos) {
+		if (!item.clientePendente || item.erros.length > 0) continue;
+		if (!item.valor || item.diavencimento === null) continue;
+
+		const chave = chaveClienteImportacao(item.codigocliente);
+		const contrato: ContratoPendenteImportacao = {
+			linha: item.linha,
+			grupocontrato: item.grupocontrato,
+			tipocontrato: item.tipocontrato,
+			descricao: item.descricao,
+			valor: item.valor,
+			diavencimento: item.diavencimento,
+		};
+		const atual = mapa.get(chave);
+
+		if (!atual) {
+			mapa.set(chave, {
+				codigocliente: item.codigocliente.trim(),
+				identidadeSugerida: item.identidadeSugerida,
+				nomeSugerido: item.nomeSugerido,
+				contratos: [contrato],
+			});
+			continue;
+		}
+
+		atual.contratos.push(contrato);
+		if (!atual.identidadeSugerida && item.identidadeSugerida) {
+			atual.identidadeSugerida = item.identidadeSugerida;
+			atual.nomeSugerido = item.nomeSugerido;
+		}
+	}
+
+	return [...mapa.values()];
+}
 
 function somenteDigitos(valor: string): string {
 	return valor.replace(/\D/g, "");
@@ -61,8 +126,11 @@ export async function resolverContratosImportacao(parametros: {
 				cliente: entidade.cliente,
 			})
 			.from(entidade)
-			.where(and(eq(entidade.idempresa, idempresa), eq(entidade.cliente, 1))),
-		db.select().from(grupocontrato).where(eq(grupocontrato.idempresa, idempresa)),
+			.where(eq(entidade.idempresa, idempresa)),
+		db
+			.select()
+			.from(grupocontrato)
+			.where(eq(grupocontrato.idempresa, idempresa)),
 		db.select().from(tipocontrato).where(eq(tipocontrato.idempresa, idempresa)),
 		buscarProximoCodigoContrato(idempresa),
 	]);
@@ -116,6 +184,9 @@ export async function resolverContratosImportacao(parametros: {
 		const erros = [...linha.erros];
 		let identidade: string | null = null;
 		let nomeCliente: string | null = null;
+		let clientePendente = false;
+		let identidadeSugerida: string | null = null;
+		let nomeSugerido: string | null = null;
 
 		const codigoCliente = linha.codigocliente.trim();
 		if (codigoCliente) {
@@ -124,10 +195,12 @@ export async function resolverContratosImportacao(parametros: {
 				somenteDigitos(codigoCliente),
 			);
 			const cliente = porId ?? porDocumento;
-			if (!cliente) {
-				erros.push(
-					`Cliente "${codigoCliente}" não encontrado (use CNPJ/CPF do cadastro)`,
-				);
+			if (!cliente || Number(cliente.cliente) !== 1) {
+				clientePendente = true;
+				if (cliente) {
+					identidadeSugerida = cliente.id;
+					nomeSugerido = cliente.nome;
+				}
 			} else {
 				identidade = cliente.id;
 				nomeCliente = cliente.nome;
@@ -140,10 +213,13 @@ export async function resolverContratosImportacao(parametros: {
 
 		if (descricaoGrupo) {
 			const chaveGrupo = normalizarTextoCabecalho(descricaoGrupo);
-			const existente =
-				grupoPorDescricao.get(chaveGrupo) ?? gruposPendentes.get(chaveGrupo);
-			if (existente) {
-				idgrupocontrato = existente.id;
+			const grupoExistente = grupoPorDescricao.get(chaveGrupo);
+			const grupoPendente = gruposPendentes.get(chaveGrupo);
+			if (grupoExistente) {
+				idgrupocontrato = grupoExistente.id;
+			} else if (grupoPendente) {
+				idgrupocontrato = grupoPendente.id;
+				criarGrupo = true;
 			} else {
 				const novo = {
 					id: uuidv4(),
@@ -163,10 +239,13 @@ export async function resolverContratosImportacao(parametros: {
 
 		if (descricaoTipo) {
 			const chaveTipo = normalizarTextoCabecalho(descricaoTipo);
-			const existente =
-				tipoPorDescricao.get(chaveTipo) ?? tiposPendentes.get(chaveTipo);
-			if (existente) {
-				idtipocontrato = existente.id;
+			const tipoExistente = tipoPorDescricao.get(chaveTipo);
+			const tipoPendente = tiposPendentes.get(chaveTipo);
+			if (tipoExistente) {
+				idtipocontrato = tipoExistente.id;
+			} else if (tipoPendente) {
+				idtipocontrato = tipoPendente.id;
+				criarTipo = true;
 			} else {
 				const valorTipo = linha.valor ?? "0.00";
 				const novo = {
@@ -192,6 +271,9 @@ export async function resolverContratosImportacao(parametros: {
 			acao: "criar",
 			identidade,
 			nomeCliente,
+			clientePendente,
+			identidadeSugerida,
+			nomeSugerido,
 			idgrupocontrato,
 			criarGrupo,
 			descricaoGrupo: descricaoGrupo || null,
@@ -215,13 +297,14 @@ export async function persistirImportacaoContratos(parametros: {
 	tiposCriados: number;
 }> {
 	const { idempresa, idtipodocumento, resolvidos } = parametros;
+	const aptos = resolvidos.filter(
+		(item): item is ContratoImportacaoResolvido & { identidade: string } =>
+			Boolean(item.identidade) && item.erros.length === 0,
+	);
 	const agora = new Date().toISOString();
 	const datainicio = dataHojeIso();
 
-	const gruposParaCriar = new Map<
-		string,
-		{ id: string; descricao: string }
-	>();
+	const gruposParaCriar = new Map<string, { id: string; descricao: string }>();
 	const tiposParaCriar = new Map<
 		string,
 		{
@@ -232,7 +315,7 @@ export async function persistirImportacaoContratos(parametros: {
 		}
 	>();
 
-	for (const item of resolvidos) {
+	for (const item of aptos) {
 		if (item.criarGrupo && item.idgrupocontrato && item.descricaoGrupo) {
 			const chave = normalizarTextoCabecalho(item.descricaoGrupo);
 			if (!gruposParaCriar.has(chave)) {
@@ -288,13 +371,13 @@ export async function persistirImportacaoContratos(parametros: {
 			codigoTipo += 1;
 		}
 
-		const contratos: NovoContrato[] = resolvidos.map((item) => {
+		const contratos: NovoContrato[] = aptos.map((item) => {
 			const codigo = String(codigoContratoAtual);
 			codigoContratoAtual += 1;
 			return {
 				id: uuidv4(),
 				idempresa,
-				identidade: item.identidade as string,
+				identidade: item.identidade,
 				idtipocontrato: item.idtipocontrato,
 				codigo,
 				descricao: item.descricao.slice(0, 255),
@@ -327,7 +410,7 @@ export async function persistirImportacaoContratos(parametros: {
 	});
 
 	return {
-		criados: resolvidos.length,
+		criados: aptos.length,
 		gruposCriados: gruposParaCriar.size,
 		tiposCriados: tiposParaCriar.size,
 	};

@@ -87,6 +87,9 @@ export type ContratoPreviewImportacao = {
 	diavencimento: number | null;
 	criarGrupo: boolean;
 	criarTipo: boolean;
+	clientePendente: boolean;
+	identidadeSugerida: string | null;
+	nomeSugerido: string | null;
 	acao: "criar";
 	erros: string[];
 };
@@ -96,13 +99,55 @@ export type PreviewImportacaoContratosResponse = {
 	totalCriar: number;
 	totalGruposNovos: number;
 	totalTiposNovos: number;
+	totalClientesPendentes: number;
 	totalErros: number;
 	errosGerais: string[];
 	contratos: ContratoPreviewImportacao[];
 };
 
+export type ClientePendenteImportacaoContrato = {
+	linha: number;
+	grupocontrato: string;
+	tipocontrato: string;
+	descricao: string;
+	valor: string;
+	diavencimento: number;
+};
+
+export type ClientePendenteImportacao = {
+	codigocliente: string;
+	identidadeSugerida: string | null;
+	nomeSugerido: string | null;
+	contratos: ClientePendenteImportacaoContrato[];
+};
+
 export type ImportarContratosResponse = {
 	totalImportados: number;
+	totalCriados: number;
+	totalGruposCriados: number;
+	totalTiposCriados: number;
+	clientesPendentes: ClientePendenteImportacao[];
+};
+
+export type VincularClienteImportacaoData = {
+	idempresa: string;
+	idtipodocumento: string;
+	acao: "cadastrar" | "associar";
+	codigocliente: string;
+	nome?: string;
+	identidade?: string;
+	contratos: Array<{
+		grupocontrato: string;
+		tipocontrato: string;
+		descricao: string;
+		valor: string;
+		diavencimento: number;
+	}>;
+};
+
+export type VincularClienteImportacaoResponse = {
+	identidade: string;
+	nomeCliente: string;
 	totalCriados: number;
 	totalGruposCriados: number;
 	totalTiposCriados: number;
@@ -255,12 +300,20 @@ export const contratoService = {
 			{
 				onUploadProgress: (evento) => {
 					if (onUploadProgress && evento.total) {
-						onUploadProgress(
-							Math.round((evento.loaded / evento.total) * 100),
-						);
+						onUploadProgress(Math.round((evento.loaded / evento.total) * 100));
 					}
 				},
 			},
+		);
+		return data;
+	},
+
+	async vincularClienteImportacao(
+		dados: VincularClienteImportacaoData,
+	): Promise<VincularClienteImportacaoResponse> {
+		const { data } = await api.post<VincularClienteImportacaoResponse>(
+			"/contratos/importar/vincular-cliente",
+			dados,
 		);
 		return data;
 	},

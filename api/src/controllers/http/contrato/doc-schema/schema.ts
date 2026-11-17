@@ -41,3 +41,9 @@ export const importarContratosSchema: FastifySchema = {
 	summary: "Importar contratos via CSV/XLSX",
 	security: [{ bearerAuth: [] }],
 };
+
+export const vincularClienteImportacaoContratosSchema: FastifySchema = {
+	tags: ["contratos"],
+	summary: "Cadastrar ou associar cliente pendente da importação de contratos",
+	security: [{ bearerAuth: [] }],
+};

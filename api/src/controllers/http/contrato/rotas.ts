@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { MODULOS_SAAS } from "@/constants/saas-catalog.js";
-import { requireModulo } from "../../middleware/verify-plano.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { requireModulo } from "../../middleware/verify-plano.js";
 import { criarHandlerProximoCodigo } from "../shared/proximo-codigo-query.js";
 import { criarProximoCodigoSchema } from "../shared/proximo-codigo-schema.js";
 import { atualizarContrato } from "./atualizar.js";
@@ -12,6 +12,7 @@ import { excluirContrato } from "./excluir.js";
 import { importarContratos } from "./importar.js";
 import { previewImportacaoContratos } from "./importar-preview.js";
 import { listarContratos } from "./listar.js";
+import { vincularClienteImportacaoContratos } from "./vincular-cliente.js";
 
 const LIMITE_BODY_IMPORTACAO = 20 * 1024 * 1024;
 
@@ -32,6 +33,10 @@ export async function contratosRotas(app: FastifyInstance) {
 		schema: schema.importarContratosSchema,
 		bodyLimit: LIMITE_BODY_IMPORTACAO,
 		handler: importarContratos,
+	});
+	app.post("/contratos/importar/vincular-cliente", {
+		schema: schema.vincularClienteImportacaoContratosSchema,
+		handler: vincularClienteImportacaoContratos,
 	});
 	app.post("/contratos", {
 		schema: schema.criarContratoSchema,
