@@ -156,6 +156,35 @@ export function formatDateCurtaBrasilia(value?: string | Date | null): string {
 	return `${dia}/${mes}`;
 }
 
+const MESES_CURTOS = [
+	"jan",
+	"fev",
+	"mar",
+	"abr",
+	"mai",
+	"jun",
+	"jul",
+	"ago",
+	"set",
+	"out",
+	"nov",
+	"dez",
+];
+
+/** Mês civil (YYYY-MM ou YYYY-MM-DD) como nov/2026, sem conversão de fuso. */
+export function formatMesAnoCivil(value?: string | null): string {
+	const bruto = value?.trim() ?? "";
+	const iso = DATE_ONLY_PATTERN.test(bruto)
+		? bruto
+		: /^\d{4}-\d{2}$/.test(bruto)
+			? `${bruto}-01`
+			: extractDateOnly(bruto);
+	if (!iso) return "—";
+	const [ano, mes] = iso.split("-");
+	const nome = MESES_CURTOS[Number(mes) - 1];
+	return nome ? `${nome}/${ano}` : iso;
+}
+
 /** Exibe instante UTC da API no relógio de Brasília. */
 export function formatDateTimeBrasilia(
 	value?: string | Date | null,
