@@ -23,9 +23,9 @@ import { formatCurrency, formatNumber } from "@/lib/dashboard-periodo";
 import { formatDateCurtaBrasilia, formatMesAnoCivil } from "@/lib/date";
 
 const chartConfig = {
-	entradas: { label: "Entradas", color: "var(--chart-1)" },
-	saidas: { label: "Saídas", color: "var(--chart-2)" },
-	saldo: { label: "Saldo", color: "var(--chart-3)" },
+	entradas: { label: "Entradas", color: "#2563eb" },
+	saidas: { label: "Saídas", color: "#dc2626" },
+	saldo: { label: "Saldo", color: "#eab308" },
 } satisfies ChartConfig;
 
 type PontoFluxo = {
@@ -204,21 +204,24 @@ export function FluxoCaixaSection() {
 									dataKey="entradas"
 									stroke="var(--color-entradas)"
 									fill="var(--color-entradas)"
-									fillOpacity={0.15}
+									fillOpacity={0.12}
+									strokeWidth={2}
 								/>
 								<Area
 									type="monotone"
 									dataKey="saidas"
 									stroke="var(--color-saidas)"
 									fill="var(--color-saidas)"
-									fillOpacity={0.15}
+									fillOpacity={0.12}
+									strokeWidth={2}
 								/>
 								<Area
 									type="monotone"
 									dataKey="saldo"
 									stroke="var(--color-saldo)"
 									fill="var(--color-saldo)"
-									fillOpacity={0.1}
+									fillOpacity={0.12}
+									strokeWidth={2}
 								/>
 							</AreaChart>
 						</ChartContainer>
