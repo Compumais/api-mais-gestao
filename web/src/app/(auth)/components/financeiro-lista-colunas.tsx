@@ -197,9 +197,9 @@ export function formatNome(
 	const nomeCliente = financeiro.nomecliente?.trim();
 	if (nomeCliente) return nomeCliente;
 	if (variante === "pagar") {
-		return financeiro.emitente || "-";
+		return financeiro.emitente?.trim() || "-";
 	}
-	return financeiro.emitente?.trim() || financeiro.historico?.trim() || "-";
+	return financeiro.emitente?.trim() || "-";
 }
 
 export function getStatusBadge(
