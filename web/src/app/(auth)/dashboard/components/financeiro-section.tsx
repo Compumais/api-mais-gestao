@@ -23,6 +23,7 @@ import {
 	formatNumber,
 	formatPercent,
 } from "@/lib/dashboard-periodo";
+import { TopTitulosFinanceiros } from "./top-titulos-financeiros";
 
 export function FinanceiroSection() {
 	const { data, isLoading } = useDashboardFinanceiroSaude();
@@ -133,6 +134,11 @@ export function FinanceiroSection() {
 					</Card>
 				</VisualErrorBoundary>
 			</div>
+
+			<TopTitulosFinanceiros
+				recebimentos={data.topRecebimentos ?? []}
+				pagamentos={data.topPagamentos ?? []}
+			/>
 
 			<VisualErrorBoundary>
 				<Card>

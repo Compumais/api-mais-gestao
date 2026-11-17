@@ -45,6 +45,7 @@ import {
 	formatPercent,
 } from "@/lib/dashboard-periodo";
 import { formatDataCivilBrasilia, formatDateCurtaBrasilia } from "@/lib/date";
+import { TopTitulosFinanceiros } from "./top-titulos-financeiros";
 
 const evolucaoConfig = {
 	total: { label: "Faturamento", color: "var(--chart-1)" },
@@ -249,6 +250,11 @@ export function VisaoGeralSection() {
 					</Card>
 				</VisualErrorBoundary>
 			</div>
+
+			<TopTitulosFinanceiros
+				recebimentos={data.topRecebimentos ?? []}
+				pagamentos={data.topPagamentos ?? []}
+			/>
 
 			<div className="grid gap-4 lg:grid-cols-3">
 				<VisualErrorBoundary>

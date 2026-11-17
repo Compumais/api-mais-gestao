@@ -70,6 +70,8 @@ export type ExecutivoDashboard = {
 	receitasDespesas: { receitas: number; despesas: number };
 	topProdutos: TopProdutoAnalytics[];
 	topClientes: TopClienteAnalytics[];
+	topRecebimentos: TopTituloEntidade[];
+	topPagamentos: TopTituloEntidade[];
 };
 
 export type VendasAvancadas = {
@@ -125,6 +127,13 @@ export type AgingBucket = {
 	valor: number;
 };
 
+export type TopTituloEntidade = {
+	identidade: string | null;
+	nome: string;
+	valor: number;
+	quantidade: number;
+};
+
 export type FinanceiroSaude = {
 	receitas: number;
 	despesas: number;
@@ -137,6 +146,8 @@ export type FinanceiroSaude = {
 	taxaInadimplenciaPct: number | null;
 	agingReceber: AgingBucket[];
 	agingPagar: AgingBucket[];
+	topRecebimentos: TopTituloEntidade[];
+	topPagamentos: TopTituloEntidade[];
 	topInadimplentes: {
 		identidade: string | null;
 		nome: string;
@@ -393,6 +404,49 @@ async function somarFinanceiroAberto(
 			${apenasVencido ? sql`AND vencimento < ${hojeBrasiliaIsoDate()}::date` : sql``}
 	`);
 	return toNumber(rowsOf<{ total: string | number }>(result)[0]?.total);
+}
+
+async function buscarTopTitulosPorEntidade(
+	idempresa: string,
+	tipo: "P" | "R",
+): Promise<TopTituloEntidade[]> {
+	const result = await db.execute(sql`
+		SELECT
+			MAX(f.identidade) as identidade,
+			COALESCE(
+				MAX(NULLIF(TRIM(e.nome), '')),
+				MAX(NULLIF(TRIM(e.razaosocial), '')),
+				MAX(NULLIF(TRIM(f.emitente), '')),
+				'Sem nome'
+			) as nome,
+			COALESCE(SUM(f.saldo::numeric), 0) as valor,
+			COUNT(*)::int as quantidade
+		FROM financeiro f
+		LEFT JOIN entidade e ON e.id = f.identidade
+		WHERE f.idempresa = ${idempresa}
+			AND f.tipo = ${tipo}
+			AND f.status = 'A'
+		GROUP BY
+			CASE
+				WHEN f.identidade IS NOT NULL THEN f.identidade
+				ELSE COALESCE(NULLIF(TRIM(f.emitente), ''), 'sem-cadastro')
+			END
+		HAVING COALESCE(SUM(f.saldo::numeric), 0) > 0
+		ORDER BY valor DESC
+		LIMIT 10
+	`);
+
+	return rowsOf<{
+		identidade: string | null;
+		nome: string;
+		valor: string | number;
+		quantidade: number;
+	}>(result).map((row) => ({
+		identidade: row.identidade,
+		nome: row.nome,
+		valor: toNumber(row.valor),
+		quantidade: Number(row.quantidade) || 0,
+	}));
 }
 
 async function somarTitulosPrevistos(
@@ -772,6 +826,8 @@ export async function buscarExecutivoDashboard({
 		evolucaoFaturamento,
 		topProdutos,
 		topClientes,
+		topRecebimentos,
+		topPagamentos,
 	] = await Promise.all([
 		somarFaturamento(idempresa, dataInicioStr, dataFimStr),
 		somarFaturamento(
@@ -824,6 +880,8 @@ export async function buscarExecutivoDashboard({
 		buscarEvolucaoFaturamento({ idempresa, dataInicioStr, dataFimStr }),
 		buscarTopProdutosPeriodo(idempresa, dataInicioStr, dataFimStr),
 		buscarTopClientesPeriodo(idempresa, dataInicioStr, dataFimStr),
+		buscarTopTitulosPorEntidade(idempresa, "R"),
+		buscarTopTitulosPorEntidade(idempresa, "P"),
 	]);
 
 	const lucroBruto = faturamento - cmv;
@@ -874,6 +932,8 @@ export async function buscarExecutivoDashboard({
 		receitasDespesas: { receitas, despesas },
 		topProdutos,
 		topClientes,
+		topRecebimentos,
+		topPagamentos,
 	};
 }
 
@@ -1062,6 +1122,8 @@ export async function buscarFinanceiroSaude({
 		valorVencidoPagar,
 		agingReceber,
 		agingPagar,
+		topRecebimentos,
+		topPagamentos,
 		inadimplentesResult,
 		totalReceberHistoricoResult,
 	] = await Promise.all([
@@ -1074,6 +1136,8 @@ export async function buscarFinanceiroSaude({
 		somarFinanceiroAberto(idempresa, "P", true),
 		agingFinanceiro(idempresa, "R"),
 		agingFinanceiro(idempresa, "P"),
+		buscarTopTitulosPorEntidade(idempresa, "R"),
+		buscarTopTitulosPorEntidade(idempresa, "P"),
 		db.execute(sql`
 			SELECT
 				f.identidade,
@@ -1119,6 +1183,8 @@ export async function buscarFinanceiroSaude({
 				: null,
 		agingReceber,
 		agingPagar,
+		topRecebimentos,
+		topPagamentos,
 		topInadimplentes: rowsOf<{
 			identidade: string | null;
 			nome: string;
