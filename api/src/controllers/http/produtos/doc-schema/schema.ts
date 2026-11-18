@@ -933,6 +933,8 @@ export const alterarProdutosEmMassaSchema: FastifySchema = {
 					inativo: {
 						anyOf: [{ type: "number", enum: [0, 1] }, { type: "null" }],
 					},
+					exportaBalanca: { type: "number", enum: [0, 1] },
+					diasValidade: { type: "number" },
 					tipoproduto: {
 						anyOf: [{ type: "string", maxLength: 2 }, { type: "null" }],
 					},

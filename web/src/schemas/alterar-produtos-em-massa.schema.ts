@@ -32,6 +32,17 @@ export const alterarProdutosEmMassaFormSchema = z
 		inativo: campoAlteracao(z.number().int().min(0).max(1).nullable()),
 		controlalote: campoAlteracao(z.number().int().min(0).max(1)),
 		controlavalidade: campoAlteracao(z.number().int().min(0).max(1)),
+		exportaBalanca: campoAlteracao(z.number().int().min(0).max(1)),
+		diasValidade: campoAlteracao(
+			z
+				.number()
+				.int()
+				.refine(
+					(valor) =>
+						(valor >= 0 && valor <= 990) || valor === 998 || valor === 999,
+					{ message: "Dias de validade deve ser 0 a 990, 998 ou 999" },
+				),
+		),
 		percentualmva: campoAlteracao(percentualOpcional),
 		idcfopentrada: campoAlteracao(z.string().nullable()),
 		idcfopsaida: campoAlteracao(z.string().nullable()),
@@ -105,6 +116,8 @@ export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	inativo: { alterar: false, valor: 0 },
 	controlalote: { alterar: false, valor: 0 },
 	controlavalidade: { alterar: false, valor: 0 },
+	exportaBalanca: { alterar: false, valor: 0 },
+	diasValidade: { alterar: false, valor: 0 },
 	percentualmva: { alterar: false, valor: "" },
 	idcfopentrada: { alterar: false, valor: null },
 	idcfopsaida: { alterar: false, valor: null },
@@ -182,6 +195,12 @@ export function montarCamposAlteracaoEmMassa(
 		campos.controlalote = dados.controlalote.valor;
 	if (dados.controlavalidade.alterar) {
 		campos.controlavalidade = dados.controlavalidade.valor;
+	}
+	if (dados.exportaBalanca.alterar) {
+		campos.exportaBalanca = dados.exportaBalanca.valor;
+	}
+	if (dados.diasValidade.alterar) {
+		campos.diasValidade = dados.diasValidade.valor;
 	}
 	if (dados.percentualmva.alterar) {
 		campos.percentualmva = valorOuNulo(dados.percentualmva.valor);
