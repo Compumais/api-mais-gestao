@@ -40,6 +40,8 @@ Antes de editar: [api/AGENTS.md](../../api/AGENTS.md). Pasta: [api/docs/modulos/
 | [pdv.md](../../api/docs/modulos/pdv.md) | Quebra sync de venda, NFC-e do caixa, terminal e auto-update. |
 | [vendas-dav.md](../../api/docs/modulos/vendas-dav.md) | Impede faturar pedido em NF-e/NFC-e. |
 | [ordem-servico.md](../../api/docs/modulos/ordem-servico.md) | Perde OS, faturamento, lotes e rascunho de nota. |
+| [contratos.md](../../api/docs/modulos/contratos.md) | Quebra faturamento recorrente, lote, boleto/remessa de contratos. |
+| [locacao.md](../../api/docs/modulos/locacao.md) | Solta patrimônio alocado ou gera título/caixa errado no fechamento. |
 | [producao.md](../../api/docs/modulos/producao.md) | Quebra ficha técnica e explosão de estoque na venda. |
 | [relatorios-dashboard.md](../../api/docs/modulos/relatorios-dashboard.md) | Relatórios fiscais e gerenciais passam a ler dados errados. |
 | [automacao-email.md](../../api/docs/modulos/automacao-email.md) | Para alertas, sync de NF-e de entrada e envio Domínio. |
@@ -63,6 +65,8 @@ Antes de editar: [web/AGENTS.md](../../web/AGENTS.md). Pasta: [web/docs/modulos/
 | [pdv.md](../../web/docs/modulos/pdv.md) | `(pdv)/pdv`, vendas e fechamento de caixa |
 | [gourmet.md](../../web/docs/modulos/gourmet.md) | `(gourmet)` e `(garcom)` |
 | [financeiro.md](../../web/docs/modulos/financeiro.md) | Contas, movimentações, plano de contas, budget |
+| [contratos.md](../../web/docs/modulos/contratos.md) | Contratos, faturamento em lote e remessas CNAB |
+| [locacao.md](../../web/docs/modulos/locacao.md) | Equipamentos e locações |
 | [centro-custo.md](../../web/docs/modulos/centro-custo.md) | `(auth)/centros-custo` e `(auth)/orcamento-centro-custos` |
 | [fiscal.md](../../web/docs/modulos/fiscal.md) | NF-e, NFC-e, NFS-e, compra, tributos, CFOP |
 | [contabilidade.md](../../web/docs/modulos/contabilidade.md) | SINTEGRA, EFD, plano contábil |

@@ -794,4 +794,32 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		icon: IconHelp,
 		keywords: ["ajuda", "help", "suporte", "documentação", "documentacao"],
 	},
+	{
+		title: "Equipamentos",
+		url: "/equipamentos",
+		category: "Locação",
+		icon: IconPackage,
+		keywords: [
+			"locação",
+			"locacao",
+			"equipamento",
+			"patrimônio",
+			"patrimonio",
+			"diária",
+		],
+	},
+	{
+		title: "Locações",
+		url: "/locacoes",
+		category: "Locação",
+		icon: IconPackage,
+		keywords: [
+			"locação",
+			"locacao",
+			"aluguel",
+			"contrato",
+			"devolução",
+			"diária",
+		],
+	},
 ];

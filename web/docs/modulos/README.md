@@ -17,6 +17,7 @@ Leia antes [../../AGENTS.md](../../AGENTS.md) (deste pacote) e o [AGENTS.md da r
 | [gourmet.md](gourmet.md) | `(gourmet)` e `(garcom)` |
 | [financeiro.md](financeiro.md) | Contas, movimentações, plano de contas, budget |
 | [contratos.md](contratos.md) | Contratos, faturamento em lote e remessas CNAB |
+| [locacao.md](locacao.md) | Equipamentos e locações |
 | [centro-custo.md](centro-custo.md) | `(auth)/centros-custo` e `(auth)/orcamento-centro-custos` |
 | [fiscal.md](fiscal.md) | NF-e, NFC-e, NFS-e, compra, tributos, CFOP |
 | [contabilidade.md](contabilidade.md) | SINTEGRA, EFD, plano contábil |

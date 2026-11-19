@@ -16,7 +16,9 @@ type RecursoProximoCodigo =
 	| "condicao-pagamento"
 	| "tipo-contrato"
 	| "contrato"
-	| "grupo-contrato";
+	| "grupo-contrato"
+	| "equipamento"
+	| "locacao";
 
 export function criarHandlerProximoCodigo(recurso: RecursoProximoCodigo) {
 	return async function handlerProximoCodigo(
@@ -25,7 +27,9 @@ export function criarHandlerProximoCodigo(recurso: RecursoProximoCodigo) {
 	) {
 		try {
 			if (!request.user) {
-				return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+				return reply
+					.status(httpNaoAutorizado().status)
+					.send(httpNaoAutorizado());
 			}
 
 			const query = proximoCodigoQuerySchema.parse(request.query);

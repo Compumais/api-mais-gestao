@@ -65,6 +65,7 @@ Nomenclatura de arquivos e variáveis em português. UUID v4. Transação quando
 - [PDV](docs/modulos/pdv.md)
 - [Vendas DAV](docs/modulos/vendas-dav.md)
 - [Ordem de serviço](docs/modulos/ordem-servico.md)
+- [Locação de equipamentos](docs/modulos/locacao.md)
 - [Produção](docs/modulos/producao.md)
 - [Relatórios e dashboard](docs/modulos/relatorios-dashboard.md)
 - [Automação, e-mail e jobs](docs/modulos/automacao-email.md)

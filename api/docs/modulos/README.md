@@ -19,6 +19,7 @@ Leia [../../AGENTS.md](../../AGENTS.md) antes de editar. Um arquivo por domínio
 | [Vendas DAV](vendas-dav.md) | Impede faturar pedido em NF-e/NFC-e. |
 | [Ordem de serviço](ordem-servico.md) | Perde OS, faturamento, lotes e rascunho de nota. |
 | [Gestão de contratos](contratos.md) | Quebra faturamento recorrente, lote, boleto/remessa de contratos. |
+| [Locação de equipamentos](locacao.md) | Solta patrimônio alocado ou gera título/caixa errado no fechamento. |
 | [Produção](producao.md) | Quebra ficha técnica e explosão de estoque na venda. |
 | [Relatórios e dashboard](relatorios-dashboard.md) | Relatórios fiscais e gerenciais passam a ler dados errados. |
 | [Automação, e-mail e jobs](automacao-email.md) | Para alertas, sync de NF-e de entrada e envio Domínio. |

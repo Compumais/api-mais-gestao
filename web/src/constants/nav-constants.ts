@@ -329,6 +329,32 @@ export const DATA = {
 		},
 	] satisfies NavItem[],
 
+	navLocacao: [
+		{
+			title: "Locação",
+			icon: IconPackage,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
+				{
+					title: "Equipamentos",
+					url: "/equipamentos",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Locações",
+					url: "/locacoes",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+			],
+		},
+	] satisfies NavItem[],
+
 	navFinanceiro: [
 		{
 			title: "Financeiro",

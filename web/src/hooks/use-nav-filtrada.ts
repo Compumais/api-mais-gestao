@@ -97,6 +97,11 @@ export function useNavFiltrada() {
 		[ctxAcesso],
 	);
 
+	const navLocacaoItems = useMemo(
+		() => filtrarNavItems(DATA.navLocacao, ctxAcesso),
+		[ctxAcesso],
+	);
+
 	const navFinanceiroItems = useMemo(
 		() => filtrarNavItems(DATA.navFinanceiro, ctxAcesso),
 		[ctxAcesso],
@@ -136,6 +141,7 @@ export function useNavFiltrada() {
 				navEstoqueItems,
 				navComprasItems,
 				navContratosItems,
+				navLocacaoItems,
 				navFinanceiroItems,
 				navFiscalItems,
 				navRelatoriosItems,
@@ -150,6 +156,7 @@ export function useNavFiltrada() {
 			navEstoqueItems,
 			navComprasItems,
 			navContratosItems,
+			navLocacaoItems,
 			navFinanceiroItems,
 			navFiscalItems,
 			navRelatoriosItems,
@@ -185,6 +192,9 @@ export function useNavFiltrada() {
 		if (!isUsuarioRestrito && navContratosItems.length > 0) {
 			secoes.push({ label: "Contratos", items: navContratosItems });
 		}
+		if (!isUsuarioRestrito && navLocacaoItems.length > 0) {
+			secoes.push({ label: "Locação", items: navLocacaoItems });
+		}
 		if (!isUsuarioRestrito && navFinanceiroItems.length > 0) {
 			secoes.push({ label: "Financeiro", items: navFinanceiroItems });
 		}
@@ -213,6 +223,7 @@ export function useNavFiltrada() {
 		navEstoqueItems,
 		navComprasItems,
 		navContratosItems,
+		navLocacaoItems,
 		navFinanceiroItems,
 		navFiscalItems,
 		navRelatoriosItems,
@@ -231,6 +242,7 @@ export function useNavFiltrada() {
 		navEstoqueItems,
 		navComprasItems,
 		navContratosItems,
+		navLocacaoItems,
 		navFinanceiroItems,
 		navFiscalItems,
 		navRelatoriosItems,
