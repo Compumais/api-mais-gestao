@@ -22,6 +22,8 @@ export const ORDENAR_FINANCEIROS_CAMPOS = [
 	"documento",
 	"tipodocumentodescricao",
 	"emitente",
+	"nomecliente",
+	"historico",
 	"parcela",
 	"status",
 	"emissao",
@@ -38,6 +40,12 @@ const COLUNAS_ORDENACAO = {
 	documento: schema.financeiro.documento,
 	tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
 	emitente: schema.financeiro.emitente,
+	nomecliente: sql<string>`coalesce(
+		nullif(trim(${schema.entidade.razaosocial}), ''),
+		nullif(trim(${schema.entidade.nome}), ''),
+		nullif(trim(${schema.financeiro.emitente}), '')
+	)`,
+	historico: schema.financeiro.historico,
 	parcela: schema.financeiro.parcela,
 	status: schema.financeiro.status,
 	emissao: schema.financeiro.emissao,
@@ -178,6 +186,7 @@ interface ListarFinanceiroParametros {
 	documento?: string | null | undefined;
 	tipodocumentodescricao?: string | null | undefined;
 	emitente?: string | null | undefined;
+	historico?: string | null | undefined;
 	emissaoInicio?: string | null | undefined;
 	emissaoFim?: string | null | undefined;
 	vencimentoInicio?: string | null | undefined;
@@ -201,6 +210,7 @@ export async function listarFinanceiro({
 	documento,
 	tipodocumentodescricao,
 	emitente,
+	historico,
 	emissaoInicio,
 	emissaoFim,
 	vencimentoInicio,
@@ -242,6 +252,7 @@ export async function listarFinanceiro({
 			)!,
 		);
 	}
+	adicionarFiltroTexto(where, schema.financeiro.historico, historico);
 
 	if (emissaoInicio) {
 		where.push(gte(schema.financeiro.emissao, emissaoInicio));

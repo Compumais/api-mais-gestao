@@ -230,7 +230,12 @@ export default function ContasAPagarPage() {
 				...(filtrosColuna.idtipocobranca
 					? { idtipocobranca: filtrosColuna.idtipocobranca }
 					: {}),
-				...(filtrosColuna.emitente ? { emitente: filtrosColuna.emitente } : {}),
+				...(filtrosColuna.nomecliente
+					? { emitente: filtrosColuna.nomecliente }
+					: {}),
+				...(filtrosColuna.historico
+					? { historico: filtrosColuna.historico }
+					: {}),
 				...(filtrosColuna.status ? { status: filtrosColuna.status } : {}),
 				...(filtrosColuna.emissao
 					? {

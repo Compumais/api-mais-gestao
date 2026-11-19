@@ -15,6 +15,7 @@ type ListarFinanceirosParametros = {
 	documento?: string | null | undefined;
 	tipodocumentodescricao?: string | null | undefined;
 	emitente?: string | null | undefined;
+	historico?: string | null | undefined;
 	emissaoInicio?: string | null | undefined;
 	emissaoFim?: string | null | undefined;
 	vencimentoInicio?: string | null | undefined;
@@ -54,6 +55,7 @@ export async function listarFinanceirosService({
 	documento,
 	tipodocumentodescricao,
 	emitente,
+	historico,
 	emissaoInicio,
 	emissaoFim,
 	vencimentoInicio,
@@ -111,6 +113,7 @@ export async function listarFinanceirosService({
 		documento,
 		tipodocumentodescricao,
 		emitente,
+		historico,
 		emissaoInicio,
 		emissaoFim,
 		vencimentoInicio,

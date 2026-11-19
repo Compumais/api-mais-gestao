@@ -14,6 +14,7 @@ const listarFinanceirosQuerySchema = z.object({
 	documento: textoOpcional,
 	tipodocumentodescricao: textoOpcional,
 	emitente: textoOpcional,
+	historico: textoOpcional,
 	emissaoInicio: textoOpcional,
 	emissaoFim: textoOpcional,
 	vencimentoInicio: textoOpcional,

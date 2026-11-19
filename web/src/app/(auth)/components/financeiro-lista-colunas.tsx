@@ -36,7 +36,8 @@ export type FiltrosColunaFinanceiroState = {
 	documento: string;
 	tipodocumentodescricao: string;
 	idtipocobranca: string;
-	emitente: string;
+	nomecliente: string;
+	historico: string;
 	status: string;
 	emissao: string;
 	vencimento: string;
@@ -46,7 +47,8 @@ export const filtrosColunaFinanceiroVazios: FiltrosColunaFinanceiroState = {
 	documento: "",
 	tipodocumentodescricao: "",
 	idtipocobranca: "",
-	emitente: "",
+	nomecliente: "",
+	historico: "",
 	status: "",
 	emissao: "",
 	vencimento: "",
@@ -67,7 +69,9 @@ export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
 	documento: "documento",
 	tipodocumento: "tipodocumentodescricao",
 	cobranca: "idtipocobranca",
-	emitente: "emitente",
+	nomecliente: "nomecliente",
+	historico: "historico",
+	emitente: "historico",
 	status: "status",
 	emissao: "emissao",
 	vencimento: "vencimento",
@@ -76,7 +80,9 @@ export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
 export const COLUNA_PARA_ORDENAR_FINANCEIRO: Record<string, string> = {
 	documento: "documento",
 	tipodocumento: "tipodocumentodescricao",
-	emitente: "emitente",
+	nomecliente: "nomecliente",
+	historico: "historico",
+	emitente: "historico",
 	parcela: "parcela",
 	status: "status",
 	emissao: "emissao",
@@ -104,7 +110,8 @@ const DEFINICOES_BASE: DefinicaoColunaFinanceiro[] = [
 	{ id: "documento", label: "Documento", visivelPadrao: true },
 	{ id: "tipodocumento", label: "Tipo de documento", visivelPadrao: true },
 	{ id: "cobranca", label: "Cobrança", visivelPadrao: true },
-	{ id: "emitente", label: "Nome", visivelPadrao: true },
+	{ id: "nomecliente", label: "Cliente", visivelPadrao: true },
+	{ id: "historico", label: "Observação", visivelPadrao: true },
 	{ id: "parcela", label: "Parcela", visivelPadrao: true },
 	{ id: "status", label: "Status", visivelPadrao: true },
 	{ id: "emissao", label: "Emissão", visivelPadrao: true },
@@ -122,9 +129,15 @@ const DEFINICOES_BASE: DefinicaoColunaFinanceiro[] = [
 ];
 
 function definicoesParaVariante(variante: VarianteFinanceiroLista) {
-	return DEFINICOES_BASE.filter(
-		(def) => !def.somenteReceber || variante === "receber",
-	);
+	return DEFINICOES_BASE.map((def) => {
+		if (def.id === "nomecliente") {
+			return {
+				...def,
+				label: variante === "pagar" ? "Fornecedor" : "Cliente",
+			};
+		}
+		return def;
+	}).filter((def) => !def.somenteReceber || variante === "receber");
 }
 
 export function visibilidadePadraoColunasFinanceiro(
@@ -448,10 +461,10 @@ export function criarColunasFinanceiro(
 					},
 				});
 				break;
-			case "emitente":
+			case "nomecliente":
 				colunas.push({
-					id: "emitente",
-					accessorKey: "emitente",
+					id: "nomecliente",
+					accessorKey: "nomecliente",
 					header,
 					meta,
 					cell: ({ row }) => (
@@ -459,6 +472,26 @@ export function criarColunasFinanceiro(
 							{formatNome(row.original, opcoes.variante)}
 						</div>
 					),
+				});
+				break;
+			case "historico":
+			case "emitente":
+				colunas.push({
+					id: def.id,
+					accessorKey: "historico",
+					header,
+					meta,
+					cell: ({ row }) => {
+						const texto =
+							row.original.historico?.trim() ||
+							row.original.emitente?.trim() ||
+							"-";
+						return (
+							<div className="max-w-[220px] truncate" title={texto !== "-" ? texto : undefined}>
+								{texto}
+							</div>
+						);
+					},
 				});
 				break;
 			case "parcela":
