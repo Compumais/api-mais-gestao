@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ import {
 } from "@/services/equipamento.service";
 import { type Locacao, locacaoService } from "@/services/locacao.service";
 import { localidadesService } from "@/services/localidades.service";
+import { ApontarEnderecoDialog } from "./apontar-endereco-dialog";
 
 const PRECO_POR_PERIODO: Record<PeriodoLocacao, keyof Equipamento> = {
 	diaria: "precodiaria",
@@ -58,6 +59,7 @@ export function LocacaoForm({ modo, locacao }: Props) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const ultimoCep = useRef<string | null>(null);
+	const [mapaAberto, setMapaAberto] = useState(false);
 
 	const form = useForm<LocacaoFormData>({
 		resolver: zodResolver(locacaoFormSchema),
@@ -72,6 +74,8 @@ export function LocacaoForm({ modo, locacao }: Props) {
 			bairro: locacao?.bairro ?? "",
 			idestado: locacao?.idestado ?? "",
 			idcidade: locacao?.idcidade ?? "",
+			latitude: locacao?.latitude ? Number(locacao.latitude) : null,
+			longitude: locacao?.longitude ? Number(locacao.longitude) : null,
 			observacao: locacao?.observacao ?? "",
 			itens: locacao?.itens?.map((item) => ({
 				idequipamento: item.idequipamento,
@@ -146,6 +150,8 @@ export function LocacaoForm({ modo, locacao }: Props) {
 			form.setValue("bairro", origem.bairro ?? "");
 			form.setValue("idestado", origem.idestado ?? "");
 			form.setValue("idcidade", origem.idcidade ?? "");
+			form.setValue("latitude", null);
+			form.setValue("longitude", null);
 			ultimoCep.current = (origem.cep ?? "").replace(/\D/g, "");
 		},
 		[clientes, form],
@@ -195,6 +201,8 @@ export function LocacaoForm({ modo, locacao }: Props) {
 				bairro: dados.bairro || null,
 				idestado: dados.idestado || null,
 				idcidade: dados.idcidade || null,
+				latitude: dados.latitude ?? null,
+				longitude: dados.longitude ?? null,
 				observacao: dados.observacao || null,
 				itens: dados.itens,
 			};
@@ -250,15 +258,24 @@ export function LocacaoForm({ modo, locacao }: Props) {
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between">
+			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<h2 className="font-semibold">Endereço de alocação</h2>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={() => copiarEnderecoCliente()}
-				>
-					Copiar endereço do cliente
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => setMapaAberto(true)}
+					>
+						Apontar no mapa
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => copiarEnderecoCliente()}
+					>
+						Copiar endereço do cliente
+					</Button>
+				</div>
 			</div>
 			<div className="grid gap-4 md:grid-cols-4">
 				<div>
@@ -329,6 +346,40 @@ export function LocacaoForm({ modo, locacao }: Props) {
 					/>
 				</div>
 			</div>
+			{form.watch("latitude") != null && form.watch("longitude") != null && (
+				<p className="text-sm text-muted-foreground">
+					Ponto no mapa: {Number(form.watch("latitude")).toFixed(5)},{" "}
+					{Number(form.watch("longitude")).toFixed(5)}
+				</p>
+			)}
+			{mapaAberto && (
+				<ApontarEnderecoDialog
+					aberto
+					onFechar={() => setMapaAberto(false)}
+					latitude={form.getValues("latitude") ?? null}
+					longitude={form.getValues("longitude") ?? null}
+					enderecoAtual={[
+						form.getValues("endereco"),
+						form.getValues("numeroendereco"),
+						form.getValues("bairro"),
+					]
+						.filter(Boolean)
+						.join(", ")}
+					onConfirmar={(ponto) => {
+						if (ponto.leuEndereco) {
+							ultimoCep.current = ponto.cep.replace(/\D/g, "");
+							form.setValue("cep", ponto.cep ? maskCep(ponto.cep) : "");
+							form.setValue("endereco", ponto.endereco);
+							form.setValue("numeroendereco", ponto.numeroendereco);
+							form.setValue("bairro", ponto.bairro);
+							form.setValue("idestado", ponto.idestado);
+							form.setValue("idcidade", ponto.idcidade);
+						}
+						form.setValue("latitude", ponto.latitude);
+						form.setValue("longitude", ponto.longitude);
+					}}
+				/>
+			)}
 
 			<div className="flex items-center justify-between">
 				<h2 className="font-semibold">Equipamentos</h2>

@@ -14,6 +14,12 @@ export const listarLocacoesSchema: FastifySchema = {
 	security: seguranca,
 };
 
+export const listarMapaLocacoesSchema: FastifySchema = {
+	tags: ["locacoes"],
+	summary: "Listar equipamentos locados para o mapa",
+	security: seguranca,
+};
+
 export const buscarLocacaoSchema: FastifySchema = {
 	tags: ["locacoes"],
 	summary: "Buscar locação",

@@ -21,6 +21,8 @@ const bodySchema = z.object({
 	bairro: z.string().max(60).optional().nullable(),
 	idcidade: z.string().optional().nullable(),
 	idestado: z.string().optional().nullable(),
+	latitude: z.union([z.number(), z.string(), z.null()]).optional(),
+	longitude: z.union([z.number(), z.string(), z.null()]).optional(),
 	observacao: z.string().optional().nullable(),
 	itens: z.array(itemSchema).min(1),
 });

@@ -16,6 +16,7 @@ import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { montarItensLocacao } from "@/service/locacao/montar-itens-locacao.js";
 import {
 	type EntradaLocacao,
+	lerCoordenadas,
 	textoOpcional,
 	validarEntradaLocacao,
 } from "@/service/locacao/validar-locacao.js";
@@ -98,6 +99,9 @@ export async function atualizarLocacaoService(
 		}
 	}
 
+	const coordenadas = lerCoordenadas(dados.latitude, dados.longitude);
+	if ("erro" in coordenadas) return httpBadRequest(coordenadas.erro);
+
 	const montado = montarItensLocacao({
 		idlocacao: atual.locacao.id,
 		datainicio: dados.datainicio,
@@ -124,6 +128,8 @@ export async function atualizarLocacaoService(
 				bairro: textoOpcional(dados.bairro),
 				idcidade: textoOpcional(dados.idcidade),
 				idestado: textoOpcional(dados.idestado),
+				latitude: coordenadas.latitude,
+				longitude: coordenadas.longitude,
 				valorperiodo: moedaLocacao(montado.valorperiodo),
 				valormora: moedaLocacao(0),
 				valortotal: moedaLocacao(montado.valortotal),

@@ -43,12 +43,17 @@ export default function LocacoesPage() {
 		<PageContainer>
 			<div className="flex items-center justify-between p-4 gap-4 flex-wrap">
 				<h1 className="text-2xl font-bold">Locações</h1>
-				<Button asChild>
-					<Link href="/locacoes/novo">
-						<IconPlus className="mr-2 size-4" />
-						Nova
-					</Link>
-				</Button>
+				<div className="flex gap-2">
+					<Button asChild variant="outline">
+						<Link href="/locacoes/mapa">Mapa</Link>
+					</Button>
+					<Button asChild>
+						<Link href="/locacoes/novo">
+							<IconPlus className="mr-2 size-4" />
+							Nova
+						</Link>
+					</Button>
+				</div>
 			</div>
 			<div className="px-4 pb-4">
 				<Input

@@ -351,6 +351,13 @@ export const DATA = {
 						perfis: [...PERFIS_GESTAO],
 					},
 				},
+				{
+					title: "Mapa das locações",
+					url: "/locacoes/mapa",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
 			],
 		},
 	] satisfies NavItem[],

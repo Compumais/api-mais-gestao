@@ -16,6 +16,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { googleMapsDisponivel } from "@/lib/google-maps";
 import {
 	formatarDataBr,
 	formatarMoeda,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/locacao-calculo";
 import { locacaoService } from "@/services/locacao.service";
 import { FecharLocacaoDialog } from "../components/fechar-locacao-dialog";
+import { MapaGoogle } from "../components/mapa-google";
 
 const SITUACAO: Record<string, string> = {
 	aberta: "Aberta",
@@ -105,6 +107,28 @@ export default function LocacaoDetalhePage() {
 						<div className="rounded-lg border bg-card p-4 text-sm grid gap-1">
 							<p>Início: {formatarDataBr(data.datainicio)}</p>
 							<p>Endereço de alocação: {endereco || "Não informado"}</p>
+							{data.latitude && data.longitude && googleMapsDisponivel() && (
+								<div className="pt-2 grid gap-2">
+									<MapaGoogle
+										className="h-64"
+										ajustarEnquadramento
+										marcadores={[
+											{
+												id: data.id,
+												latitude: Number(data.latitude),
+												longitude: Number(data.longitude),
+												titulo: `Locação ${data.codigo}`,
+												detalhe: endereco,
+											},
+										]}
+									/>
+									<Button asChild variant="outline" className="w-fit">
+										<Link href={`/locacoes/mapa?focar=${data.id}`}>
+											Ver equipamentos locados
+										</Link>
+									</Button>
+								</div>
+							)}
 							{data.datadevolucao && (
 								<p>Devolução: {formatarDataBr(data.datadevolucao)}</p>
 							)}

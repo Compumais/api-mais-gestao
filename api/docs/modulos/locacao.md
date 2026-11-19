@@ -23,7 +23,8 @@ Schema: `drizzle/tables/equipamento.ts`, `locacao.ts`, `locacao-item.ts`.
 - Devolução até a data prevista cobra só o período. Devolução antecipada não devolve diferença. Cada dia seguinte soma a diária.
 - A prazo: um título `financeiro` tipo `R`, `tipoorigem = 6`, `idorigem` = id da locação. À vista: crédito em `contacorrentelancamento`, sem título.
 - Locação fechada ou cancelada não é editada. Não há devolução parcial nem estorno nesta versão.
-- Endereço de alocação fica na locação e pode ser diferente do cadastro do cliente.
+- Endereço de alocação fica na locação e pode ser diferente do cadastro do cliente. Latitude e longitude são opcionais e nascem quando o ponto é marcado no mapa.
+- `GET /locacoes/mapa` devolve as locações abertas, separando as que têm ponto das que não têm.
 
 ## O que quebra se alterar ou apagar
 

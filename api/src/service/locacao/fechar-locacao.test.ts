@@ -30,6 +30,8 @@ const locacao: Locacao = {
 	bairro: null,
 	idcidade: null,
 	idestado: null,
+	latitude: null,
+	longitude: null,
 	valorperiodo: "300.00",
 	valormora: "0.00",
 	valortotal: "300.00",

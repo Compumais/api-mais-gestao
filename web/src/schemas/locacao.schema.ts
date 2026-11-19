@@ -12,6 +12,8 @@ export const locacaoFormSchema = z
 		bairro: z.string().max(60).optional(),
 		idestado: z.string().optional(),
 		idcidade: z.string().optional(),
+		latitude: z.number().min(-90).max(90).nullable().optional(),
+		longitude: z.number().min(-180).max(180).nullable().optional(),
 		observacao: z.string().optional(),
 		itens: z
 			.array(

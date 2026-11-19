@@ -1,4 +1,13 @@
-import { and, count, desc, eq, ilike, inArray, type SQL } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	type SQL,
+} from "drizzle-orm";
 import type { NovoFinanceiro } from "@/model/financeiro-model.js";
 import type {
 	Locacao,
@@ -115,6 +124,45 @@ export async function listarLocacoes({
 		locacoes: registros,
 		total: totalCount[0]?.value ?? 0,
 	};
+}
+
+export async function listarLocacoesAbertasParaMapa(idempresa: string) {
+	const registros = await db
+		.select({
+			locacao,
+			nomecliente: entidade.nome,
+			razaosocial: entidade.razaosocial,
+		})
+		.from(locacao)
+		.innerJoin(entidade, eq(locacao.identidade, entidade.id))
+		.where(
+			and(eq(locacao.idempresa, idempresa), eq(locacao.situacao, "aberta")),
+		)
+		.orderBy(asc(locacao.codigo));
+
+	if (registros.length === 0) return [];
+
+	const itens = await db
+		.select({
+			idlocacao: locacaoitem.idlocacao,
+			codigoequipamento: equipamento.codigo,
+			descricaoequipamento: equipamento.descricao,
+			numeroserie: equipamento.numeroserie,
+		})
+		.from(locacaoitem)
+		.innerJoin(equipamento, eq(locacaoitem.idequipamento, equipamento.id))
+		.where(
+			inArray(
+				locacaoitem.idlocacao,
+				registros.map((registro) => registro.locacao.id),
+			),
+		)
+		.orderBy(asc(equipamento.codigo));
+
+	return registros.map((registro) => ({
+		...registro,
+		equipamentos: itens.filter((item) => item.idlocacao === registro.locacao.id),
+	}));
 }
 
 async function alocarEquipamentos(

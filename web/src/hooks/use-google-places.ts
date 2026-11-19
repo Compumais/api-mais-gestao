@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { carregarGoogleMaps, googleMapsDisponivel } from "@/lib/google-maps";
 
 type GoogleMapsWindow = Window & {
 	google?: {
@@ -59,52 +60,12 @@ export type EnderecoSugestao = {
 	cep: string | null;
 };
 
-const GOOGLE_PLACES_API_KEY =
-	process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY?.trim() ?? "";
-
-let scriptPromise: Promise<void> | null = null;
-
-function carregarGooglePlacesScript(): Promise<void> {
-	if (typeof window === "undefined") {
-		return Promise.reject(new Error("Google Places indisponível no servidor"));
-	}
-
-	if (!GOOGLE_PLACES_API_KEY) {
-		return Promise.reject(new Error("Chave do Google Places não configurada"));
-	}
-
-	const googleWindow = window as GoogleMapsWindow;
-	if (googleWindow.google?.maps?.places) {
-		return Promise.resolve();
-	}
-
-	if (scriptPromise) return scriptPromise;
-
-	scriptPromise = new Promise((resolve, reject) => {
-		const scriptId = "google-maps-places-script";
-		const existente = document.getElementById(scriptId);
-		if (existente) {
-			existente.addEventListener("load", () => resolve());
-			existente.addEventListener("error", () =>
-				reject(new Error("Falha ao carregar Google Places")),
-			);
-			return;
-		}
-
-		const script = document.createElement("script");
-		script.id = scriptId;
-		script.async = true;
-		script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_PLACES_API_KEY}&libraries=places&loading=async`;
-		script.onload = () => resolve();
-		script.onerror = () => reject(new Error("Falha ao carregar Google Places"));
-		document.head.appendChild(script);
-	});
-
-	return scriptPromise;
+function carregarGooglePlacesScript() {
+	return carregarGoogleMaps();
 }
 
 export function isGooglePlacesDisponivel(): boolean {
-	return Boolean(GOOGLE_PLACES_API_KEY);
+	return googleMapsDisponivel();
 }
 
 export function useGooglePlacesAutocomplete({

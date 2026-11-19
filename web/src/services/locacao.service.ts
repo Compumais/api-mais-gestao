@@ -33,6 +33,8 @@ export type Locacao = {
 	bairro: string | null;
 	idcidade: string | null;
 	idestado: string | null;
+	latitude: string | null;
+	longitude: string | null;
 	valorperiodo: string;
 	valormora: string;
 	valortotal: string;
@@ -60,6 +62,8 @@ export type LocacaoPayload = {
 	bairro?: string | null;
 	idcidade?: string | null;
 	idestado?: string | null;
+	latitude?: number | null;
+	longitude?: number | null;
 	observacao?: string | null;
 	itens: Array<{
 		idequipamento: string;
@@ -114,6 +118,34 @@ export const locacaoService = {
 				totalPages: number;
 			};
 		}>("/locacoes", { params });
+		return data;
+	},
+
+	async listarMapa(idempresa: string) {
+		const { data } = await api.get<{
+			comPonto: Array<{
+				id: string;
+				codigo: string;
+				nomecliente: string;
+				endereco: string | null;
+				numeroendereco: string | null;
+				bairro: string | null;
+				cep: string | null;
+				latitude: string;
+				longitude: string;
+				equipamentos: Array<{
+					codigo: string;
+					descricao: string;
+					numeroserie: string | null;
+				}>;
+			}>;
+			semPonto: Array<{
+				id: string;
+				codigo: string;
+				nomecliente: string;
+				equipamentos: Array<{ codigo: string; descricao: string }>;
+			}>;
+		}>("/locacoes/mapa", { params: { idempresa } });
 		return data;
 	},
 

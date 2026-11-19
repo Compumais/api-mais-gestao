@@ -12,6 +12,8 @@ export type EntradaLocacao = {
 	bairro?: string | null;
 	idcidade?: string | null;
 	idestado?: string | null;
+	latitude?: number | string | null;
+	longitude?: number | string | null;
 	observacao?: string | null;
 	itens: Array<{
 		idequipamento: string;
@@ -23,6 +25,37 @@ export type EntradaLocacao = {
 export function textoOpcional(valor: string | null | undefined) {
 	const texto = valor?.trim();
 	return texto ? texto : null;
+}
+
+function lerCoordenada(
+	valor: number | string | null | undefined,
+	minimo: number,
+	maximo: number,
+	nome: string,
+) {
+	if (valor === null || valor === undefined || valor === "") return null;
+	const numero = typeof valor === "number" ? valor : Number(valor);
+	if (!Number.isFinite(numero) || numero < minimo || numero > maximo) {
+		return { erro: `${nome} inválida` } as const;
+	}
+	return numero.toFixed(7);
+}
+
+export function lerCoordenadas(
+	latitude: number | string | null | undefined,
+	longitude: number | string | null | undefined,
+) {
+	const lat = lerCoordenada(latitude, -90, 90, "Latitude");
+	const lng = lerCoordenada(longitude, -180, 180, "Longitude");
+	if (lat && typeof lat === "object") return lat;
+	if (lng && typeof lng === "object") return lng;
+	if (Boolean(lat) !== Boolean(lng)) {
+		return { erro: "Informe latitude e longitude juntas" } as const;
+	}
+	return {
+		latitude: typeof lat === "string" ? lat : null,
+		longitude: typeof lng === "string" ? lng : null,
+	};
 }
 
 export function validarEntradaLocacao(

@@ -9,6 +9,7 @@ import { criarLocacao } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { fecharLocacao } from "./fechar.js";
 import { listarLocacoes } from "./listar.js";
+import { listarMapaLocacoes } from "./listar-mapa.js";
 import { preverFechamentoLocacao } from "./prever.js";
 
 export async function locacoesRotas(app: FastifyInstance) {
@@ -25,6 +26,10 @@ export async function locacoesRotas(app: FastifyInstance) {
 	app.get("/locacoes", {
 		schema: schema.listarLocacoesSchema,
 		handler: listarLocacoes,
+	});
+	app.get("/locacoes/mapa", {
+		schema: schema.listarMapaLocacoesSchema,
+		handler: listarMapaLocacoes,
 	});
 	app.get("/locacoes/:id", {
 		schema: schema.buscarLocacaoSchema,

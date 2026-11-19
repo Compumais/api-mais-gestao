@@ -13,6 +13,7 @@ import {
 	IconHelp,
 	IconHistory,
 	IconListDetails,
+	IconMapPin,
 	IconPackage,
 	IconReportMoney,
 	IconScale,
@@ -806,6 +807,20 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 			"patrimônio",
 			"patrimonio",
 			"diária",
+		],
+	},
+	{
+		title: "Mapa das locações",
+		url: "/locacoes/mapa",
+		category: "Locação",
+		icon: IconMapPin,
+		keywords: [
+			"locação",
+			"locacao",
+			"mapa",
+			"equipamento locado",
+			"onde está",
+			"google maps",
 		],
 	},
 	{

@@ -33,6 +33,8 @@ export const locacao = pgTable(
 		bairro: varchar({ length: 60 }),
 		idcidade: text(),
 		idestado: text(),
+		latitude: numeric({ precision: 10, scale: 7 }),
+		longitude: numeric({ precision: 10, scale: 7 }),
 		valorperiodo: numeric({ precision: 12, scale: 2 })
 			.notNull()
 			.default("0.00"),
