@@ -11,6 +11,7 @@ type ListarFinanceirosParametros = {
 	idusuario: string;
 	idempresa?: string | null | undefined;
 	saldo?: string | null | undefined;
+	q?: string | null | undefined;
 	emissao?: string | null | undefined;
 	documento?: string | null | undefined;
 	tipodocumentodescricao?: string | null | undefined;
@@ -51,6 +52,7 @@ export async function listarFinanceirosService({
 	idusuario,
 	idempresa,
 	saldo,
+	q,
 	emissao,
 	documento,
 	tipodocumentodescricao,
@@ -109,6 +111,7 @@ export async function listarFinanceirosService({
 	const { financeiros, total } = await listarFinanceiro({
 		idempresas: empresasParaBuscar,
 		saldo,
+		q,
 		emissao,
 		documento,
 		tipodocumentodescricao,

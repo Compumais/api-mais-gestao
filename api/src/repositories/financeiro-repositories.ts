@@ -36,15 +36,19 @@ export const ORDENAR_FINANCEIROS_CAMPOS = [
 export type OrdenarFinanceirosCampo =
 	(typeof ORDENAR_FINANCEIROS_CAMPOS)[number];
 
+// Remove prefixo "NF 90 - " / "NF 89/2 - " gravado no emitente (bases migradas/NF).
+const NOME_CLIENTE_SQL = sql<string | null>`coalesce(
+	nullif(trim(${schema.entidade.razaosocial}), ''),
+	nullif(trim(${schema.entidade.nome}), ''),
+	nullif(trim(regexp_replace(${schema.financeiro.emitente}, '^[[:space:]]*NF[[:space:]]+[^[:space:]]+[[:space:]]*-[[:space:]]*', '', 'i')), ''),
+	nullif(trim(${schema.financeiro.emitente}), '')
+)`;
+
 const COLUNAS_ORDENACAO = {
 	documento: schema.financeiro.documento,
 	tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
 	emitente: schema.financeiro.emitente,
-	nomecliente: sql<string>`coalesce(
-		nullif(trim(${schema.entidade.razaosocial}), ''),
-		nullif(trim(${schema.entidade.nome}), ''),
-		nullif(trim(${schema.financeiro.emitente}), '')
-	)`,
+	nomecliente: NOME_CLIENTE_SQL,
 	historico: schema.financeiro.historico,
 	parcela: schema.financeiro.parcela,
 	status: schema.financeiro.status,
@@ -182,6 +186,7 @@ interface ListarFinanceiroParametros {
 	page?: number;
 	limit?: number;
 	saldo?: string | null | undefined;
+	q?: string | null | undefined;
 	emissao?: string | null | undefined;
 	documento?: string | null | undefined;
 	tipodocumentodescricao?: string | null | undefined;
@@ -206,6 +211,7 @@ export async function listarFinanceiro({
 	page = 1,
 	limit = 10,
 	saldo,
+	q,
 	emissao,
 	documento,
 	tipodocumentodescricao,
@@ -227,6 +233,27 @@ export async function listarFinanceiro({
 	const offset = (page - 1) * limit;
 
 	const where: SQL[] = [];
+
+	if (q?.trim()) {
+		const termo = `%${q.trim()}%`;
+		where.push(
+			or(
+				ilike(schema.financeiro.documento, termo),
+				ilike(schema.financeiro.emitente, termo),
+				ilike(schema.financeiro.historico, termo),
+				ilike(schema.tipodocumentofinanceiro.descricao, termo),
+				ilike(schema.entidade.razaosocial, termo),
+				ilike(schema.entidade.nome, termo),
+				ilike(schema.entidade.cnpjcpf, termo),
+				ilike(schema.financeiro.cnpjcpfemitente, termo),
+				sql`${schema.financeiro.valor}::text ilike ${termo}`,
+				sql`${schema.financeiro.saldo}::text ilike ${termo}`,
+				sql`${schema.financeiro.emissao}::text ilike ${termo}`,
+				sql`${schema.financeiro.vencimento}::text ilike ${termo}`,
+				sql`${NOME_CLIENTE_SQL} ilike ${termo}`,
+			)!,
+		);
+	}
 
 	if (saldo) {
 		where.push(ilike(schema.financeiro.saldo, saldo));
@@ -338,11 +365,7 @@ export async function listarFinanceiro({
 			.select({
 				...getTableColumns(schema.financeiro),
 				tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
-				nomecliente: sql<string | null>`coalesce(
-					nullif(trim(${schema.entidade.razaosocial}), ''),
-					nullif(trim(${schema.entidade.nome}), ''),
-					nullif(trim(${schema.financeiro.emitente}), '')
-				)`,
+				nomecliente: NOME_CLIENTE_SQL,
 			})
 			.from(schema.financeiro)
 			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)

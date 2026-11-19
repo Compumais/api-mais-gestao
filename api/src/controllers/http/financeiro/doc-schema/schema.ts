@@ -211,6 +211,12 @@ export const listarFinanceirosSchema: FastifySchema = {
 				nullable: true,
 				description: "Filtro por documento (busca parcial)",
 			},
+			q: {
+				type: "string",
+				nullable: true,
+				description:
+					"Busca geral (documento, nome, observação, CNPJ/CPF, tipo, valor, saldo e datas)",
+			},
 			tipodocumentodescricao: {
 				type: "string",
 				nullable: true,

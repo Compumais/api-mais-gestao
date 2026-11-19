@@ -128,6 +128,7 @@ export interface ListarFinanceirosParams {
 	documento?: string | null;
 	tipodocumentodescricao?: string | null;
 	emitente?: string | null;
+	q?: string | null;
 	historico?: string | null;
 	emissaoInicio?: string | null;
 	emissaoFim?: string | null;

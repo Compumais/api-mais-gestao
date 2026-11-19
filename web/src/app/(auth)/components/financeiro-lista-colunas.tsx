@@ -207,12 +207,16 @@ export function formatNome(
 	financeiro: Financeiro,
 	variante: VarianteFinanceiroLista,
 ) {
-	const nomeCliente = financeiro.nomecliente?.trim();
+	void variante;
+	const nomeCliente = limparPrefixoNf(financeiro.nomecliente);
 	if (nomeCliente) return nomeCliente;
-	if (variante === "pagar") {
-		return financeiro.emitente?.trim() || "-";
-	}
-	return financeiro.emitente?.trim() || "-";
+	return limparPrefixoNf(financeiro.emitente) || "-";
+}
+
+/** Remove prefixos como "NF 90 - " ou "NF 89/2 - " e devolve só o nome. */
+function limparPrefixoNf(valor: string | null | undefined) {
+	const texto = valor?.trim() ?? "";
+	return texto.replace(/^NF\s+\S+\s*-\s*/i, "").trim();
 }
 
 export function getStatusBadge(
