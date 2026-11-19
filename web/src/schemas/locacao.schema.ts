@@ -18,7 +18,7 @@ export const locacaoFormSchema = z
 				z.object({
 					idequipamento: z.string().min(1, "Selecione o equipamento"),
 					periodo: z.enum(["diaria", "semanal", "quinzenal", "mensal"]),
-					quantidade: z.coerce.number().int().min(1, "Informe a quantidade"),
+					quantidade: z.number().int().min(1, "Informe a quantidade"),
 				}),
 			)
 			.min(1, "Informe ao menos um equipamento"),

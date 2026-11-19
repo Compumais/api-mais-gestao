@@ -425,7 +425,9 @@ export function LocacaoForm({ modo, locacao }: Props) {
 								<Input
 									type="number"
 									min={1}
-									{...form.register(`itens.${indice}.quantidade`)}
+									{...form.register(`itens.${indice}.quantidade`, {
+										valueAsNumber: true,
+									})}
 								/>
 							</div>
 							<div className="text-sm">
