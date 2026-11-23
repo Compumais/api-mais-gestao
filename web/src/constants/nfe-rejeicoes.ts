@@ -14,6 +14,11 @@ export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 		instrucao:
 			"O serviço da SEFAZ está fora do ar. Considere emissão em contingência.",
 	},
+	"176": {
+		descricao: "IE do local de Entrega não informada",
+		instrucao:
+			"O CNPJ do local de entrega possui Inscrição Estadual ativa na UF. Verifique a IE do destinatário/local de entrega e retransmita a NF-e.",
+	},
 	"204": {
 		descricao: "Duplicidade de NF-e",
 		instrucao:

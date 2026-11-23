@@ -16,7 +16,12 @@ describe("resolverEnderecoEntregaNfe", () => {
 		const endereco = await resolverEnderecoEntregaNfe({
 			informarManual: true,
 			enderecoInformado: enderecoCompleto,
-			destinatario: { razaosocial: "Cliente", cnpjcpf: "123" },
+			destinatario: {
+				razaosocial: "Cliente",
+				cnpjcpf: "123",
+				ie: "05692817400041",
+				estado: "SP",
+			},
 		});
 
 		expect(endereco).toMatchObject({
@@ -24,6 +29,7 @@ describe("resolverEnderecoEntregaNfe", () => {
 			uf: "SP",
 			cep: "01001000",
 			nome: "Cliente",
+			ie: "05692817400041",
 		});
 	});
 
@@ -39,11 +45,13 @@ describe("resolverEnderecoEntregaNfe", () => {
 				estado: "SP",
 				cep: "01001000",
 				razaosocial: "Cliente",
+				ie: "056.928.174.000-41",
 			},
 		});
 
 		expect(endereco?.logradouro).toBe("Av. Brasil");
 		expect(endereco?.municipio).toBe("São Paulo");
+		expect(endereco?.ie).toBe("05692817400041");
 	});
 
 	it("omite a entrega quando o cadastro do destinatário está incompleto", async () => {

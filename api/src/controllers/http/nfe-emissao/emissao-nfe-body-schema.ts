@@ -166,6 +166,7 @@ export const enderecoEntregaNfeSchema = z.object({
 		.length(2)
 		.transform((valor) => valor.toUpperCase()),
 	cep: z.string().regex(/^\d{8}$/, "CEP deve ter 8 dígitos"),
+	ie: z.string().max(14).optional(),
 });
 
 function validarDescontosEmissao(
