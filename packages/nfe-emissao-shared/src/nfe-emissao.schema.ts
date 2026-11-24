@@ -147,6 +147,7 @@ export const enderecoEntregaNfeSchema = z.object({
 		.string()
 		.transform((valor) => valor.replace(/\D/g, ""))
 		.pipe(z.string().regex(/^\d{8}$/, "CEP deve ter 8 dígitos")),
+	ie: z.string().max(14).optional(),
 });
 
 export const localEntregaNfeSchema = z

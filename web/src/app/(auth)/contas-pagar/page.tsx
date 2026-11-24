@@ -8,6 +8,7 @@ import {
 	IconLayoutColumns,
 	IconPencil,
 	IconPlus,
+	IconSearch,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,6 +48,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -84,6 +86,7 @@ import {
 	type FiltrosColunaFinanceiroState,
 	filtrosColunaFinanceiroVazios,
 	montarParamsFiltroFinanceiro,
+	filtrosColunaFinanceiroIniciais,
 	podeDarBaixa,
 	visibilidadePadraoColunasFinanceiro,
 } from "../components/financeiro-lista-colunas";
@@ -118,9 +121,11 @@ export default function ContasAPagarPage() {
 		pageSize: 10,
 	});
 	const [filtrosColuna, setFiltrosColuna] =
-		useState<FiltrosColunaFinanceiroState>(filtrosColunaFinanceiroVazios);
+		useState<FiltrosColunaFinanceiroState>(filtrosColunaFinanceiroIniciais);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+	const [buscaInput, setBuscaInput] = useState("");
+	const [buscaAplicada, setBuscaAplicada] = useState("");
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [financeiroToDelete, setFinanceiroToDelete] = useState<string | null>(
 		null,
@@ -162,6 +167,12 @@ export default function ContasAPagarPage() {
 		setRowSelection({});
 	}, []);
 
+	const handleBuscar = useCallback(() => {
+		setBuscaAplicada(buscaInput.trim());
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+		setRowSelection({});
+	}, [buscaInput]);
+
 	const { data: tiposCobranca = [] } = useQuery({
 		queryKey: ["tipos-cobranca", empresa?.id, "lista-financeiro"],
 		queryFn: async () => {
@@ -196,6 +207,7 @@ export default function ContasAPagarPage() {
 			pagination.pageIndex + 1,
 			pagination.pageSize,
 			filtrosColuna,
+			buscaAplicada,
 			ordenarPor,
 			ordem,
 		],
@@ -209,6 +221,7 @@ export default function ContasAPagarPage() {
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
 				...montarParamsFiltroFinanceiro(filtrosColuna),
+				...(buscaAplicada ? { q: buscaAplicada } : {}),
 				...(ordenarPor ? { ordenarPor } : {}),
 				...(ordem ? { ordem } : {}),
 			});
@@ -536,7 +549,7 @@ export default function ContasAPagarPage() {
 	);
 	const colunasVisiveis = table.getVisibleLeafColumns();
 	const mostrarSkeleton = isLoading || isLoadingPreferencias;
-	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor || !!buscaAplicada;
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
@@ -627,6 +640,23 @@ export default function ContasAPagarPage() {
 							Incluir (F2)
 						</Button>
 					</div>
+				</div>
+
+				<div className="flex gap-2 px-4">
+					<Input
+						value={buscaInput}
+						onChange={(event) => setBuscaInput(event.target.value)}
+						onKeyDown={(event) => {
+							if (event.key === "Enter") handleBuscar();
+						}}
+						placeholder="Buscar em todas as colunas (documento, nome, observação, valor...)"
+						disabled={!empresa}
+						className="max-w-md"
+					/>
+					<Button onClick={handleBuscar} disabled={!empresa} className="gap-2">
+						<IconSearch className="size-4" />
+						Buscar
+					</Button>
 				</div>
 
 				<div className="rounded-lg border bg-card mx-4">

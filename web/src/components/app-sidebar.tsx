@@ -29,6 +29,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		navEstoqueItems,
 		navComprasItems,
 		navContratosItems,
+		navLocacaoItems,
 		navFinanceiroItems,
 		navFiscalItems,
 		navRelatoriosItems,
@@ -78,6 +79,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 							{!isUsuarioRestrito && navContratosItems.length > 0 && (
 								<NavDocuments label="Contratos" items={navContratosItems} />
+							)}
+
+							{!isUsuarioRestrito && navLocacaoItems.length > 0 && (
+								<NavDocuments label="Locação" items={navLocacaoItems} />
 							)}
 
 							{!isUsuarioRestrito && navFinanceiroItems.length > 0 && (

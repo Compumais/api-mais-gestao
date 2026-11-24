@@ -310,10 +310,51 @@ export const DATA = {
 					},
 				},
 				{
+					title: "Importar contratos",
+					url: "/contratos/importar",
+					acesso: {
+						modulo: "contratos",
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
 					title: "Faturamento",
 					url: "/contratos/faturamento",
 					acesso: {
 						modulo: "contratos",
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+			],
+		},
+	] satisfies NavItem[],
+
+	navLocacao: [
+		{
+			title: "Locação",
+			icon: IconPackage,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
+				{
+					title: "Equipamentos",
+					url: "/equipamentos",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Locações",
+					url: "/locacoes",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Mapa das locações",
+					url: "/locacoes/mapa",
+					acesso: {
 						perfis: [...PERFIS_GESTAO],
 					},
 				},
@@ -395,6 +436,13 @@ export const DATA = {
 				{
 					title: "Tipos de cobrança",
 					url: "/tipos-cobranca",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Cobrança bancária",
+					url: "/cobranca-bancaria",
 					acesso: {
 						perfis: [...PERFIS_GESTAO],
 					},

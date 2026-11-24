@@ -17,6 +17,7 @@ export function normalizarEnderecoEntregaNfe(
 	const codigoMunicipio = (endereco.codigoMunicipio ?? "").replace(/\D/g, "");
 	const cep = (endereco.cep ?? "").replace(/\D/g, "");
 	const complemento = endereco.complemento?.trim();
+	const ie = endereco.ie?.replace(/\D/g, "") ?? "";
 
 	if (
 		logradouro.length < 2 ||
@@ -43,6 +44,7 @@ export function normalizarEnderecoEntregaNfe(
 		...(endereco.cnpjcpf?.replace(/\D/g, "")
 			? { cnpjcpf: endereco.cnpjcpf.replace(/\D/g, "") }
 			: {}),
+		...(ie ? { ie } : {}),
 	};
 }
 
@@ -54,11 +56,18 @@ export async function resolverEnderecoEntregaNfe(params: {
 	if (params.informarManual) {
 		const manual = normalizarEnderecoEntregaNfe(params.enderecoInformado);
 		if (!manual) return undefined;
+		const ieDestinatario = params.destinatario?.ie?.replace(/\D/g, "") || undefined;
+		const ufDestinatario = params.destinatario?.estado?.trim().toUpperCase();
+		const iePadrao =
+			!manual.cnpjcpf && (!ufDestinatario || ufDestinatario === manual.uf)
+				? ieDestinatario
+				: undefined;
 		return {
 			...manual,
 			nome: manual.nome ?? params.destinatario?.razaosocial?.trim(),
 			cnpjcpf:
 				manual.cnpjcpf ?? params.destinatario?.cnpjcpf?.replace(/\D/g, ""),
+			...(manual.ie ?? iePadrao ? { ie: manual.ie ?? iePadrao } : {}),
 		};
 	}
 
@@ -83,5 +92,6 @@ export async function resolverEnderecoEntregaNfe(params: {
 		cep: destinatario.cep,
 		nome: destinatario.razaosocial,
 		cnpjcpf: destinatario.cnpjcpf,
+		ie: destinatario.ie,
 	});
 }

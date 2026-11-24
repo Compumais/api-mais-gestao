@@ -753,16 +753,29 @@ export async function prepararPayloadEmissaoNfeVenda(
 					destinatario?.cnpjcpf?.replace(/\D/g, ""),
 				nome: localEntrega.nome?.trim() || destinatario?.razaosocial?.trim(),
 				cep: localEntrega.cep.replace(/\D/g, ""),
+				ie: localEntrega.ie?.replace(/\D/g, "") || undefined,
 			}
 		: undefined;
 
+	const enderecoEntregaCalculado = await resolverEnderecoEntregaNfe({
+		informarManual: informarEnderecoEntregaManual,
+		enderecoInformado: enderecoEntrega ?? enderecoEntregaPersistido,
+		destinatario,
+	});
 	const enderecoEntregaResolvido =
-		enderecoEntregaPersistido ??
-		(await resolverEnderecoEntregaNfe({
-			informarManual: informarEnderecoEntregaManual,
-			enderecoInformado: enderecoEntrega,
-			destinatario,
-		}));
+		enderecoEntregaCalculado ??
+		(enderecoEntregaPersistido
+			? {
+					...enderecoEntregaPersistido,
+					...(!enderecoEntregaPersistido.ie &&
+					destinatario?.ie?.replace(/\D/g, "") &&
+					(!destinatario.estado ||
+						normalizarUf(destinatario.estado) ===
+							normalizarUf(enderecoEntregaPersistido.uf))
+						? { ie: destinatario.ie.replace(/\D/g, "") }
+						: {}),
+				}
+			: undefined);
 
 	const indPresInformado =
 		indPres ??

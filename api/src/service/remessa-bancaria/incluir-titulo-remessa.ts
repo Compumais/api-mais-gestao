@@ -16,8 +16,11 @@ import {
 	criarRemessaBancariaItem,
 	listarItensRemessa,
 } from "@/repositories/remessa-bancaria-repositories.js";
-import { montarArquivoCnab240 } from "@/service/remessa-bancaria/gerar-cnab240.js";
+import { codigoBancoFebraban } from "@/service/remessa-bancaria/cnab-utils.js";
+import { montarArquivoRemessa } from "@/service/remessa-bancaria/montar-arquivo-remessa.js";
+import { buscarBancoPorId } from "@/repositories/banco-repositories.js";
 import { STATUS_REMESSA_BANCARIA } from "@/util/contrato-constants.js";
+import { resolverLayoutRemessa } from "@/util/cnab-layouts.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 
 type IncluirTituloRemessaParametros = {
@@ -65,6 +68,16 @@ export async function incluirTituloRemessaService({
 		return httpBadRequest("Conta corrente não encontrada");
 	}
 
+	const bancoConta = conta.idbanco ? await buscarBancoPorId(conta.idbanco) : null;
+	const codigoBanco = codigoBancoFebraban(bancoConta?.codigo);
+	if (!codigoBanco) {
+		return httpBadRequest(
+			"Conta corrente sem banco FEBRABAN válido. Vincule um banco (ex.: 021 Banestes) — não use EM MÃOS (000).",
+		);
+	}
+
+	const layout = resolverLayoutRemessa(conta);
+
 	let remessa = await buscarRemessaAbertaPorConta(idempresa, idcontacorrente);
 	if (!remessa) {
 		const sequencia = (conta.sequenciaremessa ?? 0) + 1;
@@ -77,7 +90,7 @@ export async function incluirTituloRemessaService({
 			idempresa,
 			idcontacorrente,
 			sequencia,
-			layout: "cnab240",
+			layout,
 			status: STATUS_REMESSA_BANCARIA.ABERTA,
 			nomearquivo: `remessa_${sequencia}.rem`,
 			conteudo: null,
@@ -140,17 +153,22 @@ export async function incluirTituloRemessaService({
 		});
 	}
 
-	const conteudo = montarArquivoCnab240({
+	const arquivo = montarArquivoRemessa({
 		empresa,
 		conta,
 		sequencia: remessa.sequencia,
 		titulos: titulosRemessa,
+		codigoBanco,
+		layout,
 	});
 
 	await atualizarRemessaBancaria(remessa.id, {
-		conteudo,
+		conteudo: arquivo.conteudo,
+		layout: arquivo.layout,
 		status: STATUS_REMESSA_BANCARIA.GERADA,
-		nomearquivo: remessa.nomearquivo ?? `remessa_${remessa.sequencia}.rem`,
+		nomearquivo:
+			remessa.nomearquivo ??
+			`remessa_${remessa.sequencia}.${arquivo.extensao}`,
 	});
 
 	return httpOk({

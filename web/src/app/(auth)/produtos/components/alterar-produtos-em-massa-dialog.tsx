@@ -657,6 +657,62 @@ export function AlterarProdutosEmMassaDialog({
 									)}
 								/>
 							</LinhaCampo>
+							<LinhaCampo
+								id="exportaBalanca"
+								label="Exportar para balança"
+								alterar={valores.exportaBalanca?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("exportaBalanca.alterar", alterar)
+								}
+							>
+								<Controller
+									name="exportaBalanca.valor"
+									control={control}
+									render={({ field }) => (
+										<Select
+											value={field.value?.toString()}
+											onValueChange={(valor) => field.onChange(Number(valor))}
+										>
+											<SelectTrigger id="exportaBalanca" className="w-full">
+												<SelectValue placeholder="Selecione" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="0">Não exportar</SelectItem>
+												<SelectItem value="1">Exportar (MGV)</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="diasValidade"
+								label="Validade balança (dias)"
+								alterar={valores.diasValidade?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("diasValidade.alterar", alterar)
+								}
+							>
+								<Controller
+									name="diasValidade.valor"
+									control={control}
+									render={({ field }) => (
+										<div className="space-y-1">
+											<Input
+												id="diasValidade"
+												type="number"
+												min={0}
+												max={999}
+												placeholder="0 a 990, 998 ou 999"
+												value={field.value ?? 0}
+												onChange={(e) => field.onChange(Number(e.target.value))}
+											/>
+											<p className="text-xs text-muted-foreground">
+												0 = padrão da exportação; 1 a 990 = imprime datas; 998 = não imprime; 999 = solicita na balança.
+											</p>
+										</div>
+									)}
+								/>
+							</LinhaCampo>
 						</section>
 
 						<section className="space-y-3">

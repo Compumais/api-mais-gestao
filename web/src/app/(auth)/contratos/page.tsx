@@ -2,11 +2,19 @@
 
 import { IconPlus, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FileSpreadsheet, FileUp } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ImportarContratosDialog } from "@/app/(auth)/contratos/components/importar-contratos-dialog";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -17,7 +25,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { contratoService } from "@/services/contrato.service";
+import {
+	type FormatoImportacaoContratos,
+	contratoService,
+} from "@/services/contrato.service";
 
 const FLUXO_LABEL: Record<number, string> = {
 	1: "NFS-e + CR + Boleto",
@@ -29,6 +40,8 @@ export default function ContratosPage() {
 	const { empresa } = useEmpresa();
 	const queryClient = useQueryClient();
 	const [descricao, setDescricao] = useState("");
+	const [formatoImportacao, setFormatoImportacao] =
+		useState<FormatoImportacaoContratos | null>(null);
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["contratos", empresa?.id, descricao],
@@ -58,6 +71,24 @@ export default function ContratosPage() {
 					<Button asChild variant="outline">
 						<Link href="/contratos/faturamento">Faturamento em lote</Link>
 					</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline">
+								<FileUp className="mr-2 size-4" />
+								Importar
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => setFormatoImportacao("csv")}>
+								<FileSpreadsheet className="mr-2 size-4" />
+								CSV
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => setFormatoImportacao("xlsx")}>
+								<FileSpreadsheet className="mr-2 size-4" />
+								XLSX
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 					<Button asChild>
 						<Link href="/contratos/novo">
 							<IconPlus className="mr-2 size-4" />
@@ -66,6 +97,10 @@ export default function ContratosPage() {
 					</Button>
 				</div>
 			</div>
+			<ImportarContratosDialog
+				formato={formatoImportacao}
+				onFechar={() => setFormatoImportacao(null)}
+			/>
 			<div className="px-4 pb-4">
 				<Input
 					placeholder="Filtrar por descrição"

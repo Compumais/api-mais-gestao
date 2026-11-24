@@ -5,8 +5,10 @@ import {
 	buscarProximoCodigoCondicaoPagamento,
 	buscarProximoCodigoContaCorrente,
 	buscarProximoCodigoContrato,
+	buscarProximoCodigoEquipamento,
 	buscarProximoCodigoGrupoContrato,
 	buscarProximoCodigoHierarquia,
+	buscarProximoCodigoLocacao,
 	buscarProximoCodigoProduto,
 	buscarProximoCodigoTipoContrato,
 	buscarProximoCodigoUnidadeMedida,
@@ -25,7 +27,9 @@ type BuscarProximoCodigoParametros = {
 		| "condicao-pagamento"
 		| "tipo-contrato"
 		| "contrato"
-		| "grupo-contrato";
+		| "grupo-contrato"
+		| "equipamento"
+		| "locacao";
 };
 
 type RespostaNumerica = { codigo: number };
@@ -82,6 +86,14 @@ export async function buscarProximoCodigoService({
 		}
 		case "grupo-contrato": {
 			const codigo = await buscarProximoCodigoGrupoContrato(idempresa);
+			return httpOk({ codigo });
+		}
+		case "equipamento": {
+			const codigo = await buscarProximoCodigoEquipamento(idempresa);
+			return httpOk({ codigo });
+		}
+		case "locacao": {
+			const codigo = await buscarProximoCodigoLocacao(idempresa);
 			return httpOk({ codigo });
 		}
 		default:

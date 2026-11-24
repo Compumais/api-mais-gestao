@@ -1,7 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { IconSettings } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, type Resolver, useForm } from "react-hook-form";
@@ -187,17 +189,32 @@ export function FinanceiroForm({
 		enabled: !!empresa?.id,
 	});
 
-	// Carregar entidades (clientes)
-	const { data: entidadesData } = useQuery({
-		queryKey: ["entidades", empresa?.id],
+	// Carregar todas as entidades (paginação completa — evita sumir cliente além da 1ª página)
+	const { data: entidadesLista = [] } = useQuery({
+		queryKey: ["entidades-financeiro", empresa?.id, tipo],
 		queryFn: () =>
-			entidadesService.listar({
+			entidadesService.listarTodos({
 				idempresa: empresa?.id!,
-				limit: 100,
-				page: 1,
+				...(tipo === "R" ? { cliente: 1 } : { fornecedor: 1 }),
 			}),
 		enabled: !!empresa?.id,
 	});
+
+	const opcoesEntidades = useMemo(
+		() =>
+			entidadesLista.map((entidade) => {
+				const nome =
+					entidade.razaosocial?.trim() ||
+					entidade.nome?.trim() ||
+					"Sem nome";
+				const documento = entidade.cnpjcpf?.trim();
+				return {
+					value: entidade.id,
+					label: documento ? `${nome} — ${documento}` : nome,
+				};
+			}),
+		[entidadesLista],
+	);
 
 	// Carregar planos de contas
 	const { data: planoContasData } = useQuery({
@@ -451,6 +468,25 @@ export function FinanceiroForm({
 		};
 	}, []);
 
+	const gerarDocumentoMutation = useMutation({
+		mutationFn: async () => {
+			if (!empresa?.id) {
+				throw new Error("Empresa não selecionada");
+			}
+			return financeiroService.buscarProximoDocumento({
+				idempresa: empresa.id,
+				tipo,
+			});
+		},
+		onSuccess: (resultado) => {
+			setValue("documento", resultado.codigo, { shouldValidate: true });
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Falha ao gerar número do documento");
+		},
+	});
+	const gerandoDocumento = gerarDocumentoMutation.isPending;
+
 	const criarMutation = useMutation({
 		mutationFn: async (data: CriarFinanceiroFormData) => {
 			if (!empresa) {
@@ -611,15 +647,34 @@ export function FinanceiroForm({
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<Field data-invalid={!!errors.documento}>
 							<FieldLabel htmlFor="documento">Documento</FieldLabel>
-							<Input
-								id="documento"
-								placeholder="Número do documento"
-								aria-invalid={!!errors.documento}
-								aria-describedby={
-									errors.documento ? "documento-error" : undefined
-								}
-								{...register("documento")}
-							/>
+							<div className="relative">
+								<Input
+									id="documento"
+									placeholder="Número do documento"
+									className="pr-10"
+									aria-invalid={!!errors.documento}
+									aria-describedby={
+										errors.documento ? "documento-error" : undefined
+									}
+									{...register("documento")}
+								/>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="absolute right-0.5 top-1/2 size-8 -translate-y-1/2 text-muted-foreground"
+									title="Gerar número sequencial"
+									aria-label="Gerar número sequencial do documento"
+									disabled={gerandoDocumento || !empresa?.id}
+									onClick={() => gerarDocumentoMutation.mutate()}
+								>
+									{gerandoDocumento ? (
+										<Loader2 className="size-4 animate-spin" />
+									) : (
+										<IconSettings className="size-4" />
+									)}
+								</Button>
+							</div>
 							<FieldError errors={errors.documento ? [errors.documento] : []} />
 						</Field>
 
@@ -810,23 +865,32 @@ export function FinanceiroForm({
 						</Field>
 
 						<Field data-invalid={!!errors.identidade}>
-							<FieldLabel htmlFor="identidade">Cliente *</FieldLabel>
+							<FieldLabel htmlFor="identidade">
+								{tipo === "P" ? "Fornecedor" : "Cliente"} *
+							</FieldLabel>
 							<Controller
 								control={control}
 								name="identidade"
 								render={({ field }) => (
 									<Combobox
-										options={
-											entidadesData?.data.map((entidade) => ({
-												value: entidade.id,
-												label: entidade.nome,
-											})) || []
-										}
+										options={opcoesEntidades}
 										value={field.value || ""}
 										onChange={field.onChange}
-										placeholder="Selecione o cliente"
-										searchPlaceholder="Buscar cliente..."
-										emptyMessage="Nenhum cliente encontrado."
+										placeholder={
+											tipo === "P"
+												? "Selecione o fornecedor"
+												: "Selecione o cliente"
+										}
+										searchPlaceholder={
+											tipo === "P"
+												? "Buscar fornecedor..."
+												: "Buscar cliente..."
+										}
+										emptyMessage={
+											tipo === "P"
+												? "Nenhum fornecedor encontrado."
+												: "Nenhum cliente encontrado."
+										}
 									/>
 								)}
 							/>

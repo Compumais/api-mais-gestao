@@ -103,6 +103,20 @@ describe("prepararCamposAlteracaoEmMassaProduto", () => {
 		expect(dados).not.toHaveProperty("cstpis");
 		expect(dados).not.toHaveProperty("situacaotributaria");
 	});
+
+	it("aceita e prepara campos de balanca (exportaBalanca e diasValidade)", () => {
+		const dados = prepararCamposAlteracaoEmMassaProduto(
+			camposAlteracaoParseados({
+				exportaBalanca: 1,
+				diasValidade: 7,
+			}),
+		);
+
+		expect(dados).toMatchObject({
+			exportaBalanca: 1,
+			diasValidade: 7,
+		});
+	});
 });
 
 describe("alterarProdutosEmMassaBodySchema", () => {

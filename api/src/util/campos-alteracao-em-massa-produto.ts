@@ -75,6 +75,16 @@ export const camposAlteracaoEmMassaProdutoSchema = z
 		inativo: z.number().int().min(0).max(1).optional().nullable(),
 		controlalote: z.number().int().min(0).max(1).optional(),
 		controlavalidade: z.number().int().min(0).max(1).optional(),
+		exportaBalanca: z.number().int().min(0).max(1).optional(),
+		diasValidade: z
+			.number()
+			.int()
+			.refine(
+				(valor) =>
+					(valor >= 0 && valor <= 990) || valor === 998 || valor === 999,
+				{ message: "Dias de validade deve ser 0 a 990, 998 ou 999" },
+			)
+			.optional(),
 		tipoproduto: z.string().max(2).optional().nullable(),
 		aliquotapis: camposServicoProdutoSchema.aliquotapis,
 		aliquotacofins: camposServicoProdutoSchema.aliquotacofins,

@@ -8,6 +8,7 @@ import {
 	gte,
 	ilike,
 	inArray,
+	isNull,
 	lte,
 	or,
 	type SQL,
@@ -21,6 +22,8 @@ export const ORDENAR_FINANCEIROS_CAMPOS = [
 	"documento",
 	"tipodocumentodescricao",
 	"emitente",
+	"nomecliente",
+	"historico",
 	"parcela",
 	"status",
 	"emissao",
@@ -50,10 +53,19 @@ const sqlEntidadeNome = sql<string | null>`COALESCE(${schema.entidade.nome}, ${s
 
 const sqlCentroCustoNome = sql<string | null>`(SELECT string_agg(DISTINCT cc.nome, ', ' ORDER BY cc.nome) FROM apropriacao_centro_custo acc INNER JOIN centrocusto cc ON cc.id = acc.idcentrocusto WHERE acc.origemtipo = 'financeiro' AND acc.origemid = ${schema.financeiro.id})`;
 
+// Remove prefixo "NF 90 - " / "NF 89/2 - " gravado no emitente (bases migradas/NF).
+const NOME_CLIENTE_SQL = sql<string | null>`coalesce(
+	nullif(trim(${schema.entidade.razaosocial}), ''),
+	nullif(trim(${schema.entidade.nome}), ''),
+	nullif(trim(regexp_replace(${schema.financeiro.emitente}, '^[[:space:]]*NF[[:space:]]+[^[:space:]]+[[:space:]]*-[[:space:]]*', '', 'i')), ''),
+	nullif(trim(${schema.financeiro.emitente}), '')
+)`;
+
 const COLUNAS_ORDENACAO: Record<OrdenarFinanceirosCampo, SQL | Parameters<typeof asc>[0]> = {
 	documento: schema.financeiro.documento,
 	tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
 	emitente: sql`COALESCE(NULLIF(TRIM(${schema.financeiro.emitente}), ''), ${schema.entidade.nome}, ${schema.entidade.razaosocial})`,
+	nomecliente: NOME_CLIENTE_SQL,
 	parcela: schema.financeiro.parcela,
 	status: schema.financeiro.status,
 	emissao: schema.financeiro.emissao,
@@ -107,6 +119,36 @@ export async function buscarFinanceiroPorId(id: string) {
 		.where(eq(schema.financeiro.id, id));
 
 	return financeiro;
+}
+
+export async function buscarFinanceiroPorNossoNumero(params: {
+	idempresa: string;
+	nossonumero: string;
+}) {
+	const digitos = params.nossonumero.replace(/\D/g, "");
+	const candidatos = [
+		params.nossonumero.trim(),
+		digitos,
+		digitos.padStart(11, "0"),
+		digitos.replace(/^0+/, ""),
+	];
+	const unicos = [...new Set(candidatos.filter((c) => c.length > 0))];
+
+	for (const candidato of unicos) {
+		const [titulo] = await db
+			.select()
+			.from(schema.financeiro)
+			.where(
+				and(
+					eq(schema.financeiro.idempresa, params.idempresa),
+					eq(schema.financeiro.nossonumero, candidato),
+				),
+			)
+			.limit(1);
+		if (titulo) return titulo;
+	}
+
+	return undefined;
 }
 
 export async function deletarFinanceiro(id: string) {
@@ -171,6 +213,7 @@ interface ListarFinanceiroParametros {
 	page?: number;
 	limit?: number;
 	saldo?: string | null | undefined;
+	q?: string | null | undefined;
 	emissao?: string | null | undefined;
 	documento?: string | null | undefined;
 	tipodocumentodescricao?: string | null | undefined;
@@ -196,6 +239,8 @@ interface ListarFinanceiroParametros {
 	tipo?: "P" | "R" | null | undefined;
 	identidade?: string | null | undefined;
 	idtipocobranca?: string | null | undefined;
+	remessagerada?: number | null | undefined;
+	permiteBoleto?: boolean | null | undefined;
 	ordenarPor?: OrdenarFinanceirosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 }
@@ -205,6 +250,7 @@ export async function listarFinanceiro({
 	page = 1,
 	limit = 10,
 	saldo,
+	q,
 	emissao,
 	documento,
 	tipodocumentodescricao,
@@ -230,6 +276,8 @@ export async function listarFinanceiro({
 	tipo,
 	identidade,
 	idtipocobranca,
+	remessagerada,
+	permiteBoleto,
 	ordenarPor,
 	ordem = "desc",
 }: ListarFinanceiroParametros) {
@@ -243,6 +291,27 @@ export async function listarFinanceiro({
 	const offset = (page - 1) * limit;
 
 	const where: SQL[] = [];
+
+	if (q?.trim()) {
+		const termo = `%${q.trim()}%`;
+		where.push(
+			or(
+				ilike(schema.financeiro.documento, termo),
+				ilike(schema.financeiro.emitente, termo),
+				ilike(schema.financeiro.historico, termo),
+				ilike(schema.tipodocumentofinanceiro.descricao, termo),
+				ilike(schema.entidade.razaosocial, termo),
+				ilike(schema.entidade.nome, termo),
+				ilike(schema.entidade.cnpjcpf, termo),
+				ilike(schema.financeiro.cnpjcpfemitente, termo),
+				sql`${schema.financeiro.valor}::text ilike ${termo}`,
+				sql`${schema.financeiro.saldo}::text ilike ${termo}`,
+				sql`${schema.financeiro.emissao}::text ilike ${termo}`,
+				sql`${schema.financeiro.vencimento}::text ilike ${termo}`,
+				sql`${NOME_CLIENTE_SQL} ilike ${termo}`,
+			)!,
+		);
+	}
 
 	if (saldo) {
 		where.push(ilike(schema.financeiro.saldo, saldo));
@@ -347,6 +416,29 @@ export async function listarFinanceiro({
 		where.push(eq(schema.financeiro.idtipocobranca, idtipocobranca.trim()));
 	}
 
+	if (remessagerada !== undefined && remessagerada !== null) {
+		if (remessagerada === 0) {
+			where.push(
+				or(
+					eq(schema.financeiro.remessagerada, 0),
+					isNull(schema.financeiro.remessagerada),
+				)!,
+			);
+		} else {
+			where.push(eq(schema.financeiro.remessagerada, remessagerada));
+		}
+	}
+
+	if (permiteBoleto === true) {
+		// Aceita flag explícita ou forma de pagamento NF-e 15 (boleto bancário).
+		where.push(
+			or(
+				eq(schema.tipodocumentofinanceiro.permitegerarboleto, 1),
+				eq(schema.tipodocumentofinanceiro.formapagamentonfe, "15"),
+			)!,
+		);
+	}
+
 	const ordenacao =
 		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
 			? ordem === "asc"
@@ -390,6 +482,7 @@ export async function listarFinanceiro({
 				tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
 				tipocobrancadescricao: schema.tipocobranca.descricao,
 				entidadenome: sqlEntidadeNome,
+				nomecliente: NOME_CLIENTE_SQL,
 				planocontasnome: schema.planocontas.nome,
 				planocontascodigo: schema.planocontas.codigo,
 				banconome: schema.banco.nome,

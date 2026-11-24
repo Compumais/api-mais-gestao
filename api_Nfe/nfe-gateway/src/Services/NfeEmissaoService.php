@@ -216,6 +216,22 @@ final class NfeEmissaoService
 				'',
 				(string) ($entregaFonte['cnpjcpf'] ?? '')
 			);
+			$ufEntrega = strtoupper(trim((string) $entregaFonte['uf']));
+			$ieEntrega = preg_replace('/\D/', '', (string) ($entregaFonte['ie'] ?? '')) ?? '';
+			if ($ieEntrega === '' && $tpAmb !== 2) {
+				$docDestLimpo = preg_replace('/\D/', '', (string) ($destinatario['cnpjcpf'] ?? '')) ?? '';
+				$ufDestLimpa = strtoupper(trim((string) ($destinatario['estado'] ?? '')));
+				$indIeDestAtual = (int) ($destinatario['indIEDest'] ?? 9);
+				$ieDestNormalizada = self::normalizarIeDestinatario($indIeDestAtual, $destinatario['ie'] ?? null) ?? '';
+				$ieDestDigitos = preg_replace('/\D/', '', $ieDestNormalizada) ?? '';
+				if (
+					$ieDestDigitos !== '' &&
+					($documentoEntrega === '' || $documentoEntrega === $docDestLimpo) &&
+					($ufDestLimpa === '' || $ufDestLimpa === $ufEntrega)
+				) {
+					$ieEntrega = $ieDestDigitos;
+				}
+			}
 			$entrega = [
 				'xNome'   => (string) ($entregaFonte['nome'] ?? ''),
 				'xLgr'    => (string) ($entregaFonte['logradouro'] ?? ''),
@@ -230,7 +246,7 @@ final class NfeEmissaoService
 				'xPais'   => 'BRASIL',
 				'fone'    => preg_replace('/\D/', '', (string) ($entregaFonte['telefone'] ?? '')),
 				'email'   => (string) ($entregaFonte['email'] ?? ''),
-				'IE'      => preg_replace('/\D/', '', (string) ($entregaFonte['ie'] ?? '')),
+				'IE'      => $tpAmb === 2 ? '' : $ieEntrega,
 			];
 			if (strlen((string) $documentoEntrega) === 14) {
 				$entrega['CNPJ'] = $documentoEntrega;

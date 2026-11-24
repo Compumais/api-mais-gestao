@@ -14,6 +14,13 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
@@ -22,6 +29,7 @@ import {
 	atualizarContaCorrenteSchema,
 	type CriarContaCorrenteFormData,
 	criarContaCorrenteSchema,
+	LAYOUTS_CNAB,
 } from "@/schemas/contas-correntes.schema";
 import { bancosService } from "@/services/bancos.service";
 import { contasCorrentesService } from "@/services/contas-correntes.service";
@@ -74,6 +82,16 @@ export function ContaCorrenteForm(props: ContaCorrenteFormProps) {
 					telefonegerente: contaCorrente?.telefonegerente || "",
 					codigo: contaCorrente?.codigo || undefined,
 					idbanco: contaCorrente?.idbanco || undefined,
+					carteira: "",
+					codigocedente: "",
+					codigocedentedv: "",
+					agenciadv: "",
+					contadv: "",
+					layoutarquivoremessa: "cnab240",
+					layoutarquivoretorno: "cnab240",
+					localpagamentoboleto: "",
+					nossonumeroseq: 0,
+					sequenciaremessa: 0,
 				},
 	});
 
@@ -180,6 +198,20 @@ export function ContaCorrenteForm(props: ContaCorrenteFormProps) {
 					telefonegerente: contaCorrente.telefonegerente || "",
 					codigo: contaCorrente.codigo || undefined,
 					idbanco: contaCorrente.idbanco || undefined,
+					carteira: contaCorrente.carteira || "",
+					codigocedente: contaCorrente.codigocedente || "",
+					codigocedentedv: contaCorrente.codigocedentedv || "",
+					agenciadv: contaCorrente.agenciadv || "",
+					contadv: contaCorrente.contadv || "",
+					layoutarquivoremessa:
+						(contaCorrente.layoutarquivoremessa as "cnab240" | "cnab400") ||
+						"cnab240",
+					layoutarquivoretorno:
+						(contaCorrente.layoutarquivoretorno as "cnab240" | "cnab400") ||
+						"cnab240",
+					localpagamentoboleto: contaCorrente.localpagamentoboleto || "",
+					nossonumeroseq: contaCorrente.nossonumeroseq ?? 0,
+					sequenciaremessa: contaCorrente.sequenciaremessa ?? 0,
 				}
 			: props.valoresIniciais;
 
@@ -267,26 +299,34 @@ export function ContaCorrenteForm(props: ContaCorrenteFormProps) {
 				toast.error("Empresa não selecionada");
 				return;
 			}
-			const payload = {
+			const criar = data as CriarContaCorrenteFormData;
+			criarContaCorrente({
 				idempresa: empresa.id,
-				descricao: (data as CriarContaCorrenteFormData).descricao,
-				agencia: (data as CriarContaCorrenteFormData).agencia,
-				numeroconta: (data as CriarContaCorrenteFormData).numeroconta,
-				abertura: (data as CriarContaCorrenteFormData).abertura,
-				observacao: (data as CriarContaCorrenteFormData).observacao,
-				nometitular: (data as CriarContaCorrenteFormData).nometitular,
-				cnpjcpftitular: (data as CriarContaCorrenteFormData).cnpjcpftitular,
-				gerente: (data as CriarContaCorrenteFormData).gerente,
-				telefonegerente: (data as CriarContaCorrenteFormData).telefonegerente,
-				codigo: (data as CriarContaCorrenteFormData).codigo,
-				idbanco: (data as CriarContaCorrenteFormData).idbanco,
-			};
-
-			criarContaCorrente(payload);
+				descricao: criar.descricao,
+				agencia: criar.agencia,
+				numeroconta: criar.numeroconta,
+				abertura: criar.abertura,
+				observacao: criar.observacao,
+				nometitular: criar.nometitular,
+				cnpjcpftitular: criar.cnpjcpftitular,
+				gerente: criar.gerente,
+				telefonegerente: criar.telefonegerente,
+				codigo: criar.codigo,
+				idbanco: criar.idbanco,
+				carteira: criar.carteira ?? null,
+				codigocedente: criar.codigocedente ?? null,
+				codigocedentedv: criar.codigocedentedv ?? null,
+				agenciadv: criar.agenciadv ?? null,
+				contadv: criar.contadv ?? null,
+				layoutarquivoremessa: criar.layoutarquivoremessa ?? null,
+				layoutarquivoretorno: criar.layoutarquivoretorno ?? null,
+				localpagamentoboleto: criar.localpagamentoboleto ?? null,
+				nossonumeroseq: criar.nossonumeroseq ?? null,
+				sequenciaremessa: criar.sequenciaremessa ?? null,
+			});
 			return;
 		}
 
-		// Usar getValues() para garantir que pegamos o valor mais atual do form
 		const valoresAtuais = getValues();
 		const payloadAtualizacao: AtualizarContaCorrenteFormData = {
 			descricao: valoresAtuais.descricao,
@@ -299,8 +339,17 @@ export function ContaCorrenteForm(props: ContaCorrenteFormProps) {
 			gerente: valoresAtuais.gerente,
 			telefonegerente: valoresAtuais.telefonegerente,
 			codigo: valoresAtuais.codigo,
-			// Garantir que idbanco seja enviado como string ou null, nunca undefined
 			idbanco: valoresAtuais.idbanco ?? null,
+			carteira: valoresAtuais.carteira ?? null,
+			codigocedente: valoresAtuais.codigocedente ?? null,
+			codigocedentedv: valoresAtuais.codigocedentedv ?? null,
+			agenciadv: valoresAtuais.agenciadv ?? null,
+			contadv: valoresAtuais.contadv ?? null,
+			layoutarquivoremessa: valoresAtuais.layoutarquivoremessa ?? null,
+			layoutarquivoretorno: valoresAtuais.layoutarquivoretorno ?? null,
+			localpagamentoboleto: valoresAtuais.localpagamentoboleto ?? null,
+			nossonumeroseq: valoresAtuais.nossonumeroseq ?? null,
+			sequenciaremessa: valoresAtuais.sequenciaremessa ?? null,
 		};
 		atualizarContaCorrente(payloadAtualizacao);
 	};
@@ -558,6 +607,132 @@ export function ContaCorrenteForm(props: ContaCorrenteFormProps) {
 						/>
 						<FieldError errors={errors.observacao ? [errors.observacao] : []} />
 					</Field>
+				</div>
+
+				<div className="space-y-4 mt-8">
+					<h2 className="text-lg font-semibold">Cobrança bancária (CNAB)</h2>
+					<p className="text-sm text-muted-foreground">
+						Defina o layout de remessa/retorno e os dados usados na geração de
+						boletos.
+					</p>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Field>
+							<FieldLabel>Layout remessa</FieldLabel>
+							<Select
+								value={watch("layoutarquivoremessa") ?? "cnab240"}
+								onValueChange={(value) =>
+									setValue(
+										"layoutarquivoremessa",
+										value as (typeof LAYOUTS_CNAB)[number],
+										{ shouldDirty: true },
+									)
+								}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Selecione o layout" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="cnab240">CNAB 240</SelectItem>
+									<SelectItem value="cnab400">CNAB 400</SelectItem>
+								</SelectContent>
+							</Select>
+						</Field>
+
+						<Field>
+							<FieldLabel>Layout retorno</FieldLabel>
+							<Select
+								value={watch("layoutarquivoretorno") ?? "cnab240"}
+								onValueChange={(value) =>
+									setValue(
+										"layoutarquivoretorno",
+										value as (typeof LAYOUTS_CNAB)[number],
+										{ shouldDirty: true },
+									)
+								}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Selecione o layout" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="cnab240">CNAB 240</SelectItem>
+									<SelectItem value="cnab400">CNAB 400</SelectItem>
+								</SelectContent>
+							</Select>
+						</Field>
+
+						<Field data-invalid={!!errors.carteira}>
+							<FieldLabel htmlFor="carteira">Carteira</FieldLabel>
+							<Input id="carteira" placeholder="Ex: 17" {...register("carteira")} />
+							<FieldError errors={errors.carteira ? [errors.carteira] : []} />
+						</Field>
+
+						<Field data-invalid={!!errors.codigocedente}>
+							<FieldLabel htmlFor="codigocedente">Código cedente</FieldLabel>
+							<Input
+								id="codigocedente"
+								placeholder="Código do cedente/beneficiário"
+								{...register("codigocedente")}
+							/>
+							<FieldError
+								errors={errors.codigocedente ? [errors.codigocedente] : []}
+							/>
+						</Field>
+
+						<Field data-invalid={!!errors.codigocedentedv}>
+							<FieldLabel htmlFor="codigocedentedv">DV cedente</FieldLabel>
+							<Input
+								id="codigocedentedv"
+								maxLength={1}
+								{...register("codigocedentedv")}
+							/>
+						</Field>
+
+						<Field data-invalid={!!errors.agenciadv}>
+							<FieldLabel htmlFor="agenciadv">DV agência</FieldLabel>
+							<Input id="agenciadv" maxLength={1} {...register("agenciadv")} />
+						</Field>
+
+						<Field data-invalid={!!errors.contadv}>
+							<FieldLabel htmlFor="contadv">DV conta</FieldLabel>
+							<Input id="contadv" maxLength={2} {...register("contadv")} />
+						</Field>
+
+						<Field data-invalid={!!errors.nossonumeroseq}>
+							<FieldLabel htmlFor="nossonumeroseq">
+								Sequência nosso número
+							</FieldLabel>
+							<Input
+								id="nossonumeroseq"
+								type="number"
+								{...register("nossonumeroseq", { valueAsNumber: true })}
+							/>
+						</Field>
+
+						<Field data-invalid={!!errors.sequenciaremessa}>
+							<FieldLabel htmlFor="sequenciaremessa">
+								Sequência remessa
+							</FieldLabel>
+							<Input
+								id="sequenciaremessa"
+								type="number"
+								{...register("sequenciaremessa", { valueAsNumber: true })}
+							/>
+						</Field>
+
+						<Field
+							data-invalid={!!errors.localpagamentoboleto}
+							className="md:col-span-2"
+						>
+							<FieldLabel htmlFor="localpagamentoboleto">
+								Local de pagamento
+							</FieldLabel>
+							<Input
+								id="localpagamentoboleto"
+								placeholder="Pagável em qualquer banco"
+								{...register("localpagamentoboleto")}
+							/>
+						</Field>
+					</div>
 				</div>
 
 				<div className="flex justify-end gap-2 mt-6">

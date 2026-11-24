@@ -74,6 +74,15 @@ export type ExecutivoDashboard = {
 		total: number;
 		quantidade: number;
 	}[];
+	topRecebimentos: TopTituloEntidade[];
+	topPagamentos: TopTituloEntidade[];
+};
+
+export type TopTituloEntidade = {
+	identidade: string | null;
+	nome: string;
+	valor: number;
+	quantidade: number;
 };
 
 export type VendasAvancadas = {
@@ -141,6 +150,13 @@ export type FinanceiroSaude = {
 	taxaInadimplenciaPct: number | null;
 	agingReceber: AgingBucket[];
 	agingPagar: AgingBucket[];
+	topRecebimentos: TopTituloEntidade[];
+	topPagamentos: TopTituloEntidade[];
+	extratoContas: {
+		id: string;
+		nome: string;
+		saldo: number;
+	}[];
 	topInadimplentes: {
 		identidade: string | null;
 		nome: string;

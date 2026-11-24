@@ -148,6 +148,7 @@ export type TransportePayloadNfe = {
 export type EnderecoEntregaPayloadNfe = {
 	cnpjcpf?: string;
 	nome?: string;
+	ie?: string;
 	logradouro: string;
 	numero: string;
 	complemento?: string;

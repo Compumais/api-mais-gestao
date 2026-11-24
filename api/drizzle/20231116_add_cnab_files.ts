@@ -1,8 +1,18 @@
 import { sql } from "drizzle-orm";
-import { db } from "../src/repositories/connection.js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
-export async function up() {
-  await db.execute(sql`
+type Banco = Pick<NodePgDatabase, "execute">;
+
+/** Usa o banco recebido; sem parâmetro, cai na conexão padrão da API. */
+async function resolverBanco(banco?: Banco): Promise<Banco> {
+	if (banco) return banco;
+	const { db } = await import("../src/repositories/connection.js");
+	return db;
+}
+
+export async function up(banco?: Banco): Promise<void> {
+	const db = await resolverBanco(banco);
+	await db.execute(sql`
     CREATE TABLE IF NOT EXISTS cnab_files (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
@@ -17,6 +27,7 @@ export async function up() {
   `);
 }
 
-export async function down() {
-  await db.execute(sql`DROP TABLE IF EXISTS cnab_files;`);
+export async function down(banco?: Banco): Promise<void> {
+	const db = await resolverBanco(banco);
+	await db.execute(sql`DROP TABLE IF EXISTS cnab_files;`);
 }

@@ -40,7 +40,7 @@ export type FiltrosColunaFinanceiroState = {
 	documento: string;
 	tipodocumentodescricao: string;
 	idtipocobranca: string;
-	emitente: string;
+	nomecliente: string;
 	status: string;
 	emissao: string;
 	vencimento: string;
@@ -58,7 +58,7 @@ export const filtrosColunaFinanceiroVazios: FiltrosColunaFinanceiroState = {
 	documento: "",
 	tipodocumentodescricao: "",
 	idtipocobranca: "",
-	emitente: "",
+	nomecliente: "",
 	status: "",
 	emissao: "",
 	vencimento: "",
@@ -72,6 +72,12 @@ export const filtrosColunaFinanceiroVazios: FiltrosColunaFinanceiroState = {
 	historico: "",
 };
 
+/** Abertos e parciais. Quitado, pago e demais status só entram pelo filtro. */
+export const filtrosColunaFinanceiroIniciais: FiltrosColunaFinanceiroState = {
+	...filtrosColunaFinanceiroVazios,
+	status: "A",
+};
+
 export type CampoFiltroColunaFinanceiro = keyof FiltrosColunaFinanceiroState;
 
 export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
@@ -81,7 +87,9 @@ export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
 	documento: "documento",
 	tipodocumento: "tipodocumentodescricao",
 	cobranca: "idtipocobranca",
-	emitente: "emitente",
+	nomecliente: "nomecliente",
+	// Id antigo salvo nas preferências: hoje mostra a observação.
+	emitente: "historico",
 	status: "status",
 	emissao: "emissao",
 	vencimento: "vencimento",
@@ -98,7 +106,8 @@ export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
 export const COLUNA_PARA_ORDENAR_FINANCEIRO: Record<string, string> = {
 	documento: "documento",
 	tipodocumento: "tipodocumentodescricao",
-	emitente: "emitente",
+	nomecliente: "nomecliente",
+	emitente: "historico",
 	parcela: "parcela",
 	status: "status",
 	emissao: "emissao",
@@ -130,7 +139,8 @@ export function criarConfigFiltroColunasFinanceiro(
 		documento: { tipo: "texto", placeholder: "Documento" },
 		tipodocumento: { tipo: "texto", placeholder: "Tipo de documento" },
 		cobranca: { tipo: "opcoes", opcoes: opcoesTipoCobranca },
-		emitente: { tipo: "texto", placeholder: "Nome" },
+		nomecliente: { tipo: "texto", placeholder: "Nome" },
+		emitente: { tipo: "texto", placeholder: "Observação" },
 		parcela: { tipo: "nenhum" },
 		status: { tipo: "opcoes", opcoes: STATUS_OPCOES_FILTRO },
 		emissao: { tipo: "periodo" },
@@ -170,7 +180,7 @@ export function montarParamsFiltroFinanceiro(
 		...(filtros.idtipocobranca
 			? { idtipocobranca: filtros.idtipocobranca }
 			: {}),
-		...(filtros.emitente ? { emitente: filtros.emitente } : {}),
+		...(filtros.nomecliente ? { emitente: filtros.nomecliente } : {}),
 		...(filtros.status ? { status: filtros.status } : {}),
 		...(filtros.planocontasnome
 			? { planocontasnome: filtros.planocontasnome }
@@ -212,7 +222,8 @@ const DEFINICOES_BASE: DefinicaoColunaFinanceiro[] = [
 	{ id: "documento", label: "Documento", visivelPadrao: true },
 	{ id: "tipodocumento", label: "Tipo de documento", visivelPadrao: true },
 	{ id: "cobranca", label: "Cobrança", visivelPadrao: true },
-	{ id: "emitente", label: "Nome", visivelPadrao: true },
+	{ id: "nomecliente", label: "Cliente", visivelPadrao: true },
+	{ id: "historico", label: "Observação", visivelPadrao: true },
 	{ id: "parcela", label: "Parcela", visivelPadrao: true },
 	{ id: "status", label: "Status", visivelPadrao: true },
 	{ id: "emissao", label: "Emissão", visivelPadrao: true },
@@ -244,15 +255,20 @@ const DEFINICOES_BASE: DefinicaoColunaFinanceiro[] = [
 	{ id: "centrocusto", label: "Centro de custo", visivelPadrao: false },
 	{ id: "banco", label: "Banco", visivelPadrao: false },
 	{ id: "nossonumero", label: "Nosso número", visivelPadrao: false },
-	{ id: "historico", label: "Histórico", visivelPadrao: false },
 	{ id: "tipo", label: "Tipo", visivelPadrao: false },
 	{ id: "acoes", label: "Ações", visivelPadrao: true, enableHiding: false },
 ];
 
 function definicoesParaVariante(variante: VarianteFinanceiroLista) {
-	return DEFINICOES_BASE.filter(
-		(def) => !def.somenteReceber || variante === "receber",
-	);
+	return DEFINICOES_BASE.map((def) => {
+		if (def.id === "nomecliente") {
+			return {
+				...def,
+				label: variante === "pagar" ? "Fornecedor" : "Cliente",
+			};
+		}
+		return def;
+	}).filter((def) => !def.somenteReceber || variante === "receber");
 }
 
 export function visibilidadePadraoColunasFinanceiro(
@@ -323,11 +339,20 @@ export function formatNome(
 	variante: VarianteFinanceiroLista,
 ) {
 	const nomeBase =
-		financeiro.emitente?.trim() || financeiro.entidadenome?.trim() || "";
+		limparPrefixoNf(financeiro.nomecliente) ||
+		limparPrefixoNf(financeiro.emitente) ||
+		financeiro.entidadenome?.trim() ||
+		"";
 	if (variante === "pagar") {
 		return nomeBase || "-";
 	}
 	return nomeBase || financeiro.historico?.trim() || "-";
+}
+
+/** Remove prefixos como "NF 90 - " ou "NF 89/2 - " e devolve só o nome. */
+function limparPrefixoNf(valor: string | null | undefined) {
+	const texto = valor?.trim() ?? "";
+	return texto.replace(/^NF\s+\S+\s*-\s*/i, "").trim();
 }
 
 export function getStatusBadge(
@@ -580,10 +605,10 @@ export function criarColunasFinanceiro(
 					},
 				});
 				break;
-			case "emitente":
+			case "nomecliente":
 				colunas.push({
-					id: "emitente",
-					accessorKey: "emitente",
+					id: "nomecliente",
+					accessorKey: "nomecliente",
 					header,
 					meta,
 					cell: ({ row }) => (
@@ -786,19 +811,26 @@ export function criarColunasFinanceiro(
 				});
 				break;
 			case "historico":
+			case "emitente":
 				colunas.push({
-					id: "historico",
+					id: def.id,
 					accessorKey: "historico",
 					header,
 					meta,
-					cell: ({ row }) => (
-						<div
-							className="max-w-[220px] truncate"
-							title={row.original.historico ?? undefined}
-						>
-							{row.original.historico || "-"}
-						</div>
-					),
+					cell: ({ row }) => {
+						const texto =
+							row.original.historico?.trim() ||
+							row.original.emitente?.trim() ||
+							"-";
+						return (
+							<div
+								className="max-w-[220px] truncate"
+								title={texto !== "-" ? texto : undefined}
+							>
+								{texto}
+							</div>
+						);
+					},
 				});
 				break;
 			default:

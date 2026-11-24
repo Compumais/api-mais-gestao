@@ -11,6 +11,7 @@ type ListarFinanceirosParametros = {
 	idusuario: string;
 	idempresa?: string | null | undefined;
 	saldo?: string | null | undefined;
+	q?: string | null | undefined;
 	emissao?: string | null | undefined;
 	documento?: string | null | undefined;
 	tipodocumentodescricao?: string | null | undefined;
@@ -36,6 +37,8 @@ type ListarFinanceirosParametros = {
 	tipo?: "P" | "R" | null | undefined;
 	identidade?: string | null | undefined;
 	idtipocobranca?: string | null | undefined;
+	remessagerada?: number | null | undefined;
+	permiteBoleto?: boolean | null | undefined;
 	ordenarPor?: OrdenarFinanceirosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 	page?: number;
@@ -51,6 +54,7 @@ type FinanceiroListagem = Financeiro & {
 	banconome?: string | null;
 	centrocustonome?: string | null;
 	ultimopagamento?: string | null;
+	nomecliente: string | null;
 };
 
 type ListarFinanceirosResposta = {
@@ -67,6 +71,7 @@ export async function listarFinanceirosService({
 	idusuario,
 	idempresa,
 	saldo,
+	q,
 	emissao,
 	documento,
 	tipodocumentodescricao,
@@ -92,6 +97,8 @@ export async function listarFinanceirosService({
 	tipo,
 	identidade,
 	idtipocobranca,
+	remessagerada,
+	permiteBoleto,
 	ordenarPor,
 	ordem,
 	page = 1,
@@ -135,6 +142,7 @@ export async function listarFinanceirosService({
 	const { financeiros, total } = await listarFinanceiro({
 		idempresas: empresasParaBuscar,
 		saldo,
+		q,
 		emissao,
 		documento,
 		tipodocumentodescricao,
@@ -160,6 +168,8 @@ export async function listarFinanceirosService({
 		tipo,
 		identidade,
 		idtipocobranca,
+		remessagerada,
+		permiteBoleto,
 		ordenarPor,
 		ordem,
 		page,

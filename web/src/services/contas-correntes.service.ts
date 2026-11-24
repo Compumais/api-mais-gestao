@@ -20,6 +20,8 @@ export interface ContaCorrente {
 	agenciadv?: string | null;
 	contadv?: string | null;
 	layoutarquivoremessa?: string | null;
+	layoutarquivoretorno?: string | null;
+	localpagamentoboleto?: string | null;
 	nossonumeroseq?: number | null;
 	sequenciaremessa?: number | null;
 	currenttimemillis?: number | null;
@@ -62,6 +64,8 @@ export interface CriarContaCorrenteData {
 	agenciadv?: string | null;
 	contadv?: string | null;
 	layoutarquivoremessa?: string | null;
+	layoutarquivoretorno?: string | null;
+	localpagamentoboleto?: string | null;
 	nossonumeroseq?: number | null;
 	sequenciaremessa?: number | null;
 }
@@ -84,6 +88,8 @@ export interface AtualizarContaCorrenteData {
 	agenciadv?: string | null;
 	contadv?: string | null;
 	layoutarquivoremessa?: string | null;
+	layoutarquivoretorno?: string | null;
+	localpagamentoboleto?: string | null;
 	nossonumeroseq?: number | null;
 	sequenciaremessa?: number | null;
 }

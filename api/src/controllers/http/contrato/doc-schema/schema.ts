@@ -29,3 +29,21 @@ export const excluirContratoSchema: FastifySchema = {
 	summary: "Excluir contrato",
 	security: [{ bearerAuth: [] }],
 };
+
+export const previewImportacaoContratosSchema: FastifySchema = {
+	tags: ["contratos"],
+	summary: "Preview da importação de contratos",
+	security: [{ bearerAuth: [] }],
+};
+
+export const importarContratosSchema: FastifySchema = {
+	tags: ["contratos"],
+	summary: "Importar contratos via CSV/XLSX",
+	security: [{ bearerAuth: [] }],
+};
+
+export const vincularClienteImportacaoContratosSchema: FastifySchema = {
+	tags: ["contratos"],
+	summary: "Cadastrar ou associar cliente pendente da importação de contratos",
+	security: [{ bearerAuth: [] }],
+};

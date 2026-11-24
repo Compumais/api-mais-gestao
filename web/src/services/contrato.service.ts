@@ -66,6 +66,93 @@ export type ItemElegibilidade = {
 	statusCobrancaExistente?: string;
 };
 
+export type FormatoImportacaoContratos = "csv" | "xlsx";
+
+export type ImportacaoContratosData = {
+	idempresa: string;
+	formato: FormatoImportacaoContratos;
+	conteudo: string;
+	nomeArquivo?: string;
+	idtipodocumento: string;
+};
+
+export type ContratoPreviewImportacao = {
+	linha: number;
+	codigocliente: string;
+	nomeCliente: string | null;
+	grupocontrato: string;
+	tipocontrato: string;
+	descricao: string;
+	valor: string | null;
+	diavencimento: number | null;
+	criarGrupo: boolean;
+	criarTipo: boolean;
+	clientePendente: boolean;
+	identidadeSugerida: string | null;
+	nomeSugerido: string | null;
+	acao: "criar";
+	erros: string[];
+};
+
+export type PreviewImportacaoContratosResponse = {
+	totalContratos: number;
+	totalCriar: number;
+	totalGruposNovos: number;
+	totalTiposNovos: number;
+	totalClientesPendentes: number;
+	totalErros: number;
+	errosGerais: string[];
+	contratos: ContratoPreviewImportacao[];
+};
+
+export type ClientePendenteImportacaoContrato = {
+	linha: number;
+	grupocontrato: string;
+	tipocontrato: string;
+	descricao: string;
+	valor: string;
+	diavencimento: number;
+};
+
+export type ClientePendenteImportacao = {
+	codigocliente: string;
+	identidadeSugerida: string | null;
+	nomeSugerido: string | null;
+	contratos: ClientePendenteImportacaoContrato[];
+};
+
+export type ImportarContratosResponse = {
+	totalImportados: number;
+	totalCriados: number;
+	totalGruposCriados: number;
+	totalTiposCriados: number;
+	clientesPendentes: ClientePendenteImportacao[];
+};
+
+export type VincularClienteImportacaoData = {
+	idempresa: string;
+	idtipodocumento: string;
+	acao: "cadastrar" | "associar";
+	codigocliente: string;
+	nome?: string;
+	identidade?: string;
+	contratos: Array<{
+		grupocontrato: string;
+		tipocontrato: string;
+		descricao: string;
+		valor: string;
+		diavencimento: number;
+	}>;
+};
+
+export type VincularClienteImportacaoResponse = {
+	identidade: string;
+	nomeCliente: string;
+	totalCriados: number;
+	totalGruposCriados: number;
+	totalTiposCriados: number;
+};
+
 export const contratoService = {
 	async buscarProximoCodigo(idempresa: string): Promise<{ codigo: string }> {
 		const { data } = await api.get<{ codigo: string }>(
@@ -189,6 +276,44 @@ export const contratoService = {
 		const { data } = await api.post<{ cobranca: ContratoCobranca }>(
 			`/contratos/faturamento/cobrancas/${id}/retomar`,
 			{ idempresa },
+		);
+		return data;
+	},
+
+	async previewImportacao(
+		dados: ImportacaoContratosData,
+	): Promise<PreviewImportacaoContratosResponse> {
+		const { data } = await api.post<PreviewImportacaoContratosResponse>(
+			"/contratos/importar/preview",
+			dados,
+		);
+		return data;
+	},
+
+	async importar(
+		dados: ImportacaoContratosData,
+		onUploadProgress?: (percentual: number) => void,
+	): Promise<ImportarContratosResponse> {
+		const { data } = await api.post<ImportarContratosResponse>(
+			"/contratos/importar",
+			dados,
+			{
+				onUploadProgress: (evento) => {
+					if (onUploadProgress && evento.total) {
+						onUploadProgress(Math.round((evento.loaded / evento.total) * 100));
+					}
+				},
+			},
+		);
+		return data;
+	},
+
+	async vincularClienteImportacao(
+		dados: VincularClienteImportacaoData,
+	): Promise<VincularClienteImportacaoResponse> {
+		const { data } = await api.post<VincularClienteImportacaoResponse>(
+			"/contratos/importar/vincular-cliente",
+			dados,
 		);
 		return data;
 	},

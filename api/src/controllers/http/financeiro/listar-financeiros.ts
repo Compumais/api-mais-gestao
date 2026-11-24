@@ -10,6 +10,7 @@ const listarFinanceirosQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 	saldo: textoOpcional,
+	q: textoOpcional,
 	emissao: textoOpcional,
 	documento: textoOpcional,
 	tipodocumentodescricao: textoOpcional,
@@ -35,6 +36,15 @@ const listarFinanceirosQuerySchema = z.object({
 	tipo: z.enum(["P", "R"]).optional().nullable(),
 	identidade: z.string().uuid().optional().nullable(),
 	idtipocobranca: textoOpcional,
+	remessagerada: z.coerce.number().int().optional().nullable(),
+	permiteBoleto: z
+		.enum(["true", "false", "1", "0"])
+		.optional()
+		.nullable()
+		.transform((v) => {
+			if (v === undefined || v === null) return undefined;
+			return v === "true" || v === "1";
+		}),
 	ordenarPor: z.enum(ORDENAR_FINANCEIROS_CAMPOS).optional(),
 	ordem: z.enum(["asc", "desc"]).optional(),
 });

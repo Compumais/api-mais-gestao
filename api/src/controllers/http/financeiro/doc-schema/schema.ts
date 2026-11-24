@@ -11,6 +11,7 @@ const financeiroItemResponseProperties = {
 	totalparcelas: { type: "number", nullable: true },
 	documento: { type: "string", nullable: true },
 	emitente: { type: "string", nullable: true },
+	nomecliente: { type: "string", nullable: true },
 	status: { type: "string", nullable: true },
 	idtipodocumentofinanceiro: { type: "string", nullable: true },
 	tipodocumentodescricao: { type: "string", nullable: true },
@@ -222,6 +223,12 @@ export const listarFinanceirosSchema: FastifySchema = {
 				nullable: true,
 				description: "Filtro por documento (busca parcial)",
 			},
+			q: {
+				type: "string",
+				nullable: true,
+				description:
+					"Busca geral (documento, nome, observação, CNPJ/CPF, tipo, valor, saldo e datas)",
+			},
 			tipodocumentodescricao: {
 				type: "string",
 				nullable: true,
@@ -356,6 +363,8 @@ export const listarFinanceirosSchema: FastifySchema = {
 					"documento",
 					"tipodocumentodescricao",
 					"emitente",
+					"nomecliente",
+					"historico",
 					"parcela",
 					"status",
 					"emissao",
@@ -515,6 +524,64 @@ export const excluirFinanceiroSchema: FastifySchema = {
 				error: { type: "string" },
 				code: { type: "string" },
 				details: { type: "string" },
+			},
+		},
+		500: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+	},
+};
+
+export const proximoDocumentoFinanceiroSchema: FastifySchema = {
+	tags: ["financeiro"],
+	summary: "Buscar próximo número de documento",
+	description:
+		"Retorna o próximo número sequencial de documento (MAX + 1) para a empresa e tipo (P/R).",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string", description: "ID da empresa" },
+			tipo: {
+				type: "string",
+				enum: ["P", "R"],
+				description: "P = pagar, R = receber",
+			},
+		},
+		required: ["idempresa", "tipo"],
+	},
+	response: {
+		200: {
+			type: "object",
+			properties: {
+				codigo: { type: "string" },
+			},
+			required: ["codigo"],
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+				details: { type: "array" },
+			},
+		},
+		401: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		403: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
 			},
 		},
 		500: {

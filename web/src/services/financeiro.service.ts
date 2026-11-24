@@ -18,6 +18,7 @@ export interface Financeiro {
 	banconome?: string | null;
 	centrocustonome?: string | null;
 	ultimopagamento?: string | null;
+	nomecliente?: string | null;
 	status: string | null;
 	emissao: string | null;
 	vencimento: string | null;
@@ -136,6 +137,7 @@ export interface ListarFinanceirosParams {
 	emitente?: string | null;
 	planocontasnome?: string | null;
 	nossonumero?: string | null;
+	q?: string | null;
 	historico?: string | null;
 	emissaoInicio?: string | null;
 	emissaoFim?: string | null;
@@ -304,6 +306,16 @@ export const financeiroService = {
 		await api.delete(`/financeiro/${id}`);
 	},
 
+	async buscarProximoDocumento(params: {
+		idempresa: string;
+		tipo: "P" | "R";
+	}): Promise<{ codigo: string }> {
+		const { data } = await api.get<{ codigo: string }>(
+			"/financeiro/proximo-documento",
+			{ params },
+		);
+		return data;
+	},
 };
 
 /** Título marcado como pago pelo atalho antigo, sem lançamento de baixa. */
