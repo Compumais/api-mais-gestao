@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { TipoTarefaExecucao } from "@/worker/types.js";
+import type { PoolClient } from "pg";
 import * as schema from "../../drizzle/schema.js";
-import { db } from "./connection.js";
+import { db, directPool } from "./connection.js";
 
 export type TarefaExecucao = typeof schema.tarefaExecucao.$inferSelect;
 
@@ -94,16 +95,62 @@ export async function obterUltimaExecucao({
 	return execucao;
 }
 
+const clientesLockAgendador = new Map<number, PoolClient>();
+
 export async function tentarAdquirirLockAgendador(
 	lockId: number,
 ): Promise<boolean> {
-	const result = await db.execute(
-		sql`SELECT pg_try_advisory_lock(${lockId}) as locked`,
-	);
-	const rows = (result.rows ?? result) as { locked: boolean }[];
-	return rows[0]?.locked === true;
+	const clienteExistente = clientesLockAgendador.get(lockId);
+	if (clienteExistente) {
+		return true;
+	}
+
+	const cliente = await directPool.connect();
+	try {
+		const resultado = await cliente.query<{ locked: boolean }>(
+			"SELECT pg_try_advisory_lock($1) as locked",
+			[lockId],
+		);
+		const adquiriu = resultado.rows[0]?.locked === true;
+		if (adquiriu) {
+			clientesLockAgendador.set(lockId, cliente);
+			return true;
+		}
+		cliente.release();
+		return false;
+	} catch (erro) {
+		cliente.release();
+		throw erro;
+	}
 }
 
 export async function liberarLockAgendador(lockId: number): Promise<void> {
-	await db.execute(sql`SELECT pg_advisory_unlock(${lockId})`);
+	const cliente = clientesLockAgendador.get(lockId);
+	if (!cliente) {
+		return;
+	}
+
+	try {
+		await cliente.query("SELECT pg_advisory_unlock($1)", [lockId]);
+	} finally {
+		clientesLockAgendador.delete(lockId);
+		cliente.release();
+	}
+}
+
+export async function executarComLockAgendador<T>(
+	lockId: number,
+	operacao: () => Promise<T>,
+): Promise<{ adquirido: true; resultado: T } | { adquirido: false }> {
+	const adquiriu = await tentarAdquirirLockAgendador(lockId);
+	if (!adquiriu) {
+		return { adquirido: false };
+	}
+
+	try {
+		const resultado = await operacao();
+		return { adquirido: true, resultado };
+	} finally {
+		await liberarLockAgendador(lockId);
+	}
 }

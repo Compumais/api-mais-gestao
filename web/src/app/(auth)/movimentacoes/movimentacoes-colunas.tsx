@@ -17,6 +17,7 @@ export const SENTIDO_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 export type FiltrosColunaMovimentacoesState = {
 	datahora: string;
 	historico: string;
+	entidadenome: string;
 	sentido: string;
 	planocontasnome: string;
 	documento: string;
@@ -26,6 +27,7 @@ export const filtrosColunaMovimentacoesVazios: FiltrosColunaMovimentacoesState =
 	{
 		datahora: "",
 		historico: "",
+		entidadenome: "",
 		sentido: "",
 		planocontasnome: "",
 		documento: "",
@@ -40,6 +42,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_MOVIMENTACAO: Record<
 > = {
 	datahora: "datahora",
 	historico: "historico",
+	entidadenome: "entidadenome",
 	entrada: "sentido",
 	planocontasnome: "planocontasnome",
 	documento: "documento",
@@ -48,6 +51,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_MOVIMENTACAO: Record<
 export const COLUNA_PARA_ORDENAR_MOVIMENTACAO: Record<string, string> = {
 	datahora: "datahora",
 	historico: "historico",
+	entidadenome: "entidadenome",
 	entrada: "valor",
 	saida: "valor",
 	saldoatual: "saldoatual",
@@ -70,6 +74,7 @@ type DefinicaoColunaMovimentacao = {
 
 const DEFINICOES_COLUNAS: DefinicaoColunaMovimentacao[] = [
 	{ id: "datahora", label: "Data", visivelPadrao: true },
+	{ id: "entidadenome", label: "Cliente / Fornecedor", visivelPadrao: true },
 	{ id: "historico", label: "Histórico", visivelPadrao: true },
 	{ id: "entrada", label: "Entrada", visivelPadrao: true },
 	{ id: "saida", label: "Saída", visivelPadrao: true },
@@ -192,6 +197,19 @@ export function criarColunasMovimentacoes(
 					cell: ({ row }) => (
 						<div className="max-w-[200px] truncate">
 							{row.original.historico || "-"}
+						</div>
+					),
+				});
+				break;
+			case "entidadenome":
+				colunas.push({
+					id: "entidadenome",
+					accessorKey: "entidadenome",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div className="max-w-[200px] truncate">
+							{row.original.entidadenome || "-"}
 						</div>
 					),
 				});

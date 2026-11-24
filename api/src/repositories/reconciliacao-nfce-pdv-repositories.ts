@@ -1,13 +1,13 @@
 import { and, asc, eq, gt, isNotNull, lte, or, sql } from "drizzle-orm";
 import { notafiscal, vendapdvgourmet } from "@/repositories/schema.js";
-import { db, pool } from "./connection.js";
+import { db, directPool } from "./connection.js";
 
 export async function executarComLockEmissaoNfce<T>(
 	idempresa: string,
 	idvenda: string,
 	executar: () => Promise<T>,
 ): Promise<{ adquirido: true; resultado: T } | { adquirido: false }> {
-	const cliente = await pool.connect();
+	const cliente = await directPool.connect();
 	const chaveLock = `nfce-emissao:${idempresa}:${idvenda}`;
 
 	try {
@@ -38,7 +38,7 @@ export async function executarComLockReconciliacaoNfce<T>(
 	numeropdv: number,
 	executar: () => Promise<T>,
 ): Promise<{ adquirido: true; resultado: T } | { adquirido: false }> {
-	const cliente = await pool.connect();
+	const cliente = await directPool.connect();
 	const chaveLock = `nfce-pdv:${idempresa}:${numeropdv}`;
 
 	try {

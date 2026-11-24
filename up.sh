@@ -132,8 +132,8 @@ aplicar_sql() {
 	log "Aplicando SQL $caminho"
 	(
 		cd "$ROOT/api"
-		url="$(node --input-type=module -e 'import "dotenv/config"; process.stdout.write(process.env.DATABASE_URL || "")')"
-		[[ -n "$url" ]] || die "DATABASE_URL ausente em api/.env; não aplico SQL sem credencial do ambiente."
+		url="$(node --input-type=module -e 'import "dotenv/config"; process.stdout.write(process.env.DATABASE_DIRECT_URL || process.env.DATABASE_URL || "")')"
+		[[ -n "$url" ]] || die "DATABASE_DIRECT_URL ou DATABASE_URL ausente em api/.env; não aplico SQL sem credencial do ambiente."
 		precisa psql
 		psql "$url" -v ON_ERROR_STOP=1 --single-transaction -f "$caminho"
 	)
@@ -181,6 +181,9 @@ subir_api_docker() {
 	docker compose -f "$compose" up -d postgres
 	docker compose -f "$compose" exec -T postgres \
 		sh -c 'until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 2; done'
+	if docker compose -f "$compose" config --services 2>/dev/null | grep -qx 'pgbouncer'; then
+		docker compose -f "$compose" up -d pgbouncer
+	fi
 	docker compose -f "$compose" pull api
 	docker compose -f "$compose" up -d api
 	esperar_http "$API_HEALTH_URL" "API"

@@ -15,10 +15,23 @@ type ListarFinanceirosParametros = {
 	documento?: string | null | undefined;
 	tipodocumentodescricao?: string | null | undefined;
 	emitente?: string | null | undefined;
+	planocontasnome?: string | null | undefined;
+	nossonumero?: string | null | undefined;
+	historico?: string | null | undefined;
 	emissaoInicio?: string | null | undefined;
 	emissaoFim?: string | null | undefined;
 	vencimentoInicio?: string | null | undefined;
 	vencimentoFim?: string | null | undefined;
+	vencimentooriginalInicio?: string | null | undefined;
+	vencimentooriginalFim?: string | null | undefined;
+	pagamentoInicio?: string | null | undefined;
+	pagamentoFim?: string | null | undefined;
+	baixaInicio?: string | null | undefined;
+	baixaFim?: string | null | undefined;
+	datareferenciaInicio?: string | null | undefined;
+	datareferenciaFim?: string | null | undefined;
+	entradaInicio?: string | null | undefined;
+	entradaFim?: string | null | undefined;
 	status?: string | null | undefined;
 	tipo?: "P" | "R" | null | undefined;
 	identidade?: string | null | undefined;
@@ -30,7 +43,14 @@ type ListarFinanceirosParametros = {
 };
 
 type FinanceiroListagem = Financeiro & {
-	tipodocumentodescricao: string | null;
+	tipodocumentodescricao?: string | null;
+	tipocobrancadescricao?: string | null;
+	entidadenome?: string | null;
+	planocontasnome?: string | null;
+	planocontascodigo?: string | null;
+	banconome?: string | null;
+	centrocustonome?: string | null;
+	ultimopagamento?: string | null;
 };
 
 type ListarFinanceirosResposta = {
@@ -51,10 +71,23 @@ export async function listarFinanceirosService({
 	documento,
 	tipodocumentodescricao,
 	emitente,
+	planocontasnome,
+	nossonumero,
+	historico,
 	emissaoInicio,
 	emissaoFim,
 	vencimentoInicio,
 	vencimentoFim,
+	vencimentooriginalInicio,
+	vencimentooriginalFim,
+	pagamentoInicio,
+	pagamentoFim,
+	baixaInicio,
+	baixaFim,
+	datareferenciaInicio,
+	datareferenciaFim,
+	entradaInicio,
+	entradaFim,
 	status,
 	tipo,
 	identidade,
@@ -106,10 +139,23 @@ export async function listarFinanceirosService({
 		documento,
 		tipodocumentodescricao,
 		emitente,
+		planocontasnome,
+		nossonumero,
+		historico,
 		emissaoInicio,
 		emissaoFim,
 		vencimentoInicio,
 		vencimentoFim,
+		vencimentooriginalInicio,
+		vencimentooriginalFim,
+		pagamentoInicio,
+		pagamentoFim,
+		baixaInicio,
+		baixaFim,
+		datareferenciaInicio,
+		datareferenciaFim,
+		entradaInicio,
+		entradaFim,
 		status,
 		tipo,
 		identidade,

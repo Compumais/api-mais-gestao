@@ -8,6 +8,7 @@ import {
 	ilike,
 	inArray,
 	lte,
+	or,
 	type SQL,
 	sql,
 } from "drizzle-orm";
@@ -24,19 +25,26 @@ export const ORDENAR_CONTA_CORRENTE_LANCAMENTOS_CAMPOS = [
 	"saldoatual",
 	"planocontasnome",
 	"documento",
+	"entidadenome",
 ] as const;
 
 export type OrdenarContaCorrenteLancamentosCampo =
 	(typeof ORDENAR_CONTA_CORRENTE_LANCAMENTOS_CAMPOS)[number];
 
-const COLUNAS_ORDENACAO = {
+const sqlEntidadeMovimentacao = sql<string | null>`COALESCE(${schema.entidade.nome}, ${schema.entidade.razaosocial}, ${schema.financeiro.emitente})`;
+
+const COLUNAS_ORDENACAO: Record<
+	OrdenarContaCorrenteLancamentosCampo,
+	SQL | Parameters<typeof asc>[0]
+> = {
 	datahora: schema.contacorrentelancamento.datahora,
 	historico: schema.contacorrentelancamento.historico,
 	valor: schema.contacorrentelancamento.valor,
 	saldoatual: schema.contacorrentelancamento.saldoatual,
 	planocontasnome: schema.planocontas.nome,
 	documento: schema.contacorrentelancamento.documento,
-} as const;
+	entidadenome: sqlEntidadeMovimentacao,
+};
 
 function adicionarFiltroTexto(
 	where: SQL[],
@@ -223,6 +231,7 @@ export interface LancamentoComRelacionamentos {
 	planocontascodigo: string | null;
 	contacorrentedescricao: string | null;
 	contacorrenteagencia: string | null;
+	entidadenome?: string | null;
 }
 
 export async function listarLancamentoContaCorrentePorEmpresa({
@@ -230,7 +239,12 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 	historico,
 	documento,
 	planocontasnome,
+	clienteFornecedor,
 	datahora,
+	dataInicio,
+	dataFim,
+	valorMin,
+	valorMax,
 	sentido,
 	ordenarPor,
 	ordem = "desc",
@@ -241,7 +255,12 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 	historico?: string | undefined;
 	documento?: string | undefined;
 	planocontasnome?: string | undefined;
+	clienteFornecedor?: string | undefined;
 	datahora?: string | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
+	valorMin?: string | undefined;
+	valorMax?: string | undefined;
 	sentido?: "entrada" | "saida" | undefined;
 	ordenarPor?: OrdenarContaCorrenteLancamentosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
@@ -265,13 +284,46 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 	);
 	adicionarFiltroTexto(where, schema.planocontas.nome, planocontasnome);
 
-	if (datahora?.trim()) {
-		const condicao = filtroDataDia(
-			schema.contacorrentelancamento.datahora,
-			datahora.trim(),
+	if (clienteFornecedor?.trim()) {
+		const termo = `%${clienteFornecedor.trim()}%`;
+		const condPessoa = or(
+			ilike(schema.entidade.nome, termo),
+			ilike(schema.entidade.razaosocial, termo),
+			ilike(schema.financeiro.emitente, termo),
 		);
-		if (condicao) {
-			where.push(condicao);
+		if (condPessoa) {
+			where.push(condPessoa);
+		}
+	}
+
+	if (datahora?.trim()) {
+		const dataLimpa = datahora.trim().slice(0, 10);
+		where.push(eq(schema.contacorrentelancamento.datahora, dataLimpa));
+	}
+
+	if (dataInicio?.trim()) {
+		where.push(
+			gte(schema.contacorrentelancamento.datahora, dataInicio.trim().slice(0, 10)),
+		);
+	}
+
+	if (dataFim?.trim()) {
+		where.push(
+			lte(schema.contacorrentelancamento.datahora, dataFim.trim().slice(0, 10)),
+		);
+	}
+
+	if (valorMin !== undefined && valorMin.trim() !== "") {
+		const minNum = Number(valorMin.replace(",", "."));
+		if (Number.isFinite(minNum)) {
+			where.push(sql`${schema.contacorrentelancamento.valor} >= ${minNum}`);
+		}
+	}
+
+	if (valorMax !== undefined && valorMax.trim() !== "") {
+		const maxNum = Number(valorMax.replace(",", "."));
+		if (Number.isFinite(maxNum)) {
+			where.push(sql`${schema.contacorrentelancamento.valor} <= ${maxNum}`);
 		}
 	}
 
@@ -283,7 +335,7 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 
 	const filtro = and(...where);
 
-	const ordenacao =
+	const ordenacaoPrimaria =
 		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
 			? ordem === "asc"
 				? asc(COLUNAS_ORDENACAO[ordenarPor])
@@ -291,12 +343,27 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 			: desc(schema.contacorrentelancamento.datahora);
 
 	const joinPlano = sql`${schema.contacorrentelancamento.idplanocontas}::text = ${schema.planocontas.id}`;
+	const flSubquery = db
+		.selectDistinctOn([schema.financeirolancamento.evento], {
+			evento: schema.financeirolancamento.evento,
+			idfinanceiro: schema.financeirolancamento.idfinanceiro,
+		})
+		.from(schema.financeirolancamento)
+		.where(sql`COALESCE(${schema.financeirolancamento.cancelado}, 0) = 0`)
+		.orderBy(schema.financeirolancamento.evento)
+		.as("fl");
+	const joinFl = eq(schema.contacorrentelancamento.evento, sql`fl.evento`);
+	const joinFinanceiro = eq(sql`fl.idfinanceiro`, schema.financeiro.id);
+	const joinEntidade = eq(schema.financeiro.identidade, schema.entidade.id);
 
 	const [totalCount, lancamentos] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(schema.contacorrentelancamento)
 			.leftJoin(schema.planocontas, joinPlano)
+			.leftJoin(flSubquery, joinFl)
+			.leftJoin(schema.financeiro, joinFinanceiro)
+			.leftJoin(schema.entidade, joinEntidade)
 			.where(filtro),
 		db
 			.select({
@@ -330,6 +397,7 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 				planocontascodigo: schema.planocontas.codigo,
 				contacorrentedescricao: schema.contacorrente.descricao,
 				contacorrenteagencia: schema.contacorrente.agencia,
+				entidadenome: sqlEntidadeMovimentacao,
 			})
 			.from(schema.contacorrentelancamento)
 			.leftJoin(schema.planocontas, joinPlano)
@@ -340,23 +408,14 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 					schema.contacorrente.id,
 				),
 			)
-			.leftJoin(
-				db
-					.selectDistinctOn([schema.financeirolancamento.evento], {
-						evento: schema.financeirolancamento.evento,
-						idfinanceiro: schema.financeirolancamento.idfinanceiro,
-					})
-					.from(schema.financeirolancamento)
-					.orderBy(schema.financeirolancamento.evento)
-					.as("fl"),
-				eq(schema.contacorrentelancamento.evento, sql`fl.evento`),
-			)
-			.leftJoin(
-				schema.financeiro,
-				eq(sql`fl.idfinanceiro`, schema.financeiro.id),
-			)
+			.leftJoin(flSubquery, joinFl)
+			.leftJoin(schema.financeiro, joinFinanceiro)
+			.leftJoin(schema.entidade, joinEntidade)
 			.where(filtro)
-			.orderBy(ordenacao)
+			.orderBy(
+				ordenacaoPrimaria,
+				desc(schema.contacorrentelancamento.currenttimemillis),
+			)
 			.limit(limit)
 			.offset(offset),
 	]);

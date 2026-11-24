@@ -15,7 +15,12 @@ interface UseContaCorrenteLancamentosParams {
 	historico?: string;
 	documento?: string;
 	planocontasnome?: string;
+	clienteFornecedor?: string;
 	datahora?: string;
+	dataInicio?: string;
+	dataFim?: string;
+	valorMin?: string;
+	valorMax?: string;
 	sentido?: "entrada" | "saida";
 	ordenarPor?: string;
 	ordem?: "asc" | "desc";
@@ -32,7 +37,12 @@ export function useContaCorrenteLancamentos(
 		historico,
 		documento,
 		planocontasnome,
+		clienteFornecedor,
 		datahora,
+		dataInicio,
+		dataFim,
+		valorMin,
+		valorMax,
 		sentido,
 		ordenarPor,
 		ordem,
@@ -49,7 +59,12 @@ export function useContaCorrenteLancamentos(
 			historico,
 			documento,
 			planocontasnome,
+			clienteFornecedor,
 			datahora,
+			dataInicio,
+			dataFim,
+			valorMin,
+			valorMax,
 			sentido,
 			ordenarPor,
 			ordem,
@@ -62,7 +77,12 @@ export function useContaCorrenteLancamentos(
 				...(historico ? { historico } : {}),
 				...(documento ? { documento } : {}),
 				...(planocontasnome ? { planocontasnome } : {}),
+				...(clienteFornecedor ? { clienteFornecedor } : {}),
 				...(datahora ? { datahora } : {}),
+				...(dataInicio ? { dataInicio } : {}),
+				...(dataFim ? { dataFim } : {}),
+				...(valorMin ? { valorMin } : {}),
+				...(valorMax ? { valorMax } : {}),
 				...(sentido ? { sentido } : {}),
 				...(ordenarPor ? { ordenarPor } : {}),
 				...(ordem ? { ordem } : {}),

@@ -174,3 +174,26 @@ export function formatDateTimeBrasilia(
 		: `${parte(parts, "hour")}:${parte(parts, "minute")}`;
 	return `${data} ${hora}`;
 }
+
+/** Serializa um intervalo de datas (`inicio`..`fim`) em string única para filtros de coluna. */
+export function serializarPeriodoFiltro(inicio: string, fim: string): string {
+	const ini = inicio.trim();
+	const end = fim.trim();
+	if (!ini && !end) return "";
+	return `${ini}|${end}`;
+}
+
+/** Extrai `{ inicio, fim }` de um filtro serializado (`inicio|fim` ou `YYYY-MM-DD`). */
+export function extrairPeriodoFiltro(valor?: string | null): {
+	inicio: string;
+	fim: string;
+} {
+	if (!valor) return { inicio: "", fim: "" };
+	const limpo = valor.trim();
+	if (!limpo) return { inicio: "", fim: "" };
+	if (limpo.includes("|")) {
+		const [ini = "", end = ""] = limpo.split("|");
+		return { inicio: ini.trim(), fim: end.trim() };
+	}
+	return { inicio: limpo, fim: limpo };
+}

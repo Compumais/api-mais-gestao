@@ -55,6 +55,9 @@ export function ModalHistoricoBaixasFinanceiro({
 				queryKey: ["financeiro-lancamentos", idfinanceiro],
 			});
 			void queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+			void queryClient.invalidateQueries({
+				queryKey: ["conta-corrente-lancamentos"],
+			});
 		} catch (error) {
 			toast.error(
 				error instanceof Error ? error.message : "Erro ao estornar baixa",

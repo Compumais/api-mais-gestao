@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	cachePaginasVazio,
 	deveAtualizarNodePagina,
+	deveRemontarAbaCongelada,
 	deveTrocarNodePagina,
 	evictPaginasFechadas,
 	ordenarPaginasParaExibicao,
@@ -107,5 +108,39 @@ describe("nav-abas-keep-alive", () => {
 			"/c",
 			"/b",
 		]);
+	});
+
+	it("remonta aba congelada apenas quando navega de outra rota com query diferente", () => {
+		const congeladas = ["/produtos", "/nota-fiscal-venda/nova"];
+		// Mudança de filtro na própria aba ativa não remonta
+		expect(
+			deveRemontarAbaCongelada(
+				congeladas,
+				"/produtos",
+				"/produtos",
+				"q=mouse",
+				"",
+			),
+		).toBe(false);
+		// Voltar para a mesma aba com a mesma query não remonta
+		expect(
+			deveRemontarAbaCongelada(
+				congeladas,
+				"/clientes",
+				"/produtos",
+				"q=mouse",
+				"q=mouse",
+			),
+		).toBe(false);
+		// Entrar vindo de outra aba com query diferente remonta
+		expect(
+			deveRemontarAbaCongelada(
+				congeladas,
+				"/pedidos",
+				"/nota-fiscal-venda/nova",
+				"pedido=123",
+				"",
+			),
+		).toBe(true);
 	});
 });

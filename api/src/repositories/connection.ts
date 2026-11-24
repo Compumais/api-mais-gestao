@@ -1,20 +1,75 @@
 import * as dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { Pool, type PoolConfig } from "pg";
 import * as relations from "../../drizzle/relations.js";
 import * as schema from "../../drizzle/schema.js";
 
 dotenv.config();
 
-export const pool = new Pool({
-	connectionString: process.env.DATABASE_URL,
+function lerInteiroEnv(valor: string | undefined, padrao: number): number {
+	const numero = Number.parseInt(valor ?? "", 10);
+	return Number.isFinite(numero) && numero > 0 ? numero : padrao;
+}
+
+const configBase: Omit<PoolConfig, "connectionString" | "max"> = {
 	keepAlive: true,
-	idleTimeoutMillis: 30_000,
-	connectionTimeoutMillis: 10_000,
+	idleTimeoutMillis: lerInteiroEnv(process.env.DB_IDLE_TIMEOUT_MS, 30_000),
+	connectionTimeoutMillis: lerInteiroEnv(
+		process.env.DB_CONNECTION_TIMEOUT_MS,
+		10_000,
+	),
+	application_name: process.env.DB_APPLICATION_NAME || "api-mais-gestao",
+};
+
+export const pool = new Pool({
+	...configBase,
+	connectionString: process.env.DATABASE_URL,
+	max: lerInteiroEnv(process.env.DB_POOL_MAX, 20),
+});
+
+export const directPool = new Pool({
+	...configBase,
+	connectionString:
+		process.env.DATABASE_DIRECT_URL || process.env.DATABASE_URL,
+	max: lerInteiroEnv(process.env.DB_DIRECT_POOL_MAX, 5),
+	application_name: `${configBase.application_name}-direct`,
 });
 
 pool.on("error", (err) => {
-	console.error("Erro inesperado no cliente idle do pool PostgreSQL:", err.message);
+	console.error(
+		"Erro inesperado no cliente idle do pool PostgreSQL (pooled):",
+		err.message,
+	);
+});
+
+directPool.on("error", (err) => {
+	console.error(
+		"Erro inesperado no cliente idle do pool PostgreSQL (direct):",
+		err.message,
+	);
 });
 
 export const db = drizzle(pool, { schema, ...relations });
+
+export function obterMetricasPool() {
+	return {
+		pooled: {
+			total: pool.totalCount,
+			idle: pool.idleCount,
+			waiting: pool.waitingCount,
+		},
+		direct: {
+			total: directPool.totalCount,
+			idle: directPool.idleCount,
+			waiting: directPool.waitingCount,
+		},
+	};
+}
+
+let encerrandoPools = false;
+
+export async function fecharConexoesBanco(): Promise<void> {
+	if (encerrandoPools) return;
+	encerrandoPools = true;
+	await Promise.allSettled([pool.end(), directPool.end()]);
+}

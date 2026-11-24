@@ -1,0 +1,95 @@
+version: "3.8"
+
+services:
+  api:
+    image: ghcr.io/${GHCR_REPOSITORY_LOWER}-api:latest
+    container_name: mais-gestao-api
+    restart: unless-stopped
+    env_file:
+      - /opt/mais-gestao/.env.api
+    # Permite dd-trace enviar traces ao Agent no host (porta 8126).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:3333:3333"
+    volumes:
+      - /opt/mais-gestao/pdv-updates:/opt/mais-gestao/pdv-updates:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3333/health >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+    networks:
+      - mais-gestao
+    labels:
+      com.datadoghq.ad.logs: '[{"source":"nodejs","service":"api-mais-gestao"}]'
+      com.datadoghq.tags.env: "prod"
+      com.datadoghq.tags.service: "api-mais-gestao"
+      com.datadoghq.tags.project: "mais-gestao"
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: mais-gestao-pgbouncer
+    restart: unless-stopped
+    environment:
+      DB_USER: ${POSTGRES_USER:-mais_gestao}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-mais_gestao}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-mais_gestao}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 25
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 5
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits,search_path
+      AUTH_TYPE: scram-sha-256
+    ports:
+      - "127.0.0.1:6432:5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mais-gestao
+    labels:
+      com.datadoghq.ad.logs: '[{"source":"pgbouncer","service":"mais-gestao-pgbouncer"}]'
+      com.datadoghq.tags.env: "prod"
+      com.datadoghq.tags.service: "mais-gestao-pgbouncer"
+      com.datadoghq.tags.project: "mais-gestao"
+
+  postgres:
+    image: postgres:17
+    container_name: mais-gestao-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mais_gestao}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mais_gestao}
+      POSTGRES_DB: ${POSTGRES_DB:-mais_gestao}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mais_gestao} -d ${POSTGRES_DB:-mais_gestao}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mais-gestao
+    labels:
+      com.datadoghq.ad.logs: '[{"source":"postgresql","service":"mais-gestao-db"}]'
+      com.datadoghq.tags.env: "prod"
+      com.datadoghq.tags.service: "mais-gestao-db"
+
+networks:
+  mais-gestao:
+    driver: bridge
+
+volumes:
+  pg_data:

@@ -20,6 +20,7 @@ export interface ContaCorrenteLancamento {
 	planocontascodigo?: string | null;
 	contacorrentedescricao?: string | null;
 	contacorrenteagencia?: string | null;
+	entidadenome?: string | null;
 }
 
 export interface ListarContaCorrenteLancamentosResponse {
@@ -77,7 +78,12 @@ export const contaCorrenteLancamentoService = {
 		historico?: string;
 		documento?: string;
 		planocontasnome?: string;
+		clienteFornecedor?: string;
 		datahora?: string;
+		dataInicio?: string;
+		dataFim?: string;
+		valorMin?: string;
+		valorMax?: string;
 		sentido?: "entrada" | "saida";
 		ordenarPor?: string;
 		ordem?: "asc" | "desc";

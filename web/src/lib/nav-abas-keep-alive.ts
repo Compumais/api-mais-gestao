@@ -33,6 +33,24 @@ export function deveTrocarNodePagina(
 }
 
 /**
+ * Indica se uma aba que já estava congelada recebeu navegação externa
+ * com uma query string diferente (ex.: abrir NF-e com outro `?reemitir=`).
+ * Mudanças de query feitas dentro da própria aba ativa (`pathnameAnterior === pathname`,
+ * como filtros `?q=`) não devem remontar a árvore.
+ */
+export function deveRemontarAbaCongelada(
+	congeladas: readonly string[],
+	pathnameAnterior: string,
+	pathname: string,
+	searchAtual: string,
+	searchCacheado: string | undefined,
+): boolean {
+	if (!pathname || pathnameAnterior === pathname) return false;
+	if (!congeladas.includes(pathname)) return false;
+	return searchCacheado !== undefined && searchCacheado !== searchAtual;
+}
+
+/**
  * Ao sair de uma rota, congela o último tree para a aba poder voltar
  * com o mesmo estado. A rota atual continua recebendo children novos
  * (loading → conteúdo) até o usuário navegar para outra aba.

@@ -9,7 +9,7 @@ import {
 } from "@/repositories/schema.js";
 import { AMBIENTE_SEFAZ } from "@/util/ambiente-sefaz.js";
 import { limitesUtcDoPeriodoBrasilia } from "@/util/data-hora-brasilia.js";
-import { db, pool } from "./connection.js";
+import { db, directPool } from "./connection.js";
 
 export async function buscarVendaPdvGourmetPorId(id: string) {
 	const [registro] = await db
@@ -58,7 +58,7 @@ export async function executarComLockVendaPdvLocal<T>(
 	idvendalocal: string,
 	executar: () => Promise<T>,
 ): Promise<T> {
-	const cliente = await pool.connect();
+	const cliente = await directPool.connect();
 	const chave = `venda-pdv:${idempresa}:${numeropdv}:${idvendalocal}`;
 	try {
 		await cliente.query("SELECT pg_advisory_lock(hashtextextended($1, 0))", [

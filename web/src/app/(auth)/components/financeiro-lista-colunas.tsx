@@ -14,11 +14,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { formatDataCivilBrasilia } from "@/lib/date";
+import {
+	extrairPeriodoFiltro,
+	formatDataCivilBrasilia,
+} from "@/lib/date";
 import {
 	ehTituloPagoSemRastreio,
 	ehTituloParcial,
 	type Financeiro,
+	type ListarFinanceirosParams,
 } from "@/services/financeiro.service";
 
 export type VarianteFinanceiroLista = "pagar" | "receber";
@@ -40,6 +44,14 @@ export type FiltrosColunaFinanceiroState = {
 	status: string;
 	emissao: string;
 	vencimento: string;
+	vencimentooriginal: string;
+	ultimopagamento: string;
+	baixa: string;
+	datareferencia: string;
+	entrada: string;
+	planocontasnome: string;
+	nossonumero: string;
+	historico: string;
 };
 
 export const filtrosColunaFinanceiroVazios: FiltrosColunaFinanceiroState = {
@@ -50,6 +62,14 @@ export const filtrosColunaFinanceiroVazios: FiltrosColunaFinanceiroState = {
 	status: "",
 	emissao: "",
 	vencimento: "",
+	vencimentooriginal: "",
+	ultimopagamento: "",
+	baixa: "",
+	datareferencia: "",
+	entrada: "",
+	planocontasnome: "",
+	nossonumero: "",
+	historico: "",
 };
 
 export type CampoFiltroColunaFinanceiro = keyof FiltrosColunaFinanceiroState;
@@ -65,6 +85,14 @@ export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
 	status: "status",
 	emissao: "emissao",
 	vencimento: "vencimento",
+	vencimentooriginal: "vencimentooriginal",
+	ultimopagamento: "ultimopagamento",
+	baixa: "baixa",
+	datareferencia: "datareferencia",
+	entrada: "entrada",
+	planocontas: "planocontasnome",
+	nossonumero: "nossonumero",
+	historico: "historico",
 };
 
 export const COLUNA_PARA_ORDENAR_FINANCEIRO: Record<string, string> = {
@@ -75,8 +103,18 @@ export const COLUNA_PARA_ORDENAR_FINANCEIRO: Record<string, string> = {
 	status: "status",
 	emissao: "emissao",
 	vencimento: "vencimento",
+	vencimentooriginal: "vencimentooriginal",
+	ultimopagamento: "ultimopagamento",
+	baixa: "baixa",
+	datareferencia: "datareferencia",
+	entrada: "entrada",
 	valor: "valor",
 	saldo: "saldo",
+	valorpagorecebido: "valorpagorecebido",
+	planocontas: "planocontasnome",
+	banco: "banconome",
+	nossonumero: "nossonumero",
+	historico: "historico",
 };
 
 export type ConfigFiltroColunaFinanceiro = {
@@ -85,9 +123,85 @@ export type ConfigFiltroColunaFinanceiro = {
 	placeholder?: string;
 };
 
+export function criarConfigFiltroColunasFinanceiro(
+	opcoesTipoCobranca: OpcaoFiltroColunaTabela[],
+): Record<string, ConfigFiltroColunaFinanceiro> {
+	return {
+		documento: { tipo: "texto", placeholder: "Documento" },
+		tipodocumento: { tipo: "texto", placeholder: "Tipo de documento" },
+		cobranca: { tipo: "opcoes", opcoes: opcoesTipoCobranca },
+		emitente: { tipo: "texto", placeholder: "Nome" },
+		parcela: { tipo: "nenhum" },
+		status: { tipo: "opcoes", opcoes: STATUS_OPCOES_FILTRO },
+		emissao: { tipo: "periodo" },
+		vencimento: { tipo: "periodo" },
+		vencimentooriginal: { tipo: "periodo" },
+		ultimopagamento: { tipo: "periodo" },
+		baixa: { tipo: "periodo" },
+		datareferencia: { tipo: "periodo" },
+		entrada: { tipo: "periodo" },
+		valor: { tipo: "nenhum" },
+		saldo: { tipo: "nenhum" },
+		valorpagorecebido: { tipo: "nenhum" },
+		planocontas: { tipo: "texto", placeholder: "Plano de contas" },
+		centrocusto: { tipo: "nenhum" },
+		banco: { tipo: "nenhum" },
+		nossonumero: { tipo: "texto", placeholder: "Nosso número" },
+		historico: { tipo: "texto", placeholder: "Histórico" },
+	};
+}
+
+export function montarParamsFiltroFinanceiro(
+	filtros: FiltrosColunaFinanceiroState,
+): Partial<ListarFinanceirosParams> {
+	const emissao = extrairPeriodoFiltro(filtros.emissao);
+	const vencimento = extrairPeriodoFiltro(filtros.vencimento);
+	const vencimentoOriginal = extrairPeriodoFiltro(filtros.vencimentooriginal);
+	const pagamento = extrairPeriodoFiltro(filtros.ultimopagamento);
+	const baixa = extrairPeriodoFiltro(filtros.baixa);
+	const referencia = extrairPeriodoFiltro(filtros.datareferencia);
+	const entrada = extrairPeriodoFiltro(filtros.entrada);
+
+	return {
+		...(filtros.documento ? { documento: filtros.documento } : {}),
+		...(filtros.tipodocumentodescricao
+			? { tipodocumentodescricao: filtros.tipodocumentodescricao }
+			: {}),
+		...(filtros.idtipocobranca
+			? { idtipocobranca: filtros.idtipocobranca }
+			: {}),
+		...(filtros.emitente ? { emitente: filtros.emitente } : {}),
+		...(filtros.status ? { status: filtros.status } : {}),
+		...(filtros.planocontasnome
+			? { planocontasnome: filtros.planocontasnome }
+			: {}),
+		...(filtros.nossonumero ? { nossonumero: filtros.nossonumero } : {}),
+		...(filtros.historico ? { historico: filtros.historico } : {}),
+		...(emissao.inicio ? { emissaoInicio: emissao.inicio } : {}),
+		...(emissao.fim ? { emissaoFim: emissao.fim } : {}),
+		...(vencimento.inicio ? { vencimentoInicio: vencimento.inicio } : {}),
+		...(vencimento.fim ? { vencimentoFim: vencimento.fim } : {}),
+		...(vencimentoOriginal.inicio
+			? { vencimentooriginalInicio: vencimentoOriginal.inicio }
+			: {}),
+		...(vencimentoOriginal.fim
+			? { vencimentooriginalFim: vencimentoOriginal.fim }
+			: {}),
+		...(pagamento.inicio ? { pagamentoInicio: pagamento.inicio } : {}),
+		...(pagamento.fim ? { pagamentoFim: pagamento.fim } : {}),
+		...(baixa.inicio ? { baixaInicio: baixa.inicio } : {}),
+		...(baixa.fim ? { baixaFim: baixa.fim } : {}),
+		...(referencia.inicio ? { datareferenciaInicio: referencia.inicio } : {}),
+		...(referencia.fim ? { datareferenciaFim: referencia.fim } : {}),
+		...(entrada.inicio ? { entradaInicio: entrada.inicio } : {}),
+		...(entrada.fim ? { entradaFim: entrada.fim } : {}),
+	};
+}
+
 type DefinicaoColunaFinanceiro = {
 	id: string;
 	label: string;
+	labelReceber?: string;
 	visivelPadrao: boolean;
 	enableHiding?: boolean;
 	somenteReceber?: boolean;
@@ -103,7 +217,22 @@ const DEFINICOES_BASE: DefinicaoColunaFinanceiro[] = [
 	{ id: "status", label: "Status", visivelPadrao: true },
 	{ id: "emissao", label: "Emissão", visivelPadrao: true },
 	{ id: "vencimento", label: "Vencimento", visivelPadrao: true },
+	{ id: "ultimopagamento", label: "Último pagamento", visivelPadrao: true },
+	{ id: "baixa", label: "Data da baixa", visivelPadrao: false },
+	{ id: "datareferencia", label: "Competência", visivelPadrao: false },
+	{ id: "entrada", label: "Entrada", visivelPadrao: false },
+	{
+		id: "vencimentooriginal",
+		label: "Vencimento original",
+		visivelPadrao: false,
+	},
 	{ id: "valor", label: "Valor", visivelPadrao: true },
+	{
+		id: "valorpagorecebido",
+		label: "Valor pago",
+		labelReceber: "Valor recebido",
+		visivelPadrao: false,
+	},
 	{ id: "saldo", label: "Saldo", visivelPadrao: true },
 	{
 		id: "saldoSemJurosMulta",
@@ -111,6 +240,11 @@ const DEFINICOES_BASE: DefinicaoColunaFinanceiro[] = [
 		visivelPadrao: true,
 		somenteReceber: true,
 	},
+	{ id: "planocontas", label: "Plano de contas", visivelPadrao: false },
+	{ id: "centrocusto", label: "Centro de custo", visivelPadrao: false },
+	{ id: "banco", label: "Banco", visivelPadrao: false },
+	{ id: "nossonumero", label: "Nosso número", visivelPadrao: false },
+	{ id: "historico", label: "Histórico", visivelPadrao: false },
 	{ id: "tipo", label: "Tipo", visivelPadrao: false },
 	{ id: "acoes", label: "Ações", visivelPadrao: true, enableHiding: false },
 ];
@@ -188,10 +322,12 @@ export function formatNome(
 	financeiro: Financeiro,
 	variante: VarianteFinanceiroLista,
 ) {
+	const nomeBase =
+		financeiro.emitente?.trim() || financeiro.entidadenome?.trim() || "";
 	if (variante === "pagar") {
-		return financeiro.emitente || "-";
+		return nomeBase || "-";
 	}
-	return financeiro.emitente?.trim() || financeiro.historico?.trim() || "-";
+	return nomeBase || financeiro.historico?.trim() || "-";
 }
 
 export function getStatusBadge(
@@ -312,7 +448,11 @@ export function criarColunasFinanceiro(
 	const colunas: ColumnDef<Financeiro>[] = [];
 
 	for (const def of definicoesParaVariante(opcoes.variante)) {
-		const meta = { label: def.label };
+		const rotulo =
+			opcoes.variante === "receber" && def.labelReceber
+				? def.labelReceber
+				: def.label;
+		const meta = { label: rotulo };
 
 		if (def.id === "select") {
 			colunas.push({
@@ -340,7 +480,7 @@ export function criarColunasFinanceiro(
 		if (def.id === "saldoSemJurosMulta") {
 			colunas.push({
 				id: "saldoSemJurosMulta",
-				header: () => <div className="text-right">{def.label}</div>,
+				header: () => <div className="text-right">{rotulo}</div>,
 				enableSorting: false,
 				meta,
 				cell: ({ row }) => {
@@ -359,7 +499,7 @@ export function criarColunasFinanceiro(
 			colunas.push({
 				id: "tipo",
 				accessorKey: "tipo",
-				header: def.label,
+				header: rotulo,
 				meta,
 				cell: ({ row }) => {
 					const tipo = row.original.tipo;
@@ -373,7 +513,7 @@ export function criarColunasFinanceiro(
 			continue;
 		}
 
-		const header = () => criarHeaderColuna(def, opcoes);
+		const header = () => criarHeaderColuna({ id: def.id, label: rotulo }, opcoes);
 
 		switch (def.id) {
 			case "documento":
@@ -497,6 +637,61 @@ export function criarColunasFinanceiro(
 					cell: ({ row }) => <div>{formatDate(row.original.vencimento)}</div>,
 				});
 				break;
+			case "vencimentooriginal":
+				colunas.push({
+					id: "vencimentooriginal",
+					accessorKey: "vencimentooriginal",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div>{formatDate(row.original.vencimentooriginal)}</div>
+					),
+				});
+				break;
+			case "ultimopagamento":
+				colunas.push({
+					id: "ultimopagamento",
+					accessorKey: "ultimopagamento",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div>
+							{formatDate(
+								row.original.ultimopagamento ?? row.original.pagamento,
+							)}
+						</div>
+					),
+				});
+				break;
+			case "baixa":
+				colunas.push({
+					id: "baixa",
+					accessorKey: "baixa",
+					header,
+					meta,
+					cell: ({ row }) => <div>{formatDate(row.original.baixa)}</div>,
+				});
+				break;
+			case "datareferencia":
+				colunas.push({
+					id: "datareferencia",
+					accessorKey: "datareferencia",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div>{formatDate(row.original.datareferencia)}</div>
+					),
+				});
+				break;
+			case "entrada":
+				colunas.push({
+					id: "entrada",
+					accessorKey: "entrada",
+					header,
+					meta,
+					cell: ({ row }) => <div>{formatDate(row.original.entrada)}</div>,
+				});
+				break;
 			case "valor":
 				colunas.push({
 					id: "valor",
@@ -510,6 +705,19 @@ export function criarColunasFinanceiro(
 					),
 				});
 				break;
+			case "valorpagorecebido":
+				colunas.push({
+					id: "valorpagorecebido",
+					accessorKey: "valorpagorecebido",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div className="text-right font-medium">
+							{formatCurrency(row.original.valorpagorecebido)}
+						</div>
+					),
+				});
+				break;
 			case "saldo":
 				colunas.push({
 					id: "saldo",
@@ -519,6 +727,76 @@ export function criarColunasFinanceiro(
 					cell: ({ row }) => (
 						<div className="text-right font-medium">
 							{formatCurrency(row.original.saldo)}
+						</div>
+					),
+				});
+				break;
+			case "planocontas":
+				colunas.push({
+					id: "planocontas",
+					accessorKey: "planocontasnome",
+					header,
+					meta,
+					cell: ({ row }) => {
+						const codigo = row.original.planocontascodigo?.trim();
+						const nome = row.original.planocontasnome?.trim();
+						const texto =
+							codigo && nome ? `${codigo} — ${nome}` : nome || codigo || "-";
+						return <div className="max-w-[200px] truncate">{texto}</div>;
+					},
+				});
+				break;
+			case "centrocusto":
+				colunas.push({
+					id: "centrocusto",
+					accessorKey: "centrocustonome",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div className="max-w-[180px] truncate">
+							{row.original.centrocustonome || "-"}
+						</div>
+					),
+				});
+				break;
+			case "banco":
+				colunas.push({
+					id: "banco",
+					accessorKey: "banconome",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div className="max-w-[160px] truncate">
+							{row.original.banconome || "-"}
+						</div>
+					),
+				});
+				break;
+			case "nossonumero":
+				colunas.push({
+					id: "nossonumero",
+					accessorKey: "nossonumero",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div className="max-w-[140px] truncate">
+							{row.original.nossonumero || "-"}
+						</div>
+					),
+				});
+				break;
+			case "historico":
+				colunas.push({
+					id: "historico",
+					accessorKey: "historico",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div
+							className="max-w-[220px] truncate"
+							title={row.original.historico ?? undefined}
+						>
+							{row.original.historico || "-"}
 						</div>
 					),
 				});

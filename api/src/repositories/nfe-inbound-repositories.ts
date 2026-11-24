@@ -4,8 +4,9 @@ import type {
 	StatusManifestacaoInbound,
 	TipoDocumentoInbound,
 } from "@/model/nfe-inbound-model.js";
+import type { PoolClient } from "pg";
 import * as schema from "../../drizzle/schema.js";
-import { db } from "./connection.js";
+import { db, directPool } from "./connection.js";
 
 export type NfeInboundDocumentoRow =
 	typeof schema.nfeinbounddocumento.$inferSelect;
@@ -324,16 +325,45 @@ export async function listarEmpresasComSyncInboundHabilitado(): Promise<
 	return resultado.map((r) => r.idempresa);
 }
 
+const clientesLockEmpresa = new Map<number, PoolClient>();
+
 export async function tentarAdquirirLockEmpresa(
 	lockId: number,
 ): Promise<boolean> {
-	const result = await db.execute(
-		sql`SELECT pg_try_advisory_lock(${lockId}) as locked`,
-	);
-	const rows = (result.rows ?? result) as { locked: boolean }[];
-	return rows[0]?.locked === true;
+	const clienteExistente = clientesLockEmpresa.get(lockId);
+	if (clienteExistente) {
+		return true;
+	}
+
+	const cliente = await directPool.connect();
+	try {
+		const resultado = await cliente.query<{ locked: boolean }>(
+			"SELECT pg_try_advisory_lock($1) as locked",
+			[lockId],
+		);
+		const adquiriu = resultado.rows[0]?.locked === true;
+		if (adquiriu) {
+			clientesLockEmpresa.set(lockId, cliente);
+			return true;
+		}
+		cliente.release();
+		return false;
+	} catch (erro) {
+		cliente.release();
+		throw erro;
+	}
 }
 
 export async function liberarLockEmpresa(lockId: number): Promise<void> {
-	await db.execute(sql`SELECT pg_advisory_unlock(${lockId})`);
+	const cliente = clientesLockEmpresa.get(lockId);
+	if (!cliente) {
+		return;
+	}
+
+	try {
+		await cliente.query("SELECT pg_advisory_unlock($1)", [lockId]);
+	} finally {
+		clientesLockEmpresa.delete(lockId);
+		cliente.release();
+	}
 }

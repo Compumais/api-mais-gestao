@@ -3,7 +3,10 @@ import type { FinanceiroLancamento } from "@/model/financeiro-lancamentos-model.
 import type { HttpResponse } from "@/model/http-model.js";
 import { db } from "@/repositories/connection.js";
 import { listarContaCorrenteLancamentoPorEvento } from "@/repositories/conta-corrente-lancamento-repositories.js";
-import { buscarFinanceiroLancamentoPorId } from "@/repositories/financeiro-lancamento-repositories.js";
+import {
+	buscarFinanceiroLancamentoPorId,
+	buscarUltimaBaixaAtivaExceto,
+} from "@/repositories/financeiro-lancamento-repositories.js";
 import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
 import { inserirLancamentoCaixa } from "@/service/conta-corrente/inserir-lancamento-caixa.js";
 import { resolverValorAbatimentoSaldo } from "@/service/financeirolancamento/criar-financeiro-lancamento.js";
@@ -79,6 +82,18 @@ export async function estornarFinanceiroLancamentoService({
 	const movimentosOriginais = await listarContaCorrenteLancamentoPorEvento(
 		lancamento.evento,
 	);
+	const ultimaBaixaRemanescente =
+		statusNovo === "A"
+			? await buscarUltimaBaixaAtivaExceto(financeiro.id, id)
+			: undefined;
+	const baixaRestaurada =
+		statusNovo === "A"
+			? (ultimaBaixaRemanescente?.baixa?.slice(0, 10) ?? null)
+			: financeiro.baixa;
+	const pagamentoRestaurado =
+		statusNovo === "A"
+			? (ultimaBaixaRemanescente?.pagamento ?? null)
+			: financeiro.pagamento;
 
 	try {
 		const lancamentoEstornado = await db.transaction(async (tx) => {
@@ -101,8 +116,8 @@ export async function estornarFinanceiroLancamentoService({
 					saldo: formatarValorMonetario(saldoNovo),
 					status: statusNovo,
 					valorpagorecebido: formatarValorMonetario(valorPagoNovo),
-					baixa: statusNovo === "A" ? null : financeiro.baixa,
-					pagamento: statusNovo === "A" ? null : financeiro.pagamento,
+					baixa: baixaRestaurada,
+					pagamento: pagamentoRestaurado,
 				})
 				.where(eq(schema.financeiro.id, financeiro.id));
 

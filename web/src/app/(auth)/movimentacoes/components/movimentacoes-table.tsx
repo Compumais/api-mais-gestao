@@ -5,7 +5,9 @@ import {
 	IconDotsVertical,
 	IconLayoutColumns,
 	IconPencil,
+	IconSearch,
 	IconTrash,
+	IconX,
 } from "@tabler/icons-react";
 import {
 	flexRender,
@@ -23,6 +25,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -47,6 +50,7 @@ import {
 	TABELA_MOVIMENTACOES,
 	useColunasTabelaPersistidas,
 } from "@/hooks/use-preferencias-ui-usuario";
+import { extrairPeriodoFiltro, serializarPeriodoFiltro } from "@/lib/date";
 import type { ContaCorrenteLancamento } from "@/services/conta-corrente-lancamento.service";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_MOVIMENTACAO,
@@ -80,17 +84,47 @@ function filtrosColunaAtivos(filtros: FiltrosColunaMovimentacoesState) {
 	return Object.values(filtros).some((valor) => valor.trim() !== "");
 }
 
+type FiltrosBarraMovimentacoes = {
+	clienteFornecedor: string;
+	dataInicio: string;
+	dataFim: string;
+	valorMin: string;
+	valorMax: string;
+};
+
+const filtrosBarraVazios: FiltrosBarraMovimentacoes = {
+	clienteFornecedor: "",
+	dataInicio: "",
+	dataFim: "",
+	valorMin: "",
+	valorMax: "",
+};
+
+function filtrosBarraAtivos(filtros: FiltrosBarraMovimentacoes) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
+
 export function MovimentacoesTable({
 	idcontacorrente,
 	onEdit,
 }: MovimentacoesTableProps) {
 	const idPorPagina = useId();
+	const idBuscaPessoa = useId();
+	const idDataInicio = useId();
+	const idDataFim = useId();
+	const idValorMin = useId();
+	const idValorMax = useId();
+
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
 	const [filtrosColuna, setFiltrosColuna] =
 		useState<FiltrosColunaMovimentacoesState>(filtrosColunaMovimentacoesVazios);
+	const [rascunhoBarra, setRascunhoBarra] =
+		useState<FiltrosBarraMovimentacoes>(filtrosBarraVazios);
+	const [filtrosBarra, setFiltrosBarra] =
+		useState<FiltrosBarraMovimentacoes>(filtrosBarraVazios);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 
@@ -119,6 +153,68 @@ export function MovimentacoesTable({
 		const campo = COLUNA_PARA_CAMPO_FILTRO_MOVIMENTACAO[colunaId];
 		if (!campo) return;
 		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		if (campo === "datahora") {
+			const periodo = extrairPeriodoFiltro(valor);
+			setRascunhoBarra((b) => ({
+				...b,
+				dataInicio: periodo.inicio,
+				dataFim: periodo.fim,
+			}));
+			setFiltrosBarra((b) => ({
+				...b,
+				dataInicio: periodo.inicio,
+				dataFim: periodo.fim,
+			}));
+		} else if (campo === "entidadenome") {
+			setRascunhoBarra((b) => ({ ...b, clienteFornecedor: valor }));
+			setFiltrosBarra((b) => ({ ...b, clienteFornecedor: valor }));
+		}
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const aplicarFiltrosBarra = useCallback(() => {
+		let inicio = rascunhoBarra.dataInicio.trim();
+		let fim = rascunhoBarra.dataFim.trim();
+		if (inicio && fim && inicio > fim) {
+			[inicio, fim] = [fim, inicio];
+		}
+		let min = rascunhoBarra.valorMin.trim();
+		let max = rascunhoBarra.valorMax.trim();
+		const minNum = Number(min.replace(",", "."));
+		const maxNum = Number(max.replace(",", "."));
+		if (
+			min &&
+			max &&
+			Number.isFinite(minNum) &&
+			Number.isFinite(maxNum) &&
+			minNum > maxNum
+		) {
+			[min, max] = [max, min];
+		}
+
+		const normalizado: FiltrosBarraMovimentacoes = {
+			clienteFornecedor: rascunhoBarra.clienteFornecedor.trim(),
+			dataInicio: inicio,
+			dataFim: fim,
+			valorMin: min,
+			valorMax: max,
+		};
+		setRascunhoBarra(normalizado);
+		setFiltrosBarra(normalizado);
+		setFiltrosColuna((atual) => ({
+			...atual,
+			datahora: serializarPeriodoFiltro(inicio, fim),
+			entidadenome: normalizado.clienteFornecedor,
+		}));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, [rascunhoBarra]);
+
+	const limparTodosFiltros = useCallback(() => {
+		setRascunhoBarra(filtrosBarraVazios);
+		setFiltrosBarra(filtrosBarraVazios);
+		setFiltrosColuna(filtrosColunaMovimentacoesVazios);
+		setOrdenarPor(null);
+		setOrdem(null);
 		setPagination((p) => ({ ...p, pageIndex: 0 }));
 	}, []);
 
@@ -127,7 +223,8 @@ export function MovimentacoesTable({
 		ConfigFiltroColunaMovimentacao
 	> => {
 		return {
-			datahora: { tipo: "data" },
+			datahora: { tipo: "periodo" },
+			entidadenome: { tipo: "texto", placeholder: "Cliente / Fornecedor" },
 			historico: { tipo: "texto", placeholder: "Histórico" },
 			entrada: { tipo: "opcoes", opcoes: SENTIDO_OPCOES_FILTRO },
 			saida: { tipo: "nenhum" },
@@ -137,6 +234,12 @@ export function MovimentacoesTable({
 		};
 	}, []);
 
+	const periodoColuna = extrairPeriodoFiltro(filtrosColuna.datahora);
+	const dataInicioEfetiva = filtrosBarra.dataInicio || periodoColuna.inicio;
+	const dataFimEfetiva = filtrosBarra.dataFim || periodoColuna.fim;
+	const pessoaEfetiva =
+		filtrosBarra.clienteFornecedor || filtrosColuna.entidadenome;
+
 	const { data, isLoading } = useContaCorrenteLancamentos({
 		idcontacorrente,
 		page: pagination.pageIndex + 1,
@@ -144,7 +247,11 @@ export function MovimentacoesTable({
 		historico: filtrosColuna.historico || undefined,
 		documento: filtrosColuna.documento || undefined,
 		planocontasnome: filtrosColuna.planocontasnome || undefined,
-		datahora: filtrosColuna.datahora || undefined,
+		clienteFornecedor: pessoaEfetiva || undefined,
+		dataInicio: dataInicioEfetiva || undefined,
+		dataFim: dataFimEfetiva || undefined,
+		valorMin: filtrosBarra.valorMin || undefined,
+		valorMax: filtrosBarra.valorMax || undefined,
 		sentido:
 			filtrosColuna.sentido === "entrada" || filtrosColuna.sentido === "saida"
 				? filtrosColuna.sentido
@@ -237,14 +344,130 @@ export function MovimentacoesTable({
 
 	const colunasVisiveis = table.getVisibleLeafColumns();
 	const mostrarSkeleton = isLoading || isLoadingPreferencias;
-	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
-
-	if (mostrarSkeleton) {
-		return <MovimentacoesTableSkeleton />;
-	}
+	const comFiltros =
+		filtrosColunaAtivos(filtrosColuna) ||
+		filtrosBarraAtivos(filtrosBarra) ||
+		!!ordenarPor;
 
 	return (
 		<div className="flex flex-col gap-4">
+			<div className="rounded-lg border bg-card p-4">
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(200px,1.5fr)_1fr_1fr_1fr_1fr_auto] lg:items-end">
+					<div className="space-y-1.5">
+						<Label htmlFor={idBuscaPessoa}>Cliente / Fornecedor</Label>
+						<Input
+							id={idBuscaPessoa}
+							type="text"
+							placeholder="Buscar por cliente ou fornecedor..."
+							value={rascunhoBarra.clienteFornecedor}
+							onChange={(e) =>
+								setRascunhoBarra((b) => ({
+									...b,
+									clienteFornecedor: e.target.value,
+								}))
+							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									aplicarFiltrosBarra();
+								}
+							}}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor={idDataInicio}>Data início</Label>
+						<Input
+							id={idDataInicio}
+							type="date"
+							value={rascunhoBarra.dataInicio}
+							onChange={(e) =>
+								setRascunhoBarra((b) => ({ ...b, dataInicio: e.target.value }))
+							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									aplicarFiltrosBarra();
+								}
+							}}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor={idDataFim}>Data fim</Label>
+						<Input
+							id={idDataFim}
+							type="date"
+							value={rascunhoBarra.dataFim}
+							onChange={(e) =>
+								setRascunhoBarra((b) => ({ ...b, dataFim: e.target.value }))
+							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									aplicarFiltrosBarra();
+								}
+							}}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor={idValorMin}>Valor mín. (R$)</Label>
+						<Input
+							id={idValorMin}
+							type="number"
+							step="0.01"
+							min="0"
+							placeholder="0,00"
+							value={rascunhoBarra.valorMin}
+							onChange={(e) =>
+								setRascunhoBarra((b) => ({ ...b, valorMin: e.target.value }))
+							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									aplicarFiltrosBarra();
+								}
+							}}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor={idValorMax}>Valor máx. (R$)</Label>
+						<Input
+							id={idValorMax}
+							type="number"
+							step="0.01"
+							min="0"
+							placeholder="0,00"
+							value={rascunhoBarra.valorMax}
+							onChange={(e) =>
+								setRascunhoBarra((b) => ({ ...b, valorMax: e.target.value }))
+							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									aplicarFiltrosBarra();
+								}
+							}}
+						/>
+					</div>
+					<div className="flex flex-wrap items-center gap-2">
+						<Button type="button" onClick={aplicarFiltrosBarra}>
+							<IconSearch className="size-4" />
+							Filtrar
+						</Button>
+						{comFiltros && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={limparTodosFiltros}
+							>
+								<IconX className="size-4" />
+								Limpar
+							</Button>
+						)}
+					</div>
+				</div>
+			</div>
+
 			<div className="flex items-center justify-end">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
@@ -277,7 +500,10 @@ export function MovimentacoesTable({
 				</DropdownMenu>
 			</div>
 
-			<div className="overflow-hidden rounded-lg border bg-card">
+			{mostrarSkeleton ? (
+				<MovimentacoesTableSkeleton />
+			) : (
+				<div className="overflow-hidden rounded-lg border bg-card">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
@@ -383,7 +609,8 @@ export function MovimentacoesTable({
 						</div>
 					</div>
 				)}
-			</div>
+				</div>
+			)}
 		</div>
 	);
 }

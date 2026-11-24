@@ -1,4 +1,4 @@
-import { count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, ne, sql } from "drizzle-orm";
 import type { NovoFinanceiroLancamento } from "@/model/financeiro-lancamentos-model.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
@@ -76,4 +76,27 @@ export async function listarFinanceiroLancamento({
 		financeiroLancamentos,
 		total: totalCount[0]?.value ?? 0,
 	};
+}
+
+export async function buscarUltimaBaixaAtivaExceto(
+	idfinanceiro: string,
+	idLancamentoIgnorado: string,
+) {
+	const [lancamento] = await db
+		.select()
+		.from(schema.financeirolancamento)
+		.where(
+			and(
+				eq(schema.financeirolancamento.idfinanceiro, idfinanceiro),
+				ne(schema.financeirolancamento.id, idLancamentoIgnorado),
+				sql`COALESCE(${schema.financeirolancamento.cancelado}, 0) = 0`,
+			),
+		)
+		.orderBy(
+			desc(schema.financeirolancamento.pagamento),
+			desc(schema.financeirolancamento.currenttimemillis),
+		)
+		.limit(1);
+
+	return lancamento;
 }

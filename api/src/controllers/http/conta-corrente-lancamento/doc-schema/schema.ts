@@ -201,9 +201,29 @@ export const listarContaCorrenteLancamentoSchema: FastifySchema = {
 			historico: { type: "string" },
 			documento: { type: "string" },
 			planocontasnome: { type: "string" },
+			clienteFornecedor: {
+				type: "string",
+				description: "Filtro por cliente ou fornecedor vinculado ao título",
+			},
 			datahora: {
 				type: "string",
 				description: "Filtro por data (YYYY-MM-DD)",
+			},
+			dataInicio: {
+				type: "string",
+				description: "Data inicial do período (YYYY-MM-DD)",
+			},
+			dataFim: {
+				type: "string",
+				description: "Data final do período (YYYY-MM-DD)",
+			},
+			valorMin: {
+				type: "string",
+				description: "Valor mínimo da movimentação",
+			},
+			valorMax: {
+				type: "string",
+				description: "Valor máximo da movimentação",
 			},
 			sentido: {
 				type: "string",
@@ -218,6 +238,7 @@ export const listarContaCorrenteLancamentoSchema: FastifySchema = {
 					"saldoatual",
 					"planocontasnome",
 					"documento",
+					"entidadenome",
 				],
 			},
 			ordem: { type: "string", enum: ["asc", "desc"] },
@@ -262,6 +283,7 @@ export const listarContaCorrenteLancamentoSchema: FastifySchema = {
 							planocontascodigo: { type: "string", nullable: true },
 							contacorrentedescricao: { type: "string", nullable: true },
 							contacorrenteagencia: { type: "string", nullable: true },
+							entidadenome: { type: "string", nullable: true },
 						},
 					},
 				},

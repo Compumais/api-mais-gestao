@@ -14,12 +14,15 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { extrairPeriodoFiltro, serializarPeriodoFiltro } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 export type TipoFiltroColunaTabela =
 	| "nenhum"
 	| "texto"
 	| "data"
+	| "periodo"
 	| "opcoes"
 	| "catalogo";
 
@@ -56,9 +59,15 @@ export function CabecalhoColunaTabela({
 	placeholderFiltro = "Filtrar...",
 }: CabecalhoColunaTabelaProps) {
 	const [rascunho, setRascunho] = useState(valorFiltro);
+	const periodoInicial = extrairPeriodoFiltro(valorFiltro);
+	const [rascunhoInicio, setRascunhoInicio] = useState(periodoInicial.inicio);
+	const [rascunhoFim, setRascunhoFim] = useState(periodoInicial.fim);
 
 	useEffect(() => {
 		setRascunho(valorFiltro);
+		const parsed = extrairPeriodoFiltro(valorFiltro);
+		setRascunhoInicio(parsed.inicio);
+		setRascunhoFim(parsed.fim);
 	}, [valorFiltro]);
 
 	function ciclarOrdenacao() {
@@ -69,6 +78,14 @@ export function CabecalhoColunaTabela({
 
 	function aplicarTexto() {
 		onFiltrar(rascunho.trim());
+	}
+
+	function aplicarPeriodo() {
+		if (rascunhoInicio && rascunhoFim && rascunhoInicio > rascunhoFim) {
+			onFiltrar(serializarPeriodoFiltro(rascunhoFim, rascunhoInicio));
+			return;
+		}
+		onFiltrar(serializarPeriodoFiltro(rascunhoInicio, rascunhoFim));
 	}
 
 	const IconeOrdenacao =
@@ -113,7 +130,7 @@ export function CabecalhoColunaTabela({
 							/>
 						</Button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start" className="w-56">
+					<DropdownMenuContent align="start" className="w-60">
 						<DropdownMenuLabel>Ordenação</DropdownMenuLabel>
 						<DropdownMenuItem onClick={() => onOrdenar("asc")}>
 							Ordenar crescente
@@ -128,6 +145,80 @@ export function CabecalhoColunaTabela({
 						)}
 						<DropdownMenuSeparator />
 						<DropdownMenuLabel>Filtro</DropdownMenuLabel>
+
+						{tipoFiltro === "periodo" && (
+							<div className="space-y-2 px-2 py-1.5">
+								<div className="space-y-1">
+									<Label
+										htmlFor={`filtro-inicio-${colunaId}`}
+										className="text-xs text-muted-foreground"
+									>
+										De
+									</Label>
+									<Input
+										id={`filtro-inicio-${colunaId}`}
+										type="date"
+										value={rascunhoInicio}
+										onChange={(e) => setRascunhoInicio(e.target.value)}
+										onKeyDown={(e) => {
+											e.stopPropagation();
+											if (e.key === "Enter") {
+												e.preventDefault();
+												aplicarPeriodo();
+											}
+										}}
+										onClick={(e) => e.stopPropagation()}
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label
+										htmlFor={`filtro-fim-${colunaId}`}
+										className="text-xs text-muted-foreground"
+									>
+										Até
+									</Label>
+									<Input
+										id={`filtro-fim-${colunaId}`}
+										type="date"
+										value={rascunhoFim}
+										onChange={(e) => setRascunhoFim(e.target.value)}
+										onKeyDown={(e) => {
+											e.stopPropagation();
+											if (e.key === "Enter") {
+												e.preventDefault();
+												aplicarPeriodo();
+											}
+										}}
+										onClick={(e) => e.stopPropagation()}
+									/>
+								</div>
+								<div className="mt-2 flex gap-1">
+									<Button
+										type="button"
+										size="sm"
+										className="h-7 flex-1"
+										onClick={aplicarPeriodo}
+									>
+										Aplicar
+									</Button>
+									{filtroAtivo && (
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											className="h-7"
+											onClick={() => {
+												setRascunhoInicio("");
+												setRascunhoFim("");
+												onFiltrar("");
+											}}
+										>
+											Limpar
+										</Button>
+									)}
+								</div>
+							</div>
+						)}
 
 						{(tipoFiltro === "texto" || tipoFiltro === "data") && (
 							<div className="px-2 py-1.5">

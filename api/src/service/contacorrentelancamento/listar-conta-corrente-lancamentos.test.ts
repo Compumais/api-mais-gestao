@@ -195,4 +195,33 @@ describe("listarContaCorrenteLancamentosService", () => {
 			expect(resultado.body.data[1]?.datahora).toBe("2024-01-14");
 		}
 	});
+
+	it("deve repassar filtros de clienteFornecedor, range de data e range de valores", async () => {
+		vi.mocked(
+			contaCorrenteLancamentoRepository.listarLancamentoContaCorrentePorEmpresa,
+		).mockResolvedValue({ lancamentos: [lancamento1Mock], total: 1 });
+
+		const resultado = await listarContaCorrenteLancamentosService({
+			idcontacorrente: "conta-corrente-123",
+			clienteFornecedor: "Cliente XPTO",
+			dataInicio: "2026-01-01",
+			dataFim: "2026-01-31",
+			valorMin: "100.00",
+			valorMax: "1500.00",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(
+			contaCorrenteLancamentoRepository.listarLancamentoContaCorrentePorEmpresa,
+		).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idcontacorrente: "conta-corrente-123",
+				clienteFornecedor: "Cliente XPTO",
+				dataInicio: "2026-01-01",
+				dataFim: "2026-01-31",
+				valorMin: "100.00",
+				valorMax: "1500.00",
+			}),
+		);
+	});
 });

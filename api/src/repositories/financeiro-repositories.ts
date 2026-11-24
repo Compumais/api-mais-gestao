@@ -9,7 +9,9 @@ import {
 	ilike,
 	inArray,
 	lte,
+	or,
 	type SQL,
+	sql,
 } from "drizzle-orm";
 import type { NovoFinanceiro } from "@/model/financeiro-model.js";
 import * as schema from "@/repositories/schema.js";
@@ -23,26 +25,54 @@ export const ORDENAR_FINANCEIROS_CAMPOS = [
 	"status",
 	"emissao",
 	"vencimento",
+	"vencimentooriginal",
+	"pagamento",
+	"ultimopagamento",
+	"baixa",
+	"datareferencia",
+	"entrada",
 	"valor",
 	"saldo",
+	"valorpagorecebido",
+	"planocontasnome",
+	"banconome",
+	"nossonumero",
+	"historico",
 	"currenttimemillis",
 ] as const;
 
 export type OrdenarFinanceirosCampo =
 	(typeof ORDENAR_FINANCEIROS_CAMPOS)[number];
 
-const COLUNAS_ORDENACAO = {
+const sqlUltimoPagamento = sql<string | null>`COALESCE((SELECT MAX(fl.pagamento) FROM financeirolancamento fl WHERE fl.idfinanceiro = ${schema.financeiro.id} AND COALESCE(fl.cancelado, 0) = 0), ${schema.financeiro.pagamento})`;
+
+const sqlEntidadeNome = sql<string | null>`COALESCE(${schema.entidade.nome}, ${schema.entidade.razaosocial})`;
+
+const sqlCentroCustoNome = sql<string | null>`(SELECT string_agg(DISTINCT cc.nome, ', ' ORDER BY cc.nome) FROM apropriacao_centro_custo acc INNER JOIN centrocusto cc ON cc.id = acc.idcentrocusto WHERE acc.origemtipo = 'financeiro' AND acc.origemid = ${schema.financeiro.id})`;
+
+const COLUNAS_ORDENACAO: Record<OrdenarFinanceirosCampo, SQL | Parameters<typeof asc>[0]> = {
 	documento: schema.financeiro.documento,
 	tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
-	emitente: schema.financeiro.emitente,
+	emitente: sql`COALESCE(NULLIF(TRIM(${schema.financeiro.emitente}), ''), ${schema.entidade.nome}, ${schema.entidade.razaosocial})`,
 	parcela: schema.financeiro.parcela,
 	status: schema.financeiro.status,
 	emissao: schema.financeiro.emissao,
 	vencimento: schema.financeiro.vencimento,
+	vencimentooriginal: schema.financeiro.vencimentooriginal,
+	pagamento: sqlUltimoPagamento,
+	ultimopagamento: sqlUltimoPagamento,
+	baixa: schema.financeiro.baixa,
+	datareferencia: schema.financeiro.datareferencia,
+	entrada: schema.financeiro.entrada,
 	valor: schema.financeiro.valor,
 	saldo: schema.financeiro.saldo,
+	valorpagorecebido: schema.financeiro.valorpagorecebido,
+	planocontasnome: schema.planocontas.nome,
+	banconome: schema.banco.nome,
+	nossonumero: schema.financeiro.nossonumero,
+	historico: schema.financeiro.historico,
 	currenttimemillis: schema.financeiro.currenttimemillis,
-} as const;
+};
 
 function adicionarFiltroTexto(
 	where: SQL[],
@@ -145,10 +175,23 @@ interface ListarFinanceiroParametros {
 	documento?: string | null | undefined;
 	tipodocumentodescricao?: string | null | undefined;
 	emitente?: string | null | undefined;
+	planocontasnome?: string | null | undefined;
+	nossonumero?: string | null | undefined;
+	historico?: string | null | undefined;
 	emissaoInicio?: string | null | undefined;
 	emissaoFim?: string | null | undefined;
 	vencimentoInicio?: string | null | undefined;
 	vencimentoFim?: string | null | undefined;
+	vencimentooriginalInicio?: string | null | undefined;
+	vencimentooriginalFim?: string | null | undefined;
+	pagamentoInicio?: string | null | undefined;
+	pagamentoFim?: string | null | undefined;
+	baixaInicio?: string | null | undefined;
+	baixaFim?: string | null | undefined;
+	datareferenciaInicio?: string | null | undefined;
+	datareferenciaFim?: string | null | undefined;
+	entradaInicio?: string | null | undefined;
+	entradaFim?: string | null | undefined;
 	status?: string | null | undefined;
 	tipo?: "P" | "R" | null | undefined;
 	identidade?: string | null | undefined;
@@ -166,10 +209,23 @@ export async function listarFinanceiro({
 	documento,
 	tipodocumentodescricao,
 	emitente,
+	planocontasnome,
+	nossonumero,
+	historico,
 	emissaoInicio,
 	emissaoFim,
 	vencimentoInicio,
 	vencimentoFim,
+	vencimentooriginalInicio,
+	vencimentooriginalFim,
+	pagamentoInicio,
+	pagamentoFim,
+	baixaInicio,
+	baixaFim,
+	datareferenciaInicio,
+	datareferenciaFim,
+	entradaInicio,
+	entradaFim,
 	status,
 	tipo,
 	identidade,
@@ -177,6 +233,13 @@ export async function listarFinanceiro({
 	ordenarPor,
 	ordem = "desc",
 }: ListarFinanceiroParametros) {
+	if (idempresas.length === 0) {
+		return {
+			financeiros: [],
+			total: 0,
+		};
+	}
+
 	const offset = (page - 1) * limit;
 
 	const where: SQL[] = [];
@@ -195,22 +258,77 @@ export async function listarFinanceiro({
 		schema.tipodocumentofinanceiro.descricao,
 		tipodocumentodescricao,
 	);
-	adicionarFiltroTexto(where, schema.financeiro.emitente, emitente);
+	adicionarFiltroTexto(where, schema.planocontas.nome, planocontasnome);
+	adicionarFiltroTexto(where, schema.financeiro.nossonumero, nossonumero);
+	adicionarFiltroTexto(where, schema.financeiro.historico, historico);
 
-	if (emissaoInicio) {
-		where.push(gte(schema.financeiro.emissao, emissaoInicio));
+	if (emitente?.trim()) {
+		const termo = `%${emitente.trim()}%`;
+		const condNome = or(
+			ilike(schema.financeiro.emitente, termo),
+			ilike(schema.entidade.nome, termo),
+			ilike(schema.entidade.razaosocial, termo),
+		);
+		if (condNome) {
+			where.push(condNome);
+		}
 	}
 
-	if (emissaoFim) {
-		where.push(lte(schema.financeiro.emissao, emissaoFim));
+	if (emissaoInicio?.trim()) {
+		where.push(gte(schema.financeiro.emissao, emissaoInicio.trim()));
+	}
+	if (emissaoFim?.trim()) {
+		where.push(lte(schema.financeiro.emissao, emissaoFim.trim()));
 	}
 
-	if (vencimentoInicio) {
-		where.push(gte(schema.financeiro.vencimento, vencimentoInicio));
+	if (vencimentoInicio?.trim()) {
+		where.push(gte(schema.financeiro.vencimento, vencimentoInicio.trim()));
+	}
+	if (vencimentoFim?.trim()) {
+		where.push(lte(schema.financeiro.vencimento, vencimentoFim.trim()));
 	}
 
-	if (vencimentoFim) {
-		where.push(lte(schema.financeiro.vencimento, vencimentoFim));
+	if (vencimentooriginalInicio?.trim()) {
+		where.push(
+			gte(schema.financeiro.vencimentooriginal, vencimentooriginalInicio.trim()),
+		);
+	}
+	if (vencimentooriginalFim?.trim()) {
+		where.push(
+			lte(schema.financeiro.vencimentooriginal, vencimentooriginalFim.trim()),
+		);
+	}
+
+	if (pagamentoInicio?.trim()) {
+		where.push(sql`${sqlUltimoPagamento} >= ${pagamentoInicio.trim()}`);
+	}
+	if (pagamentoFim?.trim()) {
+		where.push(sql`${sqlUltimoPagamento} <= ${pagamentoFim.trim()}`);
+	}
+
+	if (baixaInicio?.trim()) {
+		where.push(gte(schema.financeiro.baixa, baixaInicio.trim()));
+	}
+	if (baixaFim?.trim()) {
+		where.push(lte(schema.financeiro.baixa, baixaFim.trim()));
+	}
+
+	if (datareferenciaInicio?.trim()) {
+		where.push(
+			gte(schema.financeiro.datareferencia, datareferenciaInicio.trim()),
+		);
+	}
+	if (datareferenciaFim?.trim()) {
+		where.push(
+			lte(schema.financeiro.datareferencia, datareferenciaFim.trim()),
+		);
+	}
+
+	if (entradaInicio?.trim()) {
+		where.push(gte(schema.financeiro.entrada, entradaInicio.trim()));
+	}
+	if (entradaFim?.trim()) {
+		where.push(lte(schema.financeiro.entrada, entradaFim.trim()));
 	}
 
 	if (status) {
@@ -245,20 +363,45 @@ export async function listarFinanceiro({
 		schema.financeiro.idtipodocumentofinanceiro,
 		schema.tipodocumentofinanceiro.id,
 	);
+	const joinEntidade = eq(schema.financeiro.identidade, schema.entidade.id);
+	const joinPlanoContas = eq(
+		schema.financeiro.idplanocontas,
+		schema.planocontas.id,
+	);
+	const joinBanco = eq(schema.financeiro.idbanco, schema.banco.id);
+	const joinTipoCobranca = eq(
+		schema.financeiro.idtipocobranca,
+		schema.tipocobranca.id,
+	);
 
 	const [totalCount, financeiros] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(schema.financeiro)
 			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)
+			.leftJoin(schema.entidade, joinEntidade)
+			.leftJoin(schema.planocontas, joinPlanoContas)
+			.leftJoin(schema.banco, joinBanco)
+			.leftJoin(schema.tipocobranca, joinTipoCobranca)
 			.where(condicao),
 		db
 			.select({
 				...getTableColumns(schema.financeiro),
 				tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
+				tipocobrancadescricao: schema.tipocobranca.descricao,
+				entidadenome: sqlEntidadeNome,
+				planocontasnome: schema.planocontas.nome,
+				planocontascodigo: schema.planocontas.codigo,
+				banconome: schema.banco.nome,
+				centrocustonome: sqlCentroCustoNome,
+				ultimopagamento: sqlUltimoPagamento,
 			})
 			.from(schema.financeiro)
 			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)
+			.leftJoin(schema.entidade, joinEntidade)
+			.leftJoin(schema.planocontas, joinPlanoContas)
+			.leftJoin(schema.banco, joinBanco)
+			.leftJoin(schema.tipocobranca, joinTipoCobranca)
 			.where(condicao)
 			.orderBy(ordenacao)
 			.limit(limit)

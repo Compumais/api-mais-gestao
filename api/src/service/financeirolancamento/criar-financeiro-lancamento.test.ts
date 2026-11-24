@@ -103,6 +103,54 @@ describe("criarFinanceiroLancamentoService", () => {
 				tipo: "C",
 				valor: 300,
 				evento: 123,
+				datahora: "2026-10-29",
+			}),
+		);
+	});
+
+	it("deve registrar na movimentação a data inserida na baixa e não a data atual", async () => {
+		vi.mocked(financeiroRepository.buscarFinanceiroPorId).mockResolvedValue({
+			id: "financeiro-retroativo",
+			idempresa: "empresa-1",
+			tipo: "P",
+			status: "A",
+			saldo: "500.00",
+			valor: "500.00",
+			historico: "Fornecedor",
+			documento: "DOC-10",
+			idplanocontas: "plano-1",
+			pagamento: null,
+			baixa: null,
+			valorpagorecebido: "0.00",
+		} as never);
+
+		mockTransactionSucesso({
+			id: "lancamento-retroativo",
+			idfinanceiro: "financeiro-retroativo",
+			valor: "500.00",
+			valorbaixa: "500.00",
+			evento: 999,
+		});
+
+		const resultado = await criarFinanceiroLancamentoService({
+			dadosFinanceiroLancamento: {
+				id: "lancamento-retroativo",
+				idfinanceiro: "financeiro-retroativo",
+				valor: "500.00",
+				pagamento: "2026-03-15",
+				baixa: "2026-03-12",
+				evento: 999,
+			},
+			idusuario: "usuario-1",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(inserirLancamentoCaixaModulo.inserirLancamentoCaixa).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({
+				datahora: "2026-03-12",
+				tipo: "D",
+				valor: 500,
 			}),
 		);
 	});

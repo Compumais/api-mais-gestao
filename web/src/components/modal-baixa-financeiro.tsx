@@ -107,6 +107,8 @@ export function ModalBaixaFinanceiro({
 
 	const [dataBaixa, setDataBaixa] = useState(hojeBrasiliaIsoDate);
 	const [dataPagamento, setDataPagamento] = useState(hojeBrasiliaIsoDate);
+	const [baixaEditadaManual, setBaixaEditadaManual] = useState(false);
+	const [pagamentoEditadoManual, setPagamentoEditadoManual] = useState(false);
 	const [juros, setJuros] = useState("0");
 	const [multa, setMulta] = useState("0");
 	const [desconto, setDesconto] = useState("0");
@@ -120,6 +122,8 @@ export function ModalBaixaFinanceiro({
 		const hoje = hojeBrasiliaIsoDate();
 		setDataBaixa(hoje);
 		setDataPagamento(hoje);
+		setBaixaEditadaManual(false);
+		setPagamentoEditadoManual(false);
 		setJuros("0");
 		setMulta("0");
 		setDesconto("0");
@@ -226,7 +230,14 @@ export function ModalBaixaFinanceiro({
 								id="data-pagamento"
 								type="date"
 								value={dataPagamento}
-								onChange={(e) => setDataPagamento(e.target.value)}
+								onChange={(e) => {
+									const novaData = e.target.value;
+									setDataPagamento(novaData);
+									setPagamentoEditadoManual(true);
+									if (!baixaEditadaManual) {
+										setDataBaixa(novaData);
+									}
+								}}
 								disabled={isPending}
 							/>
 						</div>
@@ -236,7 +247,14 @@ export function ModalBaixaFinanceiro({
 								id="data-baixa"
 								type="date"
 								value={dataBaixa}
-								onChange={(e) => setDataBaixa(e.target.value)}
+								onChange={(e) => {
+									const novaData = e.target.value;
+									setDataBaixa(novaData);
+									setBaixaEditadaManual(true);
+									if (!pagamentoEditadoManual) {
+										setDataPagamento(novaData);
+									}
+								}}
 								disabled={isPending}
 							/>
 						</div>

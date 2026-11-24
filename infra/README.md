@@ -36,7 +36,12 @@ O Nginx deve expor `/pdv/updates/` apontando para `/opt/mais-gestao/pdv-updates/
 Baseie-se em `api/.env.prod.example`:
 
 ```env
-DATABASE_URL=postgresql://mais_gestao:<PASSWORD>@127.0.0.1:5432/mais_gestao
+# Conexão da API via PgBouncer (porta 6432)
+DATABASE_URL=postgresql://mais_gestao:<PASSWORD>@127.0.0.1:6432/mais_gestao
+
+# Conexão direta ao PostgreSQL (porta 5432) para migrations e locks de sessão
+DATABASE_DIRECT_URL=postgresql://mais_gestao:<PASSWORD>@127.0.0.1:5432/mais_gestao
+
 BETTER_AUTH_SECRET=<GERAR_COM_openssl_rand_base64_32>
 BETTER_AUTH_URL=https://api.seudominio.com
 CLIENT_ORIGIN=https://app.seudominio.com
@@ -94,6 +99,7 @@ A chave pública correspondente ao `VPS_SSH_KEY` deve estar em `~/.ssh/authorize
 ```bash
 cd /opt/mais-gestao
 docker compose -f docker-compose.prod.yml up -d postgres
+docker compose -f docker-compose.prod.yml up -d pgbouncer
 docker compose -f docker-compose.prod.yml up -d api
 ```
 

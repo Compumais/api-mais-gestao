@@ -11,6 +11,13 @@ export interface Financeiro {
 	documento: string | null;
 	idtipodocumentofinanceiro: string | null;
 	tipodocumentodescricao?: string | null;
+	tipocobrancadescricao?: string | null;
+	entidadenome?: string | null;
+	planocontasnome?: string | null;
+	planocontascodigo?: string | null;
+	banconome?: string | null;
+	centrocustonome?: string | null;
+	ultimopagamento?: string | null;
 	status: string | null;
 	emissao: string | null;
 	vencimento: string | null;
@@ -127,10 +134,23 @@ export interface ListarFinanceirosParams {
 	documento?: string | null;
 	tipodocumentodescricao?: string | null;
 	emitente?: string | null;
+	planocontasnome?: string | null;
+	nossonumero?: string | null;
+	historico?: string | null;
 	emissaoInicio?: string | null;
 	emissaoFim?: string | null;
 	vencimentoInicio?: string | null;
 	vencimentoFim?: string | null;
+	vencimentooriginalInicio?: string | null;
+	vencimentooriginalFim?: string | null;
+	pagamentoInicio?: string | null;
+	pagamentoFim?: string | null;
+	baixaInicio?: string | null;
+	baixaFim?: string | null;
+	datareferenciaInicio?: string | null;
+	datareferenciaFim?: string | null;
+	entradaInicio?: string | null;
+	entradaFim?: string | null;
 	status?: string | null;
 	tipo?: string | null; // P ou R
 	identidade?: string | null;

@@ -125,6 +125,8 @@ import { verifyJwt } from "./controllers/middleware/verify-jwt.js";
 import { getApiBaseUrl } from "./util/base-url.js";
 import { corsOptions } from "./util/cors-origins.js";
 import { registrarAgendador } from "./worker/registrar-agendador.js";
+import { pararAgendador } from "./worker/agendador.js";
+import { fecharConexoesBanco } from "./repositories/connection.js";
 import { registrarErroValidacaoFastify } from "./util/registrar-erro-validacao-fastify.js";
 
 export const app = Fastify({ logger: true, trustProxy: true });
@@ -685,3 +687,24 @@ app.listen({ port: 3333 }).then(() => {
 	console.log(`Swagger documentation available at ${getApiBaseUrl()}/docs`);
 	registrarAgendador();
 });
+
+let encerrandoServidor = false;
+
+async function gracefulShutdown(sinal: string) {
+	if (encerrandoServidor) return;
+	encerrandoServidor = true;
+	console.log(`[servidor] Recebido sinal ${sinal}. Encerrando graciosamente...`);
+	try {
+		pararAgendador();
+		await app.close();
+		await fecharConexoesBanco();
+		console.log("[servidor] Recursos encerrados com sucesso.");
+		process.exit(0);
+	} catch (erro) {
+		console.error("[servidor] Erro ao encerrar recursos:", erro);
+		process.exit(1);
+	}
+}
+
+process.on("SIGINT", () => void gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"));

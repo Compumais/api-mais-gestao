@@ -126,4 +126,81 @@ describe("estornarFinanceiroLancamentoService", () => {
 		expect(resultado.success).toBe(false);
 		expect(resultado.status).toBe(400);
 	});
+
+	it("deve preservar a data da última baixa ativa restante ao estornar baixa parcial", async () => {
+		vi.mocked(
+			financeiroLancamentoRepository.buscarFinanceiroLancamentoPorId,
+		).mockResolvedValue({
+			id: "lancamento-parcial-2",
+			idfinanceiro: "financeiro-1",
+			valor: "200.00",
+			valorbaixa: "200.00",
+			juros: "0",
+			multa: "0",
+			desconto: "0",
+			cancelado: 0,
+			evento: 555,
+		} as never);
+
+		vi.mocked(financeiroRepository.buscarFinanceiroPorId).mockResolvedValue({
+			id: "financeiro-1",
+			tipo: "R",
+			status: "P",
+			saldo: "0.00",
+			valorpagorecebido: "500.00",
+			baixa: "2026-10-30",
+			pagamento: "2026-10-30",
+			idplanocontas: "plano-1",
+			documento: "NF-1",
+		} as never);
+
+		vi.mocked(
+			financeiroLancamentoRepository.buscarUltimaBaixaAtivaExceto,
+		).mockResolvedValue({
+			id: "lancamento-parcial-1",
+			pagamento: "2026-10-15",
+			baixa: "2026-10-15T00:00:00.000Z",
+		} as never);
+
+		vi.mocked(
+			contaCorrenteLancamentoRepository.listarContaCorrenteLancamentoPorEvento,
+		).mockResolvedValue([]);
+
+		let pagamentoTitulo: string | null | undefined;
+		let baixaTitulo: string | null | undefined;
+
+		vi.mocked(connection.db.transaction).mockImplementation(async (fn) => {
+			const tx = {
+				update: vi.fn().mockImplementation(() => ({
+					set: vi.fn().mockImplementation(
+						(dados: {
+							cancelado?: number;
+							pagamento?: string | null;
+							baixa?: string | null;
+						}) => {
+							if ("pagamento" in dados) pagamentoTitulo = dados.pagamento;
+							if ("baixa" in dados) baixaTitulo = dados.baixa;
+							return {
+								where: vi.fn().mockReturnValue({
+									returning: vi.fn().mockResolvedValue([
+										{ id: "lancamento-parcial-2", cancelado: 1, evento: 555 },
+									]),
+								}),
+							};
+						},
+					),
+				})),
+			};
+			return fn(tx as never);
+		});
+
+		const resultado = await estornarFinanceiroLancamentoService({
+			id: "lancamento-parcial-2",
+			idusuario: "usuario-1",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(pagamentoTitulo).toBe("2026-10-15");
+		expect(baixaTitulo).toBe("2026-10-15");
+	});
 });

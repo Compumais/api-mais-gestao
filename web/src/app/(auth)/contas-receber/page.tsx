@@ -79,12 +79,12 @@ import { tipoCobrancaService } from "@/services/tipo-cobranca.service";
 import { tipoDocumentoFinanceiroService } from "@/services/tipo-documento-financeiro.service";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO,
-	type ConfigFiltroColunaFinanceiro,
 	criarColunasFinanceiro,
+	criarConfigFiltroColunasFinanceiro,
 	type FiltrosColunaFinanceiroState,
 	filtrosColunaFinanceiroVazios,
+	montarParamsFiltroFinanceiro,
 	podeDarBaixa,
-	STATUS_OPCOES_FILTRO,
 	visibilidadePadraoColunasFinanceiro,
 } from "../components/financeiro-lista-colunas";
 import { PageContainer } from "../components/page-container";
@@ -184,23 +184,10 @@ export default function ContasAReceberPage() {
 		[tiposCobranca],
 	);
 
-	const configFiltroPorColuna = useMemo((): Record<
-		string,
-		ConfigFiltroColunaFinanceiro
-	> => {
-		return {
-			documento: { tipo: "texto", placeholder: "Documento" },
-			tipodocumento: { tipo: "texto", placeholder: "Tipo de documento" },
-			cobranca: { tipo: "opcoes", opcoes: opcoesTipoCobranca },
-			emitente: { tipo: "texto", placeholder: "Nome" },
-			parcela: { tipo: "nenhum" },
-			status: { tipo: "opcoes", opcoes: STATUS_OPCOES_FILTRO },
-			emissao: { tipo: "data" },
-			vencimento: { tipo: "data" },
-			valor: { tipo: "nenhum" },
-			saldo: { tipo: "nenhum" },
-		};
-	}, [opcoesTipoCobranca]);
+	const configFiltroPorColuna = useMemo(
+		() => criarConfigFiltroColunasFinanceiro(opcoesTipoCobranca),
+		[opcoesTipoCobranca],
+	);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -221,29 +208,7 @@ export default function ContasAReceberPage() {
 				tipo: "R",
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-				...(filtrosColuna.documento
-					? { documento: filtrosColuna.documento }
-					: {}),
-				...(filtrosColuna.tipodocumentodescricao
-					? { tipodocumentodescricao: filtrosColuna.tipodocumentodescricao }
-					: {}),
-				...(filtrosColuna.idtipocobranca
-					? { idtipocobranca: filtrosColuna.idtipocobranca }
-					: {}),
-				...(filtrosColuna.emitente ? { emitente: filtrosColuna.emitente } : {}),
-				...(filtrosColuna.status ? { status: filtrosColuna.status } : {}),
-				...(filtrosColuna.emissao
-					? {
-							emissaoInicio: filtrosColuna.emissao,
-							emissaoFim: filtrosColuna.emissao,
-						}
-					: {}),
-				...(filtrosColuna.vencimento
-					? {
-							vencimentoInicio: filtrosColuna.vencimento,
-							vencimentoFim: filtrosColuna.vencimento,
-						}
-					: {}),
+				...montarParamsFiltroFinanceiro(filtrosColuna),
 				...(ordenarPor ? { ordenarPor } : {}),
 				...(ordem ? { ordem } : {}),
 			});
@@ -409,6 +374,9 @@ export default function ContasAReceberPage() {
 		setIdsParaBaixa([]);
 		setRowSelection({});
 		void queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+		void queryClient.invalidateQueries({
+			queryKey: ["conta-corrente-lancamentos"],
+		});
 
 		if (ok > 0) {
 			toast.success(
@@ -597,6 +565,20 @@ export default function ContasAReceberPage() {
 				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
 					<h1 className="text-2xl font-bold">Contas a Receber</h1>
 					<div className="flex flex-wrap gap-2">
+						{comFiltros && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => {
+									setFiltrosColuna(filtrosColunaFinanceiroVazios);
+									setOrdenarPor(null);
+									setOrdem(null);
+									setPagination((p) => ({ ...p, pageIndex: 0 }));
+								}}
+							>
+								Limpar filtros
+							</Button>
+						)}
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="outline" size="sm">
@@ -669,6 +651,7 @@ export default function ContasAReceberPage() {
 												<TableHead
 													className={
 														header.id === "valor" ||
+														header.id === "valorpagorecebido" ||
 														header.id === "saldo" ||
 														header.id === "saldoSemJurosMulta"
 															? "text-right"

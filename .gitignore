@@ -60,3 +60,5 @@ storage/
 
 # Agents workspace
 .agents/
+
+scratch/

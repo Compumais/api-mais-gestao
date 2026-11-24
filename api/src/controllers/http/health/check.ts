@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "@/repositories/connection.js";
+import { db, obterMetricasPool } from "@/repositories/connection.js";
 
 const startedAt = Date.now();
 
@@ -8,15 +8,18 @@ async function pingDatabase(): Promise<{
 	status: "ok" | "error";
 	latencyMs?: number;
 	error?: string;
+	pools?: ReturnType<typeof obterMetricasPool>;
 }> {
 	const start = Date.now();
+	const pools = obterMetricasPool();
 	try {
 		await db.execute(sql`SELECT 1`);
-		return { status: "ok", latencyMs: Date.now() - start };
+		return { status: "ok", latencyMs: Date.now() - start, pools };
 	} catch (error) {
 		return {
 			status: "error",
 			error: error instanceof Error ? error.message : "Falha ao conectar no banco",
+			pools,
 		};
 	}
 }

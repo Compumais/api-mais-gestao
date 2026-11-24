@@ -49,6 +49,14 @@ function arredondarDinheiro(valor: number): number {
 	return Math.round(valor * 100) / 100;
 }
 
+function extrairDataCivilIso(valor: string | null | undefined): string | null {
+	if (!valor) return null;
+	const limpo = valor.trim();
+	if (!limpo) return null;
+	const match = /^(\d{4}-\d{2}-\d{2})/.exec(limpo);
+	return match?.[1] ?? null;
+}
+
 export function resolverValorBaixaFinanceiro({
 	valor,
 	valorbaixa,
@@ -215,12 +223,20 @@ export async function criarFinanceiroLancamentoService({
 			? "Baixa de título a pagar"
 			: "Baixa de título a receber");
 
+	const dataInformadaPagamento = extrairDataCivilIso(dadosLancamento.pagamento);
+	const dataInformadaBaixa = extrairDataCivilIso(dadosLancamento.baixa);
+	const hojeIso = formatarDataIso(new Date());
+
 	const dataPagamento =
-		dadosLancamento.pagamento ??
-		financeiro.pagamento ??
-		formatarDataIso(new Date());
+		dataInformadaPagamento ??
+		dataInformadaBaixa ??
+		extrairDataCivilIso(financeiro.pagamento) ??
+		hojeIso;
 	const dataBaixa =
-		dadosLancamento.baixa ?? financeiro.baixa ?? dataPagamento;
+		dataInformadaBaixa ??
+		dataInformadaPagamento ??
+		extrairDataCivilIso(financeiro.baixa) ??
+		dataPagamento;
 	const evento = dadosLancamento.evento ?? Date.now();
 	const idLancamento = dadosLancamento.id ?? uuidv4();
 
@@ -270,7 +286,8 @@ export async function criarFinanceiroLancamentoService({
 	const statusNovo = saldoNovo > TOLERANCIA_MONETARIA ? "A" : "P";
 	const valorPagoAnterior = parseValorMonetario(financeiro.valorpagorecebido);
 	const tipoMovimentoCc: "C" | "D" = financeiro.tipo === "P" ? "D" : "C";
-	const dataHoraMovimento = formatarDataIso(new Date());
+	const dataHoraMovimento =
+		dataInformadaBaixa ?? dataInformadaPagamento ?? dataBaixa;
 
 	try {
 		const financeiroLancamento = await db.transaction(async (tx) => {

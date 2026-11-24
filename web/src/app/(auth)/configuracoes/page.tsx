@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConfiguracao } from "@/hooks/use-configuracao";
 import { useEmpresa } from "@/hooks/use-empresa";
@@ -35,8 +35,15 @@ function AvisoEmpresaNecessaria() {
 export default function ConfiguracoesPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const searchParams = useSearchParams();
-	const tabInicial = searchParams.get("tab") ?? "notificacoes";
+	const tabParam = searchParams.get("tab");
+	const tabInicial = tabParam ?? "notificacoes";
 	const [tabAtiva, setTabAtiva] = useState(tabInicial);
+
+	useEffect(() => {
+		if (tabParam) {
+			setTabAtiva(tabParam);
+		}
+	}, [tabParam]);
 
 	const { data: configuracao, isLoading } = useConfiguracao(
 		empresa?.id || null,

@@ -42,30 +42,32 @@ export function NavAbasAbertasProvider({
 	const storageKey = userId ? chaveNavAbasAbertas(userId) : null;
 	const [abas, setAbas] = React.useState<AbaAberta[]>([]);
 	const [hidratado, setHidratado] = React.useState(false);
+	const abasRef = React.useRef<AbaAberta[]>([]);
+	const fechandoIdRef = React.useRef<string | null>(null);
 	const rascunhosRef = React.useRef(new Map<string, unknown>());
 
 	React.useEffect(() => {
+		fechandoIdRef.current = null;
 		if (!storageKey) {
+			abasRef.current = [];
 			setAbas([]);
 			setHidratado(true);
 			return;
 		}
-		setAbas(lerAbasAbertas(localStorage.getItem(storageKey)));
+		const iniciais = lerAbasAbertas(localStorage.getItem(storageKey));
+		abasRef.current = iniciais;
+		setAbas(iniciais);
 		setHidratado(true);
 	}, [storageKey]);
 
-	const persistir = React.useCallback(
-		(proximas: AbaAberta[]) => {
-			setAbas(proximas);
-			if (storageKey) {
-				localStorage.setItem(storageKey, JSON.stringify(proximas));
-			}
-		},
-		[storageKey],
-	);
-
 	React.useEffect(() => {
 		if (!hidratado || !pathname) return;
+		if (fechandoIdRef.current) {
+			if (pathname === fechandoIdRef.current) {
+				return;
+			}
+			fechandoIdRef.current = null;
+		}
 		const title = resolverTituloAba(pathname, search, itensNavFixaveis);
 		setAbas((atuais) => {
 			const proximas = registrarAbaAberta(atuais, pathname, search, title);
@@ -77,7 +79,11 @@ export function NavAbasAbertasProvider({
 						aba.href === atuais[i]?.href &&
 						aba.title === atuais[i]?.title,
 				);
-			if (iguais) return atuais;
+			if (iguais) {
+				abasRef.current = atuais;
+				return atuais;
+			}
+			abasRef.current = proximas;
 			if (storageKey) {
 				localStorage.setItem(storageKey, JSON.stringify(proximas));
 			}
@@ -87,6 +93,7 @@ export function NavAbasAbertasProvider({
 
 	const ativarAba = React.useCallback(
 		(href: string) => {
+			fechandoIdRef.current = null;
 			React.startTransition(() => {
 				router.push(href);
 			});
@@ -106,6 +113,7 @@ export function NavAbasAbertasProvider({
 				const proximas = atuais.map((aba) =>
 					aba.id === id ? { ...aba, title: titulo, titleLocked: true } : aba,
 				);
+				abasRef.current = proximas;
 				if (storageKey) {
 					localStorage.setItem(storageKey, JSON.stringify(proximas));
 				}
@@ -131,22 +139,26 @@ export function NavAbasAbertasProvider({
 	const fecharAba = React.useCallback(
 		(id: string) => {
 			rascunhosRef.current.delete(id);
-			let navegarPara: string | null = null;
-			setAbas((atuais) => {
-				const resultado = fecharAbaAberta(atuais, id, pathname);
-				navegarPara = resultado.navegarPara;
-				if (storageKey) {
-					localStorage.setItem(storageKey, JSON.stringify(resultado.abas));
+			const resultado = fecharAbaAberta(abasRef.current, id, pathname);
+			if (id === pathname) {
+				fechandoIdRef.current = id;
+			}
+			abasRef.current = resultado.abas;
+			if (storageKey) {
+				localStorage.setItem(storageKey, JSON.stringify(resultado.abas));
+			}
+			setAbas(resultado.abas);
+			if (resultado.navegarPara) {
+				const destino = resultado.navegarPara;
+				const destinoPath = destino.split("?")[0] ?? destino;
+				if (destinoPath !== pathname || search !== (destino.split("?")[1] ?? "")) {
+					React.startTransition(() => {
+						router.push(destino);
+					});
 				}
-				return resultado.abas;
-			});
-			if (navegarPara) {
-				React.startTransition(() => {
-					router.push(navegarPara!);
-				});
 			}
 		},
-		[pathname, storageKey, router],
+		[pathname, search, storageKey, router],
 	);
 
 	const value = React.useMemo(

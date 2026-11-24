@@ -11,7 +11,12 @@ interface ListarContaCorrenteLancamentosParametros {
 	historico?: string | undefined;
 	documento?: string | undefined;
 	planocontasnome?: string | undefined;
+	clienteFornecedor?: string | undefined;
 	datahora?: string | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
+	valorMin?: string | undefined;
+	valorMax?: string | undefined;
 	sentido?: "entrada" | "saida" | undefined;
 	ordenarPor?: OrdenarContaCorrenteLancamentosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
@@ -34,7 +39,12 @@ export async function listarContaCorrenteLancamentosService({
 	historico,
 	documento,
 	planocontasnome,
+	clienteFornecedor,
 	datahora,
+	dataInicio,
+	dataFim,
+	valorMin,
+	valorMax,
 	sentido,
 	ordenarPor,
 	ordem,
@@ -48,7 +58,12 @@ export async function listarContaCorrenteLancamentosService({
 		historico,
 		documento,
 		planocontasnome,
+		clienteFornecedor,
 		datahora,
+		dataInicio,
+		dataFim,
+		valorMin,
+		valorMax,
 		sentido,
 		ordenarPor,
 		ordem,
