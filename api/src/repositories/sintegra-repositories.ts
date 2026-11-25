@@ -63,6 +63,10 @@ function parseNumero(valor: string | null | undefined): number {
 	return Number.isFinite(numero) ? numero : 0;
 }
 
+function arredondarCentavos(valor: number): number {
+	return Math.round(valor * 100) / 100;
+}
+
 function resolverSituacaoNota(
 	status: number | null,
 	cancelada: boolean,
@@ -517,12 +521,48 @@ export function agruparItensRegistro50(
 			grupos.set(chave, lista);
 		}
 
-		for (const [chave, grupoItens] of grupos) {
+		const entradasGrupos = [...grupos.entries()];
+		const somaProdutosNota = entradasGrupos.reduce(
+			(soma, [, grupoItens]) =>
+				soma +
+				grupoItens.reduce(
+					(total, item) => total + parseNumero(item.valorProduto),
+					0,
+				),
+			0,
+		);
+		const valorTotalNota = parseNumero(nota.valorTotal);
+		const usarValorTotalNota = valorTotalNota > 0;
+		let valorTotalRestante = valorTotalNota;
+
+		for (let indice = 0; indice < entradasGrupos.length; indice++) {
+			const entrada = entradasGrupos[indice];
+			if (!entrada) continue;
+			const [chave, grupoItens] = entrada;
 			const [cfopCodigo, aliquota] = chave.split("|");
-			const valorTotal = grupoItens.reduce(
+			const valorProdutosGrupo = grupoItens.reduce(
 				(total, item) => total + parseNumero(item.valorProduto),
 				0,
 			);
+
+			let valorTotal: number;
+			if (!usarValorTotalNota) {
+				valorTotal = valorProdutosGrupo;
+			} else if (indice === entradasGrupos.length - 1) {
+				valorTotal = valorTotalRestante;
+			} else if (somaProdutosNota > 0) {
+				const peso = valorProdutosGrupo / somaProdutosNota;
+				valorTotal = arredondarCentavos(valorTotalNota * peso);
+				valorTotalRestante = arredondarCentavos(
+					valorTotalRestante - valorTotal,
+				);
+			} else {
+				valorTotal = indice === 0 ? valorTotalNota : 0;
+				valorTotalRestante = arredondarCentavos(
+					valorTotalRestante - valorTotal,
+				);
+			}
+
 			const baseIcms = grupoItens.reduce(
 				(total, item) => total + parseNumero(item.baseIcms),
 				0,
