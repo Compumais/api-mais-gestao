@@ -381,7 +381,6 @@ export const listarFinanceirosSchema: FastifySchema = {
 					"planocontasnome",
 					"banconome",
 					"nossonumero",
-					"historico",
 					"currenttimemillis",
 				],
 			},
