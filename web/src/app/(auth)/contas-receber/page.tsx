@@ -577,7 +577,7 @@ export default function ContasAReceberPage() {
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
 					<h1 className="text-2xl font-bold">Contas a Receber</h1>
-					<div className="flex flex-wrap gap-2">
+					<div className="flex flex-wrap items-center gap-2">
 						{comFiltros && (
 							<Button
 								variant="ghost"
@@ -592,6 +592,44 @@ export default function ContasAReceberPage() {
 								Limpar filtros
 							</Button>
 						)}
+						{idsSelecionados.length > 0 && (
+							<Button
+								onClick={() => handleAbrirBaixa(idsSelecionados)}
+								className="gap-2"
+							>
+								<IconCheck className="size-4" />
+								Dar baixa ({idsSelecionados.length})
+							</Button>
+						)}
+						<Button
+							disabled={!empresa}
+							onClick={() => router.push("/contas-receber/novo")}
+							className="gap-2"
+						>
+							<IconPlus className="size-4" />
+							Incluir (F2)
+						</Button>
+					</div>
+				</div>
+
+				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+					<div className="flex gap-2">
+						<Input
+							value={buscaInput}
+							onChange={(event) => setBuscaInput(event.target.value)}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") handleBuscar();
+							}}
+							placeholder="Buscar em todas as colunas (documento, nome, observação, valor...)"
+							disabled={!empresa}
+							className="max-w-md"
+						/>
+						<Button onClick={handleBuscar} disabled={!empresa} className="gap-2">
+							<IconSearch className="size-4" />
+							Buscar
+						</Button>
+					</div>
+					{empresa && (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="outline" size="sm">
@@ -621,41 +659,7 @@ export default function ContasAReceberPage() {
 									))}
 							</DropdownMenuContent>
 						</DropdownMenu>
-						{idsSelecionados.length > 0 && (
-							<Button
-								onClick={() => handleAbrirBaixa(idsSelecionados)}
-								className="gap-2"
-							>
-								<IconCheck className="size-4" />
-								Dar baixa ({idsSelecionados.length})
-							</Button>
-						)}
-						<Button
-							disabled={!empresa}
-							onClick={() => router.push("/contas-receber/novo")}
-							className="gap-2"
-						>
-							<IconPlus className="size-4" />
-							Incluir (F2)
-						</Button>
-					</div>
-				</div>
-
-				<div className="flex gap-2 px-4">
-					<Input
-						value={buscaInput}
-						onChange={(event) => setBuscaInput(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") handleBuscar();
-						}}
-						placeholder="Buscar em todas as colunas (documento, nome, observação, valor...)"
-						disabled={!empresa}
-						className="max-w-md"
-					/>
-					<Button onClick={handleBuscar} disabled={!empresa} className="gap-2">
-						<IconSearch className="size-4" />
-						Buscar
-					</Button>
+					)}
 				</div>
 
 				<div className="rounded-lg border bg-card mx-4">

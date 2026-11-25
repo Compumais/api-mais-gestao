@@ -115,7 +115,6 @@ export default function LocaisEstoquePage() {
 		<PageContainer>
 			<div className="flex items-center justify-between p-4">
 				<div className="flex items-center gap-2">
-					<Warehouse className="h-6 w-6 text-muted-foreground" />
 					<div>
 						<h1 className="text-2xl font-bold">Locais de Estoque</h1>
 						<p className="text-sm text-muted-foreground">

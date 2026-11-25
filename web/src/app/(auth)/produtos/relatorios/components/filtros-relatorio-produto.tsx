@@ -47,6 +47,27 @@ const placeholders: Partial<Record<CampoFiltroRelatorio, string>> = {
 	fornecedor: "Nome ou documento",
 };
 
+function classesGridFiltros(totalCampos: number): string {
+	if (totalCampos <= 2) return "grid gap-3 grid-cols-1 sm:grid-cols-2";
+	if (totalCampos === 3) return "grid gap-3 grid-cols-1 md:grid-cols-3";
+	if (totalCampos === 4) {
+		return "grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
+	}
+	if (totalCampos === 5) {
+		return "grid gap-3 grid-cols-1 sm:grid-cols-6 lg:grid-cols-5";
+	}
+	return "grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+}
+
+function classesItemFiltro(totalCampos: number, indice: number): string {
+	if (totalCampos === 5) {
+		return indice < 3
+			? "space-y-1.5 sm:col-span-2 lg:col-span-1"
+			: "space-y-1.5 sm:col-span-3 lg:col-span-1";
+	}
+	return "space-y-1.5";
+}
+
 export function FiltrosRelatorioProduto({
 	campos,
 	valores,
@@ -72,12 +93,13 @@ export function FiltrosRelatorioProduto({
 			className="rounded-lg border bg-card p-4"
 			aria-label="Filtros do relatório"
 		>
-			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-				{campos.map((campo) => {
+			<div className={classesGridFiltros(campos.length)}>
+				{campos.map((campo, indice) => {
 					const id = `${idBase}-${campo}`;
+					const itemClassName = classesItemFiltro(campos.length, indice);
 					if (campo === "situacao") {
 						return (
-							<div key={campo} className="space-y-1.5">
+							<div key={campo} className={itemClassName}>
 								<Label htmlFor={id}>{rotulos[campo]}</Label>
 								<Select
 									value={rascunho[campo] || "todos"}
@@ -85,7 +107,7 @@ export function FiltrosRelatorioProduto({
 										alterar(campo, valor === "todos" ? "" : valor)
 									}
 								>
-									<SelectTrigger id={id}>
+									<SelectTrigger id={id} className="w-full">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -99,7 +121,7 @@ export function FiltrosRelatorioProduto({
 					}
 					if (campo === "pendencia") {
 						return (
-							<div key={campo} className="space-y-1.5">
+							<div key={campo} className={itemClassName}>
 								<Label htmlFor={id}>{rotulos[campo]}</Label>
 								<Select
 									value={rascunho[campo] || "todos"}
@@ -107,7 +129,7 @@ export function FiltrosRelatorioProduto({
 										alterar(campo, valor === "todos" ? "" : valor)
 									}
 								>
-									<SelectTrigger id={id}>
+									<SelectTrigger id={id} className="w-full">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -124,7 +146,7 @@ export function FiltrosRelatorioProduto({
 					}
 					if (campo === "origem") {
 						return (
-							<div key={campo} className="space-y-1.5">
+							<div key={campo} className={itemClassName}>
 								<Label htmlFor={id}>{rotulos[campo]}</Label>
 								<Select
 									value={rascunho[campo] || "todos"}
@@ -132,7 +154,7 @@ export function FiltrosRelatorioProduto({
 										alterar(campo, valor === "todos" ? "" : valor)
 									}
 								>
-									<SelectTrigger id={id}>
+									<SelectTrigger id={id} className="w-full">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -148,7 +170,7 @@ export function FiltrosRelatorioProduto({
 					}
 					if (campo === "tipoEstoque") {
 						return (
-							<div key={campo} className="space-y-1.5">
+							<div key={campo} className={itemClassName}>
 								<Label htmlFor={id}>{rotulos[campo]}</Label>
 								<Select
 									value={rascunho[campo] || "todos"}
@@ -156,7 +178,7 @@ export function FiltrosRelatorioProduto({
 										alterar(campo, valor === "todos" ? "" : valor)
 									}
 								>
-									<SelectTrigger id={id}>
+									<SelectTrigger id={id} className="w-full">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -176,7 +198,7 @@ export function FiltrosRelatorioProduto({
 					].includes(campo);
 					const data = campo === "dataInicio" || campo === "dataFim";
 					return (
-						<div key={campo} className="space-y-1.5">
+						<div key={campo} className={itemClassName}>
 							<Label htmlFor={id}>{rotulos[campo]}</Label>
 							<Input
 								id={id}
