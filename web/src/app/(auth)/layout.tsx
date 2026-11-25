@@ -3,7 +3,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { VisualErrorBoundary } from "@/components/error-boundary/visual-error-boundary";
-import { NavAbasAbertasBar } from "@/components/nav-abas-abertas-bar";
 import { NavAbasKeepAlive } from "@/components/nav-abas-keep-alive";
 import { ProtectedRoute } from "@/components/protected-route";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
@@ -55,15 +54,9 @@ function LayoutSidebar({ children }: { children: React.ReactNode }) {
 			>
 				<AppSidebar variant="inset" />
 			</VisualErrorBoundary>
-			<SidebarInset>
+			<SidebarInset className="min-w-0">
 				<PwaInstallPrompt />
 				<SiteHeader />
-				<VisualErrorBoundary
-					title="Não foi possível carregar as abas"
-					className="min-h-12 w-full"
-				>
-					<NavAbasAbertasBar variante="sidebar" />
-				</VisualErrorBoundary>
 				<NavAbasKeepAlive>{children}</NavAbasKeepAlive>
 			</SidebarInset>
 			<LayoutComum>{null}</LayoutComum>
