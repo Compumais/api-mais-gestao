@@ -10,6 +10,7 @@ import { httpOk, httpProibido } from "@/util/http-util.js";
 type ListarNotasFiscaisParametros = {
 	idusuario: string;
 	idempresa: string;
+	q?: string | undefined;
 	numero?: string | undefined;
 	identidade?: string | undefined;
 	status?: number | undefined;
@@ -44,6 +45,7 @@ type ListarNotasFiscaisResposta = {
 export async function listarNotasFiscaisService({
 	idusuario,
 	idempresa,
+	q,
 	numero,
 	identidade,
 	status,
@@ -77,6 +79,7 @@ export async function listarNotasFiscaisService({
 
 	const resultado = await listarNotasFiscaisPorEmpresa({
 		idempresa,
+		q,
 		numero,
 		identidade,
 		status,

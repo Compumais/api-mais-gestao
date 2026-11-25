@@ -34,4 +34,19 @@ describe("listarNotasFiscaisService", () => {
 			}),
 		);
 	});
+
+	it("repassa filtro textual global q para o repositório", async () => {
+		await listarNotasFiscaisService({
+			idusuario: "user-1",
+			idempresa: "emp-1",
+			q: "Fornecedor X",
+		});
+
+		expect(notaRepository.listarNotasFiscaisPorEmpresa).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempresa: "emp-1",
+				q: "Fornecedor X",
+			}),
+		);
+	});
 });

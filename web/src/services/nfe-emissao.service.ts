@@ -236,6 +236,7 @@ export async function inutilizarNfe(
 
 export async function listarNfesEmitidas(params: {
 	idempresa: string;
+	q?: string;
 	status?: number;
 	numero?: string;
 	razaosocial?: string;

@@ -4,6 +4,7 @@ import {
 	IconChevronDown,
 	IconLayoutColumns,
 	IconPlus,
+	IconSearch,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -33,6 +34,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -104,12 +106,20 @@ export default function NotaFiscalCompraPage() {
 		pageSize: 10,
 	});
 	const [notaCancelar, setNotaCancelar] = useState<NotaFiscal | null>(null);
+	const [qInput, setQInput] = useState("");
+	const [qAplicado, setQAplicado] = useState("");
 	const [filtrosColuna, setFiltrosColuna] =
 		useState<FiltrosColunaNotaFiscalCompraState>(
 			filtrosColunaNotaFiscalCompraVazios,
 		);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const handleBuscar = () => {
+		const termo = qInput.trim();
+		setQAplicado(termo);
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	};
 
 	const visibilidadePadrao = useMemo(
 		() => visibilidadePadraoColunasNotaFiscalCompra(),
@@ -159,6 +169,7 @@ export default function NotaFiscalCompraPage() {
 		queryKey: [
 			"notas-fiscais-compra",
 			empresa?.id,
+			qAplicado,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
 			filtrosColuna,
@@ -174,6 +185,7 @@ export default function NotaFiscalCompraPage() {
 				tipoorigem: 0,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				...(qAplicado ? { q: qAplicado } : {}),
 				...(filtrosColuna.numero ? { numero: filtrosColuna.numero } : {}),
 				...(filtrosColuna.serie ? { serie: filtrosColuna.serie } : {}),
 				...(filtrosColuna.razaosocial
@@ -188,9 +200,7 @@ export default function NotaFiscalCompraPage() {
 				...(filtrosColuna.entradasaida
 					? { entradasaida: filtrosColuna.entradasaida }
 					: {}),
-				...(filtrosColuna.chavenfe
-					? { chavenfe: filtrosColuna.chavenfe }
-					: {}),
+				...(filtrosColuna.chavenfe ? { chavenfe: filtrosColuna.chavenfe } : {}),
 				...(filtrosColuna.status
 					? { status: Number(filtrosColuna.status) }
 					: {}),
@@ -273,7 +283,8 @@ export default function NotaFiscalCompraPage() {
 
 	const colunasVisiveis = table.getVisibleLeafColumns();
 	const mostrarSkeleton = isLoading || isLoadingPreferencias;
-	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
+	const comFiltros =
+		!!qAplicado || filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
@@ -281,35 +292,6 @@ export default function NotaFiscalCompraPage() {
 				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Nota fiscal de compra</h1>
 					<div className="flex flex-wrap gap-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="sm" disabled={!empresa}>
-									<IconLayoutColumns className="size-4" />
-									<span className="hidden lg:inline">Personalizar Colunas</span>
-									<span className="lg:hidden">Colunas</span>
-									<IconChevronDown className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="max-h-72 w-56 overflow-y-auto"
-							>
-								{table
-									.getAllColumns()
-									.filter((column) => column.getCanHide())
-									.map((column) => (
-										<DropdownMenuCheckboxItem
-											key={column.id}
-											checked={column.getIsVisible()}
-											onCheckedChange={(value) =>
-												column.toggleVisibility(!!value)
-											}
-										>
-											{rotuloColuna(column)}
-										</DropdownMenuCheckboxItem>
-									))}
-							</DropdownMenuContent>
-						</DropdownMenu>
 						<Button asChild variant="outline" disabled={!empresa}>
 							<Link href="/nota-fiscal-compra/importar">Importar XML</Link>
 						</Button>
@@ -320,6 +302,66 @@ export default function NotaFiscalCompraPage() {
 							</Link>
 						</Button>
 					</div>
+				</div>
+				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+					<div className="flex flex-1 gap-2 max-w-md">
+						<Input
+							value={qInput}
+							onChange={(event) => {
+								const valor = event.target.value;
+								setQInput(valor);
+								if (valor.trim() === "" && qAplicado !== "") {
+									setQAplicado("");
+									setPagination((p) => ({ ...p, pageIndex: 0 }));
+								}
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									handleBuscar();
+								}
+							}}
+							placeholder="Filtrar em todos os campos (número, fornecedor, chave, valor...)"
+							disabled={!empresa}
+							className="max-w-md"
+						/>
+						<Button
+							onClick={handleBuscar}
+							disabled={!empresa}
+							className="gap-2"
+						>
+							<IconSearch className="size-4" />
+							Buscar
+						</Button>
+					</div>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" size="sm" disabled={!empresa}>
+								<IconLayoutColumns className="size-4" />
+								<span className="hidden lg:inline">Personalizar Colunas</span>
+								<span className="lg:hidden">Colunas</span>
+								<IconChevronDown className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							className="max-h-72 w-56 overflow-y-auto"
+						>
+							{table
+								.getAllColumns()
+								.filter((column) => column.getCanHide())
+								.map((column) => (
+									<DropdownMenuCheckboxItem
+										key={column.id}
+										checked={column.getIsVisible()}
+										onCheckedChange={(value) =>
+											column.toggleVisibility(!!value)
+										}
+									>
+										{rotuloColuna(column)}
+									</DropdownMenuCheckboxItem>
+								))}
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 				{rascunhos && rascunhos.data.length > 0 ? (
 					<section className="mx-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
@@ -348,10 +390,7 @@ export default function NotaFiscalCompraPage() {
 							</p>
 						</div>
 					) : mostrarSkeleton ? (
-						<TableSkeleton
-							rows={10}
-							columns={colunasVisiveis.length || 8}
-						>
+						<TableSkeleton rows={10} columns={colunasVisiveis.length || 8}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
 							))}
@@ -363,8 +402,7 @@ export default function NotaFiscalCompraPage() {
 									{table.getHeaderGroups().map((headerGroup) => (
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => {
-												const isRightAligned =
-													header.id === "valortotalnota";
+												const isRightAligned = header.id === "valortotalnota";
 												return (
 													<TableHead
 														key={header.id}
@@ -492,8 +530,8 @@ export default function NotaFiscalCompraPage() {
 							Cancelar e apagar nota de compra?
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							O estoque de entrada será estornado, os títulos a pagar sem baixa e
-							os custos vinculados à nota serão removidos, e a nota será
+							O estoque de entrada será estornado, os títulos a pagar sem baixa
+							e os custos vinculados à nota serão removidos, e a nota será
 							excluída permanentemente. Esta ação não pode ser desfeita.
 						</AlertDialogDescription>
 					</AlertDialogHeader>

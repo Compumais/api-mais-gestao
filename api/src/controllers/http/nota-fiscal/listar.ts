@@ -6,6 +6,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const listarNotasFiscaisQuerySchema = z.object({
 	idempresa: z.string(),
+	q: z.string().optional(),
 	numero: z.string().optional(),
 	identidade: z.string().optional(),
 	status: z.coerce.number().int().optional(),
@@ -39,6 +40,7 @@ export async function listarNotasFiscais(
 		const resultado = await listarNotasFiscaisService({
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
+			q: query.q,
 			numero: query.numero,
 			identidade: query.identidade,
 			status: query.status,

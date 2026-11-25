@@ -153,6 +153,7 @@ export async function emitirNfse(
 
 export async function listarNfsesEmitidas(params: {
 	idempresa: string;
+	q?: string;
 	status?: number;
 	numero?: string;
 	numeronfse?: string;

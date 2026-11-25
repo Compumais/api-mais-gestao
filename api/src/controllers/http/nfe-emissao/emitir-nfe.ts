@@ -10,6 +10,7 @@ import { emitirNfeBodySchema } from "./emissao-nfe-body-schema.js";
 
 const listarNfeQuerySchema = z.object({
 	idempresa: z.string().uuid(),
+	q: z.string().optional(),
 	status: z.coerce.number().optional(),
 	numero: z.string().optional(),
 	razaosocial: z.string().optional(),
@@ -99,6 +100,7 @@ export async function listarNfesEmitidas(
 		const resultado = await listarNotasFiscaisService({
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
+			q: query.q,
 			status: query.status,
 			numero: query.numero,
 			razaosocial: query.razaosocial,

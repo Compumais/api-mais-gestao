@@ -295,6 +295,7 @@ export async function listarNotasFiscaisPorNumeros(
 
 export type ListarNotasFiscaisPorEmpresaParametros = {
 	idempresa: string;
+	q?: string | undefined;
 	numero?: string | undefined;
 	identidade?: string | undefined;
 	status?: number | undefined;
@@ -321,6 +322,7 @@ export type ListarNotasFiscaisPorEmpresaParametros = {
 
 export async function listarNotasFiscaisPorEmpresa({
 	idempresa,
+	q,
 	numero,
 	identidade,
 	status,
@@ -348,6 +350,97 @@ export async function listarNotasFiscaisPorEmpresa({
 		where.push(eq(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO));
 	} else if (excluirRascunhos) {
 		where.push(ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO));
+	}
+
+	if (q?.trim()) {
+		const texto = q.trim();
+		const termo = `%${texto}%`;
+		const textoNormalizado = texto.replace(",", ".");
+		const termoNormalizado = `%${textoNormalizado}%`;
+		const digitos = texto.replace(/\D/g, "");
+		const condicoesBusca: SQL[] = [
+			ilike(notafiscal.numero, termo),
+			ilike(notafiscal.numeronotafiscal, termo),
+			ilike(notafiscal.numeronfse, termo),
+			ilike(notafiscal.serie, termo),
+			ilike(
+				sql`coalesce(${notafiscal.serie}, '') || '-' || coalesce(${notafiscal.numeronotafiscal}, ${notafiscal.numero}, '')`,
+				termo,
+			),
+			ilike(notafiscal.razaosocial, termo),
+			ilike(notafiscal.cnpjcpf, termo),
+			ilike(notafiscal.cnpjemissor, termo),
+			ilike(notafiscal.chavenfe, termo),
+			ilike(notafiscal.protocolonfe, termo),
+			ilike(notafiscal.codigoautenticidadenfse, termo),
+			ilike(notafiscal.observacao, termo),
+			ilike(notafiscal.mensagemtransmissaonfe, termo),
+			ilike(sql`${notafiscal.valortotalnota}::text`, termoNormalizado),
+			ilike(
+				sql`replace(coalesce(${notafiscal.valortotalnota}::text, ''), '.', ',')`,
+				termo,
+			),
+			ilike(sql`${notafiscal.emissao}::text`, termo),
+			ilike(sql`to_char(${notafiscal.emissao}, 'DD/MM/YYYY')`, termo),
+			ilike(sql`${notafiscal.entradasaida}::text`, termo),
+			ilike(sql`to_char(${notafiscal.entradasaida}, 'DD/MM/YYYY')`, termo),
+			ilike(sql`${notafiscal.datahoraemissao}::text`, termo),
+			ilike(
+				sql`to_char(${notafiscal.datahoraemissao}, 'DD/MM/YYYY HH24:MI')`,
+				termo,
+			),
+			ilike(
+				sql`case ${notafiscal.tipoambientenfe}
+					when 1 then 'Produção Producao'
+					when 2 then 'Homologação Homologacao'
+					else ''
+				end`,
+				termo,
+			),
+			ilike(
+				sql`case ${notafiscal.status}
+					when 1 then 'Confirmada'
+					when 2 then 'Cancelada'
+					when 90 then 'Pendente'
+					when 91 then 'Transmitindo'
+					when 92 then 'Aguardando consulta'
+					when 93 then 'Conflito'
+					when 94 then 'Recuperando'
+					when 99 then 'Rascunho'
+					when 100 then 'Autorizada'
+					when 101 then 'Cancelada'
+					when 102 then 'Inutilizada'
+					when 110 then 'Rejeitada'
+					when 135 then 'Cancelada (fora do prazo)'
+					when 301 then 'Denegada'
+					else coalesce(${notafiscal.status}::text, 'Registrada Pendente')
+				end`,
+				termo,
+			),
+		];
+
+		if (digitos) {
+			const termoDigitos = `%${digitos}%`;
+			condicoesBusca.push(
+				ilike(
+					sql`regexp_replace(coalesce(${notafiscal.cnpjcpf}, ''), '[^0-9]', '', 'g')`,
+					termoDigitos,
+				),
+				ilike(
+					sql`regexp_replace(coalesce(${notafiscal.cnpjemissor}, ''), '[^0-9]', '', 'g')`,
+					termoDigitos,
+				),
+				ilike(
+					sql`regexp_replace(coalesce(${notafiscal.chavenfe}, ''), '[^0-9]', '', 'g')`,
+					termoDigitos,
+				),
+			);
+		}
+
+		const buscaOr = or(...condicoesBusca);
+		if (buscaOr) {
+			where.push(buscaOr);
+		}
 	}
 
 	if (numero?.trim()) {

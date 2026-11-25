@@ -45,8 +45,14 @@ export type SituacaoQuantidadeRevalidacao =
 	| "sem_movimento"
 	| "movimento_nota_sem_item";
 
-export type SituacaoEanRevalidacao = "atualizado" | "divergente" | "nota_sem_ean";
-export type SituacaoCestRevalidacao = "atualizado" | "divergente" | "nota_sem_cest";
+export type SituacaoEanRevalidacao =
+	| "atualizado"
+	| "divergente"
+	| "nota_sem_ean";
+export type SituacaoCestRevalidacao =
+	| "atualizado"
+	| "divergente"
+	| "nota_sem_cest";
 export type SituacaoTributacaoEntradaRevalidacao =
 	| "atualizada"
 	| "divergente"
@@ -86,7 +92,10 @@ export interface RevalidacaoProdutosNota {
 	}>;
 }
 
-export type ResultadoEstoqueRevalidacao = "lancado" | "ja_inserido" | "nao_corrigido";
+export type ResultadoEstoqueRevalidacao =
+	| "lancado"
+	| "ja_inserido"
+	| "nao_corrigido";
 
 export interface AplicacaoRevalidacaoProdutosNota {
 	somenteLeitura: false;
@@ -341,6 +350,7 @@ export const notaFiscalService = {
 		idempresa: string;
 		page?: number;
 		limit?: number;
+		q?: string;
 		numero?: string;
 		serie?: string;
 		razaosocial?: string;
@@ -426,7 +436,9 @@ export const notaFiscalService = {
 		return data;
 	},
 
-	async criar(payload: CriarNotaFiscalPayload): Promise<CriarNotaFiscalResponse> {
+	async criar(
+		payload: CriarNotaFiscalPayload,
+	): Promise<CriarNotaFiscalResponse> {
 		const { data } = await api.post<CriarNotaFiscalResponse>(
 			"/notas-fiscais",
 			payload,

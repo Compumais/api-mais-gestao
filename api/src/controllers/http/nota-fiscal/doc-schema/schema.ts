@@ -13,7 +13,8 @@ const itemNotaFiscalBody = {
 	properties: {
 		idproduto: {
 			type: "string",
-			description: "ID do produto já cadastrado. Se omitido, busca por codigo/ean ou cria novo.",
+			description:
+				"ID do produto já cadastrado. Se omitido, busca por codigo/ean ou cria novo.",
 		},
 		idlocalestoque: {
 			type: "string",
@@ -30,20 +31,36 @@ const itemNotaFiscalBody = {
 		},
 		descricaoproduto: {
 			type: "string",
-			description: "Descrição usada para busca ou cadastro automático do produto.",
+			description:
+				"Descrição usada para busca ou cadastro automático do produto.",
 		},
-		descricao: { type: "string", maxLength: 255, description: "Descrição do item na nota." },
+		descricao: {
+			type: "string",
+			maxLength: 255,
+			description: "Descrição do item na nota.",
+		},
 		quantidade: { type: "string" },
 		precounitario: { type: "string" },
 		total: { type: "string" },
 		desconto: { type: "string" },
 		idcfop: { type: "string", description: "ID do CFOP (FK tabela cfop)." },
-		cfop: { type: "string", maxLength: 20, description: "Código CFOP textual." },
+		cfop: {
+			type: "string",
+			maxLength: 20,
+			description: "Código CFOP textual.",
+		},
 		idncm: { type: "string", description: "ID do NCM (FK tabela ncm)." },
 		ncm: { type: "string", maxLength: 11 },
-		idunidademedida: { type: "string", description: "ID da unidade de medida (FK)." },
+		idunidademedida: {
+			type: "string",
+			description: "ID da unidade de medida (FK).",
+		},
 		unidade: { type: "string", maxLength: 6 },
-		situacaotributaria: { type: "string", maxLength: 3, description: "CST ICMS." },
+		situacaotributaria: {
+			type: "string",
+			maxLength: 3,
+			description: "CST ICMS.",
+		},
 		cstpis: { type: "string", maxLength: 2 },
 		cstcofins: { type: "string", maxLength: 2 },
 		percentualicms: { type: "string" },
@@ -62,7 +79,8 @@ const itemNotaFiscalBody = {
 		outrasdespesas: { type: "string" },
 		origem: {
 			type: "number",
-			description: "Origem da mercadoria: 0=Nacional, 1=Estrangeira importação direta.",
+			description:
+				"Origem da mercadoria: 0=Nacional, 1=Estrangeira importação direta.",
 		},
 		custoaquisicao: { type: "string" },
 		referenciafornecedor: { type: "string", maxLength: 60 },
@@ -80,27 +98,68 @@ export const criarNotaFiscalSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string" },
-			identidade: { type: "string", nullable: true, description: "ID do fornecedor (entidade)." },
-			numero: { type: "string", nullable: true, description: "Número da nota fiscal." },
+			identidade: {
+				type: "string",
+				nullable: true,
+				description: "ID do fornecedor (entidade).",
+			},
+			numero: {
+				type: "string",
+				nullable: true,
+				description: "Número da nota fiscal.",
+			},
 			numeronotafiscal: { type: "string", nullable: true, maxLength: 11 },
 			serie: { type: "string", nullable: true },
-			modelo: { type: "string", nullable: true, description: "Modelo: 55=NF-e, 65=NFC-e." },
+			modelo: {
+				type: "string",
+				nullable: true,
+				description: "Modelo: 55=NF-e, 65=NFC-e.",
+			},
 			chavenfe: { type: "string", nullable: true, maxLength: 44 },
-			emissao: { type: "string", nullable: true, description: "Data de emissão (YYYY-MM-DD)." },
-			entradasaida: { type: "string", nullable: true, description: "Data de entrada (YYYY-MM-DD)." },
+			emissao: {
+				type: "string",
+				nullable: true,
+				description: "Data de emissão (YYYY-MM-DD).",
+			},
+			entradasaida: {
+				type: "string",
+				nullable: true,
+				description: "Data de entrada (YYYY-MM-DD).",
+			},
 			datahoraemissao: { type: "string", nullable: true },
 			datahoraentradasaida: { type: "string", nullable: true },
 			tipodocumento: { type: "string", nullable: true, maxLength: 2 },
-			idcfop: { type: "string", nullable: true, description: "CFOP principal da nota (FK)." },
+			idcfop: {
+				type: "string",
+				nullable: true,
+				description: "CFOP principal da nota (FK).",
+			},
 			idlocalestoque: {
 				type: "string",
 				nullable: true,
 				description: "ID do local de estoque padrão da nota (FK localestoque).",
 			},
-			idoperacaofiscal: { type: "string", nullable: true, description: "ID da operação fiscal (FK)." },
-			idplanocontas: { type: "string", nullable: true, description: "ID do plano de contas para lançamentos." },
-			idcondicaopagto: { type: "string", nullable: true, description: "ID da condição de pagamento. Dispara geração de contas a pagar." },
-			idtipodocumento: { type: "string", nullable: true, description: "ID do tipo de documento financeiro (FK)." },
+			idoperacaofiscal: {
+				type: "string",
+				nullable: true,
+				description: "ID da operação fiscal (FK).",
+			},
+			idplanocontas: {
+				type: "string",
+				nullable: true,
+				description: "ID do plano de contas para lançamentos.",
+			},
+			idcondicaopagto: {
+				type: "string",
+				nullable: true,
+				description:
+					"ID da condição de pagamento. Dispara geração de contas a pagar.",
+			},
+			idtipodocumento: {
+				type: "string",
+				nullable: true,
+				description: "ID do tipo de documento financeiro (FK).",
+			},
 			totalproduto: { type: "string", nullable: true },
 			totalservicos: { type: "string", nullable: true },
 			valortotalnota: { type: "string", nullable: true },
@@ -118,7 +177,11 @@ export const criarNotaFiscalSchema: FastifySchema = {
 			pisretido: { type: "string", nullable: true },
 			cofinsretido: { type: "string", nullable: true },
 			inss: { type: "string", nullable: true },
-			avista: { type: "string", nullable: true, description: "Valor pago à vista." },
+			avista: {
+				type: "string",
+				nullable: true,
+				description: "Valor pago à vista.",
+			},
 			aprazo: { type: "string", nullable: true, description: "Valor a prazo." },
 			pesobruto: { type: "string", nullable: true },
 			pesoliquido: { type: "string", nullable: true },
@@ -131,7 +194,8 @@ export const criarNotaFiscalSchema: FastifySchema = {
 			gerarFinanceiro: {
 				type: "boolean",
 				default: true,
-				description: "Gerar contas a pagar automaticamente se idcondicaopagto for informado.",
+				description:
+					"Gerar contas a pagar automaticamente se idcondicaopagto for informado.",
 			},
 			itens: { type: "array", items: itemNotaFiscalBody, minItems: 1 },
 		},
@@ -143,7 +207,10 @@ export const criarNotaFiscalSchema: FastifySchema = {
 			description: "Nota fiscal criada com sucesso",
 			properties: {
 				notaFiscal: { type: "object", additionalProperties: true },
-				itens: { type: "array", items: { type: "object", additionalProperties: true } },
+				itens: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 			},
 		},
 		400: {
@@ -169,6 +236,10 @@ export const listarNotasFiscaisSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string" },
+			q: {
+				type: "string",
+				description: "Busca textual em todos os campos da nota fiscal.",
+			},
 			numero: { type: "string" },
 			identidade: { type: "string" },
 			status: { type: "number" },
@@ -217,7 +288,10 @@ export const listarNotasFiscaisSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {
@@ -359,7 +433,8 @@ export const excluirNotaFiscalSchema: FastifySchema = {
 
 export const importarXmlNFSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
-	summary: "Importar nota fiscal de compra a partir de XML NF-e (legado → rascunho)",
+	summary:
+		"Importar nota fiscal de compra a partir de XML NF-e (legado → rascunho)",
 	description: `Cria um rascunho de importação (status 99) para revisão antes da confirmação.
 Preferir POST /notas-fiscais/importar-xml/rascunho. Este endpoint mantém compatibilidade e retorna idRascunho.`,
 	security: [{ bearerAuth: [] }],
@@ -558,7 +633,11 @@ export const buscarRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Buscar rascunho de importação",
 	security: [{ bearerAuth: [] }],
-	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
 	querystring: {
 		type: "object",
 		properties: { idempresa: { type: "string" } },
@@ -577,7 +656,11 @@ export const atualizarRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Atualizar cabeçalho do rascunho",
 	security: [{ bearerAuth: [] }],
-	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
 	body: { type: "object", additionalProperties: true },
 	response: {
 		200: { type: "object", additionalProperties: true },
@@ -612,7 +695,11 @@ export const aplicarGrupoPadraoRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Aplicar grupo padrão aos itens do rascunho",
 	security: [{ bearerAuth: [] }],
-	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
 	body: {
 		type: "object",
 		properties: {
@@ -637,7 +724,11 @@ export const cadastrarItensEmMassaRascunhoImportacaoSchema: FastifySchema = {
 	description:
 		"Marca os itens pendentes do rascunho como cadastro novo na finalização. Itens já vinculados, com EAN duplicado ou sem grupo/unidade são ignorados e retornados na lista de pendências.",
 	security: [{ bearerAuth: [] }],
-	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
 	body: {
 		type: "object",
 		properties: {
@@ -683,7 +774,11 @@ export const finalizarRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Finalizar rascunho de importação",
 	security: [{ bearerAuth: [] }],
-	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
 	body: {
 		type: "object",
 		properties: {
@@ -705,7 +800,8 @@ export const finalizarRascunhoImportacaoSchema: FastifySchema = {
 
 export const auditarEntradaNfSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
-	summary: "Auditar estoque e cadastro fiscal de compras já confirmadas (somente leitura)",
+	summary:
+		"Auditar estoque e cadastro fiscal de compras já confirmadas (somente leitura)",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
@@ -726,9 +822,14 @@ export const auditarEntradaNfSchema: FastifySchema = {
 
 export const aplicarRevalidacaoProdutosNotaSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
-	summary: "Atualizar cadastro e estoque faltante dos produtos de uma compra confirmada",
+	summary:
+		"Atualizar cadastro e estoque faltante dos produtos de uma compra confirmada",
 	security: [{ bearerAuth: [] }],
-	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
 	body: {
 		type: "object",
 		properties: {
@@ -751,7 +852,11 @@ export const revalidarProdutosNotaSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Revalidar produtos de uma compra confirmada (somente leitura)",
 	security: [{ bearerAuth: [] }],
-	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
 	querystring: {
 		type: "object",
 		properties: { idempresa: { type: "string" } },
@@ -771,7 +876,11 @@ export const excluirRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Excluir rascunho de importação",
 	security: [{ bearerAuth: [] }],
-	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
 	querystring: {
 		type: "object",
 		properties: { idempresa: { type: "string" } },

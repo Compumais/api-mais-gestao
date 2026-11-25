@@ -1,6 +1,10 @@
 "use client";
 
-import { IconChevronDown, IconLayoutColumns } from "@tabler/icons-react";
+import {
+	IconChevronDown,
+	IconLayoutColumns,
+	IconSearch,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	flexRender,
@@ -20,6 +24,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -105,12 +110,20 @@ export default function NotaFiscalVendaPage() {
 		pageIndex: 0,
 		pageSize: 20,
 	});
+	const [qInput, setQInput] = useState("");
+	const [qAplicado, setQAplicado] = useState("");
 	const [filtrosColuna, setFiltrosColuna] =
 		useState<FiltrosColunaNotaFiscalProdutoState>(
 			filtrosColunaNotaFiscalProdutoVazios,
 		);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const handleBuscar = () => {
+		const termo = qInput.trim();
+		setQAplicado(termo);
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	};
 
 	const visibilidadePadrao = useMemo(
 		() => visibilidadePadraoColunasNotaFiscalProduto(),
@@ -159,6 +172,7 @@ export default function NotaFiscalVendaPage() {
 		queryKey: [
 			"nfe-emitidas",
 			empresa?.id,
+			qAplicado,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
 			filtrosColuna,
@@ -171,6 +185,7 @@ export default function NotaFiscalVendaPage() {
 				idempresa: empresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				...(qAplicado ? { q: qAplicado } : {}),
 				...(filtrosColuna.numero ? { numero: filtrosColuna.numero } : {}),
 				...(filtrosColuna.razaosocial
 					? { razaosocial: filtrosColuna.razaosocial }
@@ -326,7 +341,8 @@ export default function NotaFiscalVendaPage() {
 
 	const colunasVisiveis = table.getVisibleLeafColumns();
 	const mostrarSkeleton = isLoading || isLoadingPreferencias;
-	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
+	const comFiltros =
+		!!qAplicado || filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
@@ -335,37 +351,6 @@ export default function NotaFiscalVendaPage() {
 					<h1 className="text-2xl font-bold">Notas Fiscais de Venda (NF-e)</h1>
 					{empresa && (
 						<div className="flex flex-wrap items-center gap-2">
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline" size="sm">
-										<IconLayoutColumns className="size-4" />
-										<span className="hidden lg:inline">
-											Personalizar Colunas
-										</span>
-										<span className="lg:hidden">Colunas</span>
-										<IconChevronDown className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									align="end"
-									className="max-h-72 w-56 overflow-y-auto"
-								>
-									{table
-										.getAllColumns()
-										.filter((column) => column.getCanHide())
-										.map((column) => (
-											<DropdownMenuCheckboxItem
-												key={column.id}
-												checked={column.getIsVisible()}
-												onCheckedChange={(value) =>
-													column.toggleVisibility(!!value)
-												}
-											>
-												{rotuloColuna(column)}
-											</DropdownMenuCheckboxItem>
-										))}
-								</DropdownMenuContent>
-							</DropdownMenu>
 							<BotaoAlterarNumeracao idempresa={empresa.id} abaInicial="nfe" />
 							<Link href="/nota-fiscal-venda/nova">
 								<Button className="gap-2">
@@ -374,6 +359,69 @@ export default function NotaFiscalVendaPage() {
 								</Button>
 							</Link>
 						</div>
+					)}
+				</div>
+
+				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+					<div className="flex flex-1 gap-2 max-w-md">
+						<Input
+							value={qInput}
+							onChange={(event) => {
+								const valor = event.target.value;
+								setQInput(valor);
+								if (valor.trim() === "" && qAplicado !== "") {
+									setQAplicado("");
+									setPagination((p) => ({ ...p, pageIndex: 0 }));
+								}
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									handleBuscar();
+								}
+							}}
+							placeholder="Filtrar em todos os campos (nº, destinatário, chave, valor...)"
+							disabled={!empresa}
+							className="max-w-md"
+						/>
+						<Button
+							onClick={handleBuscar}
+							disabled={!empresa}
+							className="gap-2"
+						>
+							<IconSearch className="size-4" />
+							Buscar
+						</Button>
+					</div>
+					{empresa && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
 					)}
 				</div>
 

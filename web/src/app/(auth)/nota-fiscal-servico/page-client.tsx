@@ -1,6 +1,10 @@
 "use client";
 
-import { IconChevronDown, IconLayoutColumns } from "@tabler/icons-react";
+import {
+	IconChevronDown,
+	IconLayoutColumns,
+	IconSearch,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	flexRender,
@@ -30,6 +34,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -101,12 +106,20 @@ export default function NotaFiscalServicoPage() {
 		pageIndex: 0,
 		pageSize: 20,
 	});
+	const [qInput, setQInput] = useState("");
+	const [qAplicado, setQAplicado] = useState("");
 	const [filtrosColuna, setFiltrosColuna] =
 		useState<FiltrosColunaNotaFiscalServicoState>(
 			filtrosColunaNotaFiscalServicoVazios,
 		);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const handleBuscar = () => {
+		const termo = qInput.trim();
+		setQAplicado(termo);
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	};
 
 	const visibilidadePadrao = useMemo(
 		() => visibilidadePadraoColunasNotaFiscalServico(),
@@ -154,6 +167,7 @@ export default function NotaFiscalServicoPage() {
 		queryKey: [
 			"nfse-emissao",
 			empresa?.id,
+			qAplicado,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
 			filtrosColuna,
@@ -165,6 +179,7 @@ export default function NotaFiscalServicoPage() {
 				idempresa: empresa!.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				...(qAplicado ? { q: qAplicado } : {}),
 				...(filtrosColuna.numero ? { numero: filtrosColuna.numero } : {}),
 				...(filtrosColuna.numeronfse
 					? { numeronfse: filtrosColuna.numeronfse }
@@ -337,7 +352,8 @@ export default function NotaFiscalServicoPage() {
 
 	const colunasVisiveis = table.getVisibleLeafColumns();
 	const mostrarSkeleton = isLoading || isLoadingPreferencias;
-	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
+	const comFiltros =
+		!!qAplicado || filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 	const motivoValido = motivoCancelamento.trim().length >= 15;
 
 	if (!empresa) {
@@ -361,35 +377,6 @@ export default function NotaFiscalServicoPage() {
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="sm">
-									<IconLayoutColumns className="size-4" />
-									<span className="hidden lg:inline">Personalizar Colunas</span>
-									<span className="lg:hidden">Colunas</span>
-									<IconChevronDown className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="max-h-72 w-56 overflow-y-auto"
-							>
-								{table
-									.getAllColumns()
-									.filter((column) => column.getCanHide())
-									.map((column) => (
-										<DropdownMenuCheckboxItem
-											key={column.id}
-											checked={column.getIsVisible()}
-											onCheckedChange={(value) =>
-												column.toggleVisibility(!!value)
-											}
-										>
-											{rotuloColuna(column)}
-										</DropdownMenuCheckboxItem>
-									))}
-							</DropdownMenuContent>
-						</DropdownMenu>
 						<AvisoAmbienteNfse ambiente={nfseConfiguracao?.ambiente} />
 						<Button asChild>
 							<Link href="/nota-fiscal-servico/nova">
@@ -398,6 +385,67 @@ export default function NotaFiscalServicoPage() {
 							</Link>
 						</Button>
 					</div>
+				</div>
+
+				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+					<div className="flex flex-1 gap-2 max-w-md">
+						<Input
+							value={qInput}
+							onChange={(event) => {
+								const valor = event.target.value;
+								setQInput(valor);
+								if (valor.trim() === "" && qAplicado !== "") {
+									setQAplicado("");
+									setPagination((p) => ({ ...p, pageIndex: 0 }));
+								}
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									handleBuscar();
+								}
+							}}
+							placeholder="Filtrar em todos os campos (RPS, NFS-e, tomador, valor...)"
+							disabled={!empresa}
+							className="max-w-md"
+						/>
+						<Button
+							onClick={handleBuscar}
+							disabled={!empresa}
+							className="gap-2"
+						>
+							<IconSearch className="size-4" />
+							Buscar
+						</Button>
+					</div>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" size="sm">
+								<IconLayoutColumns className="size-4" />
+								<span className="hidden lg:inline">Personalizar Colunas</span>
+								<span className="lg:hidden">Colunas</span>
+								<IconChevronDown className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							className="max-h-72 w-56 overflow-y-auto"
+						>
+							{table
+								.getAllColumns()
+								.filter((column) => column.getCanHide())
+								.map((column) => (
+									<DropdownMenuCheckboxItem
+										key={column.id}
+										checked={column.getIsVisible()}
+										onCheckedChange={(value) =>
+											column.toggleVisibility(!!value)
+										}
+									>
+										{rotuloColuna(column)}
+									</DropdownMenuCheckboxItem>
+								))}
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 
 				<AlertaVencimentoCertificado className="mx-4" />
