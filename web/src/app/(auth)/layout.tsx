@@ -67,14 +67,14 @@ function LayoutSidebar({ children }: { children: React.ReactNode }) {
 function LayoutTopbar({ children }: { children: React.ReactNode }) {
 	return (
 		<div
-			className="flex min-h-svh flex-col"
+			className="flex min-h-[calc(100svh-var(--banner-acesso-base-height,0px))] flex-col"
 			style={
 				{
 					"--header-height": "calc(var(--spacing) * 12)",
 				} as React.CSSProperties
 			}
 		>
-			<div className="sticky top-0 z-40">
+			<div className="sticky top-[var(--banner-acesso-base-height,0px)] z-40">
 				<VisualErrorBoundary
 					title="Não foi possível carregar o menu"
 					className="min-h-12 w-full"
