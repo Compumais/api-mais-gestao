@@ -15,14 +15,16 @@ Contas a pagar e a receber, contas correntes, movimentação (incluindo OFX), pl
 - `/tipos-cobranca`, `/tipos-cobranca/[id]/editar`
 - `/meios-pagamento` — também cadastro geral ([cadastros.md](cadastros.md))
 - `/bancos` — usado no formulário financeiro (`["bancos", empresa.id]`)
+- `/conciliacao/cielo`, `/conciliacao/cielo/[id]` — importação CSV Cielo e confirmação de associação com contas a receber
 
-Menu: item “Conciliação” com `url: "#"` (sem rota).
+Menu: item “Conciliação Cielo” → `/conciliacao/cielo`.
 
 Relatórios gerenciais com `?abrir=` ficam em [relatorios.md](relatorios.md). O dashboard lê saúde financeira e fluxo em chaves próprias ([dashboard.md](dashboard.md)).
 
 ## Services / hooks
 
 - `src/services/financeiro.service.ts`
+- `src/services/conciliacao-cielo.service.ts`
 - `src/services/contas-correntes.service.ts`
 - `src/services/conta-corrente-lancamento.service.ts` — hook `use-conta-corrente-lancamento.ts`
 - `src/services/plano-contas.service.ts` — hook `use-plano-contas.ts`
@@ -44,6 +46,7 @@ Outras chaves lidas pelo financeiro e por nota/PDV:
 - `["plano-contas", empresa.id, tipo]`, árvore `["plano-contas", "arvore", empresa.id]`, e `["plano-contas", "receitas"|"budget"|"servico", empresa.id]`
 - `["tipos-cobranca", empresa.id, ...]`
 - `["conta-corrente-lancamentos"]` (importação OFX invalida esse prefixo)
+- `["conciliacoes-cielo", empresa.id]`, `["conciliacao-cielo", id, empresa.id]`, `["titulos-receber-cielo", empresa.id]`
 - `["bancos", empresa.id]`, `["entidades", empresa.id]`
 - `["budgets"]`
 - `["tipos-documento-financeiro", empresa.id]` na NF de venda e variante `...-pdv-aprazo` no PDV
