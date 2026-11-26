@@ -78,6 +78,31 @@ LEFT JOIN public.entidade e ON e.id = f.identidade AND e.idempresa = f.idempresa
 LEFT JOIN public.planocontas pc ON pc.id = f.idplanocontas AND pc.idempresa = f.idempresa
 WHERE f.idempresa = current_setting('app.empresa_id', true);
 --> statement-breakpoint
+CREATE OR REPLACE VIEW "relatorios"."vw_financeiro_lancamentos" WITH (security_barrier = true) AS
+SELECT
+	fl.id,
+	fl.idfinanceiro AS id_financeiro,
+	f.tipo,
+	f.documento,
+	fl.valor,
+	fl.valorbaixa AS valor_baixa,
+	fl.valoranterior AS valor_anterior,
+	fl.desconto,
+	fl.juros,
+	fl.multa,
+	fl.acrescimo,
+	fl.pagamento,
+	fl.baixa,
+	fl.historico,
+	fl.observacao,
+	(COALESCE(fl.cancelado, 0) = 1) AS cancelado,
+	fl.datahoracancelado AS cancelado_em,
+	e.nome AS entidade_nome
+FROM public.financeirolancamento fl
+INNER JOIN public.financeiro f ON f.id = fl.idfinanceiro
+LEFT JOIN public.entidade e ON e.id = f.identidade AND e.idempresa = f.idempresa
+WHERE f.idempresa = current_setting('app.empresa_id', true);
+--> statement-breakpoint
 CREATE OR REPLACE VIEW "relatorios"."vw_vendas_pdv" WITH (security_barrier = true) AS
 SELECT
 	v.id,
