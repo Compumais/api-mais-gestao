@@ -21,10 +21,12 @@ Todos com `verifyJwt`, registrados em `src/index.ts`:
 | `src/controllers/http/tipo-cobranca/rotas.ts` | `/tipos-cobranca` |
 | `src/controllers/http/tipo-documento-financeiro/rotas.ts` | `/tipos-documento-financeiro` (+ `popular-padrao`) |
 | `src/controllers/http/bandeira-cartao/rotas.ts` | `/bandeiras-cartao` (+ `popular-padrao`) |
+| `src/controllers/http/retorno-bancario/rotas.ts` | `/retornos-bancarios` |
+| `src/controllers/http/conciliacao-cielo/rotas.ts` | `/conciliacoes-cielo` |
 
-Services espelhados em `src/service/financeiro/`, `financeirolancamento/`, `contacorrente/`, `contacorrentelancamento/`, `bancos/`, `budgets/`, `centro-custo/`, `condicao-pagamento/`, `tipo-cobranca/`, `tipo-documento-financeiro/`, `bandeira-cartao/`, `motivobaixafinanceiro/`.
+Services espelhados em `src/service/financeiro/`, `financeirolancamento/`, `contacorrente/`, `contacorrentelancamento/`, `bancos/`, `budgets/`, `centro-custo/`, `condicao-pagamento/`, `tipo-cobranca/`, `tipo-documento-financeiro/`, `bandeira-cartao/`, `motivobaixafinanceiro/`, `retorno-bancario/`, `conciliacao-cielo/`.
 
-Schema: `drizzle/tables/financeiro.ts`, `financeiro-lancamento.ts`, `conta-corrente.ts`, `conta-corrente-lancamento.ts`, `banco.ts`, `budget.ts`, `centro-custo.ts`, `condicao-pagamento.ts`, `tipo-cobranca.ts`, `tipo-documento-financeiro.ts`, `bandeira-cartao.ts`, `motivo-baixa-financeiro.ts`.
+Schema: `drizzle/tables/financeiro.ts`, `financeiro-lancamento.ts`, `conta-corrente.ts`, `conta-corrente-lancamento.ts`, `banco.ts`, `budget.ts`, `centro-custo.ts`, `condicao-pagamento.ts`, `tipo-cobranca.ts`, `tipo-documento-financeiro.ts`, `bandeira-cartao.ts`, `motivo-baixa-financeiro.ts`, `retorno-bancario.ts`, `conciliacao-cielo.ts`, `conciliacao-cielo-item.ts`.
 
 Conta caixa padrão nasce em `popularDadosPadraoEmpresa`.
 
@@ -38,10 +40,18 @@ Feature `contas_pagar_receber` existe no catálogo SaaS. Hook `requireFeature` n
 
 Nenhuma env específica deste módulo no código lido. Jobs que leem financeiro: `alerta_vencimento`, `saldo_baixo`, `conciliacao_pendente` (módulo de automação). Exigem `AGENDADOR_HABILITADO=true`.
 
+## Conciliação Cielo
+
+- Importa CSV Cielo **Recebíveis Detalhado - Lançamentos** (`POST /conciliacoes-cielo/importar`), deduplica por `checksum` SHA-256.
+- Parser: `src/util/parse-csv-cielo.ts`. Sugestão de match com títulos a receber abertos: `src/util/sugerir-match-cielo.ts` (NSU, autorização, valor, data, bandeira, parcela; score ≥ 40).
+- Usuário associa/desassocia item (`PUT /conciliacoes-cielo/itens/:iditem/associar`) pela ação **Conciliar** (busca de documento a receber) e confirma (`POST /conciliacoes-cielo/:id/confirmar`) com `idcontacorrente`; a confirmação baixa os títulos selecionados via `criarFinanceiroLancamentoService` (líquido na conta + taxa como desconto). O histórico da baixa registra data da conciliação e o usuário.
+- Migration: `drizzle/0128_conciliacao_cielo.sql`.
+
 ## Invariantes
 
 - Registros carregam `idempresa`. Services checam `verificarUsuarioPertenceEmpresa` antes de gravar.
 - Baixa de título **somente** via `POST /financeiro-lancamentos` (não via `PUT /financeiro` de status). Quitação total grava `status = P`; parcial mantém `A` com `saldo` reduzido. Estorno: `POST /financeiro-lancamentos/:id/estornar`.
+- Conciliação Cielo **não** baixa automaticamente no import; só após confirmação explícita do usuário.
 - Título legado `status = P` com `saldo ≈ valor` e `valorpagorecebido` vazio = pago sem rastreio (atalho antigo); não reprocessar automaticamente.
 - Lançamento financeiro referencia título (`financeiro`) e movimenta conta corrente (crédito em receber, débito em pagar). Apagar o CRUD de lançamento sem o título deixa baixa órfã.
 - Origem do título: contrato de serviço `tipoorigem = 5`; locação de equipamento `tipoorigem = 6`, criada no fechamento da locação.
@@ -54,6 +64,7 @@ Nenhuma env específica deste módulo no código lido. Jobs que leem financeiro:
 
 - Geração de parcelas na autorização de venda ou no fechamento de OS.
 - Importação OFX (`POST /conta-corrente-lancamentos/importar-ofx/preview`).
+- Conciliação Cielo (`/conciliacoes-cielo`) e baixas geradas na confirmação.
 - Dashboard e relatórios de fluxo de caixa, DRE, contas a pagar/receber (leem estas tabelas).
 - Conta corrente “caixa” criada para empresa nova.
 - Seed `seed:financeiro-dashboard` e `seed:budget` (scripts de dev, não apagar as tabelas por causa deles).
@@ -70,3 +81,4 @@ Empresas, entidades (cliente/fornecedor do título), plano de contas/centro de c
 - `src/service/bancos/buscar-por-id.test.ts`
 - `src/service/nota-fiscal/gerar-contas-receber-nf.test.ts`
 - `src/util/lancamento-pagamento-pdv.test.ts`
+- `src/util/parse-csv-cielo.test.ts`

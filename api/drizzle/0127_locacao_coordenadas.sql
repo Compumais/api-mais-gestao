@@ -1,2 +1,2 @@
-ALTER TABLE "locacao" ADD COLUMN "latitude" numeric(10, 7);--> statement-breakpoint
-ALTER TABLE "locacao" ADD COLUMN "longitude" numeric(10, 7);
+ALTER TABLE "locacao" ADD COLUMN IF NOT EXISTS "latitude" numeric(10, 7);--> statement-breakpoint
+ALTER TABLE "locacao" ADD COLUMN IF NOT EXISTS "longitude" numeric(10, 7);
