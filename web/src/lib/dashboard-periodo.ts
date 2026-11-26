@@ -27,7 +27,8 @@ export type DashboardTab =
 	| "metas"
 	| "comparativo"
 	| "alertas"
-	| "controle";
+	| "controle"
+	| "personalizado";
 
 export const DASHBOARD_TABS_BASICAS: DashboardTab[] = [
 	"visao-geral",
@@ -36,6 +37,7 @@ export const DASHBOARD_TABS_BASICAS: DashboardTab[] = [
 	"dre",
 	"comparativo",
 	"controle",
+	"personalizado",
 ];
 
 export const DASHBOARD_TABS_COMPLETAS: DashboardTab[] = [
@@ -58,6 +60,7 @@ export const DASHBOARD_TAB_LABELS: Record<DashboardTab, string> = {
 	comparativo: "Comparativos",
 	alertas: "Alertas",
 	controle: "Controle",
+	personalizado: "Meu Painel",
 };
 
 export const PERIODO_PRESET_LABELS: Record<PeriodoPreset, string> = {

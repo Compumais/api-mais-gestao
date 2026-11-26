@@ -48,6 +48,7 @@ import { dashboardRotas } from "./controllers/http/dashboard/rotas.js";
 import { davsRotas } from "./controllers/http/dav/rotas.js";
 import { departamentosRotas } from "./controllers/http/departamento/rotas.js";
 import { dominioRotas } from "./controllers/http/dominio/rotas.js";
+import { editorSqlRotas } from "./controllers/http/editor-sql/rotas.js";
 import { efdRotas } from "./controllers/http/efd-icms/rotas.js";
 import { emailRotas } from "./controllers/http/email/rotas.js";
 import { empresaFiscalRotas } from "./controllers/http/empresa-fiscal/rotas.js";
@@ -208,6 +209,7 @@ await app.register(swagger, {
 			},
 			{ name: "auditoria", description: "Operações com logs de auditoria" },
 			{ name: "dashboard", description: "Operações com dashboard" },
+			{ name: "editor-sql", description: "Editor SQL seguro e BI personalizado" },
 			{
 				name: "conta-contabil",
 				description: "Operações com contas contábeis",
@@ -600,6 +602,7 @@ app.register(configuracaoRotas);
 app.register(configuracaoUsuarioRotas);
 app.register(auditoriaRotas);
 app.register(dashboardRotas);
+app.register(editorSqlRotas);
 app.register(usuariosRotas);
 app.register(assinaturasRotas);
 app.register(planosRotas);

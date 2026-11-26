@@ -93,6 +93,12 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 		},
 	},
 	{
+		prefixo: "/editor-sql",
+		acesso: {
+			perfis: ["proprietario", "admin"],
+		},
+	},
+	{
 		prefixo: "/meus-planos",
 		acesso: {
 			perfis: ["proprietario"],

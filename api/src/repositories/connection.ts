@@ -35,6 +35,14 @@ export const directPool = new Pool({
 	application_name: `${configBase.application_name}-direct`,
 });
 
+export const biReadOnlyPool = new Pool({
+	...configBase,
+	connectionString:
+		process.env.DATABASE_BI_READONLY_URL || process.env.DATABASE_URL,
+	max: lerInteiroEnv(process.env.DB_BI_POOL_MAX, 5),
+	application_name: `${configBase.application_name}-bi-ro`,
+});
+
 pool.on("error", (err) => {
 	console.error(
 		"Erro inesperado no cliente idle do pool PostgreSQL (pooled):",
@@ -45,6 +53,13 @@ pool.on("error", (err) => {
 directPool.on("error", (err) => {
 	console.error(
 		"Erro inesperado no cliente idle do pool PostgreSQL (direct):",
+		err.message,
+	);
+});
+
+biReadOnlyPool.on("error", (err) => {
+	console.error(
+		"Erro inesperado no cliente idle do pool PostgreSQL (bi-ro):",
 		err.message,
 	);
 });
@@ -63,6 +78,11 @@ export function obterMetricasPool() {
 			idle: directPool.idleCount,
 			waiting: directPool.waitingCount,
 		},
+		biReadOnly: {
+			total: biReadOnlyPool.totalCount,
+			idle: biReadOnlyPool.idleCount,
+			waiting: biReadOnlyPool.waitingCount,
+		},
 	};
 }
 
@@ -71,5 +91,9 @@ let encerrandoPools = false;
 export async function fecharConexoesBanco(): Promise<void> {
 	if (encerrandoPools) return;
 	encerrandoPools = true;
-	await Promise.allSettled([pool.end(), directPool.end()]);
+	await Promise.allSettled([
+		pool.end(),
+		directPool.end(),
+		biReadOnlyPool.end(),
+	]);
 }

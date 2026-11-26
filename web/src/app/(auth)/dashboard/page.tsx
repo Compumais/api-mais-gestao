@@ -26,6 +26,7 @@ import { DreSection } from "./components/dre-section";
 import { FinanceiroSection } from "./components/financeiro-section";
 import { FluxoCaixaSection } from "./components/fluxo-caixa-section";
 import { MetasSection } from "./components/metas-section";
+import { PersonalizadoSection } from "./components/personalizado-section";
 import { RentabilidadeSection } from "./components/rentabilidade-section";
 import { VendasSection } from "./components/vendas-section";
 import { VisaoGeralSection } from "./components/visao-geral-section";
@@ -52,6 +53,7 @@ function DashboardShell() {
 			"comparativo",
 			"alertas",
 			"controle",
+			"personalizado",
 		];
 		return ordem.filter((t) => {
 			if (DASHBOARD_TABS_BASICAS.includes(t)) return true;
@@ -123,6 +125,7 @@ function DashboardShell() {
 					{tab === "comparativo" && <ComparativoSection />}
 					{tab === "alertas" && <AlertasSection />}
 					{tab === "controle" && <ControleSection />}
+					{tab === "personalizado" && <PersonalizadoSection />}
 				</VisualErrorBoundary>
 			</div>
 		</PageContainer>
