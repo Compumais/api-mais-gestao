@@ -15,7 +15,7 @@ Contas a pagar e a receber, contas correntes, movimentação (incluindo OFX), pl
 - `/tipos-cobranca`, `/tipos-cobranca/[id]/editar`
 - `/meios-pagamento` — também cadastro geral ([cadastros.md](cadastros.md))
 - `/bancos` — usado no formulário financeiro (`["bancos", empresa.id]`)
-- `/conciliacao/cielo`, `/conciliacao/cielo/[id]` — importação CSV Cielo e confirmação de associação com contas a receber
+- `/conciliacao/cielo`, `/conciliacao/cielo/[id]` — importação CSV Cielo; em cada lançamento a ação **Conciliar** busca documento a receber; confirmar baixa os títulos selecionados
 
 Menu: item “Conciliação Cielo” → `/conciliacao/cielo`.
 

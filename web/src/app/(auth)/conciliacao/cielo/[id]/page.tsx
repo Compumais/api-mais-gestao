@@ -4,13 +4,13 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { formatCurrency } from "@/app/(auth)/components/financeiro-lista-colunas";
+import { DialogConciliarTitulo } from "@/app/(auth)/conciliacao/cielo/components/dialog-conciliar-titulo";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -32,7 +32,6 @@ import {
 	conciliacaoCieloService,
 } from "@/services/conciliacao-cielo.service";
 import { contasCorrentesService } from "@/services/contas-correntes.service";
-import { financeiroService } from "@/services/financeiro.service";
 
 function formatarData(valor: string | null | undefined) {
 	if (!valor) return "-";
@@ -42,20 +41,6 @@ function formatarData(valor: string | null | undefined) {
 	return `${dia}/${mes}/${ano}`;
 }
 
-function rotuloTitulo(titulo: {
-	documento?: string | null;
-	historico?: string | null;
-	valor?: string | null;
-	saldo?: string | null;
-	emitente?: string | null;
-	nomecliente?: string | null;
-}) {
-	const doc = titulo.documento || "s/ doc";
-	const cliente = titulo.emitente || titulo.nomecliente || "";
-	const valor = formatCurrency(titulo.saldo ?? titulo.valor);
-	return `${doc}${cliente ? ` — ${cliente}` : ""} — ${valor}`;
-}
-
 export default function ConciliacaoCieloDetalhePage() {
 	const params = useParams<{ id: string }>();
 	const id = params.id;
@@ -63,7 +48,8 @@ export default function ConciliacaoCieloDetalhePage() {
 	const queryClient = useQueryClient();
 	const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
 	const [idcontacorrente, setIdContaCorrente] = useState("");
-	const [filtroTitulo, setFiltroTitulo] = useState("");
+	const [itemConciliando, setItemConciliando] =
+		useState<ConciliacaoCieloItem | null>(null);
 
 	const { data, isLoading, refetch } = useQuery({
 		queryKey: ["conciliacao-cielo", id, empresa?.id],
@@ -81,42 +67,6 @@ export default function ConciliacaoCieloDetalhePage() {
 			}),
 	});
 
-	const { data: titulosData } = useQuery({
-		queryKey: ["titulos-receber-cielo", empresa?.id],
-		enabled: Boolean(empresa?.id),
-		queryFn: () =>
-			financeiroService.listar({
-				idempresa: empresa!.id,
-				tipo: "R",
-				status: "A",
-				limit: 500,
-				ordenarPor: "emissao",
-				ordem: "desc",
-			}),
-	});
-
-	const titulos = titulosData?.data ?? [];
-	const titulosFiltrados = useMemo(() => {
-		const termo = filtroTitulo.trim().toLowerCase();
-		if (!termo) return titulos.slice(0, 80);
-		return titulos
-			.filter((t) => {
-				const bag = [
-					t.documento,
-					t.historico,
-					t.emitente,
-					t.nossonumero,
-					t.valor,
-					t.saldo,
-				]
-					.filter(Boolean)
-					.join(" ")
-					.toLowerCase();
-				return bag.includes(termo);
-			})
-			.slice(0, 80);
-	}, [titulos, filtroTitulo]);
-
 	const itens = data?.itens ?? [];
 	const associadosSelecionaveis = itens.filter(
 		(item) =>
@@ -132,9 +82,20 @@ export default function ConciliacaoCieloDetalhePage() {
 				idempresa: empresa!.id,
 				idfinanceiro: payload.idfinanceiro,
 			}),
-		onSuccess: () => {
+		onSuccess: (_data, variables) => {
 			refetch();
-			toast.success("Associação atualizada");
+			setItemConciliando(null);
+			if (variables.idfinanceiro) {
+				setSelecionados((atual) => new Set(atual).add(variables.iditem));
+				toast.success("Lançamento associado ao título");
+			} else {
+				setSelecionados((atual) => {
+					const proximo = new Set(atual);
+					proximo.delete(variables.iditem);
+					return proximo;
+				});
+				toast.success("Associação removida");
+			}
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Falha ao associar");
@@ -150,7 +111,7 @@ export default function ConciliacaoCieloDetalhePage() {
 					? Array.from(selecionados)
 					: associadosSelecionaveis.map((i) => i.id);
 			if (ids.length === 0) {
-				throw new Error("Selecione ao menos um item associado");
+				throw new Error("Selecione ao menos um item associado para baixar");
 			}
 			return conciliacaoCieloService.confirmar(id, {
 				idempresa: empresa.id,
@@ -162,10 +123,11 @@ export default function ConciliacaoCieloDetalhePage() {
 		onSuccess: (resultado) => {
 			queryClient.invalidateQueries({ queryKey: ["conciliacao-cielo", id] });
 			queryClient.invalidateQueries({ queryKey: ["conciliacoes-cielo"] });
-			queryClient.invalidateQueries({ queryKey: ["titulos-receber-cielo"] });
+			queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+			queryClient.invalidateQueries({ queryKey: ["busca-titulos-cielo"] });
 			setSelecionados(new Set());
 			toast.success(
-				`Confirmados: ${resultado.confirmados} · Ignorados: ${resultado.ignorados} · Erros: ${resultado.erros}`,
+				`Baixados: ${resultado.confirmados} · Ignorados: ${resultado.ignorados} · Erros: ${resultado.erros}`,
 			);
 			refetch();
 		},
@@ -240,24 +202,13 @@ export default function ConciliacaoCieloDetalhePage() {
 							</SelectContent>
 						</Select>
 					</div>
-					<div className="flex flex-col gap-2 w-full max-w-md">
-						<label className="text-sm font-medium" htmlFor="filtro-titulo">
-							Filtrar títulos a receber
-						</label>
-						<Input
-							id="filtro-titulo"
-							value={filtroTitulo}
-							onChange={(e) => setFiltroTitulo(e.target.value)}
-							placeholder="Documento, cliente, valor..."
-						/>
-					</div>
 					<Button
 						disabled={confirmar.isPending || isLoading}
 						onClick={() => confirmar.mutate()}
 					>
 						{confirmar.isPending
-							? "Confirmando..."
-							: `Confirmar associações${
+							? "Baixando títulos..."
+							: `Confirmar conciliação e baixar${
 									selecionados.size > 0 ? ` (${selecionados.size})` : ""
 								}`}
 					</Button>
@@ -286,7 +237,7 @@ export default function ConciliacaoCieloDetalhePage() {
 									<TableHead>Bruto</TableHead>
 									<TableHead>Líquido</TableHead>
 									<TableHead>Status</TableHead>
-									<TableHead className="min-w-[280px]">Conta a receber</TableHead>
+									<TableHead className="min-w-[260px]">Conta a receber</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -300,6 +251,7 @@ export default function ConciliacaoCieloDetalhePage() {
 										item.idfinanceiro &&
 											item.statusprocessamento !== "confirmado",
 									);
+									const confirmado = item.statusprocessamento === "confirmado";
 									return (
 										<TableRow key={item.id}>
 											<TableCell>
@@ -347,53 +299,37 @@ export default function ConciliacaoCieloDetalhePage() {
 												</div>
 											</TableCell>
 											<TableCell>
-												{item.statusprocessamento === "confirmado" ? (
-													<div className="text-sm">
-														<div>{item.documento || item.idfinanceiro}</div>
-														<div className="text-muted-foreground">
-															{item.nomecliente || item.historico || ""}
-														</div>
-													</div>
-												) : (
-													<Select
-														value={item.idfinanceiro ?? "__none__"}
-														onValueChange={(value) =>
-															associar.mutate({
-																iditem: item.id,
-																idfinanceiro:
-																	value === "__none__" ? null : value,
-															})
-														}
-													>
-														<SelectTrigger>
-															<SelectValue placeholder="Associar título" />
-														</SelectTrigger>
-														<SelectContent>
-															<SelectItem value="__none__">
-																Sem associação
-															</SelectItem>
-															{item.idfinanceiro &&
-																!titulosFiltrados.some(
-																	(t) => t.id === item.idfinanceiro,
-																) && (
-																	<SelectItem value={item.idfinanceiro}>
-																		{rotuloTitulo({
-																			documento: item.documento,
-																			historico: item.historico,
-																			valor: item.valorfinanceiro,
-																			saldo: item.saldofinanceiro,
-																			nomecliente: item.nomecliente,
-																		})}
-																	</SelectItem>
+												<div className="flex flex-col gap-2">
+													{item.idfinanceiro ? (
+														<div className="text-sm">
+															<div className="font-medium">
+																{item.documento || item.idfinanceiro}
+															</div>
+															<div className="text-muted-foreground">
+																{item.nomecliente || item.historico || ""}
+															</div>
+															<div className="text-muted-foreground">
+																{formatCurrency(
+																	item.saldofinanceiro ?? item.valorfinanceiro,
 																)}
-															{titulosFiltrados.map((titulo) => (
-																<SelectItem key={titulo.id} value={titulo.id}>
-																	{rotuloTitulo(titulo)}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
-												)}
+															</div>
+														</div>
+													) : (
+														<span className="text-sm text-muted-foreground">
+															Sem associação
+														</span>
+													)}
+													{!confirmado && (
+														<Button
+															size="sm"
+															variant="outline"
+															className="w-fit"
+															onClick={() => setItemConciliando(item)}
+														>
+															Conciliar
+														</Button>
+													)}
+												</div>
 											</TableCell>
 										</TableRow>
 									);
@@ -403,6 +339,27 @@ export default function ConciliacaoCieloDetalhePage() {
 					</div>
 				</div>
 			</div>
+
+			{itemConciliando && (
+				<DialogConciliarTitulo
+					aberto={Boolean(itemConciliando)}
+					onAbertoChange={(aberto) => {
+						if (!aberto) setItemConciliando(null);
+					}}
+					idempresa={empresa.id}
+					nsu={itemConciliando.nsu}
+					autorizacao={itemConciliando.codigoautorizacao}
+					valorBruto={itemConciliando.valorbruto}
+					idfinanceiroAtual={itemConciliando.idfinanceiro}
+					salvando={associar.isPending}
+					onConfirmar={(idfinanceiro) =>
+						associar.mutate({
+							iditem: itemConciliando.id,
+							idfinanceiro,
+						})
+					}
+				/>
+			)}
 		</PageContainer>
 	);
 }

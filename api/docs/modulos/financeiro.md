@@ -44,7 +44,7 @@ Nenhuma env específica deste módulo no código lido. Jobs que leem financeiro:
 
 - Importa CSV Cielo **Recebíveis Detalhado - Lançamentos** (`POST /conciliacoes-cielo/importar`), deduplica por `checksum` SHA-256.
 - Parser: `src/util/parse-csv-cielo.ts`. Sugestão de match com títulos a receber abertos: `src/util/sugerir-match-cielo.ts` (NSU, autorização, valor, data, bandeira, parcela; score ≥ 40).
-- Usuário associa/desassocia item (`PUT /conciliacoes-cielo/itens/:iditem/associar`) e confirma (`POST /conciliacoes-cielo/:id/confirmar`) com `idcontacorrente`; a confirmação baixa via `criarFinanceiroLancamentoService` (líquido na conta + taxa como desconto no saldo do título).
+- Usuário associa/desassocia item (`PUT /conciliacoes-cielo/itens/:iditem/associar`) pela ação **Conciliar** (busca de documento a receber) e confirma (`POST /conciliacoes-cielo/:id/confirmar`) com `idcontacorrente`; a confirmação baixa os títulos selecionados via `criarFinanceiroLancamentoService` (líquido na conta + taxa como desconto). O histórico da baixa registra data da conciliação e o usuário.
 - Migration: `drizzle/0128_conciliacao_cielo.sql`.
 
 ## Invariantes

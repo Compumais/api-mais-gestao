@@ -14,6 +14,7 @@ import {
 } from "@/repositories/conciliacao-cielo-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
+import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 import { criarFinanceiroLancamentoService } from "@/service/financeirolancamento/criar-financeiro-lancamento.js";
 import { mensagemErroHttp } from "@/util/http-response-util.js";
 import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
@@ -36,6 +37,12 @@ export type ResultadoConfirmarConciliacaoCielo = {
 
 function valorNumero(valor: string | null | undefined) {
 	return Math.round(Number(valor ?? 0) * 100) / 100;
+}
+
+function formatarDataHistorico(dataIso: string) {
+	const [ano, mes, dia] = dataIso.slice(0, 10).split("-");
+	if (!ano || !mes || !dia) return dataIso;
+	return `${dia}/${mes}/${ano}`;
 }
 
 export async function confirmarConciliacaoCieloService({
@@ -61,6 +68,12 @@ export async function confirmarConciliacaoCieloService({
 	if (!conta || conta.idempresa !== idempresa) {
 		return httpBadRequest("Conta corrente não encontrada");
 	}
+
+	const usuario = await buscarUsuarioPorId(idusuario);
+	const nomeUsuario =
+		usuario?.nome?.trim() || usuario?.email?.trim() || idusuario;
+	const dataConciliacaoIso = new Date().toISOString().slice(0, 10);
+	const dataConciliacaoBr = formatarDataHistorico(dataConciliacaoIso);
 
 	const todos = await listarItensConciliacaoCielo(idconciliacao);
 	const selecionados = idsitens?.length
@@ -146,7 +159,7 @@ export async function confirmarConciliacaoCieloService({
 						pagamento: dataPagamento,
 						baixa: new Date().toISOString(),
 						evento: Date.now(),
-						historico: `Conciliação Cielo NSU ${item.nsu ?? "-"} auth ${item.codigoautorizacao ?? "-"}`,
+						historico: `Conciliação Cielo em ${dataConciliacaoBr} por ${nomeUsuario} — NSU ${item.nsu ?? "-"} auth ${item.codigoautorizacao ?? "-"}`,
 						pagamentos: [
 							{
 								metodo: "Cartão",
